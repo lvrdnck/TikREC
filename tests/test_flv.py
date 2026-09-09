@@ -118,6 +118,15 @@ class FlvTagTests(unittest.TestCase):
         self.assertTrue(decoded.is_configuration)
         self.assertTrue(decoded.is_avc_configuration)
 
+    def test_encoded_timestamp_is_limited_to_flv_four_byte_range(self) -> None:
+        tag = FlvTag(9, 0, b"\x00\x00\x00", b"\x17\x01frame")
+
+        # A caller can supply a negative base even though source timestamps are
+        # bounded; encoding still must fit FLV's four-byte timestamp field.
+        decoded = read_tag(BytesIO(tag.encoded(base_timestamp=-(1 << 32))))
+
+        self.assertEqual(decoded.timestamp, 0)
+
     def test_clean_end_returns_none_but_a_torn_tag_raises_eof_error(self) -> None:
         self.assertIsNone(read_tag(BytesIO()))
         torn_tag = FlvTag(8, 0, b"\x00\x00\x00", b"\xaf\x01audio").encoded()[:-2]
@@ -139,6 +148,12 @@ class AvcDimensionsTests(unittest.TestCase):
 
     def test_avc_configuration_uses_its_sps_dimensions(self) -> None:
         configuration = make_avc_configuration(make_sps(720, 1280))
+
+        self.assertEqual(avc_configuration_dimensions(configuration), (720, 1280))
+
+    def test_avc_configuration_ignores_malformed_entries_after_first_sps(self) -> None:
+        configuration = bytearray(make_avc_configuration(make_sps(720, 1280)))
+        configuration[5] = 0xE2  # Claim a second SPS that is not fully present.
 
         self.assertEqual(avc_configuration_dimensions(configuration), (720, 1280))
 

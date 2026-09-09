@@ -73,7 +73,7 @@ class FlvTag:
         header[1:4] = len(self.payload).to_bytes(3, "big")
         header[4:7] = (timestamp & 0xFFFFFF).to_bytes(3, "big")
         # FLV stores the high timestamp byte after the low three bytes.
-        header[7] = timestamp >> 24
+        header[7] = (timestamp >> 24) & 0xFF
         header[8:11] = self.stream_id
         previous_tag_size = (11 + len(self.payload)).to_bytes(4, "big")
         return bytes(header) + self.payload + previous_tag_size
@@ -221,25 +221,13 @@ def avc_configuration_dimensions(configuration: bytes) -> tuple[int, int]:
     if len(configuration) < 7 or configuration[0] != 1:
         raise FlvFormatError("invalid AVCDecoderConfigurationRecord")
 
-    position = 6
     sps_count = configuration[5] & 0x1F
     if not sps_count:
         raise FlvFormatError("AVC configuration contains no SPS")
 
-    first_sps: bytes | None = None
-    for _ in range(sps_count):
-        sps, position = _read_length_prefixed_nal(configuration, position)
-        if first_sps is None:
-            first_sps = sps
-
-    if position >= len(configuration):
-        raise FlvFormatError("AVC configuration is missing its PPS count")
-    pps_count = configuration[position]
-    position += 1
-    for _ in range(pps_count):
-        _, position = _read_length_prefixed_nal(configuration, position)
-
-    assert first_sps is not None
+    # A recorder needs dimensions, not a full decoder setup. TikTok may append
+    # malformed unused parameter sets, so accept a usable first SPS and continue.
+    first_sps, _ = _read_length_prefixed_nal(configuration, 6)
     return sps_dimensions(first_sps)
 
 
