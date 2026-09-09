@@ -4,3 +4,17 @@
 .env
 .env.*
 *.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Recorded media — never commit
+runs/
+*.flv
+*.mp4
+*.ts
+*.partial

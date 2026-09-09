@@ -16,9 +16,9 @@ GitHub is the source of truth.
 A minimal command-line tool that records a single TikTok LIVE stream to
 disk from a URL supplied manually. See SPEC.md for the full design.
 
-This is a rewrite. The previous version lives in `../TikREC-legacy` and
-is reference material only — read it to learn how the format behaves in
-the wild, never copy from it.
+This is a rewrite. The previous version is not in this repo — I will paste
+relevant files from it into the conversation when the format behaviour
+matters. Do not go looking for it on disk.
 
 ## Constraints
 
