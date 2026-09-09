@@ -32,7 +32,7 @@ def finalize_parts(
     configurations = tuple(_configuration_for(part) for part in ordered_parts)
     same_configuration = len(set(configurations)) == 1
     target_size = _target_size(configurations) if not same_configuration else None
-    temporary_output = output_path.with_name(f".{output_path.name}.partial")
+    temporary_output = _temporary_output_path(output_path)
     if temporary_output.exists():
         raise FileExistsError(f"temporary output already exists: {temporary_output}")
 
@@ -89,6 +89,18 @@ def _validate_output_path(output_path: Path) -> None:
         raise ValueError(f"output directory does not exist: {output_path.parent}")
     if output_path.exists():
         raise FileExistsError(f"refusing to overwrite existing output: {output_path}")
+    if not output_path.suffix:
+        raise ValueError("output path must have a container extension")
+
+
+def _temporary_output_path(output_path: Path) -> Path:
+    """Return a hidden temporary path that retains FFmpeg's output suffix."""
+    suffix = output_path.suffix
+    stem = output_path.name[: -len(suffix)]
+    # FFmpeg chooses its muxer from the last suffix, so ``.partial`` belongs
+    # before it rather than after it. Keeping the directory unchanged permits
+    # ``os.replace`` to remain atomic on filesystems that support it.
+    return output_path.with_name(f".{stem}.partial{suffix}")
 
 
 def _configuration_for(part: Path) -> bytes:

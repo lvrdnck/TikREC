@@ -96,7 +96,7 @@ class FinalizeTests(unittest.TestCase):
 
             self.assertIn("code 9", str(error.exception))
             self.assertFalse((root / "final.mp4").exists())
-            self.assertFalse((root / ".final.mp4.partial").exists())
+            self.assertFalse((root / ".final.partial.mp4").exists())
 
     def test_success_promotes_partial_output_atomically(self) -> None:
         with TemporaryDirectory() as directory:
@@ -109,9 +109,33 @@ class FinalizeTests(unittest.TestCase):
             with patch("tikrec.finalize.os.replace", wraps=os.replace) as replace:
                 finalize_parts([part], output, runner=runner)
 
-            replace.assert_called_once_with(root / ".final.mp4.partial", output)
+            replace.assert_called_once_with(root / ".final.partial.mp4", output)
             self.assertEqual(output.read_bytes(), b"finished media")
-            self.assertFalse((root / ".final.mp4.partial").exists())
+            self.assertFalse((root / ".final.partial.mp4").exists())
+
+    def test_temporary_mp4_output_retains_the_container_suffix(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            part = root / "part-0001.flv"
+            write_part(part, b"same")
+            runner = _Runner()
+
+            finalize_parts([part], root / "final.mp4", runner=runner)
+
+            self.assertEqual(Path(runner.commands[0][-1]).name, ".final.partial.mp4")
+            self.assertEqual(Path(runner.commands[0][-1]).suffix, ".mp4")
+
+    def test_temporary_output_preserves_non_mp4_container_suffix(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            part = root / "part-0001.flv"
+            write_part(part, b"same")
+            runner = _Runner()
+
+            finalize_parts([part], root / "final.mkv", runner=runner)
+
+            self.assertEqual(Path(runner.commands[0][-1]).name, ".final.partial.mkv")
+            self.assertEqual(Path(runner.commands[0][-1]).suffix, ".mkv")
 
     def test_rejects_an_existing_destination_without_running_ffmpeg(self) -> None:
         with TemporaryDirectory() as directory:
@@ -140,7 +164,7 @@ class FinalizeTests(unittest.TestCase):
             finalize_parts([part], output, ffmpeg="fake ffmpeg", runner=runner)
 
             self.assertEqual(runner.commands[0][0], "fake ffmpeg")
-            self.assertIn(str(output.with_name(".final media.mp4.partial")), runner.commands[0])
+            self.assertIn(str(output.with_name(".final media.partial.mp4")), runner.commands[0])
             self.assertIn(str(part.resolve()), runner.manifest)
 
 
