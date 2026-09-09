@@ -20,6 +20,15 @@ This is a rewrite. The previous version is not in this repo — I will paste
 relevant files from it into the conversation when the format behaviour
 matters. Do not go looking for it on disk.
 
+## Layout
+
+    tikrec/          the package — one file per module
+    tests/           one test file per module, named test_<module>.py
+    pyproject.toml   package definition and CLI entry point
+
+Nothing lives at the repo root except configuration and documentation.
+Module order and responsibilities are defined in SPEC.md.
+
 ## Constraints
 
 - Python 3.11+. Standard library only for FLV handling.
@@ -30,6 +39,21 @@ matters. Do not go looking for it on disk.
   what format behaviour it handles. If you can't explain why a line is
   there, don't write it.
 - Tests run offline. No test may require network access or a live stream.
+
+## Definition of done
+
+A module is finished only when all of these are true:
+
+- It does what SPEC.md says for that module, and nothing beyond it
+- Its tests exist in `tests/test_<module>.py` and pass offline
+- Public functions have docstrings; non-obvious lines have why-comments
+- The file is under 300 lines
+- It is committed with a message describing the change, and pushed
+
+## Commit style
+
+One logical change per commit. Imperative mood, no "wip".
+Structure changes commit separately from behaviour changes.
 
 ## How to work with me
 
