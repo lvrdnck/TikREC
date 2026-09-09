@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 import unittest
 
-from flv import (
+from tikrec.flv import (
     FlvFormatError,
     FlvTag,
     avc_configuration_dimensions,
