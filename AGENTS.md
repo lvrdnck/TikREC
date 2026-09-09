@@ -10,3 +10,43 @@ GitHub is the source of truth.
 - After completing a task, run `git add -A`, commit with a real message
   describing the change, and `git push`.
 - Never force-push. If the rebase conflicts, stop and ask.
+
+## What this is
+
+A minimal command-line tool that records a single TikTok LIVE stream to
+disk from a URL supplied manually. See SPEC.md for the full design.
+
+This is a rewrite. The previous version lives in `../TikREC-legacy` and
+is reference material only — read it to learn how the format behaves in
+the wild, never copy from it.
+
+## Constraints
+
+- Python 3.11+. Standard library only for FLV handling.
+- ffmpeg and ffprobe as external binaries, invoked via subprocess.
+- No new dependencies without asking me first.
+- No file over 300 lines. Split the module instead.
+- Every non-obvious line gets a comment explaining *why* it exists and
+  what format behaviour it handles. If you can't explain why a line is
+  there, don't write it.
+- Tests run offline. No test may require network access or a live stream.
+
+## How to work with me
+
+I am learning this codebase as we build it, so pace matters more than
+speed.
+
+- Build one module at a time, in the order given in SPEC.md.
+- Write the tests for a module before starting the next one.
+- After each module, explain in plain language what you wrote and how it
+  works, before moving on.
+- Flag anything you were unsure about or had to guess.
+- Do not scaffold ahead. Do not create empty files for future modules.
+- Wait for me to say continue.
+
+## Environment
+
+- Windows PC: has the RTX 4080, so NVENC and any GPU path is tested here.
+- MacBook: CPU only. Anything GPU-specific must degrade gracefully or
+  be skipped with a clear message.
+- Development happens over VS Code Remote-SSH into the PC.
