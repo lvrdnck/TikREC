@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import BinaryIO
 
-from .flv import FlvTag
+from .flv import FLV_AUDIO_TAG, FlvTag
 
 
 # The flags byte advertises both audio and video; TikTok parts can contain both.
@@ -21,9 +21,18 @@ def write_parts(tags: Iterable[FlvTag], output_dir: Path) -> tuple[Path, ...]:
     paths: list[Path] = []
     part: _OpenPart | None = None
     configuration: bytes | None = None
+    latest_audio_configuration: FlvTag | None = None
 
     try:
         for tag in tags:
+            if tag.tag_type == FLV_AUDIO_TAG and tag.is_configuration:
+                latest_audio_configuration = tag
+                if part is not None and part.started:
+                    # An AAC sequence header changes decoder state for packets
+                    # that follow it, so retain it at its incoming timestamp.
+                    _write_tag(part, tag)
+                continue
+
             if tag.is_avc_configuration:
                 # AVC video tags have a one-byte video header and three-byte
                 # composition time before the decoder-configuration record.
@@ -51,6 +60,8 @@ def write_parts(tags: Iterable[FlvTag], output_dir: Path) -> tuple[Path, ...]:
                     continue
                 part.base_timestamp = tag.timestamp
                 _write_tag(part, part.configuration_tag)
+                if latest_audio_configuration is not None:
+                    _write_tag(part, latest_audio_configuration)
                 part.started = True
 
             _write_tag(part, tag)

@@ -21,6 +21,10 @@ def audio(timestamp: int) -> FlvTag:
     return FlvTag(8, timestamp, b"\x00\x00\x00", b"\xaf\x01audio")
 
 
+def audio_configuration(timestamp: int, value: bytes = b"\x12\x10") -> FlvTag:
+    return FlvTag(8, timestamp, b"\x00\x00\x00", b"\xaf\x00" + value)
+
+
 def read_part(path: Path) -> list[FlvTag]:
     with path.open("rb") as handle:
         assert handle.read(13) == b"FLV\x01\x05\x00\x00\x00\x09\x00\x00\x00\x00"
@@ -31,6 +35,72 @@ def read_part(path: Path) -> list[FlvTag]:
 
 
 class WriterTests(unittest.TestCase):
+    def test_prepends_audio_configuration_seen_before_avc_configuration(self) -> None:
+        tags = [
+            audio_configuration(50),
+            avc_configuration(100, b"first"),
+            audio(110),
+            video(120, frame_type=1),
+            audio(125),
+        ]
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(tags, Path(directory))
+            written_tags = read_part(paths[0])
+
+        self.assertEqual([tag.payload for tag in written_tags], [
+            avc_configuration(0, b"first").payload,
+            audio_configuration(0).payload,
+            video(0, frame_type=1).payload,
+            audio(0).payload,
+        ])
+        self.assertEqual([tag.timestamp for tag in written_tags], [0, 0, 0, 5])
+
+    def test_prepends_audio_configuration_seen_while_waiting_for_keyframe(self) -> None:
+        tags = [
+            avc_configuration(100, b"first"),
+            audio_configuration(110, b"\x11\x90"),
+            audio(115),
+            video(120, frame_type=1),
+        ]
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(tags, Path(directory))
+            written_tags = read_part(paths[0])
+
+        self.assertEqual([tag.payload for tag in written_tags], [
+            avc_configuration(0, b"first").payload,
+            audio_configuration(0, b"\x11\x90").payload,
+            video(0, frame_type=1).payload,
+        ])
+
+    def test_writes_later_audio_configuration_at_its_stream_position(self) -> None:
+        tags = [
+            avc_configuration(100, b"first"),
+            video(120, frame_type=1),
+            audio_configuration(130, b"\x11\x90"),
+            audio(135),
+        ]
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(tags, Path(directory))
+            written_tags = read_part(paths[0])
+
+        self.assertEqual([tag.timestamp for tag in written_tags], [0, 0, 10, 15])
+        self.assertEqual(written_tags[2].payload, audio_configuration(0, b"\x11\x90").payload)
+
+    def test_stream_without_audio_configuration_still_writes_video(self) -> None:
+        tags = [avc_configuration(100, b"first"), video(120, frame_type=1)]
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(tags, Path(directory))
+            written_tags = read_part(paths[0])
+
+        self.assertEqual([tag.payload for tag in written_tags], [
+            avc_configuration(0, b"first").payload,
+            video(0, frame_type=1).payload,
+        ])
+
     def test_waits_for_keyframe_and_rebases_the_retained_tags(self) -> None:
         tags = [
             avc_configuration(1000, b"first"),
