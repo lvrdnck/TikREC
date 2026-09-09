@@ -22,38 +22,42 @@ def write_parts(tags: Iterable[FlvTag], output_dir: Path) -> tuple[Path, ...]:
     part: _OpenPart | None = None
     configuration: bytes | None = None
 
-    for tag in tags:
-        if tag.is_avc_configuration:
-            # AVC video tags have a one-byte video header and three-byte
-            # composition time before the decoder-configuration record.
-            next_configuration = tag.payload[5:]
-            if configuration != next_configuration:
-                _close_part(part, paths)
-                part = _open_part(output_dir, len(paths) + 1, tag)
-                configuration = next_configuration
+    try:
+        for tag in tags:
+            if tag.is_avc_configuration:
+                # AVC video tags have a one-byte video header and three-byte
+                # composition time before the decoder-configuration record.
+                next_configuration = tag.payload[5:]
+                if configuration != next_configuration:
+                    _close_part(part, paths)
+                    part = None
+                    part = _open_part(output_dir, len(paths) + 1, tag)
+                    configuration = next_configuration
+                    continue
+
+                if part is not None and part.started:
+                    _write_tag(part, tag)
+                elif part is not None:
+                    # Keep the latest repeated sequence header until its keyframe;
+                    # it is the configuration that belongs with the new rendition.
+                    part.configuration_tag = tag
                 continue
 
-            if part is not None and part.started:
-                _write_tag(part, tag)
-            elif part is not None:
-                # Keep the latest repeated sequence header until its keyframe;
-                # it is the configuration that belongs with the new rendition.
-                part.configuration_tag = tag
-            continue
-
-        if part is None:
-            continue
-
-        if not part.started:
-            if not _is_video_keyframe(tag):
+            if part is None:
                 continue
-            part.base_timestamp = tag.timestamp
-            _write_tag(part, part.configuration_tag)
-            part.started = True
 
-        _write_tag(part, tag)
+            if not part.started:
+                if not _is_video_keyframe(tag):
+                    continue
+                part.base_timestamp = tag.timestamp
+                _write_tag(part, part.configuration_tag)
+                part.started = True
 
-    _close_part(part, paths)
+            _write_tag(part, tag)
+    finally:
+        # Iteration can be interrupted by Ctrl-C or a malformed source. Close
+        # the active file before exposing the exception to the capture layer.
+        _close_part(part, paths)
     return tuple(paths)
 
 
@@ -74,6 +78,7 @@ class _OpenPart:
         self.base_timestamp = 0
         self.started = False
         self.media_tag_count = 0
+        self.closed = False
 
 
 def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _OpenPart:
@@ -93,9 +98,10 @@ def _write_tag(part: _OpenPart, tag: FlvTag) -> None:
 
 
 def _close_part(part: _OpenPart | None, paths: list[Path]) -> None:
-    if part is None:
+    if part is None or part.closed:
         return
     part.handle.close()
+    part.closed = True
     if part.media_tag_count == 0:
         part.partial_path.unlink()
         return
