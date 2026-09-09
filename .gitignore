@@ -18,3 +18,4 @@ runs/
 *.mp4
 *.ts
 *.partial
+*.egg-info/
