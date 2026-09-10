@@ -215,6 +215,19 @@ class WriterTests(unittest.TestCase):
 
         self.assertEqual([path.name for path in paths], ["part-0007.flv"])
 
+    def test_reports_a_part_start_only_after_its_first_keyframe(self) -> None:
+        tags = [
+            avc_configuration(100, b"first"),
+            video(110, frame_type=2),
+            video(120, frame_type=1),
+        ]
+        started: list[Path] = []
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(tags, Path(directory), on_part_started=started.append)
+
+        self.assertEqual(started, list(paths))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import os
 import subprocess
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 import unittest
 
 from tikrec.flv import FlvTag
-from tikrec.finalize import FinalizationError, finalize_parts
+from tikrec.finalize import FinalizationError, _run_ffmpeg, finalize_parts
 
 
 def write_part(path: Path, configuration: bytes) -> None:
@@ -97,6 +98,41 @@ class FinalizeTests(unittest.TestCase):
             self.assertIn("code 9", str(error.exception))
             self.assertFalse((root / "final.mp4").exists())
             self.assertFalse((root / ".final.partial.mp4").exists())
+
+    def test_reports_ffmpeg_stderr_and_preserves_it_on_failure(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            part = root / "part-0001.flv"
+            write_part(part, b"same")
+            progress: list[str] = []
+            runner = _Runner(returncode=9, stderr="out_time=00:00:01.000000\ndecoder exploded")
+
+            with self.assertRaisesRegex(FinalizationError, "decoder exploded"):
+                finalize_parts(
+                    [part], root / "final.mp4", runner=runner, progress=progress.append,
+                )
+
+        self.assertEqual(progress, [
+            "ffmpeg: out_time=00:00:01.000000",
+            "ffmpeg: decoder exploded",
+        ])
+
+    def test_default_runner_streams_ffmpeg_stderr_and_retains_diagnostics(self) -> None:
+        progress: list[str] = []
+        process = _Process("out_time=00:00:01.000000\ndecoder exploded\n", 9)
+
+        with patch("tikrec.finalize.subprocess.Popen", return_value=process) as popen:
+            result = _run_ffmpeg(["ffmpeg", "-n"], subprocess.run, progress.append)
+
+        self.assertEqual(result.returncode, 9)
+        self.assertEqual(result.stderr, "out_time=00:00:01.000000\ndecoder exploded\n")
+        self.assertEqual(progress, [
+            "ffmpeg: out_time=00:00:01.000000",
+            "ffmpeg: decoder exploded",
+        ])
+        self.assertEqual(popen.call_args.args[0], [
+            "ffmpeg", "-n", "-progress", "pipe:2", "-nostats",
+        ])
 
     def test_success_promotes_partial_output_atomically(self) -> None:
         with TemporaryDirectory() as directory:
@@ -191,6 +227,18 @@ class _Runner:
         if self.writes_output:
             Path(command[-1]).write_bytes(b"finished media")
         return subprocess.CompletedProcess(command, self.returncode, stderr=self.stderr)
+
+
+class _Process:
+    def __init__(self, stderr: str, returncode: int) -> None:
+        self.stderr = StringIO(stderr)
+        self.returncode = returncode
+
+    def wait(self) -> int:
+        return self.returncode
+
+    def terminate(self) -> None:
+        self.returncode = -15
 
 
 if __name__ == "__main__":

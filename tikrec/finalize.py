@@ -24,8 +24,9 @@ def finalize_parts(
     *,
     ffmpeg: str | Path = "ffmpeg",
     runner: Callable[..., Any] = subprocess.run,
+    progress: Callable[[str], None] | None = None,
 ) -> Path:
-    """Stitch completed FLV parts into ``output_path`` and return that path."""
+    """Stitch parts into ``output_path`` and report FFmpeg output when requested."""
     ordered_parts = _validate_parts(parts)
     output_path = Path(output_path)
     _validate_output_path(output_path)
@@ -47,10 +48,7 @@ def finalize_parts(
             manifest=manifest,
             target_size=target_size,
         )
-        try:
-            result = runner(command, capture_output=True, text=True, check=False)
-        except OSError as error:
-            raise FinalizationError(f"could not start FFmpeg: {error}") from error
+        result = _run_ffmpeg(command, runner, progress)
         if result.returncode != 0:
             raise FinalizationError(_ffmpeg_failure(command, result.stderr, result.returncode))
         if not temporary_output.is_file():
@@ -68,6 +66,60 @@ def finalize_parts(
         # Remove any output from a failed FFmpeg run instead of leaving a file
         # whose partial filename might be mistaken for a recoverable recording.
         temporary_output.unlink(missing_ok=True)
+
+
+def _run_ffmpeg(
+    command: list[str],
+    runner: Callable[..., Any],
+    progress: Callable[[str], None] | None,
+) -> Any:
+    if progress is None or runner is not subprocess.run:
+        try:
+            result = runner(command, capture_output=True, text=True, check=False)
+        except OSError as error:
+            raise FinalizationError(f"could not start FFmpeg: {error}") from error
+        _report_ffmpeg_stderr(result.stderr, progress)
+        return result
+
+    # FFmpeg writes both structured progress and diagnostics to stderr. Retain
+    # every line so a non-zero exit still reports the actual diagnostic.
+    progress_command = command[:2] + ["-progress", "pipe:2", "-nostats"] + command[2:]
+    try:
+        process = subprocess.Popen(
+            progress_command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+        )
+    except OSError as error:
+        raise FinalizationError(f"could not start FFmpeg: {error}") from error
+
+    assert process.stderr is not None
+    stderr_lines: list[str] = []
+    try:
+        for line in process.stderr:
+            stderr_lines.append(line)
+            _report_ffmpeg_stderr(line, progress)
+    except Exception:
+        process.terminate()
+        process.wait()
+        raise
+    return subprocess.CompletedProcess(command, process.wait(), stderr="".join(stderr_lines))
+
+
+def _report_ffmpeg_stderr(
+    stderr: str | None,
+    progress: Callable[[str], None] | None,
+) -> None:
+    if progress is None or not stderr:
+        return
+    for line in stderr.splitlines():
+        if line:
+            progress(f"ffmpeg: {line}")
 
 
 def _validate_parts(parts: Iterable[Path]) -> tuple[Path, ...]:

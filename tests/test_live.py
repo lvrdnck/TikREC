@@ -22,6 +22,66 @@ def stream() -> list[FlvTag]:
 
 
 class LiveCaptureTests(unittest.TestCase):
+    def test_reports_the_live_lifecycle_without_a_signed_cdn_url(self) -> None:
+        actions: list[object] = [
+            "https://cdn.test/live.flv?token=secret",
+            TikTokOfflineError("offline"),
+        ]
+        progress: list[str] = []
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "final.mp4"
+            capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                output_path=output,
+                resolver=resolver,
+                tag_source=lambda _: iter(stream()),
+                finalizer=_finalizer,
+                sleeper=lambda _: None,
+                progress=progress.append,
+            )
+
+        self.assertEqual(progress, [
+            "resolving room",
+            "connection 1 opened",
+            "part started: part-0001.flv",
+            "connection lost: connection closed; reconnecting in 1s",
+            "resolving room",
+            "room ended",
+            "finalizing",
+            f"output written: {output} (5 bytes)",
+        ])
+        self.assertNotIn("token=secret", "\n".join(progress))
+
+    def test_redacts_a_signed_url_from_a_connection_loss_reason(self) -> None:
+        progress: list[str] = []
+
+        def failing_stream():
+            raise OSError("read failed: https://cdn.test/live.flv?token=secret")
+            yield
+
+        with TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(CaptureError, "consecutive connection failures"):
+                capture_live(
+                    "https://www.tiktok.com/@creator/live",
+                    parts_directory=Path(directory) / "parts",
+                    resolver=lambda _: "https://cdn.test/live.flv?token=secret",
+                    tag_source=lambda _: failing_stream(),
+                    max_consecutive_failures=2,
+                    progress=progress.append,
+                    sleeper=lambda _: None,
+                )
+
+        self.assertIn("[URL redacted]", "\n".join(progress))
+        self.assertNotIn("token=secret", "\n".join(progress))
     def test_reconnects_into_new_parts_and_appends_records_as_connections_close(self) -> None:
         actions: list[object] = ["https://cdn.test/one.flv", "https://cdn.test/two.flv", TikTokOfflineError("offline")]
         sleeps: list[tuple[float, int]] = []
@@ -258,6 +318,7 @@ class LiveCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(calls[0][0], "https://www.tiktok.com/@creator/live")
         self.assertEqual(calls[0][1]["parts_directory"], output.with_name("final media.parts"))
+        self.assertIn("progress", calls[0][1])
         self.assertIn("recorded", stdout.getvalue())
 
 

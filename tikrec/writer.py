@@ -40,11 +40,13 @@ def write_parts(
     output_dir: Path,
     *,
     start_index: int = 1,
+    on_part_started: Callable[[Path], None] | None = None,
     on_part_retained: Callable[[Path], None] | None = None,
     on_part_closed: Callable[[PartTiming], None] | None = None,
 ) -> tuple[Path, ...]:
     """Write media into numbered FLV parts and return the retained paths.
 
+    ``on_part_started`` fires when a keyframe makes a part decodable.
     ``on_part_closed`` receives original source timestamps for each retained
     part, before timestamp rebasing makes its keyframe-gate interval opaque.
     """
@@ -102,6 +104,8 @@ def write_parts(
                 if latest_audio_configuration is not None:
                     _write_tag(part, latest_audio_configuration)
                 part.started = True
+                if on_part_started is not None:
+                    on_part_started(part.final_path)
 
             _write_tag(part, tag)
     finally:

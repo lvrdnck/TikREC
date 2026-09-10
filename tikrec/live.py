@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from collections.abc import Callable, Iterable
 from http.client import HTTPException
@@ -22,6 +23,9 @@ from .tiktok import (
 from .writer import PartTiming, write_parts
 
 
+_URL_PATTERN = re.compile(r"https?://\S+")
+
+
 def capture_live(
     url: str,
     *,
@@ -36,12 +40,14 @@ def capture_live(
     backoff_seconds: float = 1.0,
     sleeper: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.time,
+    progress: Callable[[str], None] | None = None,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until room-info says offline.
 
     ``resolver`` and ``tag_source`` are injectable so network behaviour can be
-    tested without contacting TikTok.  Only resolver transport failures and
-    direct-stream connection failures are retried.
+    tested without contacting TikTok. ``progress`` receives safe user-facing
+    status messages. Only resolver transport failures and direct-stream
+    connection failures are retried.
     """
     _validate_limits(
         max_consecutive_failures,
@@ -73,6 +79,9 @@ def capture_live(
         def part_closed(timing: PartTiming) -> None:
             part_timings.append(timing)
 
+        def part_started(path: Path) -> None:
+            _report(progress, f"part started: {path.name}")
+
         def close_record(outcome: str, error: Exception | None = None) -> ConnectionRecord:
             nonlocal previous_end, next_part_index
             ended_at = clock()
@@ -95,11 +104,14 @@ def capture_live(
             return record
 
         try:
+            _report(progress, "resolving room")
             direct_url = resolver(url)
+            _report(progress, f"connection {connection_number} opened")
             written_parts = writer(
                 tag_source(direct_url),
                 parts_directory,
                 start_index=next_part_index,
+                on_part_started=part_started,
                 on_part_retained=retained,
                 on_part_closed=part_closed,
             )
@@ -111,28 +123,34 @@ def capture_live(
             return CaptureResult(tuple(all_parts), None, True, tuple(records))
         except TikTokOfflineError as error:
             close_record("offline", error)
+            _report(progress, "room ended")
             if not all_parts:
                 raise CaptureError("TikTok account or room is not live") from error
             return _finalize(
-                all_parts, output_path, finalizer, tuple(records), parts_directory
+                all_parts, output_path, finalizer, tuple(records), parts_directory, progress
             )
         except TikTokResolutionTransientError as error:
             close_record("resolver_error", error)
             consecutive_failures += 1
+            reconnect_reason = _safe_reason(error)
         # HTTP reads raise HTTPException (not OSError) when a CDN body ends early.
         except (OSError, EOFError, HTTPException) as error:
             close_record("connection_error", error)
             consecutive_failures += 1
+            reconnect_reason = _safe_reason(error)
         except TikTokResolutionError as error:
             close_record("resolution_error", error)
-            raise CaptureError(f"TikTok LIVE resolution failed: {error}", tuple(all_parts)) from error
+            raise CaptureError(
+                f"TikTok LIVE resolution failed: {_safe_reason(error)}", tuple(all_parts)
+            ) from error
         except Exception as error:
             close_record("capture_error", error)
-            raise CaptureError(f"live capture failed: {error}", tuple(all_parts)) from error
+            raise CaptureError(f"live capture failed: {_safe_reason(error)}", tuple(all_parts)) from error
         else:
             close_record("closed")
             consecutive_failures = 0
             consecutive_empty = consecutive_empty + 1 if not written_parts else 0
+            reconnect_reason = "connection closed"
             if consecutive_empty >= max_consecutive_empty_connections:
                 raise CaptureError(
                     "live capture stopped after consecutive connections with no media",
@@ -145,7 +163,12 @@ def capture_live(
                 tuple(all_parts),
             )
         # Re-resolving after every close gets a fresh signed CDN URL.
-        sleeper(backoff_seconds * (2 ** max(0, consecutive_failures - 1)))
+        delay = backoff_seconds * (2 ** max(0, consecutive_failures - 1))
+        _report(
+            progress,
+            f"connection lost: {reconnect_reason}; reconnecting in {_format_seconds(delay)}",
+        )
+        sleeper(delay)
 
 
 def _finalize(
@@ -154,16 +177,35 @@ def _finalize(
     finalizer: Callable[[Iterable[Path], Path], Path],
     records: tuple[ConnectionRecord, ...],
     parts_directory: Path,
+    progress: Callable[[str], None] | None,
 ) -> CaptureResult:
     if output_path is None:
         return CaptureResult(tuple(parts), None, False, records)
     try:
-        output = finalizer(parts, output_path)
+        _report(progress, "finalizing")
+        if finalizer is finalize_parts:
+            output = finalizer(parts, output_path, progress=progress)
+        else:
+            output = finalizer(parts, output_path)
     except KeyboardInterrupt:
         return CaptureResult(tuple(parts), None, True, records)
     except Exception as error:
         raise CaptureError(f"finalization failed: {error}", tuple(parts)) from error
+    _report(progress, f"output written: {output} ({output.stat().st_size} bytes)")
     return CaptureResult(tuple(parts), output, False, records)
+
+
+def _report(progress: Callable[[str], None] | None, message: str) -> None:
+    if progress is not None:
+        progress(message)
+
+
+def _safe_reason(error: Exception) -> str:
+    return _URL_PATTERN.sub("[URL redacted]", str(error))
+
+
+def _format_seconds(seconds: float) -> str:
+    return f"{seconds:g}s"
 
 
 def _append_connection_record(path: Path, record: ConnectionRecord) -> None:

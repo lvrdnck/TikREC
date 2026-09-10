@@ -42,11 +42,20 @@ def main(
     parts_directory = output_path.with_name(f"{output_path.stem}.parts")
     capture_function = live_capture if arguments.command == "live" else capture
     try:
-        result = capture_function(
-            arguments.url,
-            parts_directory=parts_directory,
-            output_path=output_path,
-        )
+        if arguments.command == "live":
+            # Flush each update so an unattended recording stays observable.
+            result = capture_function(
+                arguments.url,
+                parts_directory=parts_directory,
+                output_path=output_path,
+                progress=lambda message: print(message, file=stdout, flush=True),
+            )
+        else:
+            result = capture_function(
+                arguments.url,
+                parts_directory=parts_directory,
+                output_path=output_path,
+            )
     except (CaptureError, OSError, ValueError) as error:
         print(f"tikrec: {error}", file=stderr)
         return 1
