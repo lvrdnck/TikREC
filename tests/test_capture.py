@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -67,6 +68,27 @@ class CaptureTests(unittest.TestCase):
 
         self.assertEqual(seen_urls, ["https://example.test/direct.flv"])
         self.assertEqual(len(result.parts), 1)
+
+    def test_capture_url_writes_a_raw_copy_and_connection_mapping(self) -> None:
+        def raw_source(_: str, raw_copy) -> object:
+            raw_copy.write(b"unmodified source bytes")
+            return iter(tags())
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_url(
+                "https://example.test/direct.flv",
+                parts_directory=root / "session",
+                raw_copy_dir=root / "raw",
+                raw_tag_source=raw_source,
+            )
+            record = json.loads((root / "session" / "connections.jsonl").read_text())
+
+            self.assertEqual((root / "raw" / "connection-0001.raw").read_bytes(), b"unmodified source bytes")
+
+        self.assertEqual(len(result.parts), 1)
+        self.assertEqual(record["connection"], 1)
+        self.assertEqual(record["raw_copy"], "connection-0001.raw")
 
     def test_injected_writer_receives_the_complete_stream(self) -> None:
         received: list[FlvTag] = []
@@ -170,6 +192,21 @@ class CliTests(unittest.TestCase):
         self.assertEqual(calls[0][0], "https://example.test/live")
         self.assertEqual(calls[0][1]["parts_directory"], output.with_name("recording.parts"))
         self.assertIn("recorded", stdout.getvalue())
+
+    def test_record_passes_the_optional_raw_copy_directory(self) -> None:
+        calls = []
+
+        def capture(url: str, **kwargs: object) -> CaptureResult:
+            calls.append((url, kwargs))
+            return CaptureResult((), Path(kwargs["output_path"]), False)
+
+        code = main(
+            ["record", "https://example.test/live", "--output", "recording.mp4", "--raw-copy", "raw"],
+            capture=capture,
+        )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[0][1]["raw_copy_dir"], Path("raw"))
 
     def test_invalid_arguments_return_argparse_error_code(self) -> None:
         self.assertEqual(main(["record", "https://example.test/live"]), 2)

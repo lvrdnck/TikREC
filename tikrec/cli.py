@@ -55,6 +55,8 @@ def main(
             return 0
 
         parts_directory = output_path.with_name(f"{output_path.stem}.parts")
+        raw_copy_dir = Path(arguments.raw_copy) if arguments.raw_copy is not None else None
+        warning = lambda message: print(f"tikrec: warning: {message}", file=stderr)
         capture_function = live_capture if arguments.command == "live" else capture
         if arguments.command == "live":
             live_progress = LiveProgress(stdout)
@@ -64,12 +66,16 @@ def main(
                 output_path=output_path,
                 progress=live_progress.event,
                 heartbeat=live_progress.heartbeat,
+                raw_copy_dir=raw_copy_dir,
+                warning=warning,
             )
         else:
             result = capture_function(
                 arguments.url,
                 parts_directory=parts_directory,
                 output_path=output_path,
+                raw_copy_dir=raw_copy_dir,
+                warning=warning,
             )
         if result.interrupted:
             if live_progress is not None:
@@ -140,6 +146,7 @@ def _parser() -> argparse.ArgumentParser:
     record = subcommands.add_parser("record", help="record one direct FLV URL")
     record.add_argument("url", metavar="DIRECT_FLV_URL")
     record.add_argument("--output", required=True, metavar="FILE")
+    record.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     finalize = subcommands.add_parser("finalize", help="stitch retained FLV parts")
     finalize.add_argument("parts_directory", metavar="PARTS_DIRECTORY")
     finalize.add_argument("--output", required=True, metavar="FILE")
@@ -148,6 +155,7 @@ def _parser() -> argparse.ArgumentParser:
     live = subcommands.add_parser("live", help="record a public TikTok LIVE page")
     live.add_argument("url", metavar="TIKTOK_LIVE_URL")
     live.add_argument("--output", required=True, metavar="FILE")
+    live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     for command in (record, finalize, resolve, live):
         # Accept the global diagnostic flag after a subcommand as well.
         command.add_argument("--debug", action="store_true", default=argparse.SUPPRESS)

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 import unittest
 
 from tikrec.flv import FlvFormatError, FlvTag
-from tikrec.source import iter_tags, iter_url_chunks, iter_url_tags
+from tikrec.source import RawCopy, iter_tags, iter_url_chunks, iter_url_tags
 
 
 def make_stream(*tags: FlvTag) -> bytes:
@@ -104,6 +106,48 @@ class UrlChunkTests(unittest.TestCase):
         with patch("tikrec.source.urlopen", return_value=response):
             self.assertEqual(list(iter_url_tags("https://example.test/live")), tags)
 
+    def test_raw_copy_receives_exact_chunks_before_parsing(self) -> None:
+        response = _Response([b"first", b"second", b""])
+
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "connection-0001.raw"
+            with patch("tikrec.source.urlopen", return_value=response):
+                self.assertEqual(
+                    list(iter_url_chunks("https://example.test/live", raw_copy=RawCopy(path))),
+                    [b"first", b"second"],
+                )
+            self.assertEqual(path.read_bytes(), b"firstsecond")
+
+    def test_raw_copy_open_failure_warns_without_stopping_the_stream(self) -> None:
+        response = _Response([b"first", b""])
+        warnings: list[str] = []
+
+        with TemporaryDirectory() as directory:
+            blocked = Path(directory) / "blocked"
+            blocked.write_bytes(b"not a directory")
+            raw_copy = RawCopy(blocked / "connection-0001.raw", warnings.append)
+            with patch("tikrec.source.urlopen", return_value=response):
+                self.assertEqual(list(iter_url_chunks("https://example.test/live", raw_copy=raw_copy)), [b"first"])
+
+        self.assertIsNone(raw_copy.saved_path)
+        self.assertIn("could not open raw copy", warnings[0])
+
+    def test_raw_copy_write_failure_warns_without_stopping_the_stream(self) -> None:
+        response = _Response([b"first", b"second", b""])
+        warnings: list[str] = []
+
+        with TemporaryDirectory() as directory:
+            with patch("tikrec.source.Path.open", return_value=_WriteFailingHandle()):
+                raw_copy = RawCopy(Path(directory) / "connection-0001.raw", warnings.append)
+                with patch("tikrec.source.urlopen", return_value=response):
+                    self.assertEqual(
+                        list(iter_url_chunks("https://example.test/live", raw_copy=raw_copy)),
+                        [b"first", b"second"],
+                    )
+
+        self.assertIsNone(raw_copy.saved_path)
+        self.assertIn("could not write raw copy", warnings[0])
+
 
 class _Response:
     def __init__(self, chunks: list[bytes]) -> None:
@@ -117,6 +161,14 @@ class _Response:
 
     def read(self, _: int) -> bytes:
         return next(self._chunks, b"")
+
+
+class _WriteFailingHandle:
+    def write(self, _: bytes) -> None:
+        raise OSError("disk full")
+
+    def close(self) -> None:
+        return None
 
 
 if __name__ == "__main__":

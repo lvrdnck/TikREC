@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
-import json
-import os
 import re
 import time
 from collections.abc import Callable, Iterable
 from http.client import HTTPException
 from pathlib import Path
 
-from .capture import CaptureError, CaptureResult, ConnectionRecord, _prepare_session
+from .capture import (
+    CaptureError,
+    CaptureResult,
+    ConnectionRecord,
+    _prepare_session,
+    append_connection_record,
+    raw_copy_path,
+)
 from .finalize import finalize_parts
 from .flv import FlvTag
-from .source import iter_url_tags
+from .source import RawCopy, iter_url_tags
 from .tiktok import (
     TikTokOfflineError,
     TikTokResolutionError,
@@ -42,6 +47,9 @@ def capture_live(
     clock: Callable[[], float] = time.time,
     progress: Callable[[str], None] | None = None,
     heartbeat: Callable[[Path, int], None] | None = None,
+    raw_copy_dir: Path | None = None,
+    raw_tag_source: Callable[[str, RawCopy], Iterable[FlvTag]] | None = None,
+    warning: Callable[[str], None] | None = None,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until room-info says offline.
 
@@ -72,6 +80,7 @@ def capture_live(
         started_at = clock()
         connection_parts: list[Path] = []
         part_timings: list[PartTiming] = []
+        raw_copy: RawCopy | None = None
 
         def retained(path: Path) -> None:
             # This callback preserves a part even when Ctrl-C interrupts writer.
@@ -98,8 +107,9 @@ def capture_live(
                 outcome,
                 None if error is None else str(error),
                 tuple(part_timings),
+                None if raw_copy is None else raw_copy.saved_path,
             )
-            _append_connection_record(parts_directory / "connections.jsonl", record)
+            append_connection_record(parts_directory / "connections.jsonl", record)
             records.append(record)
             all_parts.extend(connection_parts)
             # This advances from writer output, rather than inspecting the directory.
@@ -111,16 +121,36 @@ def capture_live(
             _report(progress, "resolving room")
             direct_url = resolver(url)
             _report(progress, f"connection {connection_number} opened")
-            written_parts = writer(
-                tag_source(direct_url),
-                parts_directory,
-                start_index=next_part_index,
-                on_part_started=part_started,
-                on_progress=heartbeat,
-                on_part_retained=retained,
-                on_part_closed=part_closed,
-                on_timestamp_replay=timestamp_replay,
-            )
+            if raw_copy_dir is not None and raw_tag_source is not None:
+                raw_copy = RawCopy(
+                    raw_copy_path(raw_copy_dir, connection_number),
+                    lambda message: _warn(warning, progress, message),
+                )
+                tags = raw_tag_source(direct_url, raw_copy)
+            elif raw_copy_dir is not None and tag_source is iter_url_tags:
+                raw_copy = RawCopy(
+                    raw_copy_path(raw_copy_dir, connection_number),
+                    lambda message: _warn(warning, progress, message),
+                )
+                tags = iter_url_tags(direct_url, raw_copy=raw_copy)
+            else:
+                if raw_copy_dir is not None:
+                    _warn(warning, progress, "raw copy is unavailable for a custom tag source")
+                tags = tag_source(direct_url)
+            try:
+                written_parts = writer(
+                    tags,
+                    parts_directory,
+                    start_index=next_part_index,
+                    on_part_started=part_started,
+                    on_progress=heartbeat,
+                    on_part_retained=retained,
+                    on_part_closed=part_closed,
+                    on_timestamp_replay=timestamp_replay,
+                )
+            finally:
+                if raw_copy is not None:
+                    raw_copy.close()
             # Custom writers may not use the callback, while the built-in writer does.
             if not connection_parts:
                 connection_parts.extend(written_parts)
@@ -218,6 +248,17 @@ def _report(progress: Callable[[str], None] | None, message: str) -> None:
         progress(message)
 
 
+def _warn(
+    warning: Callable[[str], None] | None,
+    progress: Callable[[str], None] | None,
+    message: str,
+) -> None:
+    if warning is not None:
+        warning(message)
+    else:
+        _report(progress, f"warning: {message}")
+
+
 def _safe_reason(error: Exception) -> str:
     return _URL_PATTERN.sub("[URL redacted]", str(error))
 
@@ -232,46 +273,6 @@ def _timestamp_replay_message(replay: TimestampReplay) -> str:
         f"timestamp replay: {replay.path.name} tag {replay.position} jumped back "
         f"{replay.magnitude}ms; {replay.replayed_tag_count} tags replayed before {suffix}"
     )
-
-
-def _append_connection_record(path: Path, record: ConnectionRecord) -> None:
-    values = {
-        "connection": record.number,
-        "started_at": record.started_at,
-        "ended_at": record.ended_at,
-        "gap_before": record.gap_before,
-        "part_start": record.parts[0].name if record.parts else None,
-        "part_end": record.parts[-1].name if record.parts else None,
-        "part_timings": [
-            {
-                "name": timing.path.name,
-                "configuration_timestamp": timing.configuration_timestamp,
-                "first_media_timestamp": timing.first_media_timestamp,
-                "first_keyframe_timestamp": timing.first_keyframe_timestamp,
-                "keyframe_gate_duration": timing.keyframe_gate_duration,
-                "last_tag_timestamp": timing.last_tag_timestamp,
-                "timestamp_replays": [
-                    {
-                        "position": replay.position,
-                        "previous_timestamp": replay.previous_timestamp,
-                        "timestamp": replay.timestamp,
-                        "magnitude": replay.magnitude,
-                        "replayed_tag_count": replay.replayed_tag_count,
-                        "recovered": replay.recovered,
-                    }
-                    for replay in timing.timestamp_replays
-                ],
-            }
-            for timing in record.part_timings
-        ],
-        "outcome": record.outcome,
-        "error": record.error,
-    }
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(values, sort_keys=True) + "\n")
-        handle.flush()
-        # A process killed between reconnects must not lose the closed record.
-        os.fsync(handle.fileno())
 
 
 def _validate_limits(failures: int, empty: int, backoff: float) -> None:

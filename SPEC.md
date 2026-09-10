@@ -33,13 +33,14 @@ when invoked, that is an error, not a wait state.
 
 ## Commands
 
-    tikrec record <direct-flv-url> --output FILE
+    tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
-    tikrec live <tiktok-live-page-url> --output FILE
+    tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
     tikrec finalize PARTS_DIRECTORY --output FILE
 
 `record` takes a direct FLV URL and is the generic path. It must stay
-source-agnostic and must not gain TikTok-specific behaviour.
+source-agnostic and must not gain TikTok-specific behaviour. Its optional
+`--raw-copy DIR` stores the unmodified connection bytes before FLV parsing.
 `finalize` stitches a retained parts directory after an interrupted or failed
 run. It uses the same finalizer as capture, never changes the parts, and
 refuses to overwrite an existing destination.
@@ -76,11 +77,14 @@ A visual layout change on TikTok does not imply a codec configuration
 change. Roll on the codec, not on appearance.
 
 ### tikrec/source.py — one HTTP connection
-`iter_tags`, `iter_url_chunks`, `iter_url_tags`.
+`iter_tags`, `iter_url_chunks`, `iter_url_tags`, `RawCopy`.
 
 Parses incrementally, never buffers the whole stream. Validates the FLV
 header and initial PreviousTagSize. No retries, no TikTok-specific logic.
-This is the primitive for exactly one direct FLV connection.
+This is the primitive for exactly one direct FLV connection. When requested,
+`RawCopy` tees each received byte chunk to `connection-NNNN.raw` before the
+parser consumes it. A raw-copy open, write, or close failure warns and disables
+only the copy; capture continues.
 
 ### tikrec/finalize.py — stitching
 `finalize_parts(parts, output_path, *, ffmpeg, runner)`.
@@ -136,7 +140,8 @@ room-info response confirms that the room is offline.
   it is never inferred by scanning the parts directory.
 - As each connection closes, `connections.jsonl` receives and flushes one
   record with wall-clock start/end, its preceding gap, retained part range,
-  outcome, and error. `CaptureResult.connections` exposes the same records.
+  outcome, error, and optional raw-copy filename. `CaptureResult.connections`
+  exposes the same records.
 - Defaults stop capture after three consecutive transient failures or three
   consecutive connections retaining no media. Both limits, the clock, and
   sleeper are injectable for offline tests.
@@ -145,6 +150,14 @@ room-info response confirms that the room is offline.
   output was requested, but still exits 130 because capture ended early. A
   second Ctrl-C during finalization terminates FFmpeg; all retained parts
   survive either path.
+
+## Raw-copy storage
+
+`--raw-copy DIR` is off by default. When enabled, it retains the received bytes
+of every direct FLV connection before parsing so source behaviour can be
+compared directly with TikREC output. The files are named by the connection
+number recorded in `connections.jsonl`. This roughly doubles the session's
+disk use. A copy failure is a warning, never a capture failure.
 
 ## Testing
 

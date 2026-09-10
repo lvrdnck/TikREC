@@ -7,8 +7,8 @@ reconnecting if the connection drops, and you get one MP4 out.
 
 ## Usage
 
-    tikrec live <tiktok-live-page-url> --output FILE
-    tikrec record <direct-flv-url> --output FILE
+    tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
+    tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
 
@@ -22,6 +22,12 @@ an existing output file.
 For `live`, the first Ctrl-C stops capture, finalizes retained parts, and exits
 130 to show that recording ended early. A second Ctrl-C during finalization
 stops FFmpeg; retained parts always remain available.
+
+`--raw-copy DIR` optionally saves the exact bytes received from every source
+connection before FLV parsing, as `connection-0001.raw`,
+`connection-0002.raw`, and so on. `connections.jsonl` identifies the raw file
+for each connection. A raw-copy error only emits a warning; recording
+continues. Raw copies roughly double the recording's disk use.
 
 ## Requirements
 
@@ -38,9 +44,10 @@ or when a dropped connection is re-established. Parts are then stitched
 into a single MP4 — losslessly when the configurations match, re-encoded
 when they don't.
 
-Each recording writes `connections.jsonl` alongside the parts: one line
-per connection, with wall-clock timings, the gap before it, and per-part
-timestamp diagnostics.
+Each live recording, and each direct recording using `--raw-copy`, writes
+`connections.jsonl` alongside the parts: one line per connection, with
+wall-clock timings, the gap before it, per-part timestamp diagnostics, and the
+optional raw-copy filename.
 
 ## Validating a recording
 

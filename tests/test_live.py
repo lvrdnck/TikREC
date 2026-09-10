@@ -120,6 +120,36 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertEqual(record["part_timings"][0]["timestamp_replays"], [])
         self.assertNotIn("timestamp replay", "\n".join(progress))
 
+    def test_live_raw_copy_maps_each_connection_to_its_manifest_record(self) -> None:
+        actions: list[object] = ["https://cdn.test/live.flv", TikTokOfflineError("offline")]
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        def raw_source(_: str, raw_copy) -> object:
+            raw_copy.write(b"unmodified connection bytes")
+            return iter(stream())
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                resolver=resolver,
+                raw_copy_dir=root / "raw",
+                raw_tag_source=raw_source,
+                sleeper=lambda _: None,
+            )
+            records = [json.loads(line) for line in (root / "parts" / "connections.jsonl").read_text().splitlines()]
+
+            self.assertEqual((root / "raw" / "connection-0001.raw").read_bytes(), b"unmodified connection bytes")
+
+        self.assertEqual(records[0]["raw_copy"], "connection-0001.raw")
+        self.assertIsNone(records[1]["raw_copy"])
+
     def test_redacts_a_signed_url_from_a_connection_loss_reason(self) -> None:
         progress: list[str] = []
 
@@ -407,6 +437,21 @@ class LiveCliTests(unittest.TestCase):
         self.assertIn("progress", calls[0][1])
         self.assertIn("heartbeat", calls[0][1])
         self.assertIn("recorded", stdout.getvalue())
+
+    def test_live_command_passes_the_optional_raw_copy_directory(self) -> None:
+        calls: list[dict[str, object]] = []
+
+        def live_capture(_: str, **kwargs: object) -> CaptureResult:
+            calls.append(kwargs)
+            return CaptureResult((), Path(kwargs["output_path"]), False)
+
+        code = main(
+            ["live", "https://www.tiktok.com/@creator/live", "--output", "final.mp4", "--raw-copy", "raw"],
+            live_capture=live_capture,
+        )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[0]["raw_copy_dir"], Path("raw"))
 
     def test_interrupted_live_clears_a_visible_heartbeat_before_stderr(self) -> None:
         class TtyStringIO(StringIO):

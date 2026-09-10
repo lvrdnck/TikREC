@@ -2,10 +2,76 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
+import warnings
+from collections.abc import Callable, Iterable, Iterator
+from pathlib import Path
+from typing import BinaryIO
 from urllib.request import urlopen
 
 from .flv import FlvFormatError, FlvTag, read_tag
+
+
+class RawCopy:
+    """Best-effort byte-for-byte copy of one source connection.
+
+    The copy is deliberately independent of parsing: write failures disable
+    only the copy, so capture retains the received source bytes when possible.
+    """
+
+    def __init__(self, path: Path, warning: Callable[[str], None] | None = None) -> None:
+        self.path = Path(path)
+        self._warning = warning
+        self._handle: BinaryIO | None = None
+        self._saved_path: Path | None = None
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self._handle = self.path.open("xb")
+            self._saved_path = self.path
+        except OSError as error:
+            self._warn(f"could not open raw copy {self.path}: {error}")
+
+    @property
+    def saved_path(self) -> Path | None:
+        """Return the completed raw path, or ``None`` after a copy failure."""
+        return self._saved_path
+
+    def write(self, chunk: bytes) -> None:
+        """Copy a received chunk without allowing disk errors to stop capture."""
+        if self._handle is None:
+            return
+        try:
+            if self._handle.write(chunk) != len(chunk):
+                raise OSError("short write")
+        except OSError as error:
+            self._saved_path = None
+            self._warn(f"could not write raw copy {self.path}: {error}")
+            self._close_handle()
+
+    def close(self) -> None:
+        """Finish the copy and turn a close error into a non-fatal warning."""
+        if self._handle is None:
+            return
+        try:
+            self._handle.close()
+        except OSError as error:
+            self._saved_path = None
+            self._warn(f"could not close raw copy {self.path}: {error}")
+        finally:
+            self._handle = None
+
+    def _close_handle(self) -> None:
+        assert self._handle is not None
+        try:
+            self._handle.close()
+        except OSError:
+            pass
+        self._handle = None
+
+    def _warn(self, message: str) -> None:
+        if self._warning is not None:
+            self._warning(message)
+        else:
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
 
 
 def iter_tags(chunks: Iterable[bytes]) -> Iterator[FlvTag]:
@@ -20,21 +86,36 @@ def iter_tags(chunks: Iterable[bytes]) -> Iterator[FlvTag]:
 
 
 def iter_url_chunks(
-    url: str, *, chunk_size: int = 64 * 1024, timeout: float | None = None
+    url: str,
+    *,
+    chunk_size: int = 64 * 1024,
+    timeout: float | None = None,
+    raw_copy: RawCopy | None = None,
 ) -> Iterator[bytes]:
     """Yield byte chunks from one direct HTTP FLV URL without retrying."""
     if chunk_size <= 0:
         raise ValueError("chunk_size must be positive")
-    with urlopen(url, timeout=timeout) as response:
-        while chunk := response.read(chunk_size):
-            yield chunk
+    try:
+        with urlopen(url, timeout=timeout) as response:
+            while chunk := response.read(chunk_size):
+                # Tee the received bytes before their first parser read.
+                if raw_copy is not None:
+                    raw_copy.write(chunk)
+                yield chunk
+    finally:
+        if raw_copy is not None:
+            raw_copy.close()
 
 
 def iter_url_tags(
-    url: str, *, chunk_size: int = 64 * 1024, timeout: float | None = None
+    url: str,
+    *,
+    chunk_size: int = 64 * 1024,
+    timeout: float | None = None,
+    raw_copy: RawCopy | None = None,
 ) -> Iterator[FlvTag]:
     """Yield parsed tags from one direct HTTP FLV URL without retrying."""
-    yield from iter_tags(iter_url_chunks(url, chunk_size=chunk_size, timeout=timeout))
+    yield from iter_tags(iter_url_chunks(url, chunk_size=chunk_size, timeout=timeout, raw_copy=raw_copy))
 
 
 class _ChunkStream:
