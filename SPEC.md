@@ -36,9 +36,13 @@ when invoked, that is an error, not a wait state.
     tikrec record <direct-flv-url> --output FILE
     tikrec resolve <tiktok-live-page-url>
     tikrec live <tiktok-live-page-url> --output FILE
+    tikrec finalize PARTS_DIRECTORY --output FILE
 
 `record` takes a direct FLV URL and is the generic path. It must stay
 source-agnostic and must not gain TikTok-specific behaviour.
+`finalize` stitches a retained parts directory after an interrupted or failed
+run. It uses the same finalizer as capture, never changes the parts, and
+refuses to overwrite an existing destination.
 
 Exit codes: 0 success, 1 capture or finalization error, 130 interrupted.
 

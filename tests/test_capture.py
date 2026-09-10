@@ -8,8 +8,10 @@ import unittest
 
 from tikrec.capture import CaptureError, CaptureResult, capture_tags, capture_url
 from tikrec.cli import main
+from tikrec.finalize import finalize_parts
 from tikrec.flv import FlvTag, read_tag
 from tikrec.tiktok import TikTokResolutionTransientError
+from tikrec.writer import write_parts
 
 
 def tags() -> list[FlvTag]:
@@ -224,6 +226,58 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(code, 1)
         self.assertEqual(stderr.getvalue(), "tikrec: short read\n")
+
+    def test_finalize_command_stitches_retained_parts_without_deleting_them(self) -> None:
+        calls: list[tuple[Path, ...]] = []
+
+        def finalizer(parts, output: Path) -> Path:
+            calls.append(tuple(parts))
+            output.write_bytes(b"final")
+            return output
+
+        stdout = StringIO()
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            parts_directory = root / "interrupted.parts"
+            parts = write_parts(tags(), parts_directory)
+            output = root / "recording.mp4"
+
+            code = main(
+                ["finalize", str(parts_directory), "--output", str(output)],
+                finalizer=finalizer,
+                stdout=stdout,
+            )
+
+            self.assertEqual(code, 0)
+            self.assertEqual(calls, [parts])
+            self.assertTrue(parts[0].is_file())
+            self.assertEqual(output.read_bytes(), b"final")
+
+        self.assertIn("finalizing", stdout.getvalue())
+        self.assertIn("output written:", stdout.getvalue())
+
+    def test_finalize_command_refuses_an_existing_output_and_keeps_parts(self) -> None:
+        stdout = StringIO()
+        stderr = StringIO()
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            parts_directory = root / "recording.parts"
+            parts = write_parts(tags(), parts_directory)
+            output = root / "recording.mp4"
+            output.write_bytes(b"keep")
+
+            code = main(
+                ["finalize", str(parts_directory), "--output", str(output)],
+                finalizer=finalize_parts,
+                stdout=stdout,
+                stderr=stderr,
+            )
+
+            self.assertEqual(code, 1)
+            self.assertEqual(output.read_bytes(), b"keep")
+            self.assertTrue(parts[0].is_file())
+
+        self.assertIn("refusing to overwrite", stderr.getvalue())
 
     def test_unexpected_resolve_error_is_short_without_debug(self) -> None:
         stderr = StringIO()

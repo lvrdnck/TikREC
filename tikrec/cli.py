@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .capture import CaptureError, CaptureResult, capture_url
+from .finalize import finalize_parts
 from .live import capture_live
 from .progress import LiveProgress
 from .tiktok import TikTokResolutionError, resolve_live_url
@@ -21,6 +22,7 @@ def main(
     capture: Callable[..., CaptureResult] = capture_url,
     live_capture: Callable[..., CaptureResult] = capture_live,
     resolver: Callable[[str], str] = resolve_live_url,
+    finalizer: Callable[..., Path] = finalize_parts,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
 ) -> int:
@@ -42,6 +44,16 @@ def main(
             return 0
 
         output_path = Path(arguments.output)
+        if arguments.command == "finalize":
+            live_progress = LiveProgress(stdout)
+            _finalize_directory(
+                Path(arguments.parts_directory),
+                output_path,
+                finalizer,
+                live_progress.event,
+            )
+            return 0
+
         parts_directory = output_path.with_name(f"{output_path.stem}.parts")
         capture_function = live_capture if arguments.command == "live" else capture
         if arguments.command == "live":
@@ -95,6 +107,32 @@ def _one_line_error(error: Exception) -> str:
     return " ".join(str(error).split())
 
 
+def _finalize_directory(
+    parts_directory: Path,
+    output_path: Path,
+    finalizer: Callable[..., Path],
+    progress: Callable[[str], None],
+) -> Path:
+    """Finalize retained FLV parts without modifying their directory."""
+    if not parts_directory.is_dir():
+        raise CaptureError(f"parts directory does not exist: {parts_directory}")
+    parts = tuple(sorted(parts_directory.glob("part-*.flv")))
+    if not parts:
+        raise CaptureError(f"no completed FLV parts in: {parts_directory}")
+    try:
+        progress("finalizing")
+        if finalizer is finalize_parts:
+            output = finalizer(parts, output_path, progress=progress)
+        else:
+            output = finalizer(parts, output_path)
+    except KeyboardInterrupt:
+        raise
+    except Exception as error:
+        raise CaptureError(f"finalization failed: {error}", parts) from error
+    progress(f"output written: {output} ({output.stat().st_size} bytes)")
+    return output
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tikrec")
     parser.add_argument("--debug", action="store_true", help="print unexpected-error tracebacks")
@@ -102,12 +140,15 @@ def _parser() -> argparse.ArgumentParser:
     record = subcommands.add_parser("record", help="record one direct FLV URL")
     record.add_argument("url", metavar="DIRECT_FLV_URL")
     record.add_argument("--output", required=True, metavar="FILE")
+    finalize = subcommands.add_parser("finalize", help="stitch retained FLV parts")
+    finalize.add_argument("parts_directory", metavar="PARTS_DIRECTORY")
+    finalize.add_argument("--output", required=True, metavar="FILE")
     resolve = subcommands.add_parser("resolve", help="resolve one public TikTok LIVE page")
     resolve.add_argument("url", metavar="TIKTOK_LIVE_URL")
     live = subcommands.add_parser("live", help="record a public TikTok LIVE page")
     live.add_argument("url", metavar="TIKTOK_LIVE_URL")
     live.add_argument("--output", required=True, metavar="FILE")
-    for command in (record, resolve, live):
+    for command in (record, finalize, resolve, live):
         # Accept the global diagnostic flag after a subcommand as well.
         command.add_argument("--debug", action="store_true", default=argparse.SUPPRESS)
     return parser

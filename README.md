@@ -10,10 +10,14 @@ reconnecting if the connection drops, and you get one MP4 out.
     tikrec live <tiktok-live-page-url> --output FILE
     tikrec record <direct-flv-url> --output FILE
     tikrec resolve <tiktok-live-page-url>
+    tikrec finalize PARTS_DIRECTORY --output FILE
 
 `live` records a public LIVE page and reconnects across dropped
 connections. `record` takes a direct FLV URL and is source-agnostic.
 `resolve` prints the current direct FLV URL for a live page.
+`finalize` stitches retained `part-*.flv` files after an interrupted or
+otherwise stopped recording. It preserves those parts and refuses to overwrite
+an existing output file.
 
 For `live`, the first Ctrl-C stops capture, finalizes retained parts, and exits
 130 to show that recording ended early. A second Ctrl-C during finalization
