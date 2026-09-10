@@ -1,0 +1,261 @@
+from __future__ import annotations
+
+import json
+from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+
+from tikrec.capture import CaptureError, CaptureResult
+from tikrec.cli import main
+from tikrec.flv import FlvFormatError, FlvTag
+from tikrec.live import capture_live
+from tikrec.tiktok import TikTokOfflineError, TikTokResolutionTransientError
+
+
+def stream() -> list[FlvTag]:
+    return [
+        FlvTag(9, 100, b"\x00\x00\x00", b"\x17\x00\x00\x00\x00config"),
+        FlvTag(9, 120, b"\x00\x00\x00", b"\x17\x01\x00\x00\x00key"),
+    ]
+
+
+class LiveCaptureTests(unittest.TestCase):
+    def test_reconnects_into_new_parts_and_appends_records_as_connections_close(self) -> None:
+        actions: list[object] = ["https://cdn.test/one.flv", "https://cdn.test/two.flv", TikTokOfflineError("offline")]
+        sleeps: list[tuple[float, int]] = []
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            log_path = root / "parts" / "connections.jsonl"
+
+            def sleeper(delay: float) -> None:
+                sleeps.append((delay, len(log_path.read_text().splitlines())))
+
+            times = iter((100.0, 110.0, 120.0, 130.0, 140.0, 150.0))
+            output = root / "final.mp4"
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                output_path=output,
+                resolver=resolver,
+                tag_source=lambda _: iter(stream()),
+                finalizer=_finalizer,
+                sleeper=sleeper,
+                clock=lambda: next(times),
+            )
+            records = [json.loads(line) for line in log_path.read_text().splitlines()]
+
+        self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
+        self.assertEqual(result.output_path, output)
+        self.assertEqual(sleeps, [(1.0, 1), (1.0, 2)])
+        self.assertEqual([record["outcome"] for record in records], ["closed", "closed", "offline"])
+        self.assertEqual(records[0]["part_start"], "part-0001.flv")
+        self.assertEqual(records[1]["part_end"], "part-0002.flv")
+        self.assertEqual(result.connections[1].gap_before, 10.0)
+
+    def test_retries_transient_resolver_failure_with_backoff(self) -> None:
+        actions: list[object] = [TikTokResolutionTransientError("timeout"), "https://cdn.test/live.flv", TikTokOfflineError("offline")]
+        delays: list[float] = []
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                resolver=resolver,
+                tag_source=lambda _: iter(stream()),
+                sleeper=delays.append,
+            )
+
+        self.assertEqual(len(result.parts), 1)
+        self.assertEqual(delays, [1.0, 1.0])
+        self.assertEqual(result.connections[0].outcome, "resolver_error")
+
+    def test_initial_offline_room_is_an_error_and_is_logged(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(CaptureError, "not live"):
+                capture_live(
+                    "https://www.tiktok.com/@creator/live",
+                    parts_directory=root / "parts",
+                    resolver=lambda _: (_ for _ in ()).throw(TikTokOfflineError("offline")),
+                )
+
+            records = (root / "parts" / "connections.jsonl").read_text().splitlines()
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(json.loads(records[0])["outcome"], "offline")
+
+    def test_stops_after_the_injectable_failure_limit(self) -> None:
+        calls = 0
+
+        def resolver(_: str) -> str:
+            nonlocal calls
+            calls += 1
+            raise TikTokResolutionTransientError("temporary failure")
+
+        with TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(CaptureError, "consecutive connection failures"):
+                capture_live(
+                    "https://www.tiktok.com/@creator/live",
+                    parts_directory=Path(directory) / "parts",
+                    resolver=resolver,
+                    max_consecutive_failures=2,
+                    sleeper=lambda _: None,
+                )
+
+        self.assertEqual(calls, 2)
+
+    def test_stops_after_connections_that_retain_no_media(self) -> None:
+        actions: list[object] = ["https://cdn.test/one.flv", "https://cdn.test/two.flv"]
+        no_keyframe = [
+            FlvTag(9, 100, b"\x00\x00\x00", b"\x17\x00\x00\x00\x00config"),
+            FlvTag(9, 110, b"\x00\x00\x00", b"\x27\x01\x00\x00\x00inter"),
+        ]
+
+        def resolver(_: str) -> str:
+            return str(actions.pop(0))
+
+        with TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(CaptureError, "no media"):
+                capture_live(
+                    "https://www.tiktok.com/@creator/live",
+                    parts_directory=Path(directory) / "parts",
+                    resolver=resolver,
+                    tag_source=lambda _: iter(no_keyframe),
+                    max_consecutive_empty_connections=2,
+                    sleeper=lambda _: None,
+                )
+
+    def test_retries_a_dropped_direct_connection_and_keeps_its_completed_part(self) -> None:
+        actions: list[object] = [
+            "https://cdn.test/one.flv",
+            "https://cdn.test/two.flv",
+            TikTokOfflineError("offline"),
+        ]
+        finalizer_parts: list[tuple[Path, ...]] = []
+
+        def dropped_stream():
+            yield from stream()
+            raise OSError("connection reset")
+
+        def finalizer(parts, output: Path) -> Path:
+            finalizer_parts.append(tuple(parts))
+            output.write_bytes(b"final")
+            return output
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                output_path=root / "final.mp4",
+                resolver=resolver,
+                tag_source=lambda url: dropped_stream() if url.endswith("one.flv") else iter(stream()),
+                finalizer=finalizer,
+                sleeper=lambda _: None,
+            )
+
+        self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
+        self.assertEqual([part.name for part in finalizer_parts[0]], ["part-0001.flv", "part-0002.flv"])
+        self.assertEqual(result.connections[0].outcome, "connection_error")
+
+    def test_keyboard_interrupt_retains_closed_parts_without_finalizing(self) -> None:
+        finalizer_called = False
+
+        def interrupted_stream():
+            yield from stream()
+            raise KeyboardInterrupt
+
+        def finalizer(*_: object) -> Path:
+            nonlocal finalizer_called
+            finalizer_called = True
+            raise AssertionError("must not finalize an interrupted live capture")
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                resolver=lambda _: "https://cdn.test/live.flv",
+                tag_source=lambda _: interrupted_stream(),
+                finalizer=finalizer,
+            )
+            record = json.loads((root / "parts" / "connections.jsonl").read_text())
+
+        self.assertTrue(result.interrupted)
+        self.assertEqual([part.name for part in result.parts], ["part-0001.flv"])
+        self.assertEqual(record["outcome"], "interrupted")
+        self.assertFalse(finalizer_called)
+
+    def test_malformed_flv_is_not_retried(self) -> None:
+        calls = 0
+
+        def resolver(_: str) -> str:
+            nonlocal calls
+            calls += 1
+            return "https://cdn.test/live.flv"
+
+        with TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(CaptureError, "malformed"):
+                capture_live(
+                    "https://www.tiktok.com/@creator/live",
+                    parts_directory=Path(directory) / "parts",
+                    resolver=resolver,
+                    tag_source=lambda _: (_ for _ in ()).throw(FlvFormatError("malformed")),
+                    sleeper=lambda _: None,
+                )
+
+        self.assertEqual(calls, 1)
+
+
+class LiveCliTests(unittest.TestCase):
+    def test_live_command_uses_the_injected_live_capture(self) -> None:
+        calls: list[tuple[str, dict[str, object]]] = []
+
+        def live_capture(url: str, **kwargs: object) -> CaptureResult:
+            calls.append((url, kwargs))
+            return CaptureResult((), Path(kwargs["output_path"]), False)
+
+        stdout = StringIO()
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / "final media.mp4"
+            code = main(
+                ["live", "https://www.tiktok.com/@creator/live", "--output", str(output)],
+                live_capture=live_capture,
+                stdout=stdout,
+            )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(calls[0][0], "https://www.tiktok.com/@creator/live")
+        self.assertEqual(calls[0][1]["parts_directory"], output.with_name("final media.parts"))
+        self.assertIn("recorded", stdout.getvalue())
+
+
+def _finalizer(parts, output: Path) -> Path:
+    assert list(parts)
+    output.write_bytes(b"final")
+    return output
+
+
+if __name__ == "__main__":
+    unittest.main()

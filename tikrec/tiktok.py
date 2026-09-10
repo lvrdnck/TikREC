@@ -27,6 +27,14 @@ class TikTokResolutionError(RuntimeError):
     """Raised when a public TikTok LIVE URL cannot yield a direct FLV URL."""
 
 
+class TikTokOfflineError(TikTokResolutionError):
+    """Raised only after room-info confirms that a room is not live."""
+
+
+class TikTokResolutionTransientError(TikTokResolutionError):
+    """Raised for a network failure that a live capture may retry."""
+
+
 def resolve_live_url(
     url: str,
     *,
@@ -76,7 +84,9 @@ def _read_public_url(
         with opener(request, timeout=timeout) as response:
             return response.read()
     except (OSError, URLError) as error:
-        raise TikTokResolutionError(f"TikTok network request failed: {error}") from error
+        raise TikTokResolutionTransientError(
+            f"TikTok network request failed: {error}"
+        ) from error
 
 
 def _room_id_from_page(page: bytes) -> str | None:
@@ -149,7 +159,7 @@ def _live_room(response: Mapping[str, Any]) -> Mapping[str, Any]:
     room = data.get("room")
     room = room if isinstance(room, Mapping) else data
     if str(room.get("status")) != "2":
-        raise TikTokResolutionError("TikTok account or room is not live")
+        raise TikTokOfflineError("TikTok account or room is not live")
     return room
 
 

@@ -1,4 +1,4 @@
-"""Command-line entry point for recording one direct FLV stream."""
+"""Command-line entry point for direct-FLV and public TikTok LIVE recording."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .capture import CaptureError, CaptureResult, capture_url
+from .live import capture_live
 from .tiktok import TikTokResolutionError, resolve_live_url
 
 
@@ -16,6 +17,7 @@ def main(
     argv: Sequence[str] | None = None,
     *,
     capture: Callable[..., CaptureResult] = capture_url,
+    live_capture: Callable[..., CaptureResult] = capture_live,
     resolver: Callable[[str], str] = resolve_live_url,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
@@ -38,8 +40,9 @@ def main(
 
     output_path = Path(arguments.output)
     parts_directory = output_path.with_name(f"{output_path.stem}.parts")
+    capture_function = live_capture if arguments.command == "live" else capture
     try:
-        result = capture(
+        result = capture_function(
             arguments.url,
             parts_directory=parts_directory,
             output_path=output_path,
@@ -62,6 +65,9 @@ def _parser() -> argparse.ArgumentParser:
     record.add_argument("--output", required=True, metavar="FILE")
     resolve = subcommands.add_parser("resolve", help="resolve one public TikTok LIVE page")
     resolve.add_argument("url", metavar="TIKTOK_LIVE_URL")
+    live = subcommands.add_parser("live", help="record a public TikTok LIVE page")
+    live.add_argument("url", metavar="TIKTOK_LIVE_URL")
+    live.add_argument("--output", required=True, metavar="FILE")
     return parser
 
 

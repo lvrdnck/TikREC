@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import BinaryIO
 
@@ -14,8 +14,16 @@ from .flv import FLV_AUDIO_TAG, FlvTag
 _FLV_HEADER = b"FLV\x01\x05\x00\x00\x00\x09\x00\x00\x00\x00"
 
 
-def write_parts(tags: Iterable[FlvTag], output_dir: Path) -> tuple[Path, ...]:
+def write_parts(
+    tags: Iterable[FlvTag],
+    output_dir: Path,
+    *,
+    start_index: int = 1,
+    on_part_retained: Callable[[Path], None] | None = None,
+) -> tuple[Path, ...]:
     """Write media into numbered FLV parts and return the retained paths."""
+    if not isinstance(start_index, int) or start_index < 1:
+        raise ValueError("start_index must be a positive integer")
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
@@ -38,9 +46,9 @@ def write_parts(tags: Iterable[FlvTag], output_dir: Path) -> tuple[Path, ...]:
                 # composition time before the decoder-configuration record.
                 next_configuration = tag.payload[5:]
                 if configuration != next_configuration:
-                    _close_part(part, paths)
+                    _close_part(part, paths, on_part_retained)
                     part = None
-                    part = _open_part(output_dir, len(paths) + 1, tag)
+                    part = _open_part(output_dir, start_index + len(paths), tag)
                     configuration = next_configuration
                     continue
 
@@ -68,7 +76,7 @@ def write_parts(tags: Iterable[FlvTag], output_dir: Path) -> tuple[Path, ...]:
     finally:
         # Iteration can be interrupted by Ctrl-C or a malformed source. Close
         # the active file before exposing the exception to the capture layer.
-        _close_part(part, paths)
+        _close_part(part, paths, on_part_retained)
     return tuple(paths)
 
 
@@ -108,7 +116,11 @@ def _write_tag(part: _OpenPart, tag: FlvTag) -> None:
         part.media_tag_count += 1
 
 
-def _close_part(part: _OpenPart | None, paths: list[Path]) -> None:
+def _close_part(
+    part: _OpenPart | None,
+    paths: list[Path],
+    on_part_retained: Callable[[Path], None] | None,
+) -> None:
     if part is None or part.closed:
         return
     part.handle.close()
@@ -119,6 +131,8 @@ def _close_part(part: _OpenPart | None, paths: list[Path]) -> None:
     # Rename only a closed file so consumers never see a still-growing part.
     os.replace(part.partial_path, part.final_path)
     paths.append(part.final_path)
+    if on_part_retained is not None:
+        on_part_retained(part.final_path)
 
 
 def _is_video_keyframe(tag: FlvTag) -> bool:

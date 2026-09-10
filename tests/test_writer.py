@@ -185,6 +185,14 @@ class WriterTests(unittest.TestCase):
             self.assertTrue(paths[0].is_file())
             self.assertEqual(list(output_dir.glob(".*.partial")), [])
 
+    def test_uses_explicit_start_index_for_part_names(self) -> None:
+        tags = [avc_configuration(100, b"first"), video(120, frame_type=1)]
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(tags, Path(directory), start_index=7)
+
+        self.assertEqual([path.name for path in paths], ["part-0007.flv"])
+
 
 if __name__ == "__main__":
     unittest.main()

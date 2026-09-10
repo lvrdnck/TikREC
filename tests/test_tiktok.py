@@ -5,7 +5,12 @@ from urllib.error import URLError
 from urllib.parse import parse_qs, urlsplit
 import unittest
 
-from tikrec.tiktok import TikTokResolutionError, resolve_live_url
+from tikrec.tiktok import (
+    TikTokOfflineError,
+    TikTokResolutionError,
+    TikTokResolutionTransientError,
+    resolve_live_url,
+)
 
 
 def live_page(room_id: str = "123456") -> bytes:
@@ -62,7 +67,7 @@ class TikTokResolverTests(unittest.TestCase):
     def test_reports_a_room_that_is_not_live(self) -> None:
         opener = _Opener([live_page(), live_room({}, status=4)])
 
-        with self.assertRaisesRegex(TikTokResolutionError, "not live"):
+        with self.assertRaisesRegex(TikTokOfflineError, "not live"):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
 
     def test_reports_missing_flv_renditions(self) -> None:
@@ -95,7 +100,7 @@ class TikTokResolverTests(unittest.TestCase):
         def failing_opener(*_: object, **__: object):
             raise URLError("connection refused")
 
-        with self.assertRaisesRegex(TikTokResolutionError, "network request failed"):
+        with self.assertRaisesRegex(TikTokResolutionTransientError, "network request failed"):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=failing_opener)
 
 

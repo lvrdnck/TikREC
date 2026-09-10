@@ -21,12 +21,26 @@ class CaptureError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class ConnectionRecord:
+    """One closed live connection and the retained parts it produced."""
+
+    number: int
+    started_at: float
+    ended_at: float
+    gap_before: float | None
+    parts: tuple[Path, ...]
+    outcome: str
+    error: str | None = None
+
+
+@dataclass(frozen=True)
 class CaptureResult:
-    """The completed parts, optional final output, and interruption state."""
+    """The completed parts, final output, interruption state, and connections."""
 
     parts: tuple[Path, ...]
     output_path: Path | None
     interrupted: bool = False
+    connections: tuple[ConnectionRecord, ...] = ()
 
 
 def capture_tags(
