@@ -1,0 +1,93 @@
+from __future__ import annotations
+
+import json
+from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+import unittest
+
+from scripts.validate_parts import validate_parts
+
+
+class ValidatePartsTests(unittest.TestCase):
+    def test_reports_each_clean_part_without_ffmpeg_output(self) -> None:
+        calls: list[list[str]] = []
+
+        def runner(command, **_: object):
+            calls.append(command)
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "part-0002.flv").write_bytes(b"")
+            (root / "part-0001.flv").write_bytes(b"")
+            stdout = StringIO()
+            code = validate_parts(root, runner=runner, stdout=stdout, stderr=StringIO())
+
+        self.assertEqual(code, 0)
+        self.assertEqual([command[5] for command in calls], [str(root / "part-0001.flv"), str(root / "part-0002.flv")])
+        self.assertEqual(stdout.getvalue().splitlines(), [
+            "PASS part-0001.flv", "PASS part-0002.flv", "2/2 parts passed",
+        ])
+
+    def test_treats_ffmpeg_error_output_as_a_failed_part(self) -> None:
+        def runner(command, **_: object):
+            if command[5].endswith("part-0002.flv"):
+                return SimpleNamespace(returncode=0, stdout="", stderr="decode error")
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "part-0001.flv").write_bytes(b"")
+            (root / "part-0002.flv").write_bytes(b"")
+            stdout = StringIO()
+            stderr = StringIO()
+            code = validate_parts(root, runner=runner, stdout=stdout, stderr=stderr)
+
+        self.assertEqual(code, 1)
+        self.assertIn("PASS part-0001.flv", stdout.getvalue())
+        self.assertIn("FAIL part-0002.flv", stdout.getvalue())
+        self.assertEqual(stderr.getvalue(), "decode error\n")
+
+    def test_prints_available_per_part_timing_metadata(self) -> None:
+        record = {
+            "connection": 1,
+            "outcome": "closed",
+            "part_timings": [{
+                "name": "part-0001.flv",
+                "configuration_timestamp": 0,
+                "first_media_timestamp": 3_427_480,
+                "first_keyframe_timestamp": 3_427_493,
+                "keyframe_gate_duration": 13,
+                "last_tag_timestamp": 3_430_000,
+            }],
+        }
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "part-0001.flv").write_bytes(b"")
+            (root / "connections.jsonl").write_text(json.dumps(record) + "\n")
+            stdout = StringIO()
+            validate_parts(
+                root,
+                runner=lambda *_args, **_kwargs: SimpleNamespace(returncode=0, stdout="", stderr=""),
+                stdout=stdout,
+                stderr=StringIO(),
+            )
+
+        self.assertIn("Timing summary:", stdout.getvalue())
+        self.assertIn("gate=13ms", stdout.getvalue())
+        self.assertIn("first-media=3427480", stdout.getvalue())
+
+    def test_rejects_a_directory_without_retained_parts(self) -> None:
+        with TemporaryDirectory() as directory:
+            stderr = StringIO()
+            code = validate_parts(Path(directory), stdout=StringIO(), stderr=stderr)
+
+        self.assertEqual(code, 2)
+        self.assertIn("no retained FLV parts", stderr.getvalue())
+
+
+if __name__ == "__main__":
+    unittest.main()
