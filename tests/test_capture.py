@@ -199,6 +199,18 @@ class CliTests(unittest.TestCase):
             130,
         )
 
+    def test_resolve_command_returns_a_direct_url(self) -> None:
+        stdout = StringIO()
+
+        code = main(
+            ["resolve", "https://www.tiktok.com/@creator/live"],
+            resolver=lambda _: "https://cdn.test/live.flv?token=x",
+            stdout=stdout,
+        )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(stdout.getvalue(), "https://cdn.test/live.flv?token=x\n")
+
 
 if __name__ == "__main__":
     unittest.main()
