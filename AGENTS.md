@@ -108,9 +108,8 @@ Deferred work lives in GitHub issues, not in code comments or TODOs.
   "Closes #N" so it closes on push.
 - Do not open issues for things we're about to do in the same session.
 
-Work issue #1: Show FFmpeg finalization progress.
 
-Read the issue on GitHub first. Follow SPEC.md and AGENTS.md as usual.
-Include "Closes #1" in the commit message so the issue closes on push.
-
-Stop after this and explain what you changed.
+When closing an issue, comment on it with what was actually done —
+especially if the approach differs from what the issue proposed, or if
+the issue's premise turned out to be wrong. A commit link alone is not
+enough; the issue should be readable on its own in six months.
