@@ -134,27 +134,35 @@ behaviour is tested through injected functions.
 
 Media correctness is not provable by unit tests alone. Any change touching
 codec configuration, part boundaries, or finalization must also be checked
-against a real recording:
+against a real recording with the per-part validator:
 
-    ffmpeg -v error -i part-0001.flv -f null -
+    python3 scripts/validate_parts.py PARTS_DIRECTORY
 
-No output means clean. This is how the AAC configuration bug was found
-after 53 unit tests passed over it.
+It checks decoder output and the stored packet timestamps separately.
 
 ## Validation notes
 
-The primary real-recording check is per retained FLV part:
+Validate each retained FLV part in two independent ways:
 
-    ffmpeg -v error -i part-NNNN.flv -f null -
+1. Decode it with `ffprobe -show_frames`, with frame output discarded and
+   decoder errors captured. A non-zero exit or decoder error output fails the
+   part.
+2. Read stored packet DTS with `ffprobe -show_packets` and verify that DTS is
+   strictly increasing within each stream. Missing, malformed, duplicate, or
+   decreasing DTS fails the part.
 
-Every retained part must decode with zero errors. This is the meaningful
-media-correctness signal for capture and part writing.
+`scripts/validate_parts.py` performs both checks and prints the available
+per-part timing metadata from `connections.jsonl`.
 
-Running the same command on a concatenated MP4 can report non-monotonic-DTS
-warnings without indicating a broken recording. The concat output inherits a
-nominal `r_frame_rate` from its first part; parts recorded at another frame
-rate can then produce spurious downstream null-muxer warnings. Verify final
-output with stored packet DTS and packet counts, not that null-muxer warning.
+Do not use `ffmpeg -f null -` as a corruption check. Its null-output timestamp
+path can resynthesize FLV integer-millisecond timestamps onto a coarser frame
+time base, producing non-monotonic-DTS warnings even when the stored DTS is
+strictly increasing. These warnings can occur on individual FLV parts as well
+as on concatenated output.
+
+The AAC configuration bug found on 2026-09-09 was different: it caused genuine
+AAC decoder failures and is still detected by the first check. That distinction
+is why the old null-output command appeared to be a useful validation check.
 
 The six-part reconnect recording validated on 2026-09-10 ran for about
 20 minutes. All packets were present and ordered, A/V was within 21 ms at
