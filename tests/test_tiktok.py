@@ -19,10 +19,17 @@ def live_page(room_id: str = "123456") -> bytes:
     return f'<script id="SIGI_STATE" type="application/json">{json.dumps(state)}</script>'.encode()
 
 
-def live_room(renditions: dict[str, str], status: int = 2) -> bytes:
+def live_room(
+    renditions: dict[str, str],
+    status: int = 2,
+    rtmp_pull_url: str | None = None,
+) -> bytes:
+    stream_url: dict[str, object] = {"flv_pull_url": renditions}
+    if rtmp_pull_url is not None:
+        stream_url["rtmp_pull_url"] = rtmp_pull_url
     return json.dumps({
         "status_code": 0,
-        "data": {"status": status, "stream_url": {"flv_pull_url": renditions}},
+        "data": {"status": status, "stream_url": stream_url},
     }).encode()
 
 
@@ -52,6 +59,38 @@ class TikTokResolverTests(unittest.TestCase):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener),
             "https://cdn.test/full-hd.flv",
         )
+
+    def test_prefers_flv_pull_url_when_quality_tiers_match(self) -> None:
+        opener = _Opener([live_page(), live_room(
+            {"default": "https://cdn.test/from-flv-field.flv"},
+            rtmp_pull_url="https://cdn.test/from-rtmp-field.flv",
+        )])
+
+        self.assertEqual(
+            resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener),
+            "https://cdn.test/from-flv-field.flv",
+        )
+
+    def test_uses_https_flv_from_rtmp_pull_url_when_flv_map_is_empty(self) -> None:
+        opener = _Opener([live_page(), live_room(
+            {}, rtmp_pull_url="https://cdn.test/live.flv?token=x"
+        )])
+
+        self.assertEqual(
+            resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener),
+            "https://cdn.test/live.flv?token=x",
+        )
+
+    def test_rejects_an_rtmp_url_from_rtmp_pull_url(self) -> None:
+        opener = _Opener([live_page(), live_room(
+            {}, rtmp_pull_url="rtmp://cdn.test/live.flv"
+        )])
+
+        with self.assertRaisesRegex(
+            TikTokResolutionError,
+            "no public HTTP\\(S\\) FLV rendition in flv_pull_url or rtmp_pull_url",
+        ):
+            resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
 
     def test_uses_public_room_lookup_when_page_has_no_embedded_room_id(self) -> None:
         lookup = json.dumps({"statusCode": 0, "data": {"liveRoom": {"roomId": "456"}}}).encode()
@@ -87,7 +126,7 @@ class TikTokResolverTests(unittest.TestCase):
     def test_reports_missing_flv_renditions(self) -> None:
         opener = _Opener([live_page(), live_room({"HD1": "https://cdn.test/live.m3u8"})])
 
-        with self.assertRaisesRegex(TikTokResolutionError, "no public FLV"):
+        with self.assertRaisesRegex(TikTokResolutionError, "no public HTTP\\(S\\) FLV"):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
 
     def test_reports_malformed_room_info_json(self) -> None:

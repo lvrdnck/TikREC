@@ -98,6 +98,11 @@ api-live user/room lookup. Queries webcast room/info. Live means room
 status equals 2. Picks a rendition by deterministic quality preference.
 Returns only http(s) URLs ending in `.flv`.
 
+`rtmp_pull_url` may contain an HTTPS FLV URL despite its name, so it is also
+considered after `flv_pull_url`; the latter wins equal-quality ties. An actual
+`rtmp://` URL is not supported. `hls_pull_url` may also be present, but HLS
+capture is not supported.
+
 No cookies, no login, no private signing, no yt-dlp.
 
 ### tikrec/capture.py — orchestration

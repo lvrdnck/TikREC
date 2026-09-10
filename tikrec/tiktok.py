@@ -57,8 +57,14 @@ def resolve_live_url(
     room = _live_room(room_info)
     renditions = _flv_renditions(room)
     if not renditions:
-        raise TikTokResolutionError("live room has no public FLV rendition")
-    return sorted(renditions, key=lambda item: (-_quality_score(item[0]), item[0], item[1]))[0][1]
+        raise TikTokResolutionError(
+            "live room has no public HTTP(S) FLV rendition in flv_pull_url or "
+            "rtmp_pull_url"
+        )
+    return sorted(
+        renditions,
+        key=lambda item: (-_quality_score(item[0]), item[1], item[0], item[2]),
+    )[0][2]
 
 
 def _validate_live_page_url(url: str) -> str:
@@ -172,20 +178,25 @@ def _live_room(response: Mapping[str, Any]) -> Mapping[str, Any]:
     return room
 
 
-def _flv_renditions(room: Mapping[str, Any]) -> list[tuple[str, str]]:
+def _flv_renditions(room: Mapping[str, Any]) -> list[tuple[str, int, str]]:
     stream_url = room.get("stream_url")
     if not isinstance(stream_url, Mapping):
         raise TikTokResolutionError("malformed room-info stream URL data")
-    values = stream_url.get("flv_pull_url")
-    if isinstance(values, str):
-        values = {"default": values}
-    if not isinstance(values, Mapping):
-        return []
-    return [
-        (str(name).lower(), value)
-        for name, value in values.items()
-        if isinstance(value, str) and _is_http_flv_url(value)
-    ]
+    renditions: list[tuple[str, int, str]] = []
+    for source_rank, field in enumerate(("flv_pull_url", "rtmp_pull_url")):
+        values = stream_url.get(field)
+        if isinstance(values, str):
+            values = {"default": values}
+        if not isinstance(values, Mapping):
+            continue
+        # TikTok sometimes publishes HTTPS FLV only in the misleading rtmp field.
+        # The source rank retains flv_pull_url as the deterministic tie-breaker.
+        renditions.extend(
+            (str(name).lower(), source_rank, value)
+            for name, value in values.items()
+            if isinstance(value, str) and _is_http_flv_url(value)
+        )
+    return renditions
 
 
 def _is_http_flv_url(url: str) -> bool:
