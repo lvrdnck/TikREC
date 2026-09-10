@@ -141,6 +141,25 @@ against a real recording:
 No output means clean. This is how the AAC configuration bug was found
 after 53 unit tests passed over it.
 
+## Validation notes
+
+The primary real-recording check is per retained FLV part:
+
+    ffmpeg -v error -i part-NNNN.flv -f null -
+
+Every retained part must decode with zero errors. This is the meaningful
+media-correctness signal for capture and part writing.
+
+Running the same command on a concatenated MP4 can report non-monotonic-DTS
+warnings without indicating a broken recording. The concat output inherits a
+nominal `r_frame_rate` from its first part; parts recorded at another frame
+rate can then produce spurious downstream null-muxer warnings. Verify final
+output with stored packet DTS and packet counts, not that null-muxer warning.
+
+The six-part reconnect recording validated on 2026-09-10 ran for about
+20 minutes. All packets were present and ordered, A/V was within 21 ms at
+the investigated boundaries, and finalization added 267 ms of duration drift.
+
 ## Roadmap
 
 Not yet scheduled, in rough order:
