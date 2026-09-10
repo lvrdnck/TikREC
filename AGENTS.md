@@ -88,15 +88,16 @@ speed.
 
 ## Keeping the docs true
 
-SPEC.md and AGENTS.md must describe the repo as it actually is.
+README.md, SPEC.md and AGENTS.md must describe the repo as it actually is.
 
-At the end of a module, check whether anything you built contradicts them —
-a module that doesn't exist, an API that changed, a rule that turned out to
-be wrong. If so, say what's stale and propose the edit. Do not edit these
-two files without asking.
+At the end of a module or issue, check whether anything you built
+contradicts them — a module that doesn't exist, a command that changed,
+a status list that's out of date, a rule that turned out to be wrong.
+If so, say what's stale and propose the edit. Do not edit these files
+without asking.
 
-When a real bug is found that unit tests didn't catch, propose adding the
-lesson to SPEC.md so it survives the session.
+README.md in particular describes what the tool does today, not what it
+will do. Any new or changed command belongs there.  
 
 ## Issues
 
