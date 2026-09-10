@@ -11,12 +11,26 @@ from scripts.validate_parts import validate_parts
 
 
 class ValidatePartsTests(unittest.TestCase):
-    def test_reports_each_clean_part_without_ffmpeg_output(self) -> None:
+    @staticmethod
+    def successful_runner(command, **_: object):
+        if "-show_packets" in command:
+            packets = {
+                "packets": [
+                    {"stream_index": 0, "dts": 0},
+                    {"stream_index": 1, "dts": 0},
+                    {"stream_index": 0, "dts": 40},
+                    {"stream_index": 1, "dts": 21},
+                ]
+            }
+            return SimpleNamespace(returncode=0, stdout=json.dumps(packets), stderr="")
+        return SimpleNamespace(returncode=0, stderr="")
+
+    def test_reports_each_clean_part_after_both_checks(self) -> None:
         calls: list[list[str]] = []
 
         def runner(command, **_: object):
             calls.append(command)
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
+            return self.successful_runner(command)
 
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -26,16 +40,22 @@ class ValidatePartsTests(unittest.TestCase):
             code = validate_parts(root, runner=runner, stdout=stdout, stderr=StringIO())
 
         self.assertEqual(code, 0)
-        self.assertEqual([command[5] for command in calls], [str(root / "part-0001.flv"), str(root / "part-0002.flv")])
+        self.assertEqual(len(calls), 4)
+        self.assertEqual([command[-1] for command in calls], [
+            str(root / "part-0001.flv"),
+            str(root / "part-0001.flv"),
+            str(root / "part-0002.flv"),
+            str(root / "part-0002.flv"),
+        ])
         self.assertEqual(stdout.getvalue().splitlines(), [
             "PASS part-0001.flv", "PASS part-0002.flv", "2/2 parts passed",
         ])
 
-    def test_treats_ffmpeg_error_output_as_a_failed_part(self) -> None:
+    def test_reports_decoder_error_as_a_failed_decode_check(self) -> None:
         def runner(command, **_: object):
-            if command[5].endswith("part-0002.flv"):
-                return SimpleNamespace(returncode=0, stdout="", stderr="decode error")
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
+            if "-show_frames" in command and command[-1].endswith("part-0002.flv"):
+                return SimpleNamespace(returncode=0, stderr="AAC decode error")
+            return self.successful_runner(command)
 
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -48,7 +68,33 @@ class ValidatePartsTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("PASS part-0001.flv", stdout.getvalue())
         self.assertIn("FAIL part-0002.flv", stdout.getvalue())
-        self.assertEqual(stderr.getvalue(), "decode error\n")
+        self.assertIn("part-0002.flv decode check failed: AAC decode error", stderr.getvalue())
+
+    def test_reports_duplicate_stored_dts_as_a_failed_dts_check(self) -> None:
+        def runner(command, **_: object):
+            if "-show_packets" in command:
+                packets = {
+                    "packets": [
+                        {"stream_index": 0, "dts": 100},
+                        {"stream_index": 0, "dts": 100},
+                    ]
+                }
+                return SimpleNamespace(
+                    returncode=0, stdout=json.dumps(packets), stderr=""
+                )
+            return self.successful_runner(command)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "part-0001.flv").write_bytes(b"")
+            stdout = StringIO()
+            stderr = StringIO()
+            code = validate_parts(root, runner=runner, stdout=stdout, stderr=stderr)
+
+        self.assertEqual(code, 1)
+        self.assertIn("FAIL part-0001.flv", stdout.getvalue())
+        self.assertIn("part-0001.flv DTS check failed", stderr.getvalue())
+        self.assertIn("stream 0 DTS 100 is not strictly greater than 100", stderr.getvalue())
 
     def test_prints_available_per_part_timing_metadata(self) -> None:
         record = {
@@ -71,7 +117,7 @@ class ValidatePartsTests(unittest.TestCase):
             stdout = StringIO()
             validate_parts(
                 root,
-                runner=lambda *_args, **_kwargs: SimpleNamespace(returncode=0, stdout="", stderr=""),
+                runner=self.successful_runner,
                 stdout=stdout,
                 stderr=StringIO(),
             )
