@@ -154,6 +154,12 @@ def _json_response(response: bytes, description: str) -> Mapping[str, Any]:
 
 def _live_room(response: Mapping[str, Any]) -> Mapping[str, Any]:
     status_code = response.get("status_code", response.get("statusCode", 0))
+    if str(status_code) == "4003110":
+        raise TikTokResolutionError(
+            "this room's stream is not available to anonymous requests -- "
+            "TikREC only records publicly accessible streams "
+            f"(TikTok status code {status_code})"
+        )
     if str(status_code) != "0":
         raise TikTokResolutionError(f"room-info returned TikTok status code {status_code}")
     data = response.get("data")

@@ -21,6 +21,13 @@ Out of scope, deliberately:
 - Any feature whose purpose is tracking a person rather than
   capturing a stream I chose to record
 
+Some rooms that are visibly live return room-info status code `4003110` and
+expose no stream URLs to anonymous page or API requests, while other public
+rooms resolve normally. This is TikTok making a session-dependent access
+decision, not an offline status. A normal browser User-Agent and Referer were
+tested and did not change the response. Recording those rooms would require
+authenticating as the user, which is out of scope.
+
 The tool must never wait for a stream to begin. If the room is offline
 when invoked, that is an error, not a wait state.
 

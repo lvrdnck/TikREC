@@ -26,6 +26,10 @@ def live_room(renditions: dict[str, str], status: int = 2) -> bytes:
     }).encode()
 
 
+def room_info_error(status_code: int) -> bytes:
+    return json.dumps({"status_code": status_code, "data": {"prompts": ""}}).encode()
+
+
 class TikTokResolverTests(unittest.TestCase):
     def test_resolves_a_public_live_url_and_discovers_its_room_id(self) -> None:
         opener = _Opener([live_page("987654"), live_room({"HD1": "https://cdn.test/live.flv?token=x"})])
@@ -69,6 +73,15 @@ class TikTokResolverTests(unittest.TestCase):
         opener = _Opener([live_page(), live_room({}, status=4)])
 
         with self.assertRaisesRegex(TikTokOfflineError, "not live"):
+            resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+    def test_reports_4003110_as_anonymous_stream_access_restriction(self) -> None:
+        opener = _Opener([live_page(), room_info_error(4003110)])
+
+        with self.assertRaisesRegex(
+            TikTokResolutionError,
+            "stream is not available to anonymous requests.*4003110",
+        ):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
 
     def test_reports_missing_flv_renditions(self) -> None:
