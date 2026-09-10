@@ -1,97 +1,171 @@
-# tikrec2 — minimal FLV recorder
+# TikREC — a recorder for public TikTok LIVE streams
 
 ## Goal
-A command-line tool that records one TikTok LIVE stream to disk, from a URL
-I supply manually, and stops when I stop it or when the stream ends.
 
-Nothing else. No monitoring, no polling, no transcription, no web UI,
-no notifications, no database.
+Record a single public TikTok LIVE stream to disk, reliably and completely,
+from a URL supplied manually. Stop when the stream ends or when I stop it.
 
-## Non-goals (do not build these)
-- Watching a handle and auto-starting
+## Scope
+
+In scope:
+- Public LIVE streams only
+- Recording a stream from the moment I start the tool
+- Reconnecting within a recording when the connection drops
+
+Out of scope, deliberately:
+- Subscriber-only, private, or otherwise gated streams
+- Auth, CAPTCHA, or private request-signing bypass
+- Watching a handle and starting automatically
+- Predicting when someone will go live
 - Transcription, chapters, search, analytics
-- Web server or library UI
-- Cookie/authenticated access to restricted streams
-- Anything involving multiple creators
+- Any feature whose purpose is tracking a person rather than
+  capturing a stream I chose to record
 
-## Usage
-    tikrec record <url> [--out DIR]
+The tool must never wait for a stream to begin. If the room is offline
+when invoked, that is an error, not a wait state.
 
-Prints progress to stdout. Ctrl-C stops cleanly and finalizes what it has.
+## Commands
 
-## Behaviour
+    tikrec record <direct-flv-url> --output FILE
+    tikrec resolve <tiktok-live-page-url>
+    tikrec live <tiktok-live-page-url> --output FILE
 
-1. Resolve the given URL to a direct FLV stream URL.
-2. Open an HTTP connection and read the FLV byte stream.
-3. Parse it into tags and write them to `part-0001.flv`, `part-0002.flv`, ...
-4. Start a new part whenever the video configuration changes.
-5. On stop or stream end, stitch the parts into one `final/original.mp4`.
-6. Write a short `session.json` with what happened.
+`record` takes a direct FLV URL and is the generic path. It must stay
+source-agnostic and must not gain TikTok-specific behaviour.
 
-## Architecture — four modules, in dependency order
+Exit codes: 0 success, 1 capture or finalization error, 130 interrupted.
 
-Build and test these in order. Do not start the next until the previous
-has passing tests.
+## Modules
 
-### 1. flv.py — pure format handling
-No network, no subprocess. Bytes in, structured data out.
+Layered so that generic FLV handling never becomes TikTok-specific.
 
-- `FlvTag` dataclass: tag_type, timestamp, stream_id, payload
-- `read_tag(stream)` -> FlvTag | None
-- `FlvTag.encoded(base_timestamp)` -> bytes
-- Detect configuration tags vs media tags (byte 1 == 0 vs 1)
-- `sps_dimensions(sps)` -> (width, height)
-- `avc_configuration_dimensions(config)` -> (width, height)
+### tikrec/flv.py — format
+Bytes in, structured data out. No network, no subprocess.
 
-### 2. writer.py — parts on disk
-Takes an iterable of tags, writes part files.
+`FlvTag`, `read_tag`, `sps_dimensions`, `avc_configuration_dimensions`,
+`FlvFormatError`. Configuration tags are `payload[1] == 0`, media tags
+are `payload[1] == 1`.
 
-- Rolls to a new part when the AVC configuration changes
-- Rebases timestamps so each part starts near zero
-- Waits for a video keyframe before writing media into a new part
-- Writes to a hidden `.partial` name, renames on clean close
-- Deletes parts that ended up with zero media tags
+### tikrec/writer.py — parts on disk
+Consumes an iterable of tags, writes numbered FLV parts.
 
-Key seam: this takes an *iterator of tags*, not a socket. That means a
-file on disk is a valid input and the whole thing is testable offline.
+- Waits for a video keyframe before writing media into a part
+- Rebases timestamps per part
+- Writes AVC configuration, then AAC configuration, then first keyframe
+- Rolls to a new part only on a real AVCDecoderConfigurationRecord change
+- Writes `.partial`, promotes atomically with `os.replace`
+- Deletes parts retaining zero media tags
+- Accepts an explicit `start_index` so numbering can carry across sessions
 
-### 3. source.py — getting the bytes
-- Resolve a TikTok LIVE URL to a direct FLV URL
-- Open it and yield chunks
-- Reconnect on drop, with backoff, up to N attempts
-- Same seam: expose `iter_tags(source)` so tests can pass a local file
+The AAC configuration must be cached and emitted even when it arrives
+before the first video keyframe. Dropping it produces an FLV that looks
+valid and decodes at a ~99% audio error rate.
 
-### 4. finalize.py — stitching
-- Given N part files, produce one MP4
-- If all parts share the same configuration: remux losslessly, no re-encode
-- If they differ: use an ffmpeg filter graph that keeps A/V in sync
-- Shell out to ffmpeg; do not attempt this in Python
+A visual layout change on TikTok does not imply a codec configuration
+change. Roll on the codec, not on appearance.
 
-## Testing rules
+### tikrec/source.py — one HTTP connection
+`iter_tags`, `iter_url_chunks`, `iter_url_tags`.
 
-- Every module gets tests before the next module is written.
-- Tests must run without network access and without a live stream.
-- Test inputs are small FLV files committed under `tests/fixtures/`.
-  Generate them with ffmpeg where possible; capture real short samples
-  where the quirk can't be synthesized.
-- Minimum fixture set:
-  - clean single-configuration stream
-  - stream with a mid-stream resolution change
-  - file truncated mid-tag (crash simulation)
+Parses incrementally, never buffers the whole stream. Validates the FLV
+header and initial PreviousTagSize. No retries, no TikTok-specific logic.
+This is the primitive for exactly one direct FLV connection.
 
-## Constraints
+### tikrec/finalize.py — stitching
+`finalize_parts(parts, output_path, *, ffmpeg, runner)`.
 
-- Python 3.11+, standard library only for FLV handling.
-- ffmpeg/ffprobe as external binaries. No PyAV, no pypdf-style wrappers.
-- Every non-obvious line gets a comment explaining *why*, citing the
-  format behaviour it handles. If you can't explain why a line exists,
-  don't write it.
-- No file over 300 lines. If a module grows past that, split it.
-- Ask me before adding any dependency.
+Identical configurations across parts: concat demuxer with `-c copy`.
+Differing configurations: filter_complex, reset timestamps, scale and pad
+to a common size, re-encode.
 
-## How to work with me
+Writes a hidden temporary file preserving the output suffix
+(`.final.partial.mp4`, not `.final.mp4.partial` — ffmpeg infers the muxer
+from the extension). Promotes with `os.replace`. Refuses to overwrite an
+existing destination. Never deletes the source parts.
 
-I am learning this codebase as we build it. After each module:
-- Explain what you wrote, in plain language, before moving on.
-- Point out anything you were unsure about.
-- Do not scaffold ahead. One module at a time.
+### tikrec/tiktok.py — resolution
+`resolve_live_url(url, *, opener, timeout)` for a public LIVE page.
+
+Finds the room ID from public page state, falls back to the public
+api-live user/room lookup. Queries webcast room/info. Live means room
+status equals 2. Picks a rendition by deterministic quality preference.
+Returns only http(s) URLs ending in `.flv`.
+
+No cookies, no login, no private signing, no yt-dlp.
+
+### tikrec/capture.py — orchestration
+`capture_tags`, `capture_url`, `CaptureResult`, `CaptureError`.
+
+Prepares the session directory once, refuses to reuse an existing one,
+preserves completed parts on error or interrupt, finalizes on clean EOF.
+
+## Next: reconnect-capable live capture
+
+`tikrec live` records across connection drops until the room genuinely ends.
+
+Lifecycle: resolve, connect, record, connection dies, re-resolve, and if
+still live reconnect with a fresh URL. Stop when the room is offline.
+
+**Every reconnect starts a new part**, even when the AVC configuration,
+resolution, and AAC configuration are byte-identical. A new HTTP connection
+may restart its timestamp origin, and continuing the previous writer state
+would produce backward or zero timestamps.
+
+Required behaviour:
+
+- Only a successful room/info response with status != 2 means offline.
+  Resolver transport failures, timeouts, and HTTP errors are transient and
+  retry with backoff.
+- Room offline at the first resolve is a clear error. Room offline after
+  a successful recording is a normal end.
+- Part numbering is monotonic and carries forward via explicit
+  `start_index`. Never derive it by scanning the directory; deleted empty
+  parts make the directory lie.
+- Append one JSONL line per connection to the session directory as the
+  connection closes: wall-clock start, wall-clock end, and the part range
+  retained. A session killed mid-recording must still show its gaps.
+  Also surface this in `CaptureResult`.
+- Bound the recoverable path: stop after N consecutive failed connections,
+  and after N consecutive connections retaining zero media. N injectable.
+- Backoff sleeps through an injectable `sleeper` so tests never wait.
+- Do not retry programming errors, invalid arguments, or malformed state.
+- Ctrl-C preserves all completed parts and exits 130.
+- `tikrec record` behaviour is unchanged.
+
+Tests are mocked end to end. The two that matter most are a resolver
+network error retrying, and a resolver success with status != 2 ending
+cleanly. Those two encode the distinction the whole module rests on.
+
+## Testing
+
+Unit tests run offline with no network and no live stream. Network
+behaviour is tested through injected functions.
+
+Media correctness is not provable by unit tests alone. Any change touching
+codec configuration, part boundaries, or finalization must also be checked
+against a real recording:
+
+    ffmpeg -v error -i part-0001.flv -f null -
+
+No output means clean. This is how the AAC configuration bug was found
+after 53 unit tests passed over it.
+
+## Roadmap
+
+Not yet scheduled, in rough order:
+
+- Reconnect smoke tests against a real LIVE
+- Real multi-configuration capture, verifying each part decodes alone
+- Session manifest: timings, parts, codecs, reconnect count, status
+- Health checks: ffprobe validation, duration sanity, timestamp anomalies
+- Logging with a debug mode; never log signed CDN URLs at normal verbosity
+- Local library for browsing recordings, stored outside /tmp
+
+## Design principles
+
+- Small modules. Generic FLV logic stays generic.
+- One connection is `source`. Resolution is `tiktok`. Reconnect sits above
+  both, in orchestration.
+- The writer owns what "independently decodable part" means.
+- The finalizer owns joining. It never destroys its inputs.
+- Never silently overwrite user output.

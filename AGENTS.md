@@ -13,12 +13,9 @@ GitHub is the source of truth.
 
 ## What this is
 
-A minimal command-line tool that records a single TikTok LIVE stream to
-disk from a URL supplied manually. See SPEC.md for the full design.
-
-This is a rewrite. The previous version is not in this repo — I will paste
-relevant files from it into the conversation when the format behaviour
-matters. Do not go looking for it on disk.
+A command-line tool that records a single public TikTok LIVE stream to
+disk from a URL supplied manually. See SPEC.md for the full design,
+module responsibilities, and scope boundaries.
 
 ## Layout
 
@@ -27,7 +24,6 @@ matters. Do not go looking for it on disk.
     pyproject.toml   package definition and CLI entry point
 
 Nothing lives at the repo root except configuration and documentation.
-Module order and responsibilities are defined in SPEC.md.
 
 ## Constraints
 
@@ -38,7 +34,8 @@ Module order and responsibilities are defined in SPEC.md.
 - Every non-obvious line gets a comment explaining *why* it exists and
   what format behaviour it handles. If you can't explain why a line is
   there, don't write it.
-- Tests run offline. No test may require network access or a live stream.
+- Unit tests run offline. No test may require network access or a live
+  stream. Network behaviour is tested through injected functions.
 
 ## Definition of done
 
@@ -49,6 +46,18 @@ A module is finished only when all of these are true:
 - Public functions have docstrings; non-obvious lines have why-comments
 - The file is under 300 lines
 - It is committed with a message describing the change, and pushed
+
+## Media correctness
+
+Passing unit tests do not prove a recording is playable. A module that
+touches codec configuration, part boundaries, or finalization is not
+proven until a real recording decodes cleanly:
+
+    ffmpeg -v error -i part-0001.flv -f null -
+
+No output means clean. An AAC configuration bug once produced a ~99%
+audio decode failure rate while 53 unit tests passed over it. When you
+finish such a module, say explicitly that this check is still outstanding.
 
 ## Commit style
 
@@ -67,10 +76,24 @@ speed.
 - Flag anything you were unsure about or had to guess.
 - Do not scaffold ahead. Do not create empty files for future modules.
 - Wait for me to say continue.
+- When troubleshooting or testing, give me one terminal command at a time.
+  Full implementation tasks are fine as a single instruction.
 
 ## Environment
 
-- Windows PC: has the RTX 4080, so NVENC and any GPU path is tested here.
+- Windows PC: RTX 4080, so NVENC and any GPU path is tested there.
 - MacBook: CPU only. Anything GPU-specific must degrade gracefully or
   be skipped with a clear message.
-- Development happens over VS Code Remote-SSH into the PC.
+- Development happens on either machine; both push to GitHub.
+
+## Keeping the docs true
+
+SPEC.md and AGENTS.md must describe the repo as it actually is.
+
+At the end of a module, check whether anything you built contradicts them —
+a module that doesn't exist, an API that changed, a rule that turned out to
+be wrong. If so, say what's stale and propose the edit. Do not edit these
+two files without asking.
+
+When a real bug is found that unit tests didn't catch, propose adding the
+lesson to SPEC.md so it survives the session.
