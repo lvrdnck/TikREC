@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 
@@ -14,14 +15,34 @@ from .flv import FLV_AUDIO_TAG, FlvTag
 _FLV_HEADER = b"FLV\x01\x05\x00\x00\x00\x09\x00\x00\x00\x00"
 
 
+@dataclass(frozen=True)
+class PartTiming:
+    """The original source timestamps retained for one completed FLV part."""
+
+    path: Path
+    configuration_timestamp: int
+    first_keyframe_timestamp: int
+    last_tag_timestamp: int
+
+    @property
+    def keyframe_gate_duration(self) -> int:
+        """Return the source-time media interval withheld until a keyframe."""
+        return self.first_keyframe_timestamp - self.configuration_timestamp
+
+
 def write_parts(
     tags: Iterable[FlvTag],
     output_dir: Path,
     *,
     start_index: int = 1,
     on_part_retained: Callable[[Path], None] | None = None,
+    on_part_closed: Callable[[PartTiming], None] | None = None,
 ) -> tuple[Path, ...]:
-    """Write media into numbered FLV parts and return the retained paths."""
+    """Write media into numbered FLV parts and return the retained paths.
+
+    ``on_part_closed`` receives original source timestamps for each retained
+    part, before timestamp rebasing makes its keyframe-gate interval opaque.
+    """
     if not isinstance(start_index, int) or start_index < 1:
         raise ValueError("start_index must be a positive integer")
     output_dir = Path(output_dir)
@@ -46,7 +67,7 @@ def write_parts(
                 # composition time before the decoder-configuration record.
                 next_configuration = tag.payload[5:]
                 if configuration != next_configuration:
-                    _close_part(part, paths, on_part_retained)
+                    _close_part(part, paths, on_part_retained, on_part_closed)
                     part = None
                     part = _open_part(output_dir, start_index + len(paths), tag)
                     configuration = next_configuration
@@ -67,6 +88,7 @@ def write_parts(
                 if not _is_video_keyframe(tag):
                     continue
                 part.base_timestamp = tag.timestamp
+                part.first_keyframe_timestamp = tag.timestamp
                 _write_tag(part, part.configuration_tag)
                 if latest_audio_configuration is not None:
                     _write_tag(part, latest_audio_configuration)
@@ -76,7 +98,7 @@ def write_parts(
     finally:
         # Iteration can be interrupted by Ctrl-C or a malformed source. Close
         # the active file before exposing the exception to the capture layer.
-        _close_part(part, paths, on_part_retained)
+        _close_part(part, paths, on_part_retained, on_part_closed)
     return tuple(paths)
 
 
@@ -94,6 +116,9 @@ class _OpenPart:
         self.partial_path = partial_path
         self.final_path = final_path
         self.configuration_tag = configuration_tag
+        self.configuration_timestamp = configuration_tag.timestamp
+        self.first_keyframe_timestamp: int | None = None
+        self.last_tag_timestamp: int | None = None
         self.base_timestamp = 0
         self.started = False
         self.media_tag_count = 0
@@ -112,6 +137,7 @@ def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _Open
 
 def _write_tag(part: _OpenPart, tag: FlvTag) -> None:
     part.handle.write(tag.encoded(base_timestamp=part.base_timestamp))
+    part.last_tag_timestamp = tag.timestamp
     if tag.is_media:
         part.media_tag_count += 1
 
@@ -120,6 +146,7 @@ def _close_part(
     part: _OpenPart | None,
     paths: list[Path],
     on_part_retained: Callable[[Path], None] | None,
+    on_part_closed: Callable[[PartTiming], None] | None,
 ) -> None:
     if part is None or part.closed:
         return
@@ -133,6 +160,15 @@ def _close_part(
     paths.append(part.final_path)
     if on_part_retained is not None:
         on_part_retained(part.final_path)
+    assert part.first_keyframe_timestamp is not None
+    assert part.last_tag_timestamp is not None
+    if on_part_closed is not None:
+        on_part_closed(PartTiming(
+            part.final_path,
+            part.configuration_timestamp,
+            part.first_keyframe_timestamp,
+            part.last_tag_timestamp,
+        ))
 
 
 def _is_video_keyframe(tag: FlvTag) -> bool:

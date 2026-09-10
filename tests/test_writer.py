@@ -135,7 +135,8 @@ class WriterTests(unittest.TestCase):
         ]
 
         with TemporaryDirectory() as directory:
-            paths = write_parts(iter(tags), Path(directory))
+            timings = []
+            paths = write_parts(iter(tags), Path(directory), on_part_closed=timings.append)
             parts = [read_part(path) for path in paths]
 
         self.assertEqual([path.name for path in paths], ["part-0001.flv", "part-0002.flv"])
@@ -145,6 +146,11 @@ class WriterTests(unittest.TestCase):
         )
         self.assertEqual(parts[0][0].payload[-5:], b"first")
         self.assertEqual(parts[1][0].payload[-6:], b"second")
+        self.assertEqual(
+            [(timing.configuration_timestamp, timing.first_keyframe_timestamp,
+              timing.last_tag_timestamp, timing.keyframe_gate_duration) for timing in timings],
+            [(100, 120, 130, 20), (1000, 1025, 1040, 25)],
+        )
 
     def test_deletes_part_when_no_keyframe_produced_media(self) -> None:
         tags = [

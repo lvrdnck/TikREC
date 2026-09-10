@@ -59,6 +59,14 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertEqual([record["outcome"] for record in records], ["closed", "closed", "offline"])
         self.assertEqual(records[0]["part_start"], "part-0001.flv")
         self.assertEqual(records[1]["part_end"], "part-0002.flv")
+        self.assertEqual(records[0]["part_timings"], [{
+            "name": "part-0001.flv",
+            "configuration_timestamp": 100,
+            "first_keyframe_timestamp": 120,
+            "keyframe_gate_duration": 20,
+            "last_tag_timestamp": 120,
+        }])
+        self.assertEqual(result.connections[0].part_timings[0].keyframe_gate_duration, 20)
         self.assertEqual(result.connections[1].gap_before, 10.0)
 
     def test_retries_transient_resolver_failure_with_backoff(self) -> None:

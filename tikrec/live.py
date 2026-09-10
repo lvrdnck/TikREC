@@ -19,7 +19,7 @@ from .tiktok import (
     TikTokResolutionTransientError,
     resolve_live_url,
 )
-from .writer import write_parts
+from .writer import PartTiming, write_parts
 
 
 def capture_live(
@@ -64,10 +64,14 @@ def capture_live(
         connection_number += 1
         started_at = clock()
         connection_parts: list[Path] = []
+        part_timings: list[PartTiming] = []
 
         def retained(path: Path) -> None:
             # This callback preserves a part even when Ctrl-C interrupts writer.
             connection_parts.append(path)
+
+        def part_closed(timing: PartTiming) -> None:
+            part_timings.append(timing)
 
         def close_record(outcome: str, error: Exception | None = None) -> ConnectionRecord:
             nonlocal previous_end, next_part_index
@@ -80,6 +84,7 @@ def capture_live(
                 tuple(connection_parts),
                 outcome,
                 None if error is None else str(error),
+                tuple(part_timings),
             )
             _append_connection_record(parts_directory / "connections.jsonl", record)
             records.append(record)
@@ -96,6 +101,7 @@ def capture_live(
                 parts_directory,
                 start_index=next_part_index,
                 on_part_retained=retained,
+                on_part_closed=part_closed,
             )
             # Custom writers may not use the callback, while the built-in writer does.
             if not connection_parts:
@@ -168,6 +174,16 @@ def _append_connection_record(path: Path, record: ConnectionRecord) -> None:
         "gap_before": record.gap_before,
         "part_start": record.parts[0].name if record.parts else None,
         "part_end": record.parts[-1].name if record.parts else None,
+        "part_timings": [
+            {
+                "name": timing.path.name,
+                "configuration_timestamp": timing.configuration_timestamp,
+                "first_keyframe_timestamp": timing.first_keyframe_timestamp,
+                "keyframe_gate_duration": timing.keyframe_gate_duration,
+                "last_tag_timestamp": timing.last_tag_timestamp,
+            }
+            for timing in record.part_timings
+        ],
         "outcome": record.outcome,
         "error": record.error,
     }

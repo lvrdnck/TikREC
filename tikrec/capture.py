@@ -9,7 +9,7 @@ from pathlib import Path
 from .finalize import finalize_parts
 from .flv import FlvTag
 from .source import iter_url_tags
-from .writer import write_parts
+from .writer import PartTiming, write_parts
 
 
 class CaptureError(RuntimeError):
@@ -31,6 +31,7 @@ class ConnectionRecord:
     parts: tuple[Path, ...]
     outcome: str
     error: str | None = None
+    part_timings: tuple[PartTiming, ...] = ()
 
 
 @dataclass(frozen=True)
