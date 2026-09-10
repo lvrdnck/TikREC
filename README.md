@@ -15,7 +15,9 @@ reconnecting if the connection drops, and you get one MP4 out.
 connections. `record` takes a direct FLV URL and is source-agnostic.
 `resolve` prints the current direct FLV URL for a live page.
 
-Ctrl-C stops cleanly and preserves everything recorded so far.
+For `live`, the first Ctrl-C stops capture, finalizes retained parts, and exits
+130 to show that recording ended early. A second Ctrl-C during finalization
+stops FFmpeg; retained parts always remain available.
 
 ## Requirements
 

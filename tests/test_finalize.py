@@ -134,6 +134,20 @@ class FinalizeTests(unittest.TestCase):
             "ffmpeg", "-n", "-progress", "pipe:2", "-nostats",
         ])
 
+    def test_interrupting_ffmpeg_progress_terminates_and_reaps_ffmpeg(self) -> None:
+        process = _Process("out_time=00:00:01.000000\n", 0)
+
+        with patch("tikrec.finalize.subprocess.Popen", return_value=process):
+            with self.assertRaises(KeyboardInterrupt):
+                _run_ffmpeg(
+                    ["ffmpeg", "-n"],
+                    subprocess.run,
+                    lambda _: (_ for _ in ()).throw(KeyboardInterrupt),
+                )
+
+        self.assertTrue(process.terminated)
+        self.assertEqual(process.wait_calls, 1)
+
     def test_success_promotes_partial_output_atomically(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -233,11 +247,15 @@ class _Process:
     def __init__(self, stderr: str, returncode: int) -> None:
         self.stderr = StringIO(stderr)
         self.returncode = returncode
+        self.terminated = False
+        self.wait_calls = 0
 
     def wait(self) -> int:
+        self.wait_calls += 1
         return self.returncode
 
     def terminate(self) -> None:
+        self.terminated = True
         self.returncode = -15
 
 

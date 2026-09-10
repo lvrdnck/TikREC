@@ -276,23 +276,25 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertEqual([part.name for part in finalizer_parts[0]], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual(result.connections[0].outcome, "connection_error")
 
-    def test_keyboard_interrupt_retains_closed_parts_without_finalizing(self) -> None:
-        finalizer_called = False
+    def test_keyboard_interrupt_finalizes_retained_parts_and_stays_interrupted(self) -> None:
+        finalizer_calls: list[tuple[Path, ...]] = []
 
         def interrupted_stream():
             yield from stream()
             raise KeyboardInterrupt
 
-        def finalizer(*_: object) -> Path:
-            nonlocal finalizer_called
-            finalizer_called = True
-            raise AssertionError("must not finalize an interrupted live capture")
+        def finalizer(parts, output: Path) -> Path:
+            finalizer_calls.append(tuple(parts))
+            output.write_bytes(b"final")
+            return output
 
         with TemporaryDirectory() as directory:
             root = Path(directory)
+            output = root / "final.mp4"
             result = capture_live(
                 "https://www.tiktok.com/@creator/live",
                 parts_directory=root / "parts",
+                output_path=output,
                 resolver=lambda _: "https://cdn.test/live.flv",
                 tag_source=lambda _: interrupted_stream(),
                 finalizer=finalizer,
@@ -302,7 +304,31 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertTrue(result.interrupted)
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv"])
         self.assertEqual(record["outcome"], "interrupted")
-        self.assertFalse(finalizer_called)
+        self.assertEqual(result.output_path, output)
+        self.assertEqual([part.name for part in finalizer_calls[0]], ["part-0001.flv"])
+
+    def test_second_keyboard_interrupt_abandons_finalization_but_keeps_parts(self) -> None:
+        def interrupted_stream():
+            yield from stream()
+            raise KeyboardInterrupt
+
+        def interrupted_finalizer(*_: object) -> Path:
+            raise KeyboardInterrupt
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                output_path=root / "final.mp4",
+                resolver=lambda _: "https://cdn.test/live.flv",
+                tag_source=lambda _: interrupted_stream(),
+                finalizer=interrupted_finalizer,
+            )
+
+        self.assertTrue(result.interrupted)
+        self.assertIsNone(result.output_path)
+        self.assertEqual([part.name for part in result.parts], ["part-0001.flv"])
 
     def test_malformed_flv_is_not_retried(self) -> None:
         calls = 0
@@ -372,6 +398,21 @@ class LiveCliTests(unittest.TestCase):
         self.assertEqual(code, 130)
         self.assertTrue(stdout.getvalue().endswith("\r\x1b[2K"))
         self.assertEqual(stderr.getvalue(), "tikrec: interrupted; retained parts in final.parts\n")
+
+    def test_interrupted_live_with_output_still_exits_130(self) -> None:
+        stderr = StringIO()
+
+        code = main(
+            ["live", "https://www.tiktok.com/@creator/live", "--output", "final.mp4"],
+            live_capture=lambda *_args, **_kwargs: CaptureResult((), Path("final.mp4"), True),
+            stderr=stderr,
+        )
+
+        self.assertEqual(code, 130)
+        self.assertEqual(
+            stderr.getvalue(),
+            "tikrec: interrupted; output written to final.mp4; retained parts in final.parts\n",
+        )
 
 
 def _finalizer(parts, output: Path) -> Path:

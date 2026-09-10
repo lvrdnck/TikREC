@@ -62,7 +62,14 @@ def main(
         if result.interrupted:
             if live_progress is not None:
                 live_progress.clear()
-            print(f"tikrec: interrupted; retained parts in {parts_directory}", file=stderr)
+            if result.output_path is not None:
+                print(
+                    f"tikrec: interrupted; output written to {result.output_path}; "
+                    f"retained parts in {parts_directory}",
+                    file=stderr,
+                )
+            else:
+                print(f"tikrec: interrupted; retained parts in {parts_directory}", file=stderr)
             return 130
         print(f"recorded {result.output_path}", file=stdout)
         return 0

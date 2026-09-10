@@ -122,6 +122,16 @@ def capture_live(
                 connection_parts.extend(written_parts)
         except KeyboardInterrupt:
             close_record("interrupted")
+            if all_parts:
+                return _finalize(
+                    all_parts,
+                    output_path,
+                    finalizer,
+                    tuple(records),
+                    parts_directory,
+                    progress,
+                    interrupted=True,
+                )
             return CaptureResult(tuple(all_parts), None, True, tuple(records))
         except TikTokOfflineError as error:
             close_record("offline", error)
@@ -180,9 +190,11 @@ def _finalize(
     records: tuple[ConnectionRecord, ...],
     parts_directory: Path,
     progress: Callable[[str], None] | None,
+    *,
+    interrupted: bool = False,
 ) -> CaptureResult:
     if output_path is None:
-        return CaptureResult(tuple(parts), None, False, records)
+        return CaptureResult(tuple(parts), None, interrupted, records)
     try:
         _report(progress, "finalizing")
         if finalizer is finalize_parts:
@@ -194,7 +206,7 @@ def _finalize(
     except Exception as error:
         raise CaptureError(f"finalization failed: {error}", tuple(parts)) from error
     _report(progress, f"output written: {output} ({output.stat().st_size} bytes)")
-    return CaptureResult(tuple(parts), output, False, records)
+    return CaptureResult(tuple(parts), output, interrupted, records)
 
 
 def _report(progress: Callable[[str], None] | None, message: str) -> None:

@@ -104,7 +104,9 @@ def _run_ffmpeg(
         for line in process.stderr:
             stderr_lines.append(line)
             _report_ffmpeg_stderr(line, progress)
-    except Exception:
+    except BaseException:
+        # KeyboardInterrupt is not an Exception, but FFmpeg must not outlive
+        # an abandoned finalization and keep its temporary output locked.
         process.terminate()
         process.wait()
         raise

@@ -137,7 +137,10 @@ room-info response confirms that the room is offline.
   consecutive connections retaining no media. Both limits, the clock, and
   sleeper are injectable for offline tests.
 - Programming errors, invalid arguments, and malformed FLV data do not retry.
-  Ctrl-C closes the writer, preserves completed parts, and exits 130.
+  The first Ctrl-C closes the writer and finalizes retained parts when an
+  output was requested, but still exits 130 because capture ended early. A
+  second Ctrl-C during finalization terminates FFmpeg; all retained parts
+  survive either path.
 
 ## Testing
 
