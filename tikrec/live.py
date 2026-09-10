@@ -178,6 +178,7 @@ def _append_connection_record(path: Path, record: ConnectionRecord) -> None:
             {
                 "name": timing.path.name,
                 "configuration_timestamp": timing.configuration_timestamp,
+                "first_media_timestamp": timing.first_media_timestamp,
                 "first_keyframe_timestamp": timing.first_keyframe_timestamp,
                 "keyframe_gate_duration": timing.keyframe_gate_duration,
                 "last_tag_timestamp": timing.last_tag_timestamp,

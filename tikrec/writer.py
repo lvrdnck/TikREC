@@ -17,17 +17,22 @@ _FLV_HEADER = b"FLV\x01\x05\x00\x00\x00\x09\x00\x00\x00\x00"
 
 @dataclass(frozen=True)
 class PartTiming:
-    """The original source timestamps retained for one completed FLV part."""
+    """Source timestamps for one completed FLV part.
+
+    ``configuration_timestamp`` is diagnostic-only: live FLV sequence headers
+    are commonly timestamped zero even when media uses a later clock origin.
+    """
 
     path: Path
     configuration_timestamp: int
+    first_media_timestamp: int
     first_keyframe_timestamp: int
     last_tag_timestamp: int
 
     @property
     def keyframe_gate_duration(self) -> int:
         """Return the source-time media interval withheld until a keyframe."""
-        return self.first_keyframe_timestamp - self.configuration_timestamp
+        return self.first_keyframe_timestamp - self.first_media_timestamp
 
 
 def write_parts(
@@ -84,6 +89,10 @@ def write_parts(
             if part is None:
                 continue
 
+            if tag.is_media and part.first_media_timestamp is None:
+                # Sequence headers can use a different clock origin, unlike media.
+                part.first_media_timestamp = tag.timestamp
+
             if not part.started:
                 if not _is_video_keyframe(tag):
                     continue
@@ -117,6 +126,7 @@ class _OpenPart:
         self.final_path = final_path
         self.configuration_tag = configuration_tag
         self.configuration_timestamp = configuration_tag.timestamp
+        self.first_media_timestamp: int | None = None
         self.first_keyframe_timestamp: int | None = None
         self.last_tag_timestamp: int | None = None
         self.base_timestamp = 0
@@ -161,11 +171,13 @@ def _close_part(
     if on_part_retained is not None:
         on_part_retained(part.final_path)
     assert part.first_keyframe_timestamp is not None
+    assert part.first_media_timestamp is not None
     assert part.last_tag_timestamp is not None
     if on_part_closed is not None:
         on_part_closed(PartTiming(
             part.final_path,
             part.configuration_timestamp,
+            part.first_media_timestamp,
             part.first_keyframe_timestamp,
             part.last_tag_timestamp,
         ))

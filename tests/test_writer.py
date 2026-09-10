@@ -147,10 +147,26 @@ class WriterTests(unittest.TestCase):
         self.assertEqual(parts[0][0].payload[-5:], b"first")
         self.assertEqual(parts[1][0].payload[-6:], b"second")
         self.assertEqual(
-            [(timing.configuration_timestamp, timing.first_keyframe_timestamp,
+            [(timing.configuration_timestamp, timing.first_media_timestamp, timing.first_keyframe_timestamp,
               timing.last_tag_timestamp, timing.keyframe_gate_duration) for timing in timings],
-            [(100, 120, 130, 20), (1000, 1025, 1040, 25)],
+            [(100, 120, 120, 130, 0), (1000, 1025, 1025, 1040, 0)],
         )
+
+    def test_measures_the_gate_from_media_not_a_zero_timestamp_configuration(self) -> None:
+        tags = [
+            avc_configuration(0, b"first"),
+            video(3_427_480, frame_type=2),
+            video(3_427_493, frame_type=1),
+        ]
+
+        with TemporaryDirectory() as directory:
+            timings = []
+            write_parts(tags, Path(directory), on_part_closed=timings.append)
+
+        self.assertEqual(timings[0].configuration_timestamp, 0)
+        self.assertEqual(timings[0].first_media_timestamp, 3_427_480)
+        self.assertEqual(timings[0].first_keyframe_timestamp, 3_427_493)
+        self.assertEqual(timings[0].keyframe_gate_duration, 13)
 
     def test_deletes_part_when_no_keyframe_produced_media(self) -> None:
         tags = [
