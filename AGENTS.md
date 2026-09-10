@@ -97,3 +97,20 @@ two files without asking.
 
 When a real bug is found that unit tests didn't catch, propose adding the
 lesson to SPEC.md so it survives the session.
+
+## Issues
+
+Deferred work lives in GitHub issues, not in code comments or TODOs.
+
+- When we agree to defer something, open an issue rather than leaving a
+  TODO in the source.
+- When working an issue, reference it in the commit message with
+  "Closes #N" so it closes on push.
+- Do not open issues for things we're about to do in the same session.
+
+Work issue #1: Show FFmpeg finalization progress.
+
+Read the issue on GitHub first. Follow SPEC.md and AGENTS.md as usual.
+Include "Closes #1" in the commit message so the issue closes on push.
+
+Stop after this and explain what you changed.
