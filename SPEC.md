@@ -168,6 +168,21 @@ The six-part reconnect recording validated on 2026-09-10 ran for about
 20 minutes. All packets were present and ordered, A/V was within 21 ms at
 the investigated boundaries, and finalization added 267 ms of duration drift.
 
+The 78-minute reconnect-4 recording validated on 2026-09-10 had one
+connection, 14 parts, and ended with Ctrl-C. Its 4,703.083 s wall-clock
+duration exceeded the 4,702.768 s media span by 315 ms. The 13 inter-part
+gaps totalled 474 ms (7--142 ms each; 36 ms mean), consistent with the
+33 ms video cadence.
+
+`keyframe_gate_duration` was zero for every part: each configuration,
+first-media, and first-keyframe timestamp was identical at every configuration
+roll. TikTok therefore emits the new AVC configuration with an IDR keyframe,
+and the gate discarded no tags. In part 0001 the configuration timestamp was
+zero while media began at 1,710,552 ms, confirming the zero-stamped-header
+quirk and the decision to measure the gate from first media instead. This also
+rules out gate cost as the explanation for reconnect-2 connection 2's 7.65 s
+loss; its `IncompleteRead` indicates a stalled socket tail before the error.
+
 ## Roadmap
 
 Not yet scheduled, in rough order:
