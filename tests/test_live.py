@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -140,7 +141,7 @@ class LiveCaptureTests(unittest.TestCase):
                     sleeper=lambda _: None,
                 )
 
-    def test_retries_a_dropped_direct_connection_and_keeps_its_completed_part(self) -> None:
+    def test_retries_incomplete_http_read_and_keeps_its_completed_part(self) -> None:
         actions: list[object] = [
             "https://cdn.test/one.flv",
             "https://cdn.test/two.flv",
@@ -148,9 +149,9 @@ class LiveCaptureTests(unittest.TestCase):
         ]
         finalizer_parts: list[tuple[Path, ...]] = []
 
-        def dropped_stream():
+        def incomplete_stream():
             yield from stream()
-            raise OSError("connection reset")
+            raise IncompleteRead(b"partial FLV response", 51_069)
 
         def finalizer(parts, output: Path) -> Path:
             finalizer_parts.append(tuple(parts))
@@ -170,7 +171,7 @@ class LiveCaptureTests(unittest.TestCase):
                 parts_directory=root / "parts",
                 output_path=root / "final.mp4",
                 resolver=resolver,
-                tag_source=lambda url: dropped_stream() if url.endswith("one.flv") else iter(stream()),
+                tag_source=lambda url: incomplete_stream() if url.endswith("one.flv") else iter(stream()),
                 finalizer=finalizer,
                 sleeper=lambda _: None,
             )

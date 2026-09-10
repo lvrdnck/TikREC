@@ -6,6 +6,7 @@ import json
 import os
 import time
 from collections.abc import Callable, Iterable
+from http.client import HTTPException
 from pathlib import Path
 
 from .capture import CaptureError, CaptureResult, ConnectionRecord, _prepare_session
@@ -112,7 +113,8 @@ def capture_live(
         except TikTokResolutionTransientError as error:
             close_record("resolver_error", error)
             consecutive_failures += 1
-        except (OSError, EOFError) as error:
+        # HTTP reads raise HTTPException (not OSError) when a CDN body ends early.
+        except (OSError, EOFError, HTTPException) as error:
             close_record("connection_error", error)
             consecutive_failures += 1
         except TikTokResolutionError as error:
