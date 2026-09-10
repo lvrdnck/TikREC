@@ -41,13 +41,14 @@ def capture_live(
     sleeper: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.time,
     progress: Callable[[str], None] | None = None,
+    heartbeat: Callable[[Path, int], None] | None = None,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until room-info says offline.
 
     ``resolver`` and ``tag_source`` are injectable so network behaviour can be
     tested without contacting TikTok. ``progress`` receives safe user-facing
-    status messages. Only resolver transport failures and direct-stream
-    connection failures are retried.
+    status messages and ``heartbeat`` receives active-part byte updates. Only
+    resolver transport failures and direct-stream connection failures retry.
     """
     _validate_limits(
         max_consecutive_failures,
@@ -112,6 +113,7 @@ def capture_live(
                 parts_directory,
                 start_index=next_part_index,
                 on_part_started=part_started,
+                on_progress=heartbeat,
                 on_part_retained=retained,
                 on_part_closed=part_closed,
             )

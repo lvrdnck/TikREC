@@ -11,6 +11,7 @@ from typing import TextIO
 
 from .capture import CaptureError, CaptureResult, capture_url
 from .live import capture_live
+from .progress import LiveProgress
 from .tiktok import TikTokResolutionError, resolve_live_url
 
 
@@ -33,6 +34,7 @@ def main(
         print("tikrec: interrupted", file=stderr)
         return 130
 
+    live_progress: LiveProgress | None = None
     try:
         if arguments.command == "resolve":
             direct_url = resolver(arguments.url)
@@ -43,12 +45,13 @@ def main(
         parts_directory = output_path.with_name(f"{output_path.stem}.parts")
         capture_function = live_capture if arguments.command == "live" else capture
         if arguments.command == "live":
-            # Flush each update so an unattended recording stays observable.
+            live_progress = LiveProgress(stdout)
             result = capture_function(
                 arguments.url,
                 parts_directory=parts_directory,
                 output_path=output_path,
-                progress=lambda message: print(message, file=stdout, flush=True),
+                progress=live_progress.event,
+                heartbeat=live_progress.heartbeat,
             )
         else:
             result = capture_function(
@@ -72,6 +75,9 @@ def main(
         if arguments.debug:
             traceback.print_exc(file=stderr)
         return 1
+    finally:
+        if live_progress is not None:
+            live_progress.close()
 
 
 def _one_line_error(error: Exception) -> str:

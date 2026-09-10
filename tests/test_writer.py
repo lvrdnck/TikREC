@@ -228,6 +228,23 @@ class WriterTests(unittest.TestCase):
 
         self.assertEqual(started, list(paths))
 
+    def test_reports_written_bytes_for_an_active_part(self) -> None:
+        reported: list[tuple[Path, int]] = []
+        tags = [
+            avc_configuration(100, b"first"),
+            video(120, frame_type=1),
+            video(130, frame_type=2),
+        ]
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(
+                tags, Path(directory), on_progress=lambda path, size: reported.append((path, size)),
+            )
+
+        self.assertEqual([path for path, _ in reported], [paths[0], paths[0]])
+        self.assertGreater(reported[0][1], 13)
+        self.assertLess(reported[0][1], reported[1][1])
+
 
 if __name__ == "__main__":
     unittest.main()

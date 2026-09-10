@@ -61,6 +61,33 @@ class LiveCaptureTests(unittest.TestCase):
         ])
         self.assertNotIn("token=secret", "\n".join(progress))
 
+    def test_reports_active_part_bytes_to_the_heartbeat(self) -> None:
+        actions: list[object] = [
+            "https://cdn.test/live.flv",
+            TikTokOfflineError("offline"),
+        ]
+        heartbeat: list[tuple[Path, int]] = []
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=Path(directory) / "parts",
+                resolver=resolver,
+                tag_source=lambda _: iter(stream()),
+                sleeper=lambda _: None,
+                heartbeat=lambda path, size: heartbeat.append((path, size)),
+            )
+
+        self.assertEqual([path.name for path, _ in heartbeat], ["part-0001.flv"])
+        self.assertGreater(heartbeat[0][1], 13)
+        self.assertEqual(len(result.parts), 1)
+
     def test_redacts_a_signed_url_from_a_connection_loss_reason(self) -> None:
         progress: list[str] = []
 
@@ -319,6 +346,7 @@ class LiveCliTests(unittest.TestCase):
         self.assertEqual(calls[0][0], "https://www.tiktok.com/@creator/live")
         self.assertEqual(calls[0][1]["parts_directory"], output.with_name("final media.parts"))
         self.assertIn("progress", calls[0][1])
+        self.assertIn("heartbeat", calls[0][1])
         self.assertIn("recorded", stdout.getvalue())
 
 

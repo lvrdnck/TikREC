@@ -41,12 +41,14 @@ def write_parts(
     *,
     start_index: int = 1,
     on_part_started: Callable[[Path], None] | None = None,
+    on_progress: Callable[[Path, int], None] | None = None,
     on_part_retained: Callable[[Path], None] | None = None,
     on_part_closed: Callable[[PartTiming], None] | None = None,
 ) -> tuple[Path, ...]:
     """Write media into numbered FLV parts and return the retained paths.
 
     ``on_part_started`` fires when a keyframe makes a part decodable.
+    ``on_progress`` receives the active part's final name and written bytes.
     ``on_part_closed`` receives original source timestamps for each retained
     part, before timestamp rebasing makes its keyframe-gate interval opaque.
     """
@@ -67,6 +69,7 @@ def write_parts(
                     # An AAC sequence header changes decoder state for packets
                     # that follow it, so retain it at its incoming timestamp.
                     _write_tag(part, tag)
+                    _report_progress(part, on_progress)
                 continue
 
             if tag.is_avc_configuration:
@@ -82,6 +85,7 @@ def write_parts(
 
                 if part is not None and part.started:
                     _write_tag(part, tag)
+                    _report_progress(part, on_progress)
                 elif part is not None:
                     # Keep the latest repeated sequence header until its keyframe;
                     # it is the configuration that belongs with the new rendition.
@@ -108,6 +112,7 @@ def write_parts(
                     on_part_started(part.final_path)
 
             _write_tag(part, tag)
+            _report_progress(part, on_progress)
     finally:
         # Iteration can be interrupted by Ctrl-C or a malformed source. Close
         # the active file before exposing the exception to the capture layer.
@@ -154,6 +159,14 @@ def _write_tag(part: _OpenPart, tag: FlvTag) -> None:
     part.last_tag_timestamp = tag.timestamp
     if tag.is_media:
         part.media_tag_count += 1
+
+
+def _report_progress(
+    part: _OpenPart,
+    on_progress: Callable[[Path, int], None] | None,
+) -> None:
+    if on_progress is not None:
+        on_progress(part.final_path, part.handle.tell())
 
 
 def _close_part(
