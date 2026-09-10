@@ -30,11 +30,15 @@ class LiveProgress:
 
     def event(self, message: str) -> None:
         """Write a normal event line without corrupting a TTY heartbeat."""
+        self.clear()
+        self._write(f"{message}\n")
+
+    def clear(self) -> None:
+        """Erase a visible TTY heartbeat without adding a scrollback line."""
         if self._heartbeat_visible:
-            # Erase the redrawn line before allowing the event into scrollback.
+            # stderr may share this terminal, so clear before it writes its message.
             self._write("\r\x1b[2K")
             self._heartbeat_visible = False
-        self._write(f"{message}\n")
 
     def heartbeat(self, part: Path, byte_count: int) -> None:
         """Refresh status when the active writer has made enough progress."""

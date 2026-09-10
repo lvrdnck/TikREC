@@ -349,6 +349,30 @@ class LiveCliTests(unittest.TestCase):
         self.assertIn("heartbeat", calls[0][1])
         self.assertIn("recorded", stdout.getvalue())
 
+    def test_interrupted_live_clears_a_visible_heartbeat_before_stderr(self) -> None:
+        class TtyStringIO(StringIO):
+            def isatty(self) -> bool:
+                return True
+
+        def interrupted_live_capture(_: str, **kwargs: object) -> CaptureResult:
+            heartbeat = kwargs["heartbeat"]
+            assert callable(heartbeat)
+            heartbeat(Path("part-0001.flv"), 96_400_000)
+            return CaptureResult((), None, True)
+
+        stdout = TtyStringIO()
+        stderr = StringIO()
+        code = main(
+            ["live", "https://www.tiktok.com/@creator/live", "--output", "final.mp4"],
+            live_capture=interrupted_live_capture,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+        self.assertEqual(code, 130)
+        self.assertTrue(stdout.getvalue().endswith("\r\x1b[2K"))
+        self.assertEqual(stderr.getvalue(), "tikrec: interrupted; retained parts in final.parts\n")
+
 
 def _finalizer(parts, output: Path) -> Path:
     assert list(parts)

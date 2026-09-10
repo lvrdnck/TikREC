@@ -41,6 +41,18 @@ class LiveProgressTests(unittest.TestCase):
             "00:01:00  part-0001.flv  3.0 MB",
         ])
 
+    def test_clear_erases_a_tty_heartbeat_without_a_newline(self) -> None:
+        stdout = StringIO()
+        progress = LiveProgress(stdout, clock=lambda: 0.0, is_tty=True)
+
+        progress.heartbeat(Path("part-0001.flv"), 1_000_000)
+        progress.clear()
+
+        self.assertEqual(
+            stdout.getvalue(),
+            "\r\x1b[2K00:00:00  part-0001.flv  1.0 MB\r\x1b[2K",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

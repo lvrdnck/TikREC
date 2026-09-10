@@ -60,11 +60,15 @@ def main(
                 output_path=output_path,
             )
         if result.interrupted:
+            if live_progress is not None:
+                live_progress.clear()
             print(f"tikrec: interrupted; retained parts in {parts_directory}", file=stderr)
             return 130
         print(f"recorded {result.output_path}", file=stdout)
         return 0
     except KeyboardInterrupt:
+        if live_progress is not None:
+            live_progress.clear()
         print("tikrec: interrupted", file=stderr)
         return 130
     except (CaptureError, TikTokResolutionError, OSError, ValueError) as error:
