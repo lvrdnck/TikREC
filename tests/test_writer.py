@@ -168,15 +168,13 @@ class WriterTests(unittest.TestCase):
         self.assertEqual(timings[0].first_keyframe_timestamp, 3_427_493)
         self.assertEqual(timings[0].keyframe_gate_duration, 13)
 
-    def test_records_a_timestamp_replay_without_discarding_tags(self) -> None:
+    def test_ignores_a_zero_timestamp_script_tag_between_media_tags(self) -> None:
         tags = [
             avc_configuration(100, b"first"),
             video(120, frame_type=1),
             video(130, frame_type=2),
             FlvTag(18, 0, b"\x00\x00\x00", b"script"),
-            video(110, frame_type=2),
-            video(120, frame_type=2),
-            video(131, frame_type=2),
+            video(140, frame_type=2),
         ]
         timings = []
         replays = []
@@ -190,18 +188,35 @@ class WriterTests(unittest.TestCase):
             )
             written_tags = read_part(paths[0])
 
-        self.assertEqual([tag.payload for tag in written_tags][-4:], [
+        self.assertEqual([tag.payload for tag in written_tags][-2:], [
             b"script",
             video(0, frame_type=2).payload,
-            video(0, frame_type=2).payload,
-            video(0, frame_type=2).payload,
         ])
-        self.assertEqual(len(replays), 1)
-        self.assertEqual(replays[0].position, 4)
-        self.assertEqual(replays[0].magnitude, 130)
-        self.assertEqual(replays[0].replayed_tag_count, 3)
-        self.assertTrue(replays[0].recovered)
+        self.assertEqual(replays, [])
         self.assertEqual(timings[0].timestamp_replays, tuple(replays))
+
+    def test_records_audio_and_video_replays_independently(self) -> None:
+        tags = [
+            avc_configuration(100, b"first"),
+            video(120, frame_type=1),
+            audio(125),
+            video(130, frame_type=2),
+            audio(130),
+            video(110, frame_type=2),
+            audio(110),
+            video(120, frame_type=2),
+            audio(120),
+            video(131, frame_type=2),
+            audio(131),
+        ]
+        replays = []
+
+        with TemporaryDirectory() as directory:
+            write_parts(tags, Path(directory), on_timestamp_replay=replays.append)
+
+        self.assertEqual([(replay.position, replay.magnitude, replay.replayed_tag_count)
+                          for replay in replays], [(6, 20, 2), (7, 20, 2)])
+        self.assertTrue(all(replay.recovered for replay in replays))
 
     def test_deletes_part_when_no_keyframe_produced_media(self) -> None:
         tags = [

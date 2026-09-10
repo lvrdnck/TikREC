@@ -164,8 +164,8 @@ class _OpenPart:
         self.started = False
         self.media_tag_count = 0
         self.tag_position = 0
-        self.last_observed_timestamp: int | None = None
-        self.pending_replay: _PendingTimestampReplay | None = None
+        self.last_observed_timestamps: dict[int, int] = {}
+        self.pending_replays: dict[int, _PendingTimestampReplay] = {}
         self.timestamp_replays: list[TimestampReplay] = []
         self.closed = False
 
@@ -190,7 +190,7 @@ def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _Open
 
 def _write_tag(part: _OpenPart, tag: FlvTag, *, observe_timestamp: bool = True, on_timestamp_replay: Callable[[TimestampReplay], None] | None = None) -> None:
     part.tag_position += 1
-    if observe_timestamp:
+    if observe_timestamp and tag.is_media:
         _observe_timestamp(part, tag, on_timestamp_replay)
     part.handle.write(tag.encoded(base_timestamp=part.base_timestamp))
     part.last_tag_timestamp = tag.timestamp
@@ -211,31 +211,33 @@ def _observe_timestamp(
     tag: FlvTag,
     callback: Callable[[TimestampReplay], None] | None,
 ) -> None:
-    replay = part.pending_replay
+    stream = tag.tag_type
+    replay = part.pending_replays.get(stream)
     if replay is not None:
         if tag.timestamp <= replay.previous_timestamp:
             replay.replayed_tag_count += 1
             return
-        _finish_timestamp_replay(part, recovered=True, callback=callback)
+        _finish_timestamp_replay(part, stream, recovered=True, callback=callback)
 
-    previous = part.last_observed_timestamp
+    previous = part.last_observed_timestamps.get(stream)
     if previous is not None and tag.timestamp < previous:
-        part.pending_replay = _PendingTimestampReplay(
+        part.pending_replays[stream] = _PendingTimestampReplay(
             part.tag_position,
             previous,
             tag.timestamp,
         )
         return
-    part.last_observed_timestamp = tag.timestamp
+    part.last_observed_timestamps[stream] = tag.timestamp
 
 
 def _finish_timestamp_replay(
     part: _OpenPart,
+    stream: int,
     *,
     recovered: bool,
     callback: Callable[[TimestampReplay], None] | None,
 ) -> None:
-    replay = part.pending_replay
+    replay = part.pending_replays.pop(stream, None)
     if replay is None:
         return
     event = TimestampReplay(
@@ -248,7 +250,6 @@ def _finish_timestamp_replay(
         recovered,
     )
     part.timestamp_replays.append(event)
-    part.pending_replay = None
     if callback is not None:
         callback(event)
 
@@ -264,7 +265,8 @@ def _close_part(
         return
     part.handle.close()
     part.closed = True
-    _finish_timestamp_replay(part, recovered=False, callback=on_timestamp_replay)
+    for stream in tuple(part.pending_replays):
+        _finish_timestamp_replay(part, stream, recovered=False, callback=on_timestamp_replay)
     if part.media_tag_count == 0:
         part.partial_path.unlink()
         return
