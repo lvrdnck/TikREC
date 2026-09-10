@@ -99,42 +99,33 @@ No cookies, no login, no private signing, no yt-dlp.
 Prepares the session directory once, refuses to reuse an existing one,
 preserves completed parts on error or interrupt, finalizes on clean EOF.
 
-## Next: reconnect-capable live capture
+### tikrec/live.py — reconnect-capable public LIVE capture
+`capture_live(url, *, parts_directory, output_path, ...)` implements the
+`tikrec live` path above the generic source, writer, and finalizer layers.
 
-`tikrec live` records across connection drops until the room genuinely ends.
+It resolves, connects, records, then re-resolves after every connection
+close so that each retry uses a fresh signed CDN URL. It stops when the
+room-info response confirms that the room is offline.
 
-Lifecycle: resolve, connect, record, connection dies, re-resolve, and if
-still live reconnect with a fresh URL. Stop when the room is offline.
-
-**Every reconnect starts a new part**, even when the AVC configuration,
-resolution, and AAC configuration are byte-identical. A new HTTP connection
-may restart its timestamp origin, and continuing the previous writer state
-would produce backward or zero timestamps.
-
-Required behaviour:
-
-- Only a successful room/info response with status != 2 means offline.
-  Resolver transport failures, timeouts, and HTTP errors are transient and
-  retry with backoff.
-- Room offline at the first resolve is a clear error. Room offline after
-  a successful recording is a normal end.
-- Part numbering is monotonic and carries forward via explicit
-  `start_index`. Never derive it by scanning the directory; deleted empty
-  parts make the directory lie.
-- Append one JSONL line per connection to the session directory as the
-  connection closes: wall-clock start, wall-clock end, and the part range
-  retained. A session killed mid-recording must still show its gaps.
-  Also surface this in `CaptureResult`.
-- Bound the recoverable path: stop after N consecutive failed connections,
-  and after N consecutive connections retaining zero media. N injectable.
-- Backoff sleeps through an injectable `sleeper` so tests never wait.
-- Do not retry programming errors, invalid arguments, or malformed state.
-- Ctrl-C preserves all completed parts and exits 130.
-- `tikrec record` behaviour is unchanged.
-
-Tests are mocked end to end. The two that matter most are a resolver
-network error retrying, and a resolver success with status != 2 ending
-cleanly. Those two encode the distinction the whole module rests on.
+- Every reconnect creates a new writer and starts a new part, even when the
+  AVC and AAC configurations are identical. A new HTTP connection may reset
+  timestamps, so continuing the preceding writer state could create backward
+  or zero timestamps.
+- Only `TikTokOfflineError`, raised from a successful room-info response
+  whose room status is not `2`, means offline. Resolver network, timeout,
+  and HTTP failures are transient and retry with backoff.
+- Room offline at the first resolve is an error. Room offline after retained
+  media is a normal end and triggers optional finalization.
+- Part numbering carries forward through the writer's explicit `start_index`;
+  it is never inferred by scanning the parts directory.
+- As each connection closes, `connections.jsonl` receives and flushes one
+  record with wall-clock start/end, its preceding gap, retained part range,
+  outcome, and error. `CaptureResult.connections` exposes the same records.
+- Defaults stop capture after three consecutive transient failures or three
+  consecutive connections retaining no media. Both limits, the clock, and
+  sleeper are injectable for offline tests.
+- Programming errors, invalid arguments, and malformed FLV data do not retry.
+  Ctrl-C closes the writer, preserves completed parts, and exits 130.
 
 ## Testing
 
@@ -154,9 +145,9 @@ after 53 unit tests passed over it.
 
 Not yet scheduled, in rough order:
 
-- Reconnect smoke tests against a real LIVE
+- Reconnect smoke tests against a real LIVE, including FFmpeg decode checks
 - Real multi-configuration capture, verifying each part decodes alone
-- Session manifest: timings, parts, codecs, reconnect count, status
+- Richer session manifest: codecs, reconnect summary, and final status
 - Health checks: ffprobe validation, duration sanity, timestamp anomalies
 - Logging with a debug mode; never log signed CDN URLs at normal verbosity
 - Local library for browsing recordings, stored outside /tmp
