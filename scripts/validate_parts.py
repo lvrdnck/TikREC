@@ -33,10 +33,12 @@ def validate_parts(
     failures = 0
     for part in parts:
         try:
-            problems = _validate_part(part, ffprobe, runner)
+            problems, warnings = _validate_part(part, ffprobe, runner)
         except OSError as error:
             print(f"FAIL {part.name}: could not start FFprobe: {error}", file=stderr)
             return 2
+        for check, warning in warnings:
+            print(f"WARNING {part.name} {check}: {warning}", file=stderr)
         if not problems:
             print(f"PASS {part.name}", file=stdout)
             continue
@@ -54,8 +56,9 @@ def _validate_part(
     part: Path,
     ffprobe: str,
     runner: Callable[..., Any],
-) -> list[tuple[str, str]]:
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
     problems: list[tuple[str, str]] = []
+    warnings: list[tuple[str, str]] = []
     decode = runner(
         [
             ffprobe,
@@ -98,10 +101,10 @@ def _validate_part(
         problems.append(("DTS", _probe_failure(packets.returncode, packet_error)))
     else:
         try:
-            _verify_packet_dts(packets.stdout)
+            warnings.extend(("DTS", warning) for warning in _verify_packet_dts(packets.stdout))
         except (TypeError, ValueError, json.JSONDecodeError) as error:
             problems.append(("DTS", str(error)))
-    return problems
+    return problems, warnings
 
 
 def _probe_failure(returncode: int, output: str) -> str:
@@ -110,11 +113,13 @@ def _probe_failure(returncode: int, output: str) -> str:
     return f"FFprobe exited with code {returncode}"
 
 
-def _verify_packet_dts(output: str) -> None:
+def _verify_packet_dts(output: str) -> list[str]:
     document = json.loads(output)
     if not isinstance(document, dict) or not isinstance(document.get("packets"), list):
         raise ValueError("FFprobe returned malformed packet data")
     previous: dict[int, int] = {}
+    stream_positions: dict[int, int] = {}
+    warnings: list[str] = []
     for packet_number, packet in enumerate(document["packets"], start=1):
         if not isinstance(packet, dict):
             raise ValueError(f"packet {packet_number} is malformed")
@@ -123,11 +128,18 @@ def _verify_packet_dts(output: str) -> None:
             dts = int(packet["dts"])
         except (KeyError, TypeError, ValueError) as error:
             raise ValueError(f"packet {packet_number} has no valid stream/DTS") from error
-        if stream in previous and dts <= previous[stream]:
+        stream_positions[stream] = stream_positions.get(stream, 0) + 1
+        if stream in previous and dts == previous[stream]:
             raise ValueError(
                 f"stream {stream} DTS {dts} is not strictly greater than {previous[stream]}"
             )
+        if stream in previous and dts < previous[stream]:
+            warnings.append(
+                f"stream {stream} packet {stream_positions[stream]} jumps backwards by "
+                f"{previous[stream] - dts} ({previous[stream]} -> {dts})"
+            )
         previous[stream] = dts
+    return warnings
 
 
 def _print_timing_summary(path: Path, stdout: TextIO, stderr: TextIO) -> None:

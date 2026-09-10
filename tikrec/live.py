@@ -20,7 +20,7 @@ from .tiktok import (
     TikTokResolutionTransientError,
     resolve_live_url,
 )
-from .writer import PartTiming, write_parts
+from .writer import PartTiming, TimestampReplay, write_parts
 
 
 _URL_PATTERN = re.compile(r"https?://\S+")
@@ -80,6 +80,9 @@ def capture_live(
         def part_closed(timing: PartTiming) -> None:
             part_timings.append(timing)
 
+        def timestamp_replay(replay: TimestampReplay) -> None:
+            _report(progress, _timestamp_replay_message(replay))
+
         def part_started(path: Path) -> None:
             _report(progress, f"part started: {path.name}")
 
@@ -116,6 +119,7 @@ def capture_live(
                 on_progress=heartbeat,
                 on_part_retained=retained,
                 on_part_closed=part_closed,
+                on_timestamp_replay=timestamp_replay,
             )
             # Custom writers may not use the callback, while the built-in writer does.
             if not connection_parts:
@@ -222,6 +226,14 @@ def _format_seconds(seconds: float) -> str:
     return f"{seconds:g}s"
 
 
+def _timestamp_replay_message(replay: TimestampReplay) -> str:
+    suffix = "recovery" if replay.recovered else "part end"
+    return (
+        f"timestamp replay: {replay.path.name} tag {replay.position} jumped back "
+        f"{replay.magnitude}ms; {replay.replayed_tag_count} tags replayed before {suffix}"
+    )
+
+
 def _append_connection_record(path: Path, record: ConnectionRecord) -> None:
     values = {
         "connection": record.number,
@@ -238,6 +250,17 @@ def _append_connection_record(path: Path, record: ConnectionRecord) -> None:
                 "first_keyframe_timestamp": timing.first_keyframe_timestamp,
                 "keyframe_gate_duration": timing.keyframe_gate_duration,
                 "last_tag_timestamp": timing.last_tag_timestamp,
+                "timestamp_replays": [
+                    {
+                        "position": replay.position,
+                        "previous_timestamp": replay.previous_timestamp,
+                        "timestamp": replay.timestamp,
+                        "magnitude": replay.magnitude,
+                        "replayed_tag_count": replay.replayed_tag_count,
+                        "recovered": replay.recovered,
+                    }
+                    for replay in timing.timestamp_replays
+                ],
             }
             for timing in record.part_timings
         ],

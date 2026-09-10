@@ -96,6 +96,29 @@ class ValidatePartsTests(unittest.TestCase):
         self.assertIn("part-0001.flv DTS check failed", stderr.getvalue())
         self.assertIn("stream 0 DTS 100 is not strictly greater than 100", stderr.getvalue())
 
+    def test_reports_a_backward_dts_as_a_warning_without_failing(self) -> None:
+        def runner(command, **_: object):
+            if "-show_packets" in command:
+                packets = {
+                    "packets": [
+                        {"stream_index": 0, "dts": 243_163},
+                        {"stream_index": 0, "dts": 240_731},
+                    ]
+                }
+                return SimpleNamespace(returncode=0, stdout=json.dumps(packets), stderr="")
+            return self.successful_runner(command)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "part-0001.flv").write_bytes(b"")
+            stdout = StringIO()
+            stderr = StringIO()
+            code = validate_parts(root, runner=runner, stdout=stdout, stderr=stderr)
+
+        self.assertEqual(code, 0)
+        self.assertIn("PASS part-0001.flv", stdout.getvalue())
+        self.assertIn("WARNING part-0001.flv DTS: stream 0 packet 2 jumps backwards by 2432", stderr.getvalue())
+
     def test_prints_available_per_part_timing_metadata(self) -> None:
         record = {
             "connection": 1,

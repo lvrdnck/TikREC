@@ -167,8 +167,9 @@ Validate each retained FLV part in two independent ways:
    decoder errors captured. A non-zero exit or decoder error output fails the
    part.
 2. Read stored packet DTS with `ffprobe -show_packets` and verify that DTS is
-   strictly increasing within each stream. Missing, malformed, duplicate, or
-   decreasing DTS fails the part.
+   strictly increasing within each stream. Missing, malformed, or duplicate
+   DTS fails the part. A decreasing DTS is reported with its packet position
+   and magnitude as a warning because it is known TikTok source behaviour.
 
 `scripts/validate_parts.py` performs both checks and prints the available
 per-part timing metadata from `connections.jsonl`.
@@ -201,6 +202,17 @@ zero while media began at 1,710,552 ms, confirming the zero-stamped-header
 quirk and the decision to measure the gate from first media instead. This also
 rules out gate cost as the explanation for reconnect-2 connection 2's 7.65 s
 loss; its `IncompleteRead` indicates a stalled socket tail before the error.
+
+The interrupted recording investigated in issue #5 also contained a source
+timestamp replay: a zero-timestamped script tag preceded a backward video DTS
+jump. Parts retain every tag in such a replay; timestamp alone is not enough
+to infer that TikTok intended content to be discarded. Each completed replay
+is recorded in its part's `timestamp_replays` entry in `connections.jsonl`,
+with the one-based retained-tag position, prior and new timestamps, magnitude,
+number of replayed tags, and whether the prior point was passed before part
+close. Live progress reports the same event. The validator warns, rather than
+fails, for backward DTS with its per-stream packet position and magnitude.
+Revisit handling only if this source behaviour becomes frequent.
 
 ## Roadmap
 

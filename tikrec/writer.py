@@ -16,6 +16,24 @@ _FLV_HEADER = b"FLV\x01\x05\x00\x00\x00\x09\x00\x00\x00\x00"
 
 
 @dataclass(frozen=True)
+class TimestampReplay:
+    """A completed source timestamp replay retained in one FLV part.
+
+    ``position`` is the one-based ordinal of the first backward tag in the
+    retained part. ``recovered`` is false when the part ended before source
+    timestamps passed the point immediately before the backward jump.
+    """
+
+    path: Path
+    position: int
+    previous_timestamp: int
+    timestamp: int
+    magnitude: int
+    replayed_tag_count: int
+    recovered: bool
+
+
+@dataclass(frozen=True)
 class PartTiming:
     """Source timestamps for one completed FLV part.
 
@@ -28,6 +46,7 @@ class PartTiming:
     first_media_timestamp: int
     first_keyframe_timestamp: int
     last_tag_timestamp: int
+    timestamp_replays: tuple[TimestampReplay, ...] = ()
 
     @property
     def keyframe_gate_duration(self) -> int:
@@ -44,6 +63,7 @@ def write_parts(
     on_progress: Callable[[Path, int], None] | None = None,
     on_part_retained: Callable[[Path], None] | None = None,
     on_part_closed: Callable[[PartTiming], None] | None = None,
+    on_timestamp_replay: Callable[[TimestampReplay], None] | None = None,
 ) -> tuple[Path, ...]:
     """Write media into numbered FLV parts and return the retained paths.
 
@@ -51,6 +71,8 @@ def write_parts(
     ``on_progress`` receives the active part's final name and written bytes.
     ``on_part_closed`` receives original source timestamps for each retained
     part, before timestamp rebasing makes its keyframe-gate interval opaque.
+    ``on_timestamp_replay`` receives completed backward-clock intervals without
+    suppressing any of their source tags.
     """
     if not isinstance(start_index, int) or start_index < 1:
         raise ValueError("start_index must be a positive integer")
@@ -68,7 +90,7 @@ def write_parts(
                 if part is not None and part.started:
                     # An AAC sequence header changes decoder state for packets
                     # that follow it, so retain it at its incoming timestamp.
-                    _write_tag(part, tag)
+                    _write_tag(part, tag, on_timestamp_replay=on_timestamp_replay)
                     _report_progress(part, on_progress)
                 continue
 
@@ -77,14 +99,14 @@ def write_parts(
                 # composition time before the decoder-configuration record.
                 next_configuration = tag.payload[5:]
                 if configuration != next_configuration:
-                    _close_part(part, paths, on_part_retained, on_part_closed)
+                    _close_part(part, paths, on_part_retained, on_part_closed, on_timestamp_replay)
                     part = None
                     part = _open_part(output_dir, start_index + len(paths), tag)
                     configuration = next_configuration
                     continue
 
                 if part is not None and part.started:
-                    _write_tag(part, tag)
+                    _write_tag(part, tag, on_timestamp_replay=on_timestamp_replay)
                     _report_progress(part, on_progress)
                 elif part is not None:
                     # Keep the latest repeated sequence header until its keyframe;
@@ -104,19 +126,19 @@ def write_parts(
                     continue
                 part.base_timestamp = tag.timestamp
                 part.first_keyframe_timestamp = tag.timestamp
-                _write_tag(part, part.configuration_tag)
+                _write_tag(part, part.configuration_tag, observe_timestamp=False, on_timestamp_replay=on_timestamp_replay)
                 if latest_audio_configuration is not None:
-                    _write_tag(part, latest_audio_configuration)
+                    _write_tag(part, latest_audio_configuration, observe_timestamp=False, on_timestamp_replay=on_timestamp_replay)
                 part.started = True
                 if on_part_started is not None:
                     on_part_started(part.final_path)
 
-            _write_tag(part, tag)
+            _write_tag(part, tag, on_timestamp_replay=on_timestamp_replay)
             _report_progress(part, on_progress)
     finally:
         # Iteration can be interrupted by Ctrl-C or a malformed source. Close
         # the active file before exposing the exception to the capture layer.
-        _close_part(part, paths, on_part_retained, on_part_closed)
+        _close_part(part, paths, on_part_retained, on_part_closed, on_timestamp_replay)
     return tuple(paths)
 
 
@@ -141,7 +163,19 @@ class _OpenPart:
         self.base_timestamp = 0
         self.started = False
         self.media_tag_count = 0
+        self.tag_position = 0
+        self.last_observed_timestamp: int | None = None
+        self.pending_replay: _PendingTimestampReplay | None = None
+        self.timestamp_replays: list[TimestampReplay] = []
         self.closed = False
+
+
+@dataclass
+class _PendingTimestampReplay:
+    position: int
+    previous_timestamp: int
+    timestamp: int
+    replayed_tag_count: int = 1
 
 
 def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _OpenPart:
@@ -154,7 +188,10 @@ def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _Open
     return _OpenPart(handle, partial_path, final_path, configuration_tag)
 
 
-def _write_tag(part: _OpenPart, tag: FlvTag) -> None:
+def _write_tag(part: _OpenPart, tag: FlvTag, *, observe_timestamp: bool = True, on_timestamp_replay: Callable[[TimestampReplay], None] | None = None) -> None:
+    part.tag_position += 1
+    if observe_timestamp:
+        _observe_timestamp(part, tag, on_timestamp_replay)
     part.handle.write(tag.encoded(base_timestamp=part.base_timestamp))
     part.last_tag_timestamp = tag.timestamp
     if tag.is_media:
@@ -169,16 +206,65 @@ def _report_progress(
         on_progress(part.final_path, part.handle.tell())
 
 
+def _observe_timestamp(
+    part: _OpenPart,
+    tag: FlvTag,
+    callback: Callable[[TimestampReplay], None] | None,
+) -> None:
+    replay = part.pending_replay
+    if replay is not None:
+        if tag.timestamp <= replay.previous_timestamp:
+            replay.replayed_tag_count += 1
+            return
+        _finish_timestamp_replay(part, recovered=True, callback=callback)
+
+    previous = part.last_observed_timestamp
+    if previous is not None and tag.timestamp < previous:
+        part.pending_replay = _PendingTimestampReplay(
+            part.tag_position,
+            previous,
+            tag.timestamp,
+        )
+        return
+    part.last_observed_timestamp = tag.timestamp
+
+
+def _finish_timestamp_replay(
+    part: _OpenPart,
+    *,
+    recovered: bool,
+    callback: Callable[[TimestampReplay], None] | None,
+) -> None:
+    replay = part.pending_replay
+    if replay is None:
+        return
+    event = TimestampReplay(
+        part.final_path,
+        replay.position,
+        replay.previous_timestamp,
+        replay.timestamp,
+        replay.previous_timestamp - replay.timestamp,
+        replay.replayed_tag_count,
+        recovered,
+    )
+    part.timestamp_replays.append(event)
+    part.pending_replay = None
+    if callback is not None:
+        callback(event)
+
+
 def _close_part(
     part: _OpenPart | None,
     paths: list[Path],
     on_part_retained: Callable[[Path], None] | None,
     on_part_closed: Callable[[PartTiming], None] | None,
+    on_timestamp_replay: Callable[[TimestampReplay], None] | None,
 ) -> None:
     if part is None or part.closed:
         return
     part.handle.close()
     part.closed = True
+    _finish_timestamp_replay(part, recovered=False, callback=on_timestamp_replay)
     if part.media_tag_count == 0:
         part.partial_path.unlink()
         return
@@ -197,6 +283,7 @@ def _close_part(
             part.first_media_timestamp,
             part.first_keyframe_timestamp,
             part.last_tag_timestamp,
+            tuple(part.timestamp_replays),
         ))
 
 

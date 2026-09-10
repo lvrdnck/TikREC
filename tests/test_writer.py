@@ -168,6 +168,41 @@ class WriterTests(unittest.TestCase):
         self.assertEqual(timings[0].first_keyframe_timestamp, 3_427_493)
         self.assertEqual(timings[0].keyframe_gate_duration, 13)
 
+    def test_records_a_timestamp_replay_without_discarding_tags(self) -> None:
+        tags = [
+            avc_configuration(100, b"first"),
+            video(120, frame_type=1),
+            video(130, frame_type=2),
+            FlvTag(18, 0, b"\x00\x00\x00", b"script"),
+            video(110, frame_type=2),
+            video(120, frame_type=2),
+            video(131, frame_type=2),
+        ]
+        timings = []
+        replays = []
+
+        with TemporaryDirectory() as directory:
+            paths = write_parts(
+                tags,
+                Path(directory),
+                on_part_closed=timings.append,
+                on_timestamp_replay=replays.append,
+            )
+            written_tags = read_part(paths[0])
+
+        self.assertEqual([tag.payload for tag in written_tags][-4:], [
+            b"script",
+            video(0, frame_type=2).payload,
+            video(0, frame_type=2).payload,
+            video(0, frame_type=2).payload,
+        ])
+        self.assertEqual(len(replays), 1)
+        self.assertEqual(replays[0].position, 4)
+        self.assertEqual(replays[0].magnitude, 130)
+        self.assertEqual(replays[0].replayed_tag_count, 3)
+        self.assertTrue(replays[0].recovered)
+        self.assertEqual(timings[0].timestamp_replays, tuple(replays))
+
     def test_deletes_part_when_no_keyframe_produced_media(self) -> None:
         tags = [
             avc_configuration(100, b"first"),
