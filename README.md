@@ -46,7 +46,9 @@ timestamp diagnostics.
 
     python3 scripts/validate_parts.py path/to/recording.parts
 
-Checks every retained part decodes and has monotonic stored timestamps.
+Checks every retained part decodes. Missing, malformed, or duplicate stored
+DTS fails validation; a decreasing DTS is reported as a warning with its
+position and magnitude.
 Note that `ffmpeg -f null -` is *not* a valid check here — see the
 validation notes in SPEC.md for why.
 
