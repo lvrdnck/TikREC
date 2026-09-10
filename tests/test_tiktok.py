@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from http.client import IncompleteRead
 from urllib.error import URLError
 from urllib.parse import parse_qs, urlsplit
 import unittest
@@ -103,9 +104,30 @@ class TikTokResolverTests(unittest.TestCase):
         with self.assertRaisesRegex(TikTokResolutionTransientError, "network request failed"):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=failing_opener)
 
+    def test_classifies_a_short_read_of_the_live_page_as_transient(self) -> None:
+        opener = _Opener([IncompleteRead(b"partial page", 20)])
+
+        with self.assertRaises(TikTokResolutionTransientError):
+            resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+    def test_classifies_a_short_read_of_the_room_id_lookup_as_transient(self) -> None:
+        opener = _Opener([
+            b"<html>no public state</html>",
+            IncompleteRead(b"partial lookup", 20),
+        ])
+
+        with self.assertRaises(TikTokResolutionTransientError):
+            resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+    def test_classifies_a_short_read_of_room_info_as_transient(self) -> None:
+        opener = _Opener([live_page(), IncompleteRead(b"partial room info", 20)])
+
+        with self.assertRaises(TikTokResolutionTransientError):
+            resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
 
 class _Opener:
-    def __init__(self, responses: list[bytes]) -> None:
+    def __init__(self, responses: list[bytes | Exception]) -> None:
         self._responses = iter(responses)
         self.urls: list[str] = []
 
@@ -115,7 +137,7 @@ class _Opener:
 
 
 class _Response:
-    def __init__(self, body: bytes) -> None:
+    def __init__(self, body: bytes | Exception) -> None:
         self._body = body
 
     def __enter__(self) -> _Response:
@@ -125,6 +147,8 @@ class _Response:
         return None
 
     def read(self) -> bytes:
+        if isinstance(self._body, Exception):
+            raise self._body
         return self._body
 
 

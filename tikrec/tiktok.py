@@ -6,6 +6,7 @@ import html
 import json
 import re
 from collections.abc import Callable, Mapping
+from http.client import HTTPException
 from typing import Any
 from urllib.error import URLError
 from urllib.parse import urlencode, urlsplit
@@ -83,7 +84,9 @@ def _read_public_url(
     try:
         with opener(request, timeout=timeout) as response:
             return response.read()
-    except (OSError, URLError) as error:
+    # Short or malformed HTTP bodies raise HTTPException during ``read()``,
+    # after a connection has opened but before a usable TikTok response exists.
+    except (HTTPException, OSError, URLError) as error:
         raise TikTokResolutionTransientError(
             f"TikTok network request failed: {error}"
         ) from error

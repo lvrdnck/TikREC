@@ -3,11 +3,13 @@ from __future__ import annotations
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 from tikrec.capture import CaptureError, CaptureResult, capture_tags, capture_url
 from tikrec.cli import main
 from tikrec.flv import FlvTag, read_tag
+from tikrec.tiktok import TikTokResolutionTransientError
 
 
 def tags() -> list[FlvTag]:
@@ -210,6 +212,55 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(code, 0)
         self.assertEqual(stdout.getvalue(), "https://cdn.test/live.flv?token=x\n")
+
+    def test_resolve_reports_a_known_error_without_a_traceback(self) -> None:
+        stderr = StringIO()
+
+        code = main(
+            ["resolve", "https://www.tiktok.com/@creator/live"],
+            resolver=lambda _: (_ for _ in ()).throw(TikTokResolutionTransientError("short read")),
+            stderr=stderr,
+        )
+
+        self.assertEqual(code, 1)
+        self.assertEqual(stderr.getvalue(), "tikrec: short read\n")
+
+    def test_unexpected_resolve_error_is_short_without_debug(self) -> None:
+        stderr = StringIO()
+
+        code = main(
+            ["resolve", "https://www.tiktok.com/@creator/live"],
+            resolver=lambda _: (_ for _ in ()).throw(RuntimeError("broken resolver")),
+            stderr=stderr,
+        )
+
+        self.assertEqual(code, 1)
+        self.assertEqual(stderr.getvalue(), "tikrec: unexpected RuntimeError: broken resolver\n")
+
+    def test_debug_prints_an_unexpected_error_traceback(self) -> None:
+        stderr = StringIO()
+
+        with patch("tikrec.cli.traceback.print_exc") as print_exc:
+            code = main(
+                ["resolve", "https://www.tiktok.com/@creator/live", "--debug"],
+                resolver=lambda _: (_ for _ in ()).throw(RuntimeError("broken resolver")),
+                stderr=stderr,
+            )
+
+        self.assertEqual(code, 1)
+        print_exc.assert_called_once_with(file=stderr)
+
+    def test_keyboard_interrupt_returns_130_without_a_traceback(self) -> None:
+        stderr = StringIO()
+
+        code = main(
+            ["resolve", "https://www.tiktok.com/@creator/live"],
+            resolver=lambda _: (_ for _ in ()).throw(KeyboardInterrupt),
+            stderr=stderr,
+        )
+
+        self.assertEqual(code, 130)
+        self.assertEqual(stderr.getvalue(), "tikrec: interrupted\n")
 
 
 if __name__ == "__main__":
