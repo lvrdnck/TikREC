@@ -25,15 +25,23 @@ otherwise stopped recording. It preserves those parts and refuses to overwrite
 an existing output file. `validate` inspects an output file, parts directory,
 or session without changing it.
 
-For `live`, the first Ctrl-C stops capture, finalizes retained parts, and exits
-130 to show that recording ended early. A second Ctrl-C during finalization
-stops FFmpeg; retained parts always remain available.
+For `live`, the first Ctrl-C stops capture, clearly announces that finalization
+has begun, finalizes retained parts, and exits 130 to show that recording ended
+early. Matching parts are stream-copied; differing video configurations require
+a re-encode that may take several minutes or longer. During encoding TikREC
+reports output time instead of forwarding FFmpeg's complete diagnostic stream.
+A second Ctrl-C during finalization stops FFmpeg; retained parts always remain
+available.
 
 `--raw-copy DIR` optionally saves the exact bytes received from every source
 connection before FLV parsing, as `connection-0001.raw`,
 `connection-0002.raw`, and so on. `connections.jsonl` identifies the raw file
 for each connection. A raw-copy error only emits a warning; recording
 continues. Raw copies roughly double the recording's disk use.
+
+An open media connection that delivers no bytes for 30 seconds is treated as a
+stall. Live capture records a `stalled` connection outcome and reconnects under
+the same bounded transient-failure policy used for other connection errors.
 
 ## Requirements
 

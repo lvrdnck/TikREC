@@ -93,7 +93,7 @@ A visual layout change on TikTok does not imply a codec configuration
 change. Roll on the codec, not on appearance.
 
 ### tikrec/source.py — one HTTP connection
-`iter_tags`, `iter_url_chunks`, `iter_url_tags`, `RawCopy`.
+`iter_tags`, `iter_url_chunks`, `iter_url_tags`, `RawCopy`, `SourceStallError`.
 
 Parses incrementally, never buffers the whole stream. Validates the FLV
 header and initial PreviousTagSize. No retries, no TikTok-specific logic.
@@ -101,6 +101,12 @@ This is the primitive for exactly one direct FLV connection. When requested,
 `RawCopy` tees each received byte chunk to `connection-NNNN.raw` before the
 parser consumes it. A raw-copy open, write, or close failure warns and disables
 only the copy; capture continues.
+
+HTTP source operations default to a 30-second timeout. A timeout after the
+response has opened is raised as `SourceStallError`, distinguishing an open
+connection that stopped delivering bytes from an ordinary close or other HTTP
+failure. Callers may inject a different positive timeout, or explicitly use
+`None`, but the recording paths use the bounded default.
 
 ### tikrec/finalize.py — stitching
 `finalize_parts(parts, output_path, *, ffmpeg, runner)`.
@@ -113,6 +119,11 @@ Writes a hidden temporary file preserving the output suffix
 (`.final.partial.mp4`, not `.final.mp4.partial` — ffmpeg infers the muxer
 from the extension). Promotes with `os.replace`. Refuses to overwrite an
 existing destination. Never deletes the source parts.
+
+Before FFmpeg starts, progress states whether finalization will stream-copy or
+re-encode. Re-encoding warns that it may take several minutes or longer.
+Structured FFmpeg output time is reported as encoding progress; other progress
+fields are suppressed, while real diagnostics remain available for failures.
 
 ### tikrec/tiktok.py — resolution
 `resolve_live_url(url, *, opener, timeout)` for a public LIVE page.
@@ -202,6 +213,10 @@ never discards bytes still arriving on an open FLV connection.
   and HTTP failures are transient and retry with backoff. A live response
   during confirmation cancels the sequence and capture resumes; a later
   non-live response starts a new sequence at one.
+- An open CDN response that delivers no bytes for 30 seconds raises
+  `SourceStallError`. Live capture records the connection outcome as `stalled`,
+  preserves any completed part, and retries it as a transient failure under the
+  existing backoff and consecutive-failure limit.
 - Room offline at the first resolve is an error. Room offline after retained
   media and successful confirmation is a normal end and triggers optional
   finalization.
@@ -286,6 +301,19 @@ path can resynthesize FLV integer-millisecond timestamps onto a coarser frame
 time base, producing non-monotonic-DTS warnings even when the stored DTS is
 strictly increasing. These warnings can occur on individual FLV parts as well
 as on concatenated output.
+
+TikTok H.264 can also make FFmpeg repeatedly print `Late SEI is not implemented`
+during decoding or re-encoding. FFmpeg's H.264 decoder deliberately skips SEI
+NAL units that arrive after picture setup; the message describes unsupported
+handling of that supplemental metadata, not a TikREC-generated A/V error. Late
+SEI ordering can still be a source-stream quirk or standards violation, and the
+skipped SEI may contain ancillary metadata, so investigate only if it coincides
+with a decoder failure or missing required metadata. By itself, it does not
+invalidate otherwise cleanly decoded TikTok media. During finalization TikREC
+shows the notice once and suppresses repeats from terminal progress while
+retaining FFmpeg's original stderr for a finalization failure. See
+[FFmpeg change `f7dd408d`](https://ffmpeg.org/pipermail/ffmpeg-cvslog/2022-July/133020.html),
+“avcodec/h264dec: Skip late SEI.”
 
 The AAC configuration bug found on 2026-09-09 was different: it caused genuine
 AAC decoder failures and is still detected by the first check. That distinction
