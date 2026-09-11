@@ -63,7 +63,6 @@ def validate_target(
     result.finding("error", "target_unsupported", "target is not a regular file or directory")
     return result.finish()
 
-
 def _validate_parts_target(
     directory: Path, ffprobe: str, runner: Callable[..., Any]
 ) -> ValidationResult:
@@ -77,7 +76,6 @@ def _validate_parts_target(
     _validate_parts(directory, result, ffprobe, runner)
     return result.finish()
 
-
 def _validate_output_target(
     output: Path, ffprobe: str, runner: Callable[..., Any]
 ) -> ValidationResult:
@@ -85,7 +83,6 @@ def _validate_output_target(
     result.output_availability = "present"
     _validate_output(output, result, ffprobe, runner)
     return result.finish()
-
 
 def _validate_session(
     directory: Path, ffprobe: str, runner: Callable[..., Any]
@@ -97,7 +94,6 @@ def _validate_session(
         return result.finish()
     _validate_manifest(directory, manifest, result, ffprobe, runner)
     return result.finish()
-
 
 def _validate_parts(
     directory: Path,
@@ -135,7 +131,6 @@ def _validate_parts(
             result.finding("warning", "part_audio_missing", "no recognizable audio stream", part)
     result.media_integrity = "failed" if media_failed else "passed"
 
-
 def _read_manifest(path: Path, result: _ResultBuilder) -> dict[str, Any] | None:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
@@ -154,7 +149,6 @@ def _read_manifest(path: Path, result: _ResultBuilder) -> dict[str, Any] | None:
         return None
     return document
 
-
 def _validate_manifest(
     directory: Path,
     manifest: dict[str, Any],
@@ -164,6 +158,8 @@ def _validate_manifest(
 ) -> None:
     status = manifest.get("status")
     result.session_completeness = _session_state(status)
+    if status not in {"recording", "completed", "interrupted", "failed"}:
+        result.finding("error", "manifest_status_invalid", "manifest status is invalid")
     expected_count = manifest.get("part_count")
     if not isinstance(expected_count, int) or isinstance(expected_count, bool) or expected_count < 0:
         result.finding("error", "manifest_part_count_invalid", "manifest part_count is invalid")
@@ -178,6 +174,24 @@ def _validate_manifest(
         finalization_status = None
     else:
         finalization_status = finalization["status"]
+        allowed_finalization = {
+            "not_requested", "pending", "not_started", "running",
+            "completed", "interrupted", "failed",
+        }
+        if finalization_status not in allowed_finalization:
+            result.finding(
+                "error", "manifest_finalization_invalid", "manifest finalization status is invalid"
+            )
+    if status == "completed" and finalization_status not in {"completed", "not_requested"}:
+        result.finding(
+            "error", "manifest_state_inconsistent",
+            f"completed session has finalization status {finalization_status!r}",
+        )
+    if status == "recording" and finalization_status == "completed":
+        result.finding(
+            "error", "manifest_state_inconsistent",
+            "recording session claims completed finalization",
+        )
     output = _manifest_output(directory, manifest, result)
     if output is None:
         result.output_availability = "not_declared"
@@ -201,7 +215,6 @@ def _validate_manifest(
     if output_info is not None:
         _compare_media(manifest.get("media"), output_info, result, output)
 
-
 def _manifest_output(
     directory: Path, manifest: dict[str, Any], result: _ResultBuilder
 ) -> Path | None:
@@ -222,7 +235,6 @@ def _manifest_output(
             # Recover the original relative-path base from the relocated session target.
             return Path(*actual[:-len(suffix)]) / output
     return output
-
 
 def _validate_output(
     output: Path, result: _ResultBuilder, ffprobe: str, runner: Callable[..., Any]
@@ -250,7 +262,6 @@ def _validate_output(
         result.media_integrity = "failed" if failed else "passed"
     return info
 
-
 def _readable_nonempty(path: Path, result: _ResultBuilder, prefix: str) -> bool:
     try:
         if not path.is_file() or path.stat().st_size == 0:
@@ -262,7 +273,6 @@ def _readable_nonempty(path: Path, result: _ResultBuilder, prefix: str) -> bool:
         result.finding("error", f"{prefix}_unreadable", str(error), path)
         return False
     return True
-
 
 def _compare_media(
     declared: Any, actual: MediaInfo, result: _ResultBuilder, output: Path
@@ -281,11 +291,9 @@ def _compare_media(
                 output,
             )
 
-
 def _session_state(status: Any) -> str:
     if status == "completed":
         return "complete"
     if status in {"recording", "interrupted", "failed"}:
         return str(status)
     return "unknown"
-

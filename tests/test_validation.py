@@ -232,6 +232,65 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(result.target_type, "missing")
         self.assertIn("target_missing", [finding.code for finding in result.findings])
 
+    def test_invalid_output_streams_and_duration_are_collected(self) -> None:
+        runner = ProbeRunner()
+        runner.media_documents["recording.mp4"] = {
+            "streams": [], "format": {"format_name": "mov,mp4", "duration": "0"},
+        }
+        with TemporaryDirectory() as temporary:
+            output = Path(temporary) / "recording.mp4"
+            output.write_bytes(b"media")
+            result = validate_target(output, runner=runner)
+
+        codes = {finding.code for finding in result.findings}
+        self.assertFalse(result.passed)
+        self.assertTrue({"output_video_missing", "output_duration_invalid"}.issubset(codes))
+        self.assertIn("output_audio_missing", codes)
+
+    def test_ffprobe_execution_failure_is_reported_for_a_part(self) -> None:
+        def unavailable(*_: object, **__: object) -> object:
+            raise OSError("ffprobe not installed")
+
+        with TemporaryDirectory() as temporary:
+            directory = Path(temporary) / "recording.parts"
+            write_part(directory)
+            result = validate_target(directory, runner=unavailable)
+
+        self.assertFalse(result.passed)
+        self.assertIn("ffprobe_unavailable", [finding.code for finding in result.findings])
+
+    def test_validation_does_not_modify_the_session_manifest(self) -> None:
+        with TemporaryDirectory() as temporary:
+            directory = Path(temporary) / "recording.parts"
+            write_part(directory)
+            values = manifest_values(
+                directory, Path(temporary) / "missing.mp4", status="interrupted",
+                finalization={"status": "not_started", "error": None},
+            )
+            path = directory / "session.json"
+            original = (json.dumps(values, indent=2) + "\n").encode()
+            path.write_bytes(original)
+
+            validate_target(directory, runner=ProbeRunner())
+
+            self.assertEqual(path.read_bytes(), original)
+
+    def test_completed_session_with_pending_finalization_is_inconsistent(self) -> None:
+        with TemporaryDirectory() as temporary:
+            directory = Path(temporary) / "recording.parts"
+            write_part(directory)
+            values = manifest_values(
+                directory, Path(temporary) / "missing.mp4",
+                finalization={"status": "pending", "error": None},
+            )
+            (directory / "session.json").write_text(json.dumps(values), encoding="utf-8")
+            result = validate_target(directory, runner=ProbeRunner())
+
+        self.assertFalse(result.passed)
+        self.assertIn("manifest_state_inconsistent", [
+            finding.code for finding in result.findings
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()
