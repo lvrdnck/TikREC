@@ -14,7 +14,8 @@ class MediaInspectionTests(unittest.TestCase):
             "streams": [
                 {"codec_type": "video", "codec_name": "h264", "width": 720, "height": 1280},
                 {"codec_type": "audio", "codec_name": "aac"},
-            ]
+            ],
+            "format": {"format_name": "mov,mp4", "duration": "42.125"},
         }
         commands: list[list[str]] = []
 
@@ -24,9 +25,10 @@ class MediaInspectionTests(unittest.TestCase):
 
         result = inspect_media(Path("recording.mp4"), ffprobe="probe", runner=runner)
 
-        self.assertEqual(result, MediaInfo("h264", "aac", 720, 1280))
+        self.assertEqual(result, MediaInfo("h264", "aac", 720, 1280, "mov,mp4", 42.125))
         self.assertEqual(commands[0][0], "probe")
         self.assertIn("-show_streams", commands[0])
+        self.assertIn("-show_format", commands[0])
 
     def test_probe_failure_returns_no_optional_media_information(self) -> None:
         def runner(*_: object, **__: object) -> object:
