@@ -74,16 +74,41 @@ def capture_tags(
         if interrupted or output_path is None:
             return CaptureResult(parts, None, interrupted)
         raise CaptureError("capture produced no completed FLV parts")
-    if output_path is None:
-        return CaptureResult(parts, None, interrupted)
+    return finalize_capture_result(
+        parts,
+        output_path,
+        finalizer=finalizer,
+        interrupted=interrupted,
+    )
 
+
+def finalize_capture_result(
+    parts: Iterable[Path],
+    output_path: Path | None,
+    *,
+    finalizer: Callable[[Iterable[Path], Path], Path] = finalize_parts,
+    interrupted: bool = False,
+    connections: tuple[ConnectionRecord, ...] = (),
+    progress: Callable[[str], None] | None = None,
+) -> CaptureResult:
+    """Optionally finalize retained parts and preserve capture result state."""
+    completed_parts = tuple(parts)
+    if output_path is None:
+        return CaptureResult(completed_parts, None, interrupted, connections)
     try:
-        final_output = finalizer(parts, output_path)
+        if progress is not None:
+            progress("finalizing")
+        if finalizer is finalize_parts:
+            final_output = finalizer(completed_parts, output_path, progress=progress)
+        else:
+            final_output = finalizer(completed_parts, output_path)
     except KeyboardInterrupt:
-        return CaptureResult(parts, None, True)
+        return CaptureResult(completed_parts, None, True, connections)
     except Exception as error:
-        raise CaptureError(f"finalization failed: {error}", parts) from error
-    return CaptureResult(parts, final_output, interrupted)
+        raise CaptureError(f"finalization failed: {error}", completed_parts) from error
+    if progress is not None:
+        progress(f"output written: {final_output} ({final_output.stat().st_size} bytes)")
+    return CaptureResult(completed_parts, final_output, interrupted, connections)
 
 
 def capture_url(

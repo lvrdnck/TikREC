@@ -10,7 +10,8 @@ from pathlib import Path
 
 from .capture import (
     CaptureError, CaptureResult, ConnectionRecord, _prepare_session,
-    append_connection_record, append_room_status_record, raw_copy_path,
+    append_connection_record, append_room_status_record, finalize_capture_result,
+    raw_copy_path,
 )
 from .finalize import finalize_parts
 from .flv import FlvTag
@@ -172,14 +173,13 @@ def capture_live(
         except KeyboardInterrupt:
             close_record("interrupted")
             if all_parts:
-                return _finalize(
+                return finalize_capture_result(
                     all_parts,
                     output_path,
-                    finalizer,
-                    tuple(records),
-                    parts_directory,
-                    progress,
+                    finalizer=finalizer,
                     interrupted=True,
+                    connections=tuple(records),
+                    progress=progress,
                 )
             return CaptureResult(tuple(all_parts), None, True, tuple(records))
         except TikTokOfflineError as error:
@@ -187,8 +187,12 @@ def capture_live(
             _report(progress, "room ended")
             if not all_parts:
                 raise CaptureError("TikTok account or room is not live") from error
-            return _finalize(
-                all_parts, output_path, finalizer, tuple(records), parts_directory, progress
+            return finalize_capture_result(
+                all_parts,
+                output_path,
+                finalizer=finalizer,
+                connections=tuple(records),
+                progress=progress,
             )
         except TikTokResolutionTransientError as error:
             close_record("resolver_error", error)
@@ -230,33 +234,6 @@ def capture_live(
             f"connection lost: {reconnect_reason}; reconnecting in {delay:g}s",
         )
         sleeper(delay)
-
-
-def _finalize(
-    parts: list[Path],
-    output_path: Path | None,
-    finalizer: Callable[[Iterable[Path], Path], Path],
-    records: tuple[ConnectionRecord, ...],
-    parts_directory: Path,
-    progress: Callable[[str], None] | None,
-    *,
-    interrupted: bool = False,
-) -> CaptureResult:
-    if output_path is None:
-        return CaptureResult(tuple(parts), None, interrupted, records)
-    try:
-        _report(progress, "finalizing")
-        if finalizer is finalize_parts:
-            output = finalizer(parts, output_path, progress=progress)
-        else:
-            output = finalizer(parts, output_path)
-    except KeyboardInterrupt:
-        return CaptureResult(tuple(parts), None, True, records)
-    except Exception as error:
-        raise CaptureError(f"finalization failed: {error}", tuple(parts)) from error
-    _report(progress, f"output written: {output} ({output.stat().st_size} bytes)")
-    return CaptureResult(tuple(parts), output, interrupted, records)
-
 
 def _report(progress: Callable[[str], None] | None, message: str) -> None:
     if progress is not None:
