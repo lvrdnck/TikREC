@@ -49,10 +49,10 @@ The first stable checkpoint established the capture foundation:
 ### v0.2.0 — Session metadata and manifest
 
 TikREC now writes an atomically updated `session.json` beside retained parts.
-Schema version 1 records the TikREC version, source type, lifecycle timestamps,
-result, paths, part/connection/reconnect counts, interruption and manual
-recovery state, finalization result, a redacted failure reason, and optional
-FFprobe codec/resolution facts. It complements rather than replaces
+Schema version 1 records a session ID, TikREC version, source type, lifecycle
+timestamps, result, paths, part/connection/reconnect counts, interruption and
+manual recovery state, finalization result, a redacted failure reason, and
+optional FFprobe codec/resolution facts. It complements rather than replaces
 `connections.jsonl`. `tikrec --version` reports the package version from the
 same source used by packaging.
 

@@ -6,6 +6,7 @@ import json
 import os
 import re
 import time
+import uuid
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,7 @@ class SessionManifest:
         *,
         clock: Callable[[], float] = time.time,
         media_inspector: Callable[[Path], MediaInfo | None] = lambda path: inspect_media(path),
+        session_id: str | None = None,
     ) -> None:
         self.path = Path(parts_directory) / "session.json"
         self._parts_directory = Path(parts_directory)
@@ -36,6 +38,7 @@ class SessionManifest:
         self._source_type = source_type
         self._clock = clock
         self._media_inspector = media_inspector
+        self._session_id = session_id
         self._values: dict[str, Any] | None = None
 
     @property
@@ -48,6 +51,7 @@ class SessionManifest:
         started_at = self._clock()
         self._values = {
             "schema_version": SCHEMA_VERSION,
+            "session_id": self._session_id or str(uuid.uuid4()),
             "tikrec_version": __version__,
             "source_type": self._source_type,
             "started_at": started_at,

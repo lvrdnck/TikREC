@@ -20,12 +20,15 @@ class SessionManifestTests(unittest.TestCase):
             parts = Path(directory) / "recording.parts"
             parts.mkdir()
             output = Path(directory) / "recording.mp4"
-            manifest = SessionManifest(parts, output, "tiktok_live", clock=lambda: 100.25)
+            manifest = SessionManifest(
+                parts, output, "tiktok_live", clock=lambda: 100.25, session_id="session-123"
+            )
 
             manifest.start(connection_count=1)
             values = read_manifest(parts / "session.json")
 
             self.assertEqual(values["schema_version"], SCHEMA_VERSION)
+            self.assertEqual(values["session_id"], "session-123")
             self.assertEqual(values["tikrec_version"], "0.2.0")
             self.assertEqual(values["source_type"], "tiktok_live")
             self.assertEqual(values["started_at"], 100.25)

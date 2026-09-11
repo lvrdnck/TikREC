@@ -32,6 +32,7 @@ are strings in the same absolute or relative form supplied to TikREC.
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `schema_version` | integer | Manifest schema version; currently `1`. |
+| `session_id` | string | Random UUID identifying the session independently of its path. |
 | `tikrec_version` | string | TikREC version that created the session. |
 | `source_type` | string | `tiktok_live`, `direct_flv`, or `tag_stream`. |
 | `started_at` | number | Time the recording session was initialized. |
@@ -86,6 +87,7 @@ Signed CDN URLs are not stored. URLs found in failure text are replaced with
   "reconnect_count": 2,
   "recovery_performed": false,
   "schema_version": 1,
+  "session_id": "a738109c-a387-423f-a20b-969ecf656c4b",
   "source_type": "tiktok_live",
   "started_at": 1789135200.0,
   "status": "completed",
