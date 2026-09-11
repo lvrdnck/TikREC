@@ -117,7 +117,8 @@ def finalize_capture_result(
         if manifest is not None:
             manifest.mark_finalizing(completed_parts)
         if progress is not None:
-            progress("finalizing")
+            end = "capture stopped by interrupt" if interrupted else "capture ended"
+            progress(f"{end}; finalizing {len(completed_parts)} retained part(s)")
         if finalizer is finalize_parts:
             final_output = finalizer(completed_parts, output_path, progress=progress)
         else:

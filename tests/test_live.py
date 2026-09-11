@@ -62,7 +62,7 @@ class LiveCaptureTests(unittest.TestCase):
             "connection lost: connection closed; reconnecting in 1s",
             "resolving room",
             "room ended",
-            "finalizing",
+            "capture ended; finalizing 1 retained part(s)",
             f"output written: {output} (5 bytes)",
         ])
         self.assertNotIn("token=secret", "\n".join(progress))
@@ -553,6 +553,7 @@ class LiveCaptureTests(unittest.TestCase):
 
     def test_keyboard_interrupt_finalizes_retained_parts_and_stays_interrupted(self) -> None:
         finalizer_calls: list[tuple[Path, ...]] = []
+        progress: list[str] = []
 
         def interrupted_stream():
             yield from stream()
@@ -573,6 +574,7 @@ class LiveCaptureTests(unittest.TestCase):
                 resolver=lambda _: "https://cdn.test/live.flv",
                 tag_source=lambda _: interrupted_stream(),
                 finalizer=finalizer,
+                progress=progress.append,
             )
             record = json.loads((root / "parts" / "connections.jsonl").read_text())
 
@@ -581,6 +583,9 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertEqual(record["outcome"], "interrupted")
         self.assertEqual(result.output_path, output)
         self.assertEqual([part.name for part in finalizer_calls[0]], ["part-0001.flv"])
+        self.assertIn(
+            "capture stopped by interrupt; finalizing 1 retained part(s)", progress
+        )
 
     def test_second_keyboard_interrupt_abandons_finalization_but_keeps_parts(self) -> None:
         def interrupted_stream():
