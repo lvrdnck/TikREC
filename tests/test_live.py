@@ -218,6 +218,7 @@ class LiveCaptureTests(unittest.TestCase):
                 for line in log_path.read_text().splitlines()
                 if "\"connection\"" in line
             ]
+            manifest = json.loads((root / "parts" / "session.json").read_text())
 
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual(result.output_path, output)
@@ -236,6 +237,12 @@ class LiveCaptureTests(unittest.TestCase):
         }])
         self.assertEqual(result.connections[0].part_timings[0].keyframe_gate_duration, 0)
         self.assertEqual(result.connections[1].gap_before, 10.0)
+        self.assertEqual(manifest["source_type"], "tiktok_live")
+        self.assertEqual(manifest["part_count"], 2)
+        self.assertEqual(manifest["connection_count"], 3)
+        self.assertEqual(manifest["reconnect_count"], 2)
+        self.assertEqual(manifest["status"], "completed")
+        self.assertEqual(manifest["finalization"]["status"], "completed")
 
     def test_retries_transient_resolver_failure_with_backoff(self) -> None:
         actions: list[object] = [TikTokResolutionTransientError("timeout"), "https://cdn.test/live.flv", TikTokOfflineError("offline")]

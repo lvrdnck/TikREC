@@ -9,9 +9,11 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import TextIO
 
+from . import __version__
 from .capture import CaptureError, CaptureResult, capture_url
 from .finalize import finalize_parts
 from .live import capture_live
+from .manifest import SessionManifest
 from .progress import LiveProgress
 from .tiktok import TikTokResolutionError, resolve_live_url
 
@@ -125,6 +127,13 @@ def _finalize_directory(
     parts = tuple(sorted(parts_directory.glob("part-*.flv")))
     if not parts:
         raise CaptureError(f"no completed FLV parts in: {parts_directory}")
+    manifest = _load_manifest(parts_directory / "session.json", progress)
+    if manifest is not None:
+        try:
+            manifest.mark_recovery(output_path, parts)
+        except (OSError, ValueError) as error:
+            progress(f"warning: session manifest could not be updated: {error}")
+            manifest = None
     try:
         progress("finalizing")
         if finalizer is finalize_parts:
@@ -132,15 +141,52 @@ def _finalize_directory(
         else:
             output = finalizer(parts, output_path)
     except KeyboardInterrupt:
+        if manifest is not None:
+            _finish_recovery(
+                manifest, parts, "interrupted", progress, error="finalization interrupted"
+            )
         raise
     except Exception as error:
+        if manifest is not None:
+            _finish_recovery(manifest, parts, "failed", progress, error=error)
         raise CaptureError(f"finalization failed: {error}", parts) from error
     progress(f"output written: {output} ({output.stat().st_size} bytes)")
+    if manifest is not None:
+        _finish_recovery(manifest, parts, "completed", progress, output_path=output)
     return output
+
+
+def _load_manifest(
+    path: Path,
+    progress: Callable[[str], None],
+) -> SessionManifest | None:
+    """Load recovery metadata without making older or damaged sessions unusable."""
+    try:
+        return SessionManifest.load(path)
+    except (OSError, ValueError) as error:
+        progress(f"warning: session manifest could not be read: {error}")
+        return None
+
+
+def _finish_recovery(
+    manifest: SessionManifest,
+    parts: tuple[Path, ...],
+    status: str,
+    progress: Callable[[str], None],
+    *,
+    output_path: Path | None = None,
+    error: BaseException | str | None = None,
+) -> None:
+    """Keep a manifest write problem from hiding the finalization result."""
+    try:
+        manifest.finish_recovery(parts, status, output_path=output_path, error=error)
+    except (OSError, ValueError) as manifest_error:
+        progress(f"warning: session manifest could not be updated: {manifest_error}")
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tikrec")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--debug", action="store_true", help="print unexpected-error tracebacks")
     subcommands = parser.add_subparsers(dest="command", required=True)
     record = subcommands.add_parser("record", help="record one direct FLV URL")

@@ -15,6 +15,8 @@ from .capture import (
 )
 from .finalize import finalize_parts
 from .flv import FlvTag
+from .manifest import SessionManifest
+from .media import MediaInfo, inspect_media
 from .source import RawCopy, iter_url_tags
 from .tiktok import (
     TikTokOfflineError,
@@ -45,11 +47,13 @@ def capture_live(
     offline_confirmation_interval: float = 5.0,
     sleeper: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.time,
+    manifest_clock: Callable[[], float] = time.time,
     progress: Callable[[str], None] | None = None,
     heartbeat: Callable[[Path, int], None] | None = None,
     raw_copy_dir: Path | None = None,
     raw_tag_source: Callable[[str, RawCopy], Iterable[FlvTag]] | None = None,
     warning: Callable[[str], None] | None = None,
+    media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until confirmed offline."""
     _validate_limits(
@@ -61,6 +65,8 @@ def capture_live(
     )
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
+    manifest = SessionManifest(parts_directory, output_path, "tiktok_live",
+                               clock=manifest_clock, media_inspector=media_inspector)
 
     records: list[ConnectionRecord] = []
     all_parts: list[Path] = []
@@ -70,6 +76,13 @@ def capture_live(
     connection_number = 0
     previous_end: float | None = None
     session_started = False
+
+    def capture_failure(message: str) -> CaptureError:
+        failure = CaptureError(message, tuple(all_parts))
+        if manifest.active:
+            finalization = "not_started" if output_path is not None else None
+            manifest.fail(all_parts, failure, finalization_status=finalization)
+        return failure
 
     while True:
         connection_number += 1
@@ -109,6 +122,8 @@ def capture_live(
                 append_connection_record(parts_directory / "connections.jsonl", record)
             records.append(record)
             all_parts.extend(connection_parts)
+            if manifest.active:
+                manifest.update_capture(all_parts, connection_count=len(records))
             # This advances from writer output, rather than inspecting the directory.
             next_part_index += len(connection_parts)
             previous_end = ended_at
@@ -131,6 +146,7 @@ def capture_live(
             if not session_started:
                 _prepare_session(parts_directory, output_path)
                 session_started = True
+                manifest.start(connection_count=connection_number)
                 # Preserve transient attempts once resolution creates a real session.
                 for pending_record in records:
                     append_connection_record(parts_directory / "connections.jsonl", pending_record)
@@ -180,19 +196,24 @@ def capture_live(
                     interrupted=True,
                     connections=tuple(records),
                     progress=progress,
+                    manifest=manifest,
                 )
+            if manifest.active:
+                finalization = "not_started" if output_path is not None else None
+                manifest.complete(all_parts, interrupted=True, finalization_status=finalization)
             return CaptureResult(tuple(all_parts), None, True, tuple(records))
         except TikTokOfflineError as error:
             close_record("offline", error)
             _report(progress, "room ended")
             if not all_parts:
-                raise CaptureError("TikTok account or room is not live") from error
+                raise capture_failure("TikTok account or room is not live") from error
             return finalize_capture_result(
                 all_parts,
                 output_path,
                 finalizer=finalizer,
                 connections=tuple(records),
                 progress=progress,
+                manifest=manifest,
             )
         except TikTokResolutionTransientError as error:
             close_record("resolver_error", error)
@@ -205,27 +226,25 @@ def capture_live(
             reconnect_reason = _safe_reason(error)
         except TikTokResolutionError as error:
             close_record("resolution_error", error)
-            raise CaptureError(
-                f"TikTok LIVE resolution failed: {_safe_reason(error)}", tuple(all_parts)
+            raise capture_failure(
+                f"TikTok LIVE resolution failed: {_safe_reason(error)}"
             ) from error
         except Exception as error:
             close_record("capture_error", error)
-            raise CaptureError(f"live capture failed: {_safe_reason(error)}", tuple(all_parts)) from error
+            raise capture_failure(f"live capture failed: {_safe_reason(error)}") from error
         else:
             close_record("closed")
             consecutive_failures = 0
             consecutive_empty = consecutive_empty + 1 if not written_parts else 0
             reconnect_reason = "connection closed"
             if consecutive_empty >= max_consecutive_empty_connections:
-                raise CaptureError(
-                    "live capture stopped after consecutive connections with no media",
-                    tuple(all_parts),
+                raise capture_failure(
+                    "live capture stopped after consecutive connections with no media"
                 )
 
         if consecutive_failures >= max_consecutive_failures:
-            raise CaptureError(
-                "live capture stopped after consecutive connection failures",
-                tuple(all_parts),
+            raise capture_failure(
+                "live capture stopped after consecutive connection failures"
             )
         # Re-resolving after every close gets a fresh signed CDN URL.
         delay = backoff_seconds * (2 ** max(0, consecutive_failures - 1))

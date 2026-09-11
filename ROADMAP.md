@@ -46,21 +46,17 @@ The first stable checkpoint established the capture foundation:
 - 123 offline tests in the tagged release, with real-recording validation notes
   retained in `SPEC.md`.
 
-## Planned releases
-
 ### v0.2.0 — Session metadata and manifest
 
-**Goal:** Give every recording one durable, versioned description of what was
-requested, captured, and produced.
+TikREC now writes an atomically updated `session.json` beside retained parts.
+Schema version 1 records the TikREC version, source type, lifecycle timestamps,
+result, paths, part/connection/reconnect counts, interruption and manual
+recovery state, finalization result, a redacted failure reason, and optional
+FFprobe codec/resolution facts. It complements rather than replaces
+`connections.jsonl`. `tikrec --version` reports the package version from the
+same source used by packaging.
 
-**Why now:** Later validation, recovery, and library features need a stable
-session record instead of reconstructing state from filenames and event lines.
-
-**Likely scope:** A session identifier and schema version; TikREC version; safe
-source identity; start, end, duration, and outcome; connection, reconnect, and
-part counts; codecs and resolution; retained parts and output paths; and
-finalization/interruption state. Existing `connections.jsonl` remains event
-evidence; signed CDN URLs and secrets remain excluded.
+## Planned releases
 
 ### v0.3.0 — Recording validation
 

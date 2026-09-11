@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tikrec"
-version = "0.1.0"
+dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = []
 
@@ -13,6 +13,9 @@ dev = ["pytest"]
 
 [project.scripts]
 tikrec = "tikrec.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "tikrec.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

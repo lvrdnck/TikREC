@@ -11,6 +11,8 @@ from pathlib import Path
 
 from .finalize import finalize_parts
 from .flv import FlvTag
+from .manifest import SessionManifest
+from .media import MediaInfo, inspect_media
 from .source import RawCopy, iter_url_tags
 from .writer import PartTiming, write_parts
 
@@ -55,11 +57,18 @@ def capture_tags(
     output_path: Path | None = None,
     writer: Callable[[Iterable[FlvTag], Path], tuple[Path, ...]] = write_parts,
     finalizer: Callable[[Iterable[Path], Path], Path] = finalize_parts,
+    source_type: str = "tag_stream",
+    connection_count: int = 0,
+    clock: Callable[[], float] = time.time,
+    media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
 ) -> CaptureResult:
     """Record supplied tags, optionally finalize them, and return their paths."""
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
     _prepare_session(parts_directory, output_path)
+    manifest = SessionManifest(parts_directory, output_path, source_type,
+                               clock=clock, media_inspector=media_inspector)
+    manifest.start(connection_count=connection_count)
     interrupted = False
     try:
         parts = writer(tags, parts_directory)
@@ -68,18 +77,24 @@ def capture_tags(
         parts = _completed_parts(parts_directory)
     except Exception as error:
         parts = _completed_parts(parts_directory)
-        raise CaptureError(f"capture failed: {error}", parts) from error
+        failure = CaptureError(f"capture failed: {error}", parts)
+        finalization = "not_started" if output_path is not None else None
+        manifest.fail(parts, failure, finalization_status=finalization)
+        raise failure from error
 
     if not parts:
-        if interrupted or output_path is None:
+        if interrupted:
+            finalization = "not_started" if output_path is not None else None
+            manifest.complete(parts, interrupted=True, finalization_status=finalization)
+            return CaptureResult(parts, None, True)
+        if output_path is None:
+            manifest.complete(parts)
             return CaptureResult(parts, None, interrupted)
-        raise CaptureError("capture produced no completed FLV parts")
-    return finalize_capture_result(
-        parts,
-        output_path,
-        finalizer=finalizer,
-        interrupted=interrupted,
-    )
+        failure = CaptureError("capture produced no completed FLV parts")
+        manifest.fail(parts, failure, finalization_status="not_started")
+        raise failure
+    return finalize_capture_result(parts, output_path, finalizer=finalizer,
+                                   interrupted=interrupted, manifest=manifest)
 
 
 def finalize_capture_result(
@@ -90,12 +105,17 @@ def finalize_capture_result(
     interrupted: bool = False,
     connections: tuple[ConnectionRecord, ...] = (),
     progress: Callable[[str], None] | None = None,
+    manifest: SessionManifest | None = None,
 ) -> CaptureResult:
     """Optionally finalize retained parts and preserve capture result state."""
     completed_parts = tuple(parts)
     if output_path is None:
+        if manifest is not None:
+            manifest.complete(completed_parts, interrupted=interrupted)
         return CaptureResult(completed_parts, None, interrupted, connections)
     try:
+        if manifest is not None:
+            manifest.mark_finalizing(completed_parts)
         if progress is not None:
             progress("finalizing")
         if finalizer is finalize_parts:
@@ -103,11 +123,24 @@ def finalize_capture_result(
         else:
             final_output = finalizer(completed_parts, output_path)
     except KeyboardInterrupt:
+        if manifest is not None:
+            manifest.complete(
+                completed_parts,
+                interrupted=True,
+                finalization_status="interrupted",
+                error="finalization interrupted",
+            )
         return CaptureResult(completed_parts, None, True, connections)
     except Exception as error:
-        raise CaptureError(f"finalization failed: {error}", completed_parts) from error
+        failure = CaptureError(f"finalization failed: {error}", completed_parts)
+        if manifest is not None:
+            manifest.fail(completed_parts, failure, finalization_status="failed")
+        raise failure from error
     if progress is not None:
         progress(f"output written: {final_output} ({final_output.stat().st_size} bytes)")
+    if manifest is not None:
+        manifest.complete(completed_parts, output_path=final_output,
+                          interrupted=interrupted, finalization_status="completed")
     return CaptureResult(completed_parts, final_output, interrupted, connections)
 
 
@@ -154,6 +187,8 @@ def capture_url(
             output_path=output_path,
             writer=writer,
             finalizer=finalizer,
+            source_type="direct_flv",
+            connection_count=1,
         )
         parts = result.parts
         outcome = "interrupted" if result.interrupted else "closed"

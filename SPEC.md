@@ -12,7 +12,7 @@ In scope:
 - Recording a stream from the moment I start the tool
 - Reconnecting within a recording when the connection drops
 
-Out of scope for v0.1.x:
+Out of scope for v0.2.x:
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
 - Watching a handle and starting automatically
@@ -31,11 +31,11 @@ expose no stream URLs to anonymous page or API requests, while other public
 rooms resolve normally. This is TikTok making a session-dependent access
 decision, not an offline status. A normal browser User-Agent and Referer were
 tested and did not change the response. Recording those rooms would require
-authenticating as the user, which is out of scope for v0.1.x. A future
+authenticating as the user, which is out of scope for v0.2.x. A future
 authenticated mode may use a session explicitly provided by the user, but must
 not bypass TikTok's access controls.
 
-The v0.1.x commands never wait for a stream to begin. If the room is offline
+The v0.2.x commands never wait for a stream to begin. If the room is offline
 when invoked, that is an error, not a wait state.
 
 ## Commands
@@ -44,6 +44,7 @@ when invoked, that is an error, not a wait state.
     tikrec resolve <tiktok-live-page-url>
     tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
     tikrec finalize PARTS_DIRECTORY --output FILE
+    tikrec --version
 
 `record` takes a direct FLV URL and is the generic path. It must stay
 source-agnostic and must not gain TikTok-specific behaviour. Its optional
@@ -126,6 +127,14 @@ No cookies, no login, no private signing, no yt-dlp.
 Prepares the session directory once, refuses to reuse an existing one,
 preserves completed parts on error or interrupt, finalizes on clean EOF.
 
+### tikrec/manifest.py and tikrec/media.py — session metadata
+
+`SessionManifest` owns the versioned `session.json` lifecycle and atomic file
+replacement. `inspect_media` optionally obtains final-output codec and
+resolution facts from FFprobe; probe failure leaves those fields null and never
+changes capture success. See [SESSION_MANIFEST.md](SESSION_MANIFEST.md) for the
+schema.
+
 ### tikrec/live.py — reconnect-capable public LIVE capture
 `capture_live(url, *, parts_directory, output_path, ...)` implements the
 `tikrec live` path above the generic source, writer, and finalizer layers.
@@ -166,6 +175,9 @@ never discards bytes still arriving on an open FLV connection.
   flushes one `room_status` event per checked response. Each event contains
   `timestamp`, the raw `status` value, and `confirmation_reached`; a live
   response that cancels confirmation is included as evidence.
+- `session.json` is initialized only after resolution creates a real session,
+  then its part and connection counts are updated as attempts close. Initial
+  offline or unresolved rooms still leave no session directory.
 - Defaults stop capture after three consecutive transient failures or three
   consecutive connections retaining no media. Non-live confirmation defaults
   to three checks spaced five seconds apart. All three limits, confirmation
@@ -256,7 +268,7 @@ Revisit handling only if this source behaviour becomes frequent.
 
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there remain out of scope until their release is implemented; the
-architecture in this specification describes v0.1.x as it exists today.
+architecture in this specification describes v0.2.x as it exists today.
 
 ## Design principles
 

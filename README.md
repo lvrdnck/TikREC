@@ -11,6 +11,7 @@ reconnecting if the connection drops, and you get one MP4 out.
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
+    tikrec --version
 
 `live` records a public LIVE page and reconnects across dropped
 connections. After media has been recorded, TikREC accepts that a room ended
@@ -55,6 +56,13 @@ during end confirmation. Each event has a timestamp, the raw TikTok room-status
 value, and whether that response reached the confirmation threshold. A live
 response that cancels confirmation is recorded too.
 
+Every recording session also writes `session.json` alongside the parts. It is
+an atomically updated, high-level summary of the session lifecycle, result,
+paths, part and connection counts, interruption/finalization state, and optional
+codec and resolution information. It complements the lower-level
+`connections.jsonl`; see [SESSION_MANIFEST.md](SESSION_MANIFEST.md) for the
+schema and lifecycle.
+
 ## Validating a recording
 
     python3 scripts/validate_parts.py path/to/recording.parts
@@ -76,4 +84,5 @@ See SPEC.md.
 [SPEC.md](SPEC.md) — architecture, module responsibilities, validation
 notes and the reasoning behind past fixes.
 [ROADMAP.md](ROADMAP.md) — dependency-ordered direction for future releases.
+[SESSION_MANIFEST.md](SESSION_MANIFEST.md) — `session.json` schema and lifecycle.
 [AGENTS.md](AGENTS.md) — working rules.

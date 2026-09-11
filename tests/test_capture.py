@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -11,6 +12,8 @@ from tikrec.capture import CaptureError, CaptureResult, capture_tags, capture_ur
 from tikrec.cli import main
 from tikrec.finalize import finalize_parts
 from tikrec.flv import FlvTag, read_tag
+from tikrec.manifest import SessionManifest
+from tikrec.media import MediaInfo
 from tikrec.tiktok import TikTokResolutionTransientError
 from tikrec.writer import write_parts
 
@@ -48,9 +51,52 @@ class CaptureTests(unittest.TestCase):
 
     def test_clean_eof_returns_completed_parts(self) -> None:
         with TemporaryDirectory() as directory:
-            result = capture_tags(iter(tags()), parts_directory=Path(directory) / "session")
+            parts_directory = Path(directory) / "session"
+            result = capture_tags(iter(tags()), parts_directory=parts_directory)
+            manifest = json.loads((parts_directory / "session.json").read_text())
 
             self.assertEqual([part.name for part in result.parts], ["part-0001.flv"])
+            self.assertEqual(manifest["status"], "completed")
+            self.assertEqual(manifest["part_count"], 1)
+            self.assertEqual(manifest["finalization"]["status"], "not_requested")
+
+    def test_finalized_capture_records_output_and_media_in_its_manifest(self) -> None:
+        def finalizer(parts, output: Path) -> Path:
+            self.assertEqual(len(tuple(parts)), 1)
+            output.write_bytes(b"final")
+            return output
+
+        times = iter((10.0, 14.0))
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_tags(
+                tags(), parts_directory=root / "session", output_path=root / "final.mp4",
+                finalizer=finalizer, clock=lambda: next(times),
+                media_inspector=lambda _: MediaInfo("h264", "aac", 720, 1280),
+            )
+            manifest = json.loads((root / "session" / "session.json").read_text())
+
+        self.assertEqual(result.output_path, root / "final.mp4")
+        self.assertEqual(manifest["elapsed_seconds"], 4.0)
+        self.assertEqual(manifest["finalization"]["status"], "completed")
+        self.assertEqual(manifest["media"]["video_codec"], "h264")
+
+    def test_finalizer_failure_is_preserved_in_the_manifest(self) -> None:
+        def failing_finalizer(*_: object) -> Path:
+            raise RuntimeError("muxer failed")
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaisesRegex(CaptureError, "finalization failed"):
+                capture_tags(
+                    tags(), parts_directory=root / "session", output_path=root / "final.mp4",
+                    finalizer=failing_finalizer,
+                )
+            manifest = json.loads((root / "session" / "session.json").read_text())
+
+        self.assertEqual(manifest["status"], "failed")
+        self.assertEqual(manifest["finalization"]["status"], "failed")
+        self.assertIn("muxer failed", manifest["finalization"]["error"])
 
     def test_capture_url_uses_an_injected_tag_source(self) -> None:
         seen_urls: list[str] = []
@@ -83,12 +129,16 @@ class CaptureTests(unittest.TestCase):
                 raw_tag_source=raw_source,
             )
             record = json.loads((root / "session" / "connections.jsonl").read_text())
+            manifest = json.loads((root / "session" / "session.json").read_text())
 
             self.assertEqual((root / "raw" / "connection-0001.raw").read_bytes(), b"unmodified source bytes")
 
         self.assertEqual(len(result.parts), 1)
         self.assertEqual(record["connection"], 1)
         self.assertEqual(record["raw_copy"], "connection-0001.raw")
+        self.assertEqual(manifest["source_type"], "direct_flv")
+        self.assertEqual(manifest["connection_count"], 1)
+        self.assertEqual(manifest["reconnect_count"], 0)
 
     def test_injected_writer_receives_the_complete_stream(self) -> None:
         received: list[FlvTag] = []
@@ -124,6 +174,10 @@ class CaptureTests(unittest.TestCase):
                 )
 
             self.assertEqual([part.name for part in error.exception.parts], ["part-0001.flv"])
+            manifest = json.loads((root / "session" / "session.json").read_text())
+            self.assertEqual(manifest["status"], "failed")
+            self.assertEqual(manifest["part_count"], 1)
+            self.assertEqual(manifest["finalization"]["status"], "not_started")
 
         self.assertEqual(finalizer_calls, [])
 
@@ -147,10 +201,14 @@ class CaptureTests(unittest.TestCase):
                 output_path=root / "final.mp4",
                 finalizer=finalizer,
             )
+            manifest = json.loads((root / "session" / "session.json").read_text())
 
             self.assertTrue(result.interrupted)
             self.assertTrue((root / "final.mp4").is_file())
             self.assertEqual([part.name for part in finalizer_calls[0]], ["part-0001.flv"])
+            self.assertEqual(manifest["status"], "interrupted")
+            self.assertTrue(manifest["interrupted"])
+            self.assertEqual(manifest["finalization"]["status"], "completed")
 
     def test_finalizer_runs_after_successful_capture(self) -> None:
         calls: list[tuple[Path, ...]] = []
@@ -176,6 +234,15 @@ class CaptureTests(unittest.TestCase):
 
 
 class CliTests(unittest.TestCase):
+    def test_version_reports_the_installed_tikrec_version(self) -> None:
+        output = StringIO()
+
+        with redirect_stdout(output):
+            code = main(["--version"])
+
+        self.assertEqual(code, 0)
+        self.assertEqual(output.getvalue(), "tikrec 0.2.0\n")
+
     def test_success_returns_zero_and_uses_deterministic_session_directory(self) -> None:
         calls = []
 
@@ -278,6 +345,11 @@ class CliTests(unittest.TestCase):
             parts_directory = root / "interrupted.parts"
             parts = write_parts(tags(), parts_directory)
             output = root / "recording.mp4"
+            manifest = SessionManifest(parts_directory, output, "tiktok_live", clock=lambda: 1.0)
+            manifest.start(connection_count=1)
+            manifest.complete(
+                parts, interrupted=True, finalization_status="not_started"
+            )
 
             code = main(
                 ["finalize", str(parts_directory), "--output", str(output)],
@@ -289,6 +361,9 @@ class CliTests(unittest.TestCase):
             self.assertEqual(calls, [parts])
             self.assertTrue(parts[0].is_file())
             self.assertEqual(output.read_bytes(), b"final")
+            manifest_values = json.loads((parts_directory / "session.json").read_text())
+            self.assertTrue(manifest_values["recovery_performed"])
+            self.assertEqual(manifest_values["finalization"]["status"], "completed")
 
         self.assertIn("finalizing", stdout.getvalue())
         self.assertIn("output written:", stdout.getvalue())
