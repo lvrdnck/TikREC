@@ -13,7 +13,10 @@ reconnecting if the connection drops, and you get one MP4 out.
     tikrec finalize PARTS_DIRECTORY --output FILE
 
 `live` records a public LIVE page and reconnects across dropped
-connections. `record` takes a direct FLV URL and is source-agnostic.
+connections. After media has been recorded, TikREC accepts that a room ended
+only after three consecutive non-live responses spaced five seconds apart. A
+room that is offline on the first resolve still fails immediately. `record`
+takes a direct FLV URL and is source-agnostic.
 `resolve` prints the current direct FLV URL for a live page.
 `finalize` stitches retained `part-*.flv` files after an interrupted or
 otherwise stopped recording. It preserves those parts and refuses to overwrite
@@ -45,9 +48,12 @@ into a single MP4 — losslessly when the configurations match, re-encoded
 when they don't.
 
 Each live recording, and each direct recording using `--raw-copy`, writes
-`connections.jsonl` alongside the parts: one line per connection, with
-wall-clock timings, the gap before it, per-part timestamp diagnostics, and the
-optional raw-copy filename.
+`connections.jsonl` alongside the parts. Connection records contain wall-clock
+timings, the preceding gap, per-part timestamp diagnostics, and the optional
+raw-copy filename. Live recordings also contain `room_status` event records
+during end confirmation. Each event has a timestamp, the raw TikTok room-status
+value, and whether that response reached the confirmation threshold. A live
+response that cancels confirmation is recorded too.
 
 ## Validating a recording
 

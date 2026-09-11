@@ -124,8 +124,17 @@ preserves completed parts on error or interrupt, finalizes on clean EOF.
 `tikrec live` path above the generic source, writer, and finalizer layers.
 
 It resolves, connects, records, then re-resolves after every connection
-close so that each retry uses a fresh signed CDN URL. It stops when the
-room-info response confirms that the room is offline.
+close so that each retry uses a fresh signed CDN URL. It does not poll room
+status while an FLV connection is open. After retained media exists, it stops
+only after three consecutive non-live room-info responses, with five seconds
+between responses. Thus the default confirmation window spans about ten
+seconds from its first response to its third.
+
+Confirmation begins only after the preceding FLV response has ended or failed;
+no media connection remains open during the checks. A false non-live sequence
+can therefore miss up to about ten seconds of media that was available through
+a new connection, in addition to the ordinary reconnect backoff and request
+latency. It never discards bytes still arriving on an open FLV connection.
 
 - Every reconnect creates a new writer and starts a new part, even when the
   AVC and AAC configurations are identical. A new HTTP connection may reset
@@ -133,18 +142,25 @@ room-info response confirms that the room is offline.
   or zero timestamps.
 - Only `TikTokOfflineError`, raised from a successful room-info response
   whose room status is not `2`, means offline. Resolver network, timeout,
-  and HTTP failures are transient and retry with backoff.
+  and HTTP failures are transient and retry with backoff. A live response
+  during confirmation cancels the sequence and capture resumes; a later
+  non-live response starts a new sequence at one.
 - Room offline at the first resolve is an error. Room offline after retained
-  media is a normal end and triggers optional finalization.
+  media and successful confirmation is a normal end and triggers optional
+  finalization.
 - Part numbering carries forward through the writer's explicit `start_index`;
   it is never inferred by scanning the parts directory.
 - As each connection closes, `connections.jsonl` receives and flushes one
   record with wall-clock start/end, its preceding gap, retained part range,
   outcome, error, and optional raw-copy filename. `CaptureResult.connections`
-  exposes the same records.
+  exposes the same connection records. End confirmation also appends and
+  flushes one `room_status` event per checked response. Each event contains
+  `timestamp`, the raw `status` value, and `confirmation_reached`; a live
+  response that cancels confirmation is included as evidence.
 - Defaults stop capture after three consecutive transient failures or three
-  consecutive connections retaining no media. Both limits, the clock, and
-  sleeper are injectable for offline tests.
+  consecutive connections retaining no media. Non-live confirmation defaults
+  to three checks spaced five seconds apart. All three limits, confirmation
+  spacing, the clock, and sleeper are injectable for offline tests.
 - Programming errors, invalid arguments, and malformed FLV data do not retry.
   The first Ctrl-C closes the writer and finalizes retained parts when an
   output was requested, but still exits 130 because capture ended early. A
