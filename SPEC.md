@@ -131,10 +131,12 @@ between responses. Thus the default confirmation window spans about ten
 seconds from its first response to its third.
 
 Confirmation begins only after the preceding FLV response has ended or failed;
-no media connection remains open during the checks. A false non-live sequence
-can therefore miss up to about ten seconds of media that was available through
-a new connection, in addition to the ordinary reconnect backoff and request
-latency. It never discards bytes still arriving on an open FLV connection.
+no media connection remains open during the checks. If a later check returns
+live, capture resumes but may have missed up to about ten seconds of media that
+was available through a new connection, in addition to the ordinary reconnect
+backoff and request latency. If all three responses are falsely non-live,
+TikREC ends the recording and may miss the room's entire remaining stream. It
+never discards bytes still arriving on an open FLV connection.
 
 - Every reconnect creates a new writer and starts a new part, even when the
   AVC and AAC configurations are identical. A new HTTP connection may reset
