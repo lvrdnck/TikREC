@@ -241,7 +241,7 @@ class CliTests(unittest.TestCase):
             code = main(["--version"])
 
         self.assertEqual(code, 0)
-        self.assertEqual(output.getvalue(), "tikrec 0.3.0\n")
+        self.assertEqual(output.getvalue(), "tikrec 0.3.1\n")
 
     def test_success_returns_zero_and_uses_deterministic_session_directory(self) -> None:
         calls = []
