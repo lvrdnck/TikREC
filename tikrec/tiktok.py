@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import json
 import re
+import time
 from collections.abc import Callable, Mapping
 from http.client import HTTPException
 from typing import Any
@@ -31,9 +32,24 @@ class TikTokResolutionError(RuntimeError):
 class TikTokOfflineError(TikTokResolutionError):
     """Raised only after room-info confirms that a room is not live."""
 
+    def __init__(self, message: str, status: Any = None) -> None:
+        super().__init__(message)
+        # Keep the JSON value unchanged so outage evidence distinguishes strings and numbers.
+        self.status = status
+
 
 class TikTokResolutionTransientError(TikTokResolutionError):
     """Raised for a network failure that a live capture may retry."""
+
+
+class _ResolvedLiveUrl(str):
+    """A string-compatible direct URL carrying its raw live room status."""
+
+    def __new__(cls, url: str, status: Any) -> _ResolvedLiveUrl:
+        value = super().__new__(cls, url)
+        # A str subclass preserves the resolver's public contract for callers and CLI output.
+        value.room_status = status
+        return value
 
 
 def resolve_live_url(
@@ -61,10 +77,55 @@ def resolve_live_url(
             "live room has no public HTTP(S) FLV rendition in flv_pull_url or "
             "rtmp_pull_url"
         )
-    return sorted(
+    selected_url = sorted(
         renditions,
         key=lambda item: (-_quality_score(item[0]), item[1], item[0], item[2]),
     )[0][2]
+    return _ResolvedLiveUrl(selected_url, room.get("status"))
+
+
+def resolve_live_url_confirmed(
+    url: str,
+    *,
+    resolver: Callable[[str], str],
+    capture_started: bool,
+    checks: int = 3,
+    interval: float = 5.0,
+    sleeper: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.time,
+    status_observer: Callable[[float, Any, bool], None] | None = None,
+) -> str:
+    """Resolve a URL, requiring spaced non-live results after capture has begun."""
+    if not isinstance(checks, int) or checks < 1:
+        raise ValueError("offline confirmation checks must be a positive integer")
+    if interval < 0:
+        raise ValueError("offline confirmation interval must not be negative")
+    try:
+        return resolver(url)
+    except TikTokOfflineError as first_error:
+        # Python clears exception-target names after ``except`` to break cycles.
+        offline_error = first_error
+
+    for attempt in range(checks):
+        if attempt:
+            sleeper(interval)
+            try:
+                direct_url = resolver(url)
+            except TikTokOfflineError as next_error:
+                offline_error = next_error
+            else:
+                if status_observer is not None:
+                    # Injected resolvers return plain strings, whose successful status is 2.
+                    status = getattr(direct_url, "room_status", 2)
+                    status_observer(clock(), status, False)
+                return direct_url
+        confirmed = not capture_started or attempt + 1 == checks
+        if status_observer is not None:
+            status_observer(clock(), offline_error.status, confirmed)
+        if confirmed:
+            raise offline_error
+
+    raise AssertionError("offline confirmation loop did not resolve or raise")
 
 
 def _validate_live_page_url(url: str) -> str:
@@ -173,8 +234,9 @@ def _live_room(response: Mapping[str, Any]) -> Mapping[str, Any]:
         raise TikTokResolutionError("malformed room-info response data")
     room = data.get("room")
     room = room if isinstance(room, Mapping) else data
-    if str(room.get("status")) != "2":
-        raise TikTokOfflineError("TikTok account or room is not live")
+    room_status = room.get("status")
+    if str(room_status) != "2":
+        raise TikTokOfflineError("TikTok account or room is not live", room_status)
     return room
 
 

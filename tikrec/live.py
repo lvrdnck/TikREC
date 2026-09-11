@@ -14,6 +14,7 @@ from .capture import (
     ConnectionRecord,
     _prepare_session,
     append_connection_record,
+    append_room_status_record,
     raw_copy_path,
 )
 from .finalize import finalize_parts
@@ -24,6 +25,7 @@ from .tiktok import (
     TikTokResolutionError,
     TikTokResolutionTransientError,
     resolve_live_url,
+    resolve_live_url_confirmed,
 )
 from .writer import PartTiming, TimestampReplay, write_parts
 
@@ -43,6 +45,8 @@ def capture_live(
     max_consecutive_failures: int = 3,
     max_consecutive_empty_connections: int = 3,
     backoff_seconds: float = 1.0,
+    offline_confirmation_checks: int = 3,
+    offline_confirmation_interval: float = 5.0,
     sleeper: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.time,
     progress: Callable[[str], None] | None = None,
@@ -51,17 +55,13 @@ def capture_live(
     raw_tag_source: Callable[[str, RawCopy], Iterable[FlvTag]] | None = None,
     warning: Callable[[str], None] | None = None,
 ) -> CaptureResult:
-    """Record a public LIVE page through reconnects until room-info says offline.
-
-    ``resolver`` and ``tag_source`` are injectable so network behaviour can be
-    tested without contacting TikTok. ``progress`` receives safe user-facing
-    status messages and ``heartbeat`` receives active-part byte updates. Only
-    resolver transport failures and direct-stream connection failures retry.
-    """
+    """Record a public LIVE page through reconnects until confirmed offline."""
     _validate_limits(
         max_consecutive_failures,
         max_consecutive_empty_connections,
         backoff_seconds,
+        offline_confirmation_checks,
+        offline_confirmation_interval,
     )
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
@@ -119,7 +119,17 @@ def capture_live(
 
         try:
             _report(progress, "resolving room")
-            direct_url = resolver(url)
+            direct_url = resolve_live_url_confirmed(
+                url,
+                resolver=resolver,
+                capture_started=bool(all_parts),
+                checks=offline_confirmation_checks,
+                interval=offline_confirmation_interval,
+                sleeper=sleeper,
+                clock=clock,
+                status_observer=lambda timestamp, status, confirmed: append_room_status_record(
+                    parts_directory / "connections.jsonl", timestamp, status, confirmed),
+            )
             _report(progress, f"connection {connection_number} opened")
             if raw_copy_dir is not None and raw_tag_source is not None:
                 raw_copy = RawCopy(
@@ -275,10 +285,16 @@ def _timestamp_replay_message(replay: TimestampReplay) -> str:
     )
 
 
-def _validate_limits(failures: int, empty: int, backoff: float) -> None:
+def _validate_limits(
+    failures: int, empty: int, backoff: float, offline_checks: int, offline_interval: float
+) -> None:
     if not isinstance(failures, int) or failures < 1:
         raise ValueError("max_consecutive_failures must be a positive integer")
     if not isinstance(empty, int) or empty < 1:
         raise ValueError("max_consecutive_empty_connections must be a positive integer")
     if backoff < 0:
         raise ValueError("backoff_seconds must not be negative")
+    if not isinstance(offline_checks, int) or offline_checks < 1:
+        raise ValueError("offline_confirmation_checks must be a positive integer")
+    if offline_interval < 0:
+        raise ValueError("offline_confirmation_interval must not be negative")

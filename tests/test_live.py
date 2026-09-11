@@ -47,6 +47,7 @@ class LiveCaptureTests(unittest.TestCase):
                 finalizer=_finalizer,
                 sleeper=lambda _: None,
                 progress=progress.append,
+                offline_confirmation_checks=1,
             )
 
         self.assertEqual(progress, [
@@ -82,6 +83,7 @@ class LiveCaptureTests(unittest.TestCase):
                 tag_source=lambda _: iter(stream()),
                 sleeper=lambda _: None,
                 heartbeat=lambda path, size: heartbeat.append((path, size)),
+                offline_confirmation_checks=1,
             )
 
         self.assertEqual([path.name for path, _ in heartbeat], ["part-0001.flv"])
@@ -114,6 +116,7 @@ class LiveCaptureTests(unittest.TestCase):
                 tag_source=lambda _: iter(tags),
                 progress=progress.append,
                 sleeper=lambda _: None,
+                offline_confirmation_checks=1,
             )
             record = json.loads((root / "parts" / "connections.jsonl").read_text().splitlines()[0])
 
@@ -142,8 +145,13 @@ class LiveCaptureTests(unittest.TestCase):
                 raw_copy_dir=root / "raw",
                 raw_tag_source=raw_source,
                 sleeper=lambda _: None,
+                offline_confirmation_checks=1,
             )
-            records = [json.loads(line) for line in (root / "parts" / "connections.jsonl").read_text().splitlines()]
+            records = [
+                json.loads(line)
+                for line in (root / "parts" / "connections.jsonl").read_text().splitlines()
+                if "\"connection\"" in line
+            ]
 
             self.assertEqual((root / "raw" / "connection-0001.raw").read_bytes(), b"unmodified connection bytes")
 
@@ -188,7 +196,7 @@ class LiveCaptureTests(unittest.TestCase):
             def sleeper(delay: float) -> None:
                 sleeps.append((delay, len(log_path.read_text().splitlines())))
 
-            times = iter((100.0, 110.0, 120.0, 130.0, 140.0, 150.0))
+            times = iter((100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0))
             output = root / "final.mp4"
             result = capture_live(
                 "https://www.tiktok.com/@creator/live",
@@ -199,8 +207,13 @@ class LiveCaptureTests(unittest.TestCase):
                 finalizer=_finalizer,
                 sleeper=sleeper,
                 clock=lambda: next(times),
+                offline_confirmation_checks=1,
             )
-            records = [json.loads(line) for line in log_path.read_text().splitlines()]
+            records = [
+                json.loads(line)
+                for line in log_path.read_text().splitlines()
+                if "\"connection\"" in line
+            ]
 
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual(result.output_path, output)
@@ -238,6 +251,7 @@ class LiveCaptureTests(unittest.TestCase):
                 resolver=resolver,
                 tag_source=lambda _: iter(stream()),
                 sleeper=delays.append,
+                offline_confirmation_checks=1,
             )
 
         self.assertEqual(len(result.parts), 1)
@@ -251,13 +265,99 @@ class LiveCaptureTests(unittest.TestCase):
                 capture_live(
                     "https://www.tiktok.com/@creator/live",
                     parts_directory=root / "parts",
-                    resolver=lambda _: (_ for _ in ()).throw(TikTokOfflineError("offline")),
+                    resolver=lambda _: (_ for _ in ()).throw(TikTokOfflineError("offline", 4)),
                 )
 
-            records = (root / "parts" / "connections.jsonl").read_text().splitlines()
+            records = [
+                json.loads(line)
+                for line in (root / "parts" / "connections.jsonl").read_text().splitlines()
+            ]
 
-        self.assertEqual(len(records), 1)
-        self.assertEqual(json.loads(records[0])["outcome"], "offline")
+        self.assertEqual(len(records), 2)
+        self.assertEqual(records[0]["event"], "room_status")
+        self.assertEqual(records[0]["status"], 4)
+        self.assertTrue(records[0]["confirmation_reached"])
+        self.assertEqual(records[1]["outcome"], "offline")
+
+    def test_confirms_three_non_live_responses_over_ten_seconds_by_default(self) -> None:
+        actions: list[object] = [
+            "https://cdn.test/live.flv",
+            TikTokOfflineError("offline", 4),
+            TikTokOfflineError("offline", "4"),
+            TikTokOfflineError("offline", 3),
+        ]
+        delays: list[float] = []
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                resolver=resolver,
+                tag_source=lambda _: iter(stream()),
+                sleeper=delays.append,
+                clock=lambda: 123.0,
+            )
+            records = [
+                json.loads(line)
+                for line in (root / "parts" / "connections.jsonl").read_text().splitlines()
+            ]
+
+        statuses = [record for record in records if record.get("event") == "room_status"]
+        self.assertEqual(delays, [1.0, 5.0, 5.0])
+        self.assertEqual([record["timestamp"] for record in statuses], [123.0] * 3)
+        self.assertEqual([record["status"] for record in statuses], [4, "4", 3])
+        self.assertEqual(
+            [record["confirmation_reached"] for record in statuses],
+            [False, False, True],
+        )
+
+    def test_live_response_during_confirmation_is_logged_and_capture_resumes(self) -> None:
+        actions: list[object] = [
+            "https://cdn.test/one.flv",
+            TikTokOfflineError("offline", 4),
+            "https://cdn.test/two.flv",
+            TikTokOfflineError("offline", 4),
+            TikTokOfflineError("offline", 4),
+        ]
+        delays: list[float] = []
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                resolver=resolver,
+                tag_source=lambda _: iter(stream()),
+                sleeper=delays.append,
+                offline_confirmation_checks=2,
+                offline_confirmation_interval=2.5,
+            )
+            records = [
+                json.loads(line)
+                for line in (root / "parts" / "connections.jsonl").read_text().splitlines()
+            ]
+
+        statuses = [record for record in records if record.get("event") == "room_status"]
+        self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
+        self.assertEqual(delays, [1.0, 2.5, 1.0, 2.5])
+        self.assertEqual([record["status"] for record in statuses], [4, 2, 4, 4])
+        self.assertEqual(
+            [record["confirmation_reached"] for record in statuses],
+            [False, False, False, True],
+        )
 
     def test_stops_after_the_injectable_failure_limit(self) -> None:
         calls = 0
@@ -333,6 +433,7 @@ class LiveCaptureTests(unittest.TestCase):
                 tag_source=lambda url: incomplete_stream() if url.endswith("one.flv") else iter(stream()),
                 finalizer=finalizer,
                 sleeper=lambda _: None,
+                offline_confirmation_checks=1,
             )
 
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])

@@ -21,7 +21,7 @@ def live_page(room_id: str = "123456") -> bytes:
 
 def live_room(
     renditions: dict[str, str],
-    status: int = 2,
+    status: object = 2,
     rtmp_pull_url: str | None = None,
 ) -> bytes:
     stream_url: dict[str, object] = {"flv_pull_url": renditions}
@@ -59,6 +59,13 @@ class TikTokResolverTests(unittest.TestCase):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener),
             "https://cdn.test/full-hd.flv",
         )
+
+    def test_preserves_the_raw_live_status_for_confirmation_evidence(self) -> None:
+        opener = _Opener([live_page(), live_room({"HD1": "https://cdn.test/live.flv"}, "2")])
+
+        result = resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+        self.assertEqual(result.room_status, "2")
 
     def test_prefers_flv_pull_url_when_quality_tiers_match(self) -> None:
         opener = _Opener([live_page(), live_room(
@@ -111,8 +118,10 @@ class TikTokResolverTests(unittest.TestCase):
     def test_reports_a_room_that_is_not_live(self) -> None:
         opener = _Opener([live_page(), live_room({}, status=4)])
 
-        with self.assertRaisesRegex(TikTokOfflineError, "not live"):
+        with self.assertRaisesRegex(TikTokOfflineError, "not live") as raised:
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+        self.assertEqual(raised.exception.status, 4)
 
     def test_reports_4003110_as_anonymous_stream_access_restriction(self) -> None:
         opener = _Opener([live_page(), room_info_error(4003110)])
