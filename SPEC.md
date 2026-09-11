@@ -338,16 +338,41 @@ quirk and the decision to measure the gate from first media instead. This also
 rules out gate cost as the explanation for reconnect-2 connection 2's 7.65 s
 loss; its `IncompleteRead` indicates a stalled socket tail before the error.
 
-The interrupted recording investigated in issue #5 also contained a source
-timestamp replay: a zero-timestamped script tag preceded a backward video DTS
-jump. Parts retain every tag in such a replay; timestamp alone is not enough
-to infer that TikTok intended content to be discarded. Each completed replay
-is recorded in its part's `timestamp_replays` entry in `connections.jsonl`,
-with the one-based retained-tag position, prior and new timestamps, magnitude,
-number of replayed tags, and whether the prior point was passed before part
-close. Live progress reports the same event. The validator warns, rather than
-fails, for backward DTS with its per-stream packet position and magnitude.
-Revisit handling only if this source behaviour becomes frequent.
+The interrupted recording investigated in issue #5 also contained source
+timestamp replays: a zero-timestamped script tag preceded backward audio and
+video DTS jumps. Parts retain every tag in such a replay; timestamp alone is
+not enough to infer that TikTok intended content to be discarded. Each
+completed replay is recorded in its part's `timestamp_replays` entry in
+`connections.jsonl`, with the one-based retained-tag position, prior and new
+timestamps, magnitude, number of replayed tags, and whether the prior point was
+passed before part close. Live progress warns that the affected part may not
+validate. The validator warns, rather than fails, for the backward DTS itself.
+
+Deep validation later found genuine H.264 decoder errors around two replay
+intervals in `part-0005.flv`; the four timestamp-replay records represented
+overlapping audio and video jumps at those two locations. Errors were confined
+to 218.831--222.221 seconds and 229.419--229.939 seconds rather than spread
+through the roughly 231-second part. Removing every backward-clock audio and
+video tag until each stream passed its previous timestamp did not repair the
+part: both decoder-error clusters remained. Frames after the removed ranges can
+still depend on reference state established inside them, so dropping only the
+detected replay is neither lossless nor sufficient.
+
+A second experiment split a temporary copy at both replay starts, initialized
+each new part with the cached codec configuration, and began each replay part
+at its H.264 IDR frame. The pre-replay part decoded cleanly, but each freshly
+initialized replay part retained its corresponding decoder-error cluster.
+Rolling a part at the backward jump therefore does not repair this recording,
+and duplicate frames entering one continuous decoder session are not a
+sufficient explanation. Without a simultaneous raw copy, the evidence cannot
+distinguish malformed CDN bytes from corruption introduced while parsing or
+writing them.
+
+The writer's independently-decodable-part guarantee does not currently hold
+across a timestamp replay. Retaining replayed tags is containment that
+preserves evidence for finalization and investigation; the failure is
+unresolved, not accepted as valid part output. Raw-copy comparison must decide
+whether a lossless writer fix is possible before replay handling changes.
 
 ## Roadmap
 

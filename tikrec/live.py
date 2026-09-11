@@ -280,8 +280,9 @@ def _safe_reason(error: Exception) -> str:
 def _timestamp_replay_message(replay: TimestampReplay) -> str:
     suffix = "recovery" if replay.recovered else "part end"
     return (
-        f"timestamp replay: {replay.path.name} tag {replay.position} jumped back "
-        f"{replay.magnitude}ms; {replay.replayed_tag_count} tags replayed before {suffix}"
+        f"warning: timestamp replay detected; {replay.path.name} tag {replay.position} "
+        f"jumped back {replay.magnitude}ms; {replay.replayed_tag_count} tags replayed "
+        f"before {suffix}; this part may not validate"
     )
 
 

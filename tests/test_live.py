@@ -95,13 +95,14 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertGreater(heartbeat[0][1], 13)
         self.assertEqual(len(result.parts), 1)
 
-    def test_ignores_a_zero_timestamp_script_tag_between_media_tags(self) -> None:
+    def test_warns_for_media_replay_but_ignores_zero_timestamp_script_tag(self) -> None:
         tags = [
             FlvTag(9, 100, b"\x00\x00\x00", b"\x17\x00\x00\x00\x00config"),
             FlvTag(9, 120, b"\x00\x00\x00", b"\x17\x01\x00\x00\x00key"),
             FlvTag(9, 130, b"\x00\x00\x00", b"\x27\x01\x00\x00\x00frame"),
             FlvTag(18, 0, b"\x00\x00\x00", b"script"),
-            FlvTag(9, 140, b"\x00\x00\x00", b"\x27\x01\x00\x00\x00frame"),
+            FlvTag(9, 110, b"\x00\x00\x00", b"\x27\x01\x00\x00\x00replay"),
+            FlvTag(9, 131, b"\x00\x00\x00", b"\x27\x01\x00\x00\x00recovered"),
         ]
         progress: list[str] = []
         actions: list[object] = ["https://cdn.test/live.flv", TikTokOfflineError("offline")]
@@ -125,8 +126,12 @@ class LiveCaptureTests(unittest.TestCase):
             )
             record = json.loads((root / "parts" / "connections.jsonl").read_text().splitlines()[0])
 
-        self.assertEqual(record["part_timings"][0]["timestamp_replays"], [])
-        self.assertNotIn("timestamp replay", "\n".join(progress))
+        self.assertEqual(len(record["part_timings"][0]["timestamp_replays"]), 1)
+        self.assertIn(
+            "warning: timestamp replay detected; part-0001.flv tag 5 jumped back "
+            "20ms; 1 tags replayed before recovery; this part may not validate",
+            progress,
+        )
 
     def test_live_raw_copy_maps_each_connection_to_its_manifest_record(self) -> None:
         actions: list[object] = ["https://cdn.test/live.flv", TikTokOfflineError("offline")]
