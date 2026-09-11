@@ -10,14 +10,14 @@ from typing import Any
 
 from .manifest import SCHEMA_VERSION
 from .media import MediaInfo, inspect_media
-from .part_validation import validate_part
-from .validation_report import ValidationFinding, ValidationResult, render_validation
-
+from .part_validation import validate_decoding, validate_part
+from .validation_report import ValidationFinding, ValidationResult
 
 class _ResultBuilder:
-    def __init__(self, target: Path, target_type: str) -> None:
+    def __init__(self, target: Path, target_type: str, deep: bool) -> None:
         self.target = target
         self.target_type = target_type
+        self.deep = deep
         self.media_integrity = "not_checked"
         self.session_completeness = "not_applicable"
         self.output_availability = "not_applicable"
@@ -32,7 +32,7 @@ class _ResultBuilder:
     def finish(self) -> ValidationResult:
         passed = not any(finding.level == "error" for finding in self.findings)
         return ValidationResult(
-            str(self.target), self.target_type, passed, self.media_integrity,
+            str(self.target), self.target_type, self.deep, passed, self.media_integrity,
             self.session_completeness, self.output_availability,
             self.parts_checked, tuple(self.findings),
         )
@@ -41,32 +41,33 @@ class _ResultBuilder:
 def validate_target(
     target: Path,
     *,
+    deep: bool = False,
     ffprobe: str = "ffprobe",
     runner: Callable[..., Any] = subprocess.run,
 ) -> ValidationResult:
     """Validate a completed output, parts directory, or v0.2 session."""
     target = Path(target)
     if not target.exists():
-        result = _ResultBuilder(target, "missing")
+        result = _ResultBuilder(target, "missing", deep)
         result.output_availability = "missing"
         result.finding("error", "target_missing", "target does not exist", target)
         return result.finish()
     if target.is_file():
         if target.name == "session.json":
-            return _validate_session(target.parent, ffprobe, runner)
-        return _validate_output_target(target, ffprobe, runner)
+            return _validate_session(target.parent, deep, ffprobe, runner)
+        return _validate_output_target(target, deep, ffprobe, runner)
     if target.is_dir():
         if (target / "session.json").exists():
-            return _validate_session(target, ffprobe, runner)
-        return _validate_parts_target(target, ffprobe, runner)
-    result = _ResultBuilder(target, "unsupported")
+            return _validate_session(target, deep, ffprobe, runner)
+        return _validate_parts_target(target, deep, ffprobe, runner)
+    result = _ResultBuilder(target, "unsupported", deep)
     result.finding("error", "target_unsupported", "target is not a regular file or directory")
     return result.finish()
 
 def _validate_parts_target(
-    directory: Path, ffprobe: str, runner: Callable[..., Any]
+    directory: Path, deep: bool, ffprobe: str, runner: Callable[..., Any]
 ) -> ValidationResult:
-    result = _ResultBuilder(directory, "parts")
+    result = _ResultBuilder(directory, "parts", deep)
     result.session_completeness = "unknown"
     result.output_availability = "not_declared"
     result.finding(
@@ -77,22 +78,22 @@ def _validate_parts_target(
     return result.finish()
 
 def _validate_output_target(
-    output: Path, ffprobe: str, runner: Callable[..., Any]
+    output: Path, deep: bool, ffprobe: str, runner: Callable[..., Any]
 ) -> ValidationResult:
-    result = _ResultBuilder(output, "output")
+    result = _ResultBuilder(output, "output", deep)
     result.output_availability = "present"
-    _validate_output(output, result, ffprobe, runner)
+    _validate_output(output, result, deep, ffprobe, runner)
     return result.finish()
 
 def _validate_session(
-    directory: Path, ffprobe: str, runner: Callable[..., Any]
+    directory: Path, deep: bool, ffprobe: str, runner: Callable[..., Any]
 ) -> ValidationResult:
-    result = _ResultBuilder(directory, "session")
+    result = _ResultBuilder(directory, "session", deep)
     manifest = _read_manifest(directory / "session.json", result)
     _validate_parts(directory, result, ffprobe, runner)
     if manifest is None:
         return result.finish()
-    _validate_manifest(directory, manifest, result, ffprobe, runner)
+    _validate_manifest(directory, manifest, result, deep, ffprobe, runner)
     return result.finish()
 
 def _validate_parts(
@@ -153,11 +154,15 @@ def _validate_manifest(
     directory: Path,
     manifest: dict[str, Any],
     result: _ResultBuilder,
+    deep: bool,
     ffprobe: str,
     runner: Callable[..., Any],
 ) -> None:
     status = manifest.get("status")
-    result.session_completeness = _session_state(status)
+    result.session_completeness = (
+        "complete" if status == "completed"
+        else str(status) if status in {"recording", "interrupted", "failed"} else "unknown"
+    )
     if status not in {"recording", "completed", "interrupted", "failed"}:
         result.finding("error", "manifest_status_invalid", "manifest status is invalid")
     expected_count = manifest.get("part_count")
@@ -175,13 +180,10 @@ def _validate_manifest(
     else:
         finalization_status = finalization["status"]
         allowed_finalization = {
-            "not_requested", "pending", "not_started", "running",
-            "completed", "interrupted", "failed",
+            "not_requested", "pending", "not_started", "running", "completed", "interrupted", "failed",
         }
         if finalization_status not in allowed_finalization:
-            result.finding(
-                "error", "manifest_finalization_invalid", "manifest finalization status is invalid"
-            )
+            result.finding("error", "manifest_finalization_invalid", "invalid finalization status")
     if status == "completed" and finalization_status not in {"completed", "not_requested"}:
         result.finding(
             "error", "manifest_state_inconsistent",
@@ -196,17 +198,14 @@ def _validate_manifest(
     if output is None:
         result.output_availability = "not_declared"
         if finalization_status == "completed":
-            result.finding(
-                "error", "completed_output_undeclared",
-                "finalization is completed but no output path is declared",
-            )
+            result.finding("error", "completed_output_undeclared", "completed output is undeclared")
         return
     result.output_availability = "present" if output.is_file() else "missing"
     if not output.is_file():
         level = "error" if finalization_status == "completed" else "warning"
         result.finding(level, "output_missing", "declared output does not exist", output)
         return
-    output_info = _validate_output(output, result, ffprobe, runner)
+    output_info = _validate_output(output, result, deep, ffprobe, runner)
     if finalization_status != "completed":
         result.finding(
             "warning", "output_state_unexpected",
@@ -237,7 +236,7 @@ def _manifest_output(
     return output
 
 def _validate_output(
-    output: Path, result: _ResultBuilder, ffprobe: str, runner: Callable[..., Any]
+    output: Path, result: _ResultBuilder, deep: bool, ffprobe: str, runner: Callable[..., Any]
 ) -> MediaInfo | None:
     if not _readable_nonempty(output, result, "output"):
         result.media_integrity = "failed"
@@ -258,6 +257,14 @@ def _validate_output(
             failed = True
     if info.audio_codec is None:
         result.finding("warning", "output_audio_missing", "no recognizable audio stream", output)
+    if deep:
+        try:
+            decode_error = validate_decoding(output, ffprobe, runner)
+        except OSError as error:
+            decode_error = f"could not start FFprobe: {error}"
+        if decode_error is not None:
+            result.finding("error", "output_decode", decode_error, output)
+            failed = True
     if result.media_integrity != "failed":
         result.media_integrity = "failed" if failed else "passed"
     return info
@@ -290,10 +297,3 @@ def _compare_media(
                 f"manifest {key} is {expected!r}, FFprobe reports {getattr(actual, key)!r}",
                 output,
             )
-
-def _session_state(status: Any) -> str:
-    if status == "completed":
-        return "complete"
-    if status in {"recording", "interrupted", "failed"}:
-        return str(status)
-    return "unknown"

@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
-from tikrec.part_validation import validate_part, verify_packet_dts
+from tikrec.part_validation import validate_decoding, validate_part, verify_packet_dts
 
 
 class PartValidationTests(unittest.TestCase):
@@ -30,6 +30,12 @@ class PartValidationTests(unittest.TestCase):
         problems, _ = validate_part(Path("part-0001.flv"), "ffprobe", runner)
 
         self.assertIn(("decode", "invalid media"), problems)
+
+    def test_decoder_check_is_reusable_for_a_completed_output(self) -> None:
+        def runner(*_: object, **__: object):
+            return SimpleNamespace(returncode=0, stderr="")
+
+        self.assertIsNone(validate_decoding(Path("recording.mp4"), "ffprobe", runner))
 
     def test_backward_dts_is_a_warning_but_duplicate_is_invalid(self) -> None:
         backward = json.dumps({"packets": [

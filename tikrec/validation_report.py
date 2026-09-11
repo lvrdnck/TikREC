@@ -22,6 +22,7 @@ class ValidationResult:
 
     target: str
     target_type: str
+    deep: bool
     passed: bool
     media_integrity: str
     session_completeness: str
@@ -41,6 +42,7 @@ def render_validation(result: ValidationResult) -> str:
     lines = [
         f"Validation {'passed' if result.passed else 'failed'}: {result.target}",
         f"Target: {result.target_type}",
+        f"Validation mode: {'deep' if result.deep else 'standard'}",
         f"Media integrity: {result.media_integrity}",
         f"Session completeness: {result.session_completeness}",
         f"Output availability: {result.output_availability}",

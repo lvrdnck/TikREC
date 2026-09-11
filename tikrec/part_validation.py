@@ -17,26 +17,9 @@ def validate_part(
     """Return hard failures and warnings found in one retained FLV part."""
     problems: list[tuple[str, str]] = []
     warnings: list[tuple[str, str]] = []
-    decode = runner(
-        [
-            ffprobe,
-            "-v",
-            "error",
-            "-show_frames",
-            "-show_entries",
-            "frame=media_type",
-            "-of",
-            "csv=p=0",
-            str(part),
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        text=True,
-        check=False,
-    )
-    decode_error = (decode.stderr or "").strip()
-    if decode.returncode or decode_error:
-        problems.append(("decode", _probe_failure(decode.returncode, decode_error)))
+    decode_error = validate_decoding(part, ffprobe, runner)
+    if decode_error is not None:
+        problems.append(("decode", decode_error))
 
     packets = runner(
         [
@@ -63,6 +46,35 @@ def validate_part(
         except (TypeError, ValueError, json.JSONDecodeError) as error:
             problems.append(("DTS", str(error)))
     return problems, warnings
+
+
+def validate_decoding(
+    media: Path,
+    ffprobe: str,
+    runner: Callable[..., Any],
+) -> str | None:
+    """Return the FFprobe decoder failure for one media file, if any."""
+    decode = runner(
+        [
+            ffprobe,
+            "-v",
+            "error",
+            "-show_frames",
+            "-show_entries",
+            "frame=media_type",
+            "-of",
+            "csv=p=0",
+            str(media),
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+    output = (decode.stderr or "").strip()
+    if decode.returncode or output:
+        return _probe_failure(decode.returncode, output)
+    return None
 
 
 def verify_packet_dts(output: str) -> list[str]:

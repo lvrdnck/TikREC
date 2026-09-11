@@ -28,7 +28,7 @@ def main(
     live_capture: Callable[..., CaptureResult] = capture_live,
     resolver: Callable[[str], str] = resolve_live_url,
     finalizer: Callable[..., Path] = finalize_parts,
-    validator: Callable[[Path], ValidationResult] = validate_target,
+    validator: Callable[..., ValidationResult] = validate_target,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
 ) -> int:
@@ -50,7 +50,7 @@ def main(
             return 0
 
         if arguments.command == "validate":
-            result = validator(Path(arguments.target))
+            result = validator(Path(arguments.target), deep=arguments.deep)
             if arguments.json:
                 print(json.dumps(result.as_dict(), indent=2, sort_keys=True), file=stdout)
             else:
@@ -216,6 +216,7 @@ def _parser() -> argparse.ArgumentParser:
     live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     validate = subcommands.add_parser("validate", help="check recording health")
     validate.add_argument("target", metavar="TARGET")
+    validate.add_argument("--deep", action="store_true", help="fully decode completed output")
     validate.add_argument("--json", action="store_true", help="print structured results")
     for command in (record, finalize, resolve, live, validate):
         # Accept the global diagnostic flag after a subcommand as well.
