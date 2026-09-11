@@ -7,7 +7,10 @@ from unittest.mock import patch
 import unittest
 
 from tikrec.flv import FlvFormatError, FlvTag
-from tikrec.source import RawCopy, iter_tags, iter_url_chunks, iter_url_tags
+from tikrec.source import (
+    DEFAULT_READ_TIMEOUT, RawCopy, SourceStallError,
+    iter_tags, iter_url_chunks, iter_url_tags,
+)
 
 
 def make_stream(*tags: FlvTag) -> bytes:
@@ -97,7 +100,22 @@ class UrlChunkTests(unittest.TestCase):
         with patch("tikrec.source.urlopen", return_value=response) as open_url:
             self.assertEqual(list(iter_url_chunks("https://example.test/live", chunk_size=6)), [b"first", b"second"])
 
-        open_url.assert_called_once_with("https://example.test/live", timeout=None)
+        open_url.assert_called_once_with(
+            "https://example.test/live", timeout=DEFAULT_READ_TIMEOUT
+        )
+
+    def test_url_chunks_turns_a_socket_read_timeout_into_a_stall(self) -> None:
+        response = _StalledResponse()
+
+        with patch("tikrec.source.urlopen", return_value=response) as open_url:
+            with self.assertRaisesRegex(SourceStallError, "stalled after 2.5s"):
+                list(iter_url_chunks("https://example.test/live", timeout=2.5))
+
+        open_url.assert_called_once_with("https://example.test/live", timeout=2.5)
+
+    def test_url_chunks_rejects_a_nonpositive_timeout(self) -> None:
+        with self.assertRaisesRegex(ValueError, "timeout must be positive"):
+            list(iter_url_chunks("https://example.test/live", timeout=0))
 
     def test_url_tags_uses_the_same_parser_with_a_mocked_response(self) -> None:
         tags = [video(100, b"\x17\x01keyframe")]
@@ -161,6 +179,14 @@ class _Response:
 
     def read(self, _: int) -> bytes:
         return next(self._chunks, b"")
+
+
+class _StalledResponse(_Response):
+    def __init__(self) -> None:
+        super().__init__([])
+
+    def read(self, _: int) -> bytes:
+        raise TimeoutError("timed out")
 
 
 class _WriteFailingHandle:

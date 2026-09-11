@@ -11,6 +11,13 @@ from urllib.request import urlopen
 from .flv import FlvFormatError, FlvTag, read_tag
 
 
+DEFAULT_READ_TIMEOUT = 30.0
+
+
+class SourceStallError(TimeoutError):
+    """Raised when an open source connection stops delivering bytes."""
+
+
 class RawCopy:
     """Best-effort byte-for-byte copy of one source connection.
 
@@ -89,15 +96,26 @@ def iter_url_chunks(
     url: str,
     *,
     chunk_size: int = 64 * 1024,
-    timeout: float | None = None,
+    timeout: float | None = DEFAULT_READ_TIMEOUT,
     raw_copy: RawCopy | None = None,
 ) -> Iterator[bytes]:
     """Yield byte chunks from one direct HTTP FLV URL without retrying."""
     if chunk_size <= 0:
         raise ValueError("chunk_size must be positive")
+    if timeout is not None and timeout <= 0:
+        raise ValueError("timeout must be positive or None")
     try:
         with urlopen(url, timeout=timeout) as response:
-            while chunk := response.read(chunk_size):
+            while True:
+                try:
+                    chunk = response.read(chunk_size)
+                except TimeoutError as error:
+                    duration = "" if timeout is None else f" after {timeout:g}s"
+                    raise SourceStallError(
+                        f"source connection stalled{duration} without data"
+                    ) from error
+                if not chunk:
+                    break
                 # Tee the received bytes before their first parser read.
                 if raw_copy is not None:
                     raw_copy.write(chunk)
@@ -111,7 +129,7 @@ def iter_url_tags(
     url: str,
     *,
     chunk_size: int = 64 * 1024,
-    timeout: float | None = None,
+    timeout: float | None = DEFAULT_READ_TIMEOUT,
     raw_copy: RawCopy | None = None,
 ) -> Iterator[FlvTag]:
     """Yield parsed tags from one direct HTTP FLV URL without retrying."""
