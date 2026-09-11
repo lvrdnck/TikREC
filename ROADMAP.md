@@ -65,6 +65,8 @@ actual parts, output, finalization state, and available media metadata. Results
 collect concise errors and warnings in human or JSON form while keeping media,
 parts, and manifests read-only. Legacy directories remain supported, and
 interrupted session completeness is reported separately from media integrity.
+An optional deep mode fully decodes the completed output when the additional
+time and CPU cost is warranted.
 
 ## Planned releases
 

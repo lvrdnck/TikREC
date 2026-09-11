@@ -44,7 +44,7 @@ when invoked, that is an error, not a wait state.
     tikrec resolve <tiktok-live-page-url>
     tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
     tikrec finalize PARTS_DIRECTORY --output FILE
-    tikrec validate TARGET [--json]
+    tikrec validate TARGET [--deep] [--json]
     tikrec --version
 
 `record` takes a direct FLV URL and is the generic path. It must stay
@@ -55,7 +55,10 @@ run. It uses the same finalizer as capture, never changes the parts, and
 refuses to overwrite an existing destination.
 `validate` performs a read-only structural and media health check on an output
 file, parts directory, or session manifest/directory. It does not finalize,
-repair, or recover recordings.
+repair, or recover recordings. Standard validation fully decodes retained
+parts but uses bounded stream/container/duration inspection for a completed
+output. `--deep` also decodes the complete output; its cost grows with recording
+length and session validation then decodes both the parts and final artifact.
 
 Exit codes: 0 success, 1 capture/finalization/validation failure, 2 invalid CLI
 usage, 130 interrupted capture.
@@ -162,6 +165,15 @@ pass when its retained parts are healthy even though no completed output exists.
 It never mutates a manifest or recording. The standalone validation script is a
 compatibility wrapper over this shared implementation.
 
+Validation began as a standalone developer script because v0.1 had only one
+diagnostic operation over retained parts and did not promise a stable user
+interface. It became a `tikrec` subcommand in v0.3 because validation now covers
+multiple user-owned target types, has documented exit behavior and JSON output,
+and is a supported recording workflow rather than a development probe. Keeping
+the script as the primary interface would either hide that status or duplicate
+target discovery and reporting. The script remains only as a thin wrapper over
+the same reusable implementation.
+
 ### tikrec/live.py — reconnect-capable public LIVE capture
 `capture_live(url, *, parts_directory, output_path, ...)` implements the
 `tikrec live` path above the generic source, writer, and finalizer layers.
@@ -222,6 +234,23 @@ of every direct FLV connection before parsing so source behaviour can be
 compared directly with TikREC output. The files are named by the connection
 number recorded in `connections.jsonl`. This roughly doubles the session's
 disk use. A copy failure is a warning, never a capture failure.
+
+## Recording storage
+
+TikREC has no implicit recording root. `--output` is the authoritative path,
+and a relative path is relative to the process working directory. Recordings
+should normally use a dedicated directory outside a source checkout. During
+development in this repository, `runs/` is the conventional local destination;
+the repository ignores `runs/`, `*.parts/`, common recorded-media extensions,
+and partial outputs. The `*.parts/` rule covers `session.json` and
+`connections.jsonl` inside deterministic session directories.
+
+TikREC does not warn merely because an output is inside a Git working tree. A
+checkout may intentionally contain an ignored recording directory, and Git
+repository detection is not evidence of a capture error. The command instead
+honors the explicit path while this repository's ignore rules prevent its normal
+artifacts from being staged accidentally. User-selected raw-copy directories
+outside ignored paths remain the user's storage responsibility.
 
 ## Testing
 

@@ -14,6 +14,7 @@ venv/
 
 # Recorded media — never commit
 runs/
+*.parts/
 *.flv
 *.mp4
 *.ts

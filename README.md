@@ -11,7 +11,7 @@ reconnecting if the connection drops, and you get one MP4 out.
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
-    tikrec validate TARGET [--json]
+    tikrec validate TARGET [--deep] [--json]
     tikrec --version
 
 `live` records a public LIVE page and reconnects across dropped
@@ -42,6 +42,14 @@ continues. Raw copies roughly double the recording's disk use.
 
 Install with `pip install -e .`
 
+TikREC writes to the path supplied with `--output`; relative paths start from
+the current directory. Prefer a dedicated recording directory outside a source
+checkout. While developing TikREC, `runs/` is the repository's ignored local
+recording directory:
+
+    mkdir -p runs
+    tikrec live <tiktok-live-page-url> --output runs/recording.mp4
+
 ## How it works
 
 The stream is written as numbered FLV parts, each independently
@@ -68,6 +76,7 @@ schema and lifecycle.
 ## Validating a recording
 
     tikrec validate path/to/recording.mp4
+    tikrec validate path/to/recording.mp4 --deep
     tikrec validate path/to/recording.parts
     tikrec validate path/to/recording.parts/session.json --json
 
@@ -79,9 +88,12 @@ also a warning so a valid video-only source is not labeled corrupt.
 
 For a completed output, validation checks readability, FFprobe inspection,
 video and optional audio streams, container information, and a positive finite
-duration. When `session.json` is present it also checks the actual part count,
-declared output, finalization state, and any available codec/resolution metadata.
-Older parts directories without a manifest remain supported.
+duration. `--deep` additionally decodes the complete output and can take
+significant time and CPU for a long recording. Retained parts always receive
+the full decode check, with or without `--deep`. When `session.json` is present
+validation also checks the actual part count, declared output, finalization
+state, and available codec/resolution metadata. Older parts directories without
+a manifest remain supported.
 
 An interrupted, failed, or still-recording session is not corrupt merely
 because it is incomplete or has no final MP4. The report presents media

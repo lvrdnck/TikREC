@@ -105,7 +105,9 @@ outcome and timing for each numbered attempt.
 `tikrec validate` accepts either `session.json` or its containing directory. It
 checks the manifest's part count, output declaration and availability,
 finalization state, and non-null codec/resolution facts against the files and
-FFprobe results. Null optional media fields do not fail validation.
+FFprobe results. Null optional media fields do not fail validation. With
+`--deep`, it also fully decodes an existing completed output after validating
+the retained parts.
 
 Validation never updates `session.json`. Its report separates media integrity,
 session completeness, and final-output availability, so an interrupted, failed,
