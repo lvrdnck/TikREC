@@ -48,6 +48,16 @@ def finalize_parts(
             manifest=manifest,
             target_size=target_size,
         )
+        if progress is not None:
+            if same_configuration:
+                progress(
+                    f"finalization started: stream-copying {len(ordered_parts)} part(s)"
+                )
+            else:
+                progress(
+                    f"finalization started: re-encoding {len(ordered_parts)} part(s); "
+                    "this may take several minutes or longer"
+                )
         result = _run_ffmpeg(command, runner, progress)
         if result.returncode != 0:
             raise FinalizationError(_ffmpeg_failure(command, result.stderr, result.returncode))
@@ -78,12 +88,14 @@ def _run_ffmpeg(
             result = runner(command, capture_output=True, text=True, check=False)
         except OSError as error:
             raise FinalizationError(f"could not start FFmpeg: {error}") from error
-        _report_ffmpeg_stderr(result.stderr, progress)
+        _FfmpegProgressReporter(progress).report(result.stderr)
         return result
 
     # FFmpeg writes both structured progress and diagnostics to stderr. Retain
     # every line so a non-zero exit still reports the actual diagnostic.
-    progress_command = command[:2] + ["-progress", "pipe:2", "-nostats"] + command[2:]
+    progress_command = command[:2] + [
+        "-progress", "pipe:2", "-nostats", "-loglevel", "warning",
+    ] + command[2:]
     try:
         process = subprocess.Popen(
             progress_command,
@@ -100,10 +112,11 @@ def _run_ffmpeg(
 
     assert process.stderr is not None
     stderr_lines: list[str] = []
+    reporter = _FfmpegProgressReporter(progress)
     try:
         for line in process.stderr:
             stderr_lines.append(line)
-            _report_ffmpeg_stderr(line, progress)
+            reporter.report(line)
     except BaseException:
         # KeyboardInterrupt is not an Exception, but FFmpeg must not outlive
         # an abandoned finalization and keep its temporary output locked.
@@ -113,15 +126,42 @@ def _run_ffmpeg(
     return subprocess.CompletedProcess(command, process.wait(), stderr="".join(stderr_lines))
 
 
-def _report_ffmpeg_stderr(
-    stderr: str | None,
-    progress: Callable[[str], None] | None,
-) -> None:
-    if progress is None or not stderr:
-        return
-    for line in stderr.splitlines():
-        if line:
-            progress(f"ffmpeg: {line}")
+class _FfmpegProgressReporter:
+    """Reduce FFmpeg stderr to useful progress while retaining raw diagnostics."""
+
+    _PROGRESS_KEYS = {
+        "bitrate", "drop_frames", "dup_frames", "fps", "frame", "out_time_ms",
+        "out_time_us", "progress", "speed", "total_size",
+    }
+
+    def __init__(self, progress: Callable[[str], None] | None) -> None:
+        self._progress = progress
+        self._late_sei_reported = False
+
+    def report(self, stderr: str | None) -> None:
+        """Report time progress and diagnostics without repeated metadata warnings."""
+        if self._progress is None or not stderr:
+            return
+        for line in stderr.splitlines():
+            if not line:
+                continue
+            if "Late SEI is not implemented" in line:
+                if not self._late_sei_reported:
+                    self._progress(
+                        "ffmpeg: late H.264 SEI metadata is unsupported; "
+                        "repeated warnings suppressed"
+                    )
+                    self._late_sei_reported = True
+                continue
+            if self._late_sei_reported and "If you want to help" in line:
+                continue
+            key, separator, value = line.partition("=")
+            if separator and key == "out_time":
+                self._progress(f"encoding progress: {value}")
+            elif separator and (key in self._PROGRESS_KEYS or key.startswith("stream_")):
+                continue
+            else:
+                self._progress(f"ffmpeg: {line}")
 
 
 def _validate_parts(parts: Iterable[Path]) -> tuple[Path, ...]:

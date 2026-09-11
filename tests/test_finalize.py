@@ -74,9 +74,13 @@ class FinalizeTests(unittest.TestCase):
             write_part(first, b"first")
             write_part(second, b"second")
             runner = _Runner()
+            progress: list[str] = []
 
             with patch("tikrec.finalize.avc_configuration_dimensions", return_value=(720, 1280)):
-                finalize_parts([first, second], root / "final.mp4", runner=runner)
+                finalize_parts(
+                    [first, second], root / "final.mp4",
+                    runner=runner, progress=progress.append,
+                )
 
             command = runner.commands[0]
             graph = command[command.index("-filter_complex") + 1]
@@ -84,6 +88,11 @@ class FinalizeTests(unittest.TestCase):
             self.assertIn("asetpts=PTS-STARTPTS", graph)
             self.assertIn("concat=n=2:v=1:a=1", graph)
             self.assertEqual(command[command.index("-c:v") + 1], "libx264")
+            self.assertIn(
+                "finalization started: re-encoding 2 part(s); "
+                "this may take several minutes or longer",
+                progress,
+            )
 
     def test_failed_ffmpeg_includes_stderr_and_deletes_partial_output(self) -> None:
         with TemporaryDirectory() as directory:
@@ -113,7 +122,8 @@ class FinalizeTests(unittest.TestCase):
                 )
 
         self.assertEqual(progress, [
-            "ffmpeg: out_time=00:00:01.000000",
+            "finalization started: stream-copying 1 part(s)",
+            "encoding progress: 00:00:01.000000",
             "ffmpeg: decoder exploded",
         ])
 
@@ -127,11 +137,31 @@ class FinalizeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 9)
         self.assertEqual(result.stderr, "out_time=00:00:01.000000\ndecoder exploded\n")
         self.assertEqual(progress, [
-            "ffmpeg: out_time=00:00:01.000000",
+            "encoding progress: 00:00:01.000000",
             "ffmpeg: decoder exploded",
         ])
         self.assertEqual(popen.call_args.args[0], [
             "ffmpeg", "-n", "-progress", "pipe:2", "-nostats",
+            "-loglevel", "warning",
+        ])
+
+    def test_repeated_late_sei_diagnostics_are_reported_once(self) -> None:
+        message = (
+            "[h264 @ 0x1] Late SEI is not implemented. Update FFmpeg.\n"
+            "[h264 @ 0x1] If you want to help, upload a sample.\n"
+            "[h264 @ 0x2] Late SEI is not implemented. Update FFmpeg.\n"
+            "out_time=00:00:02.000000\n"
+        )
+        progress: list[str] = []
+        process = _Process(message, 0)
+
+        with patch("tikrec.finalize.subprocess.Popen", return_value=process):
+            result = _run_ffmpeg(["ffmpeg", "-n"], subprocess.run, progress.append)
+
+        self.assertEqual(result.stderr, message)
+        self.assertEqual(progress, [
+            "ffmpeg: late H.264 SEI metadata is unsupported; repeated warnings suppressed",
+            "encoding progress: 00:00:02.000000",
         ])
 
     def test_interrupting_ffmpeg_progress_terminates_and_reaps_ffmpeg(self) -> None:
