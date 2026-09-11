@@ -92,29 +92,29 @@ def main(
                 warning=warning,
             )
         if result.interrupted:
-            if live_progress is not None:
-                live_progress.clear()
             if result.output_path is not None:
-                print(
+                message = (
                     f"tikrec: interrupted; output written to {result.output_path}; "
-                    f"retained parts in {parts_directory}",
-                    file=stderr,
+                    f"retained parts in {parts_directory}"
                 )
             else:
-                print(f"tikrec: interrupted; retained parts in {parts_directory}", file=stderr)
+                message = f"tikrec: interrupted; retained parts in {parts_directory}"
+            _print_final(live_progress, message, stderr)
             return 130
-        print(f"recorded {result.output_path}", file=stdout)
+        _print_final(live_progress, f"recorded {result.output_path}", stdout)
         return 0
     except KeyboardInterrupt:
-        if live_progress is not None:
-            live_progress.clear()
-        print("tikrec: interrupted", file=stderr)
+        _print_final(live_progress, "tikrec: interrupted", stderr)
         return 130
     except (CaptureError, TikTokResolutionError, OSError, ValueError) as error:
-        print(f"tikrec: {_one_line_error(error)}", file=stderr)
+        _print_final(live_progress, f"tikrec: {_one_line_error(error)}", stderr)
         return 1
     except Exception as error:
-        print(f"tikrec: unexpected {type(error).__name__}: {_one_line_error(error)}", file=stderr)
+        _print_final(
+            live_progress,
+            f"tikrec: unexpected {type(error).__name__}: {_one_line_error(error)}",
+            stderr,
+        )
         if arguments.debug:
             traceback.print_exc(file=stderr)
         return 1
@@ -125,6 +125,13 @@ def main(
 
 def _one_line_error(error: Exception) -> str:
     return " ".join(str(error).split())
+
+
+def _print_final(progress: LiveProgress | None, message: str, stream: TextIO) -> None:
+    """Clear an active heartbeat before writing a final CLI result."""
+    if progress is not None:
+        progress.clear()
+    print(message, file=stream)
 
 
 def _finalize_directory(

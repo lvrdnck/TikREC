@@ -455,6 +455,60 @@ class LiveCaptureTests(unittest.TestCase):
 
         self.assertEqual(calls, 2)
 
+    def test_retained_media_resets_failure_and_empty_connection_streaks(self) -> None:
+        resolve_count = 0
+        source_count = 0
+        no_media = [
+            FlvTag(9, 100, b"\x00\x00\x00", b"\x17\x00\x00\x00\x00config"),
+            FlvTag(9, 110, b"\x00\x00\x00", b"\x27\x01\x00\x00\x00inter"),
+        ]
+
+        def resolver(_: str) -> str:
+            nonlocal resolve_count
+            resolve_count += 1
+            if resolve_count == 7:
+                raise TikTokOfflineError("offline")
+            return f"https://cdn.test/{resolve_count}.flv"
+
+        def failed_stream():
+            raise OSError("transient read failure")
+            yield
+
+        def media_then_failure():
+            yield from stream()
+            raise IncompleteRead(b"partial FLV response", 59_998)
+
+        def source(_: str):
+            nonlocal source_count
+            source_count += 1
+            if source_count in (2, 3, 5):
+                return failed_stream()
+            if source_count == 4:
+                return media_then_failure()
+            return iter(no_media)
+
+        with TemporaryDirectory() as directory:
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=Path(directory) / "parts",
+                resolver=resolver,
+                tag_source=source,
+                max_consecutive_failures=3,
+                max_consecutive_empty_connections=2,
+                sleeper=lambda _: None,
+                offline_confirmation_checks=1,
+            )
+
+        self.assertEqual(source_count, 6)
+        self.assertEqual([part.name for part in result.parts], ["part-0001.flv"])
+        self.assertEqual(
+            [record.outcome for record in result.connections],
+            ["closed", "connection_error", "connection_error", "connection_error",
+             "connection_error", "closed", "offline"],
+        )
+        self.assertEqual(
+            [part.name for part in result.connections[3].parts], ["part-0001.flv"])
+
     def test_stops_after_connections_that_retain_no_media(self) -> None:
         actions: list[object] = ["https://cdn.test/one.flv", "https://cdn.test/two.flv"]
         no_keyframe = [
@@ -698,6 +752,33 @@ class LiveCliTests(unittest.TestCase):
         self.assertEqual(code, 130)
         self.assertTrue(stdout.getvalue().endswith("\r\x1b[2K"))
         self.assertEqual(stderr.getvalue(), "tikrec: interrupted; retained parts in final.parts\n")
+
+    def test_failed_live_clears_a_visible_heartbeat_before_stderr(self) -> None:
+        class TtyStringIO(StringIO):
+            def isatty(self) -> bool:
+                return True
+
+        def failed_live_capture(_: str, **kwargs: object) -> CaptureResult:
+            heartbeat = kwargs["heartbeat"]
+            assert callable(heartbeat)
+            heartbeat(Path("part-0002.flv"), 17_400_000)
+            raise CaptureError("live capture stopped after consecutive connection failures")
+
+        stdout = TtyStringIO()
+        stderr = StringIO()
+        code = main(
+            ["live", "https://www.tiktok.com/@creator/live", "--output", "final.mp4"],
+            live_capture=failed_live_capture,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+        self.assertEqual(code, 1)
+        self.assertTrue(stdout.getvalue().endswith("\r\x1b[2K"))
+        self.assertEqual(
+            stderr.getvalue(),
+            "tikrec: live capture stopped after consecutive connection failures\n",
+        )
 
     def test_interrupted_live_with_output_still_exits_130(self) -> None:
         stderr = StringIO()

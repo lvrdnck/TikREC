@@ -56,13 +56,8 @@ def capture_live(
     media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until confirmed offline."""
-    _validate_limits(
-        max_consecutive_failures,
-        max_consecutive_empty_connections,
-        backoff_seconds,
-        offline_confirmation_checks,
-        offline_confirmation_interval,
-    )
+    _validate_limits(max_consecutive_failures, max_consecutive_empty_connections, backoff_seconds,
+                     offline_confirmation_checks, offline_confirmation_interval)
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
     manifest = SessionManifest(parts_directory, output_path, "tiktok_live",
@@ -217,16 +212,16 @@ def capture_live(
             )
         except TikTokResolutionTransientError as error:
             close_record("resolver_error", error)
-            consecutive_failures += 1
+            consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
             reconnect_reason = _safe_reason(error)
         except SourceStallError as error:
             close_record("stalled", error)
-            consecutive_failures += 1
+            consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
             reconnect_reason = _safe_reason(error)
         # HTTP reads raise HTTPException (not OSError) when a CDN body ends early.
         except (OSError, EOFError, HTTPException) as error:
             close_record("connection_error", error)
-            consecutive_failures += 1
+            consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
             reconnect_reason = _safe_reason(error)
         except TikTokResolutionError as error:
             close_record("resolution_error", error)
@@ -239,7 +234,7 @@ def capture_live(
         else:
             close_record("closed")
             consecutive_failures = 0
-            consecutive_empty = consecutive_empty + 1 if not written_parts else 0
+            consecutive_empty = 0 if connection_parts else consecutive_empty + 1
             reconnect_reason = "connection closed"
             if consecutive_empty >= max_consecutive_empty_connections:
                 raise capture_failure(
@@ -286,8 +281,12 @@ def _timestamp_replay_message(replay: TimestampReplay) -> str:
     )
 
 
-def _validate_limits(failures: int, empty: int, backoff: float, offline_checks: int,
-                     offline_interval: float) -> None:
+def _next_failure_counts(media: bool, failures: int, empty: int) -> tuple[int, int]:
+    """Reset both connection streaks when a failed read still retained media."""
+    return (0, 0) if media else (failures + 1, empty)
+
+
+def _validate_limits(failures: int, empty: int, backoff: float, offline_checks: int, offline_interval: float) -> None:
     if not isinstance(failures, int) or failures < 1:
         raise ValueError("max_consecutive_failures must be a positive integer")
     if not isinstance(empty, int) or empty < 1:
