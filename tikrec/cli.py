@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import traceback
 from collections.abc import Callable, Sequence
@@ -16,6 +17,8 @@ from .live import capture_live
 from .manifest import SessionManifest
 from .progress import LiveProgress
 from .tiktok import TikTokResolutionError, resolve_live_url
+from .validation import validate_target
+from .validation_report import ValidationResult, render_validation
 
 
 def main(
@@ -25,6 +28,7 @@ def main(
     live_capture: Callable[..., CaptureResult] = capture_live,
     resolver: Callable[[str], str] = resolve_live_url,
     finalizer: Callable[..., Path] = finalize_parts,
+    validator: Callable[[Path], ValidationResult] = validate_target,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
 ) -> int:
@@ -44,6 +48,14 @@ def main(
             direct_url = resolver(arguments.url)
             print(direct_url, file=stdout)
             return 0
+
+        if arguments.command == "validate":
+            result = validator(Path(arguments.target))
+            if arguments.json:
+                print(json.dumps(result.as_dict(), indent=2, sort_keys=True), file=stdout)
+            else:
+                print(render_validation(result), file=stdout)
+            return 0 if result.passed else 1
 
         output_path = Path(arguments.output)
         if arguments.command == "finalize":
@@ -202,7 +214,10 @@ def _parser() -> argparse.ArgumentParser:
     live.add_argument("url", metavar="TIKTOK_LIVE_URL")
     live.add_argument("--output", required=True, metavar="FILE")
     live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
-    for command in (record, finalize, resolve, live):
+    validate = subcommands.add_parser("validate", help="check recording health")
+    validate.add_argument("target", metavar="TARGET")
+    validate.add_argument("--json", action="store_true", help="print structured results")
+    for command in (record, finalize, resolve, live, validate):
         # Accept the global diagnostic flag after a subcommand as well.
         command.add_argument("--debug", action="store_true", default=argparse.SUPPRESS)
     return parser
