@@ -75,4 +75,5 @@ See SPEC.md.
 
 [SPEC.md](SPEC.md) — architecture, module responsibilities, validation
 notes and the reasoning behind past fixes.
+[ROADMAP.md](ROADMAP.md) — dependency-ordered direction for future releases.
 [AGENTS.md](AGENTS.md) — working rules.

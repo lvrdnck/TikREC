@@ -12,23 +12,30 @@ In scope:
 - Recording a stream from the moment I start the tool
 - Reconnecting within a recording when the connection drops
 
-Out of scope, deliberately:
+Out of scope for v0.1.x:
 - Subscriber-only, private, or otherwise gated streams
-- Auth, CAPTCHA, or private request-signing bypass
+- Authentication and session management
 - Watching a handle and starting automatically
 - Predicting when someone will go live
-- Transcription, chapters, search, analytics
-- Any feature whose purpose is tracking a person rather than
-  capturing a stream I chose to record
+- Chat collection, transcription, chapters, search, analytics
+- Server/API mode and a Web UI
+
+Project-wide security and privacy boundaries:
+- No auth, CAPTCHA, entitlement, access-control, or private request-signing
+  bypass
+- No feature whose purpose is covertly tracking a person rather than
+  supporting streams and recordings the user legitimately chose to access
 
 Some rooms that are visibly live return room-info status code `4003110` and
 expose no stream URLs to anonymous page or API requests, while other public
 rooms resolve normally. This is TikTok making a session-dependent access
 decision, not an offline status. A normal browser User-Agent and Referer were
 tested and did not change the response. Recording those rooms would require
-authenticating as the user, which is out of scope.
+authenticating as the user, which is out of scope for v0.1.x. A future
+authenticated mode may use a session explicitly provided by the user, but must
+not bypass TikTok's access controls.
 
-The tool must never wait for a stream to begin. If the room is offline
+The v0.1.x commands never wait for a stream to begin. If the room is offline
 when invoked, that is an error, not a wait state.
 
 ## Commands
@@ -247,14 +254,9 @@ Revisit handling only if this source behaviour becomes frequent.
 
 ## Roadmap
 
-Not yet scheduled, in rough order:
-
-- Reconnect smoke tests against a real LIVE, including FFmpeg decode checks
-- Real multi-configuration capture, verifying each part decodes alone
-- Richer session manifest: codecs, reconnect summary, and final status
-- Health checks: ffprobe validation, duration sanity, timestamp anomalies
-- Logging with a debug mode; never log signed CDN URLs at normal verbosity
-- Local library for browsing recordings, stored outside /tmp
+See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
+listed there remain out of scope until their release is implemented; the
+architecture in this specification describes v0.1.x as it exists today.
 
 ## Design principles
 
