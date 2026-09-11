@@ -9,13 +9,8 @@ from http.client import HTTPException
 from pathlib import Path
 
 from .capture import (
-    CaptureError,
-    CaptureResult,
-    ConnectionRecord,
-    _prepare_session,
-    append_connection_record,
-    append_room_status_record,
-    raw_copy_path,
+    CaptureError, CaptureResult, ConnectionRecord, _prepare_session,
+    append_connection_record, append_room_status_record, raw_copy_path,
 )
 from .finalize import finalize_parts
 from .flv import FlvTag
@@ -65,7 +60,6 @@ def capture_live(
     )
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
-    _prepare_session(parts_directory, output_path)
 
     records: list[ConnectionRecord] = []
     all_parts: list[Path] = []
@@ -74,6 +68,7 @@ def capture_live(
     consecutive_empty = 0
     connection_number = 0
     previous_end: float | None = None
+    session_started = False
 
     while True:
         connection_number += 1
@@ -95,7 +90,7 @@ def capture_live(
         def part_started(path: Path) -> None:
             _report(progress, f"part started: {path.name}")
 
-        def close_record(outcome: str, error: Exception | None = None) -> ConnectionRecord:
+        def close_record(outcome: str, error: Exception | None = None) -> None:
             nonlocal previous_end, next_part_index
             ended_at = clock()
             record = ConnectionRecord(
@@ -109,13 +104,13 @@ def capture_live(
                 tuple(part_timings),
                 None if raw_copy is None else raw_copy.saved_path,
             )
-            append_connection_record(parts_directory / "connections.jsonl", record)
+            if session_started:
+                append_connection_record(parts_directory / "connections.jsonl", record)
             records.append(record)
             all_parts.extend(connection_parts)
             # This advances from writer output, rather than inspecting the directory.
             next_part_index += len(connection_parts)
             previous_end = ended_at
-            return record
 
         try:
             _report(progress, "resolving room")
@@ -127,9 +122,17 @@ def capture_live(
                 interval=offline_confirmation_interval,
                 sleeper=sleeper,
                 clock=clock,
+                # A pre-capture status must not create the session it failed to start.
                 status_observer=lambda timestamp, status, confirmed: append_room_status_record(
-                    parts_directory / "connections.jsonl", timestamp, status, confirmed),
+                    parts_directory / "connections.jsonl", timestamp, status, confirmed
+                ) if session_started else None,
             )
+            if not session_started:
+                _prepare_session(parts_directory, output_path)
+                session_started = True
+                # Preserve transient attempts once resolution creates a real session.
+                for pending_record in records:
+                    append_connection_record(parts_directory / "connections.jsonl", pending_record)
             _report(progress, f"connection {connection_number} opened")
             if raw_copy_dir is not None and raw_tag_source is not None:
                 raw_copy = RawCopy(
@@ -164,6 +167,8 @@ def capture_live(
             # Custom writers may not use the callback, while the built-in writer does.
             if not connection_parts:
                 connection_parts.extend(written_parts)
+        except FileExistsError:
+            raise
         except KeyboardInterrupt:
             close_record("interrupted")
             if all_parts:
@@ -222,7 +227,7 @@ def capture_live(
         delay = backoff_seconds * (2 ** max(0, consecutive_failures - 1))
         _report(
             progress,
-            f"connection lost: {reconnect_reason}; reconnecting in {_format_seconds(delay)}",
+            f"connection lost: {reconnect_reason}; reconnecting in {delay:g}s",
         )
         sleeper(delay)
 
@@ -273,10 +278,6 @@ def _safe_reason(error: Exception) -> str:
     return _URL_PATTERN.sub("[URL redacted]", str(error))
 
 
-def _format_seconds(seconds: float) -> str:
-    return f"{seconds:g}s"
-
-
 def _timestamp_replay_message(replay: TimestampReplay) -> str:
     suffix = "recovery" if replay.recovered else "part end"
     return (
@@ -285,9 +286,8 @@ def _timestamp_replay_message(replay: TimestampReplay) -> str:
     )
 
 
-def _validate_limits(
-    failures: int, empty: int, backoff: float, offline_checks: int, offline_interval: float
-) -> None:
+def _validate_limits(failures: int, empty: int, backoff: float, offline_checks: int,
+                     offline_interval: float) -> None:
     if not isinstance(failures, int) or failures < 1:
         raise ValueError("max_consecutive_failures must be a positive integer")
     if not isinstance(empty, int) or empty < 1:

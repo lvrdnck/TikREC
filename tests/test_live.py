@@ -11,7 +11,11 @@ from tikrec.capture import CaptureError, CaptureResult
 from tikrec.cli import main
 from tikrec.flv import FlvFormatError, FlvTag
 from tikrec.live import capture_live
-from tikrec.tiktok import TikTokOfflineError, TikTokResolutionTransientError
+from tikrec.tiktok import (
+    TikTokOfflineError,
+    TikTokResolutionError,
+    TikTokResolutionTransientError,
+)
 
 
 def stream() -> list[FlvTag]:
@@ -258,26 +262,85 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertEqual(delays, [1.0, 1.0])
         self.assertEqual(result.connections[0].outcome, "resolver_error")
 
-    def test_initial_offline_room_is_an_error_and_is_logged(self) -> None:
+    def test_initial_offline_room_leaves_no_directory_and_same_path_can_retry(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
+            parts_directory = root / "parts"
             with self.assertRaisesRegex(CaptureError, "not live"):
                 capture_live(
                     "https://www.tiktok.com/@creator/live",
-                    parts_directory=root / "parts",
+                    parts_directory=parts_directory,
                     resolver=lambda _: (_ for _ in ()).throw(TikTokOfflineError("offline", 4)),
                 )
 
-            records = [
-                json.loads(line)
-                for line in (root / "parts" / "connections.jsonl").read_text().splitlines()
+            self.assertFalse(parts_directory.exists())
+            actions: list[object] = [
+                "https://cdn.test/live.flv",
+                TikTokOfflineError("offline", 4),
             ]
 
-        self.assertEqual(len(records), 2)
-        self.assertEqual(records[0]["event"], "room_status")
-        self.assertEqual(records[0]["status"], 4)
-        self.assertTrue(records[0]["confirmation_reached"])
-        self.assertEqual(records[1]["outcome"], "offline")
+            def resolver(_: str) -> str:
+                action = actions.pop(0)
+                if isinstance(action, Exception):
+                    raise action
+                return str(action)
+
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=parts_directory,
+                resolver=resolver,
+                tag_source=lambda _: iter(stream()),
+                sleeper=lambda _: None,
+                offline_confirmation_checks=1,
+            )
+
+        self.assertEqual([part.name for part in result.parts], ["part-0001.flv"])
+
+    def test_initial_transient_failures_leave_no_session_directory(self) -> None:
+        with TemporaryDirectory() as directory:
+            parts_directory = Path(directory) / "parts"
+            with self.assertRaisesRegex(CaptureError, "consecutive connection failures"):
+                capture_live(
+                    "https://www.tiktok.com/@creator/live",
+                    parts_directory=parts_directory,
+                    resolver=lambda _: (_ for _ in ()).throw(
+                        TikTokResolutionTransientError("temporary failure")
+                    ),
+                    max_consecutive_failures=2,
+                    sleeper=lambda _: None,
+                )
+
+            self.assertFalse(parts_directory.exists())
+
+    def test_initial_permanent_resolution_error_leaves_no_session_directory(self) -> None:
+        with TemporaryDirectory() as directory:
+            parts_directory = Path(directory) / "parts"
+            with self.assertRaisesRegex(CaptureError, "resolution failed"):
+                capture_live(
+                    "invalid live URL",
+                    parts_directory=parts_directory,
+                    resolver=lambda _: (_ for _ in ()).throw(
+                        TikTokResolutionError("unsupported URL")
+                    ),
+                )
+
+            self.assertFalse(parts_directory.exists())
+
+    def test_existing_session_with_retained_parts_is_still_refused(self) -> None:
+        with TemporaryDirectory() as directory:
+            parts_directory = Path(directory) / "parts"
+            parts_directory.mkdir()
+            (parts_directory / "part-0001.flv").write_bytes(b"retained")
+
+            with self.assertRaisesRegex(FileExistsError, "refusing to reuse"):
+                capture_live(
+                    "https://www.tiktok.com/@creator/live",
+                    parts_directory=parts_directory,
+                    resolver=lambda _: "https://cdn.test/live.flv",
+                    tag_source=lambda _: iter(stream()),
+                )
+
+            self.assertEqual((parts_directory / "part-0001.flv").read_bytes(), b"retained")
 
     def test_confirms_three_non_live_responses_over_ten_seconds_by_default(self) -> None:
         actions: list[object] = [
