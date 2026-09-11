@@ -60,11 +60,14 @@ recording directory:
 
 ## How it works
 
-The stream is written as numbered FLV parts, each independently
-decodable. A new part starts when the video codec configuration changes
-or when a dropped connection is re-established. Parts are then stitched
-into a single MP4 — losslessly when the configurations match, re-encoded
-when they don't.
+The stream is written as numbered FLV parts intended to be independently
+decodable. A known unresolved exception is a source timestamp replay: retained
+replay intervals can contain malformed H.264 that fails decoding even in a
+freshly initialized decoder. TikREC preserves that evidence and warns that the
+affected part may not validate. A new part starts when the video codec
+configuration changes or when a dropped connection is re-established. Parts
+are then stitched into a single MP4 — losslessly when the configurations match,
+re-encoded when they don't.
 
 Each live recording, and each direct recording using `--raw-copy`, writes
 `connections.jsonl` alongside the parts. Connection records contain wall-clock
