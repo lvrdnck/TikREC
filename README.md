@@ -11,6 +11,7 @@ reconnecting if the connection drops, and you get one MP4 out.
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
+    tikrec validate TARGET [--json]
     tikrec --version
 
 `live` records a public LIVE page and reconnects across dropped
@@ -21,7 +22,8 @@ takes a direct FLV URL and is source-agnostic.
 `resolve` prints the current direct FLV URL for a live page.
 `finalize` stitches retained `part-*.flv` files after an interrupted or
 otherwise stopped recording. It preserves those parts and refuses to overwrite
-an existing output file.
+an existing output file. `validate` inspects an output file, parts directory,
+or session without changing it.
 
 For `live`, the first Ctrl-C stops capture, finalizes retained parts, and exits
 130 to show that recording ended early. A second Ctrl-C during finalization
@@ -65,11 +67,35 @@ schema and lifecycle.
 
 ## Validating a recording
 
-    python3 scripts/validate_parts.py path/to/recording.parts
+    tikrec validate path/to/recording.mp4
+    tikrec validate path/to/recording.parts
+    tikrec validate path/to/recording.parts/session.json --json
 
-Checks every retained part decodes. Missing, malformed, or duplicate stored
-DTS fails validation; a decreasing DTS is reported as a warning with its
-position and magnitude.
+For retained parts, validation checks that each file is readable and non-empty,
+contains recognizable video, decodes through FFprobe, and has valid stored
+packet DTS. Missing, malformed, or duplicate DTS fails validation; a decreasing
+DTS is a warning because it is known TikTok source behavior. Missing audio is
+also a warning so a valid video-only source is not labeled corrupt.
+
+For a completed output, validation checks readability, FFprobe inspection,
+video and optional audio streams, container information, and a positive finite
+duration. When `session.json` is present it also checks the actual part count,
+declared output, finalization state, and any available codec/resolution metadata.
+Older parts directories without a manifest remain supported.
+
+An interrupted, failed, or still-recording session is not corrupt merely
+because it is incomplete or has no final MP4. The report presents media
+integrity, session completeness, and output availability separately. Validation
+is read-only: it never finalizes, repairs, renames, deletes, or rewrites media or
+session metadata. It is a structural health check, not exhaustive media
+forensics.
+
+Exit 0 means validation passed, exit 1 means one or more checks failed, and
+invalid command usage keeps argparse's exit 2. `--json` emits the same result
+with stable finding levels and codes. The legacy
+`scripts/validate_parts.py` command remains as a compatibility wrapper over the
+same validator.
+
 Note that `ffmpeg -f null -` is *not* a valid check here — see the
 validation notes in SPEC.md for why.
 

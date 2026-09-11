@@ -12,7 +12,7 @@ In scope:
 - Recording a stream from the moment I start the tool
 - Reconnecting within a recording when the connection drops
 
-Out of scope for v0.2.x:
+Out of scope for v0.3.x:
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
 - Watching a handle and starting automatically
@@ -31,11 +31,11 @@ expose no stream URLs to anonymous page or API requests, while other public
 rooms resolve normally. This is TikTok making a session-dependent access
 decision, not an offline status. A normal browser User-Agent and Referer were
 tested and did not change the response. Recording those rooms would require
-authenticating as the user, which is out of scope for v0.2.x. A future
+authenticating as the user, which is out of scope for v0.3.x. A future
 authenticated mode may use a session explicitly provided by the user, but must
 not bypass TikTok's access controls.
 
-The v0.2.x commands never wait for a stream to begin. If the room is offline
+The v0.3.x commands never wait for a stream to begin. If the room is offline
 when invoked, that is an error, not a wait state.
 
 ## Commands
@@ -44,6 +44,7 @@ when invoked, that is an error, not a wait state.
     tikrec resolve <tiktok-live-page-url>
     tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
     tikrec finalize PARTS_DIRECTORY --output FILE
+    tikrec validate TARGET [--json]
     tikrec --version
 
 `record` takes a direct FLV URL and is the generic path. It must stay
@@ -52,8 +53,12 @@ source-agnostic and must not gain TikTok-specific behaviour. Its optional
 `finalize` stitches a retained parts directory after an interrupted or failed
 run. It uses the same finalizer as capture, never changes the parts, and
 refuses to overwrite an existing destination.
+`validate` performs a read-only structural and media health check on an output
+file, parts directory, or session manifest/directory. It does not finalize,
+repair, or recover recordings.
 
-Exit codes: 0 success, 1 capture or finalization error, 130 interrupted.
+Exit codes: 0 success, 1 capture/finalization/validation failure, 2 invalid CLI
+usage, 130 interrupted capture.
 
 ## Modules
 
@@ -130,10 +135,32 @@ preserves completed parts on error or interrupt, finalizes on clean EOF.
 ### tikrec/manifest.py and tikrec/media.py — session metadata
 
 `SessionManifest` owns the versioned `session.json` lifecycle and atomic file
-replacement. `inspect_media` optionally obtains final-output codec and
-resolution facts from FFprobe; probe failure leaves those fields null and never
-changes capture success. See [SESSION_MANIFEST.md](SESSION_MANIFEST.md) for the
+replacement. `inspect_media` obtains stream codecs, video dimensions, container
+name, and duration from one shared FFprobe path. Manifest capture treats those
+facts as optional; validation applies the stricter requirements appropriate to
+an explicit health check. See [SESSION_MANIFEST.md](SESSION_MANIFEST.md) for the
 schema.
+
+### tikrec/part_validation.py, tikrec/validation.py, and validation_report.py
+
+`part_validation` owns decoder and stored-packet-DTS checks for one retained
+FLV part. `validation` discovers supported targets, checks readable non-empty
+media, calls the shared part/media probes, and compares v0.2+ manifests with
+disk state. `validation_report` defines the collected result/finding model and
+human rendering; the same model produces `--json` output.
+
+Validation requires recognizable video. Missing audio is a warning because a
+video-only source may be valid. A completed output must additionally expose a
+container and a positive finite duration. For a manifest session, declared
+non-null codec/resolution facts must agree with FFprobe, part counts must agree
+with disk, and completed finalization requires an existing output. Missing
+optional manifest media fields do not fail.
+
+The validator reports media integrity, session completeness, and output
+availability separately. Therefore an interrupted/failed/recording session can
+pass when its retained parts are healthy even though no completed output exists.
+It never mutates a manifest or recording. The standalone validation script is a
+compatibility wrapper over this shared implementation.
 
 ### tikrec/live.py — reconnect-capable public LIVE capture
 `capture_live(url, *, parts_directory, output_path, ...)` implements the
@@ -205,7 +232,7 @@ Media correctness is not provable by unit tests alone. Any change touching
 codec configuration, part boundaries, or finalization must also be checked
 against a real recording with the per-part validator:
 
-    python3 scripts/validate_parts.py PARTS_DIRECTORY
+    tikrec validate PARTS_DIRECTORY
 
 It checks decoder output and the stored packet timestamps separately.
 
@@ -221,8 +248,9 @@ Validate each retained FLV part in two independent ways:
    DTS fails the part. A decreasing DTS is reported with its packet position
    and magnitude as a warning because it is known TikTok source behaviour.
 
-`scripts/validate_parts.py` performs both checks and prints the available
-per-part timing metadata from `connections.jsonl`.
+`tikrec validate` performs both checks and includes their collected findings in
+the validation report. `scripts/validate_parts.py` remains a thin wrapper for
+older developer workflows.
 
 Do not use `ffmpeg -f null -` as a corruption check. Its null-output timestamp
 path can resynthesize FLV integer-millisecond timestamps onto a coarser frame
@@ -268,7 +296,7 @@ Revisit handling only if this source behaviour becomes frequent.
 
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there remain out of scope until their release is implemented; the
-architecture in this specification describes v0.2.x as it exists today.
+architecture in this specification describes v0.3.x as it exists today.
 
 ## Design principles
 

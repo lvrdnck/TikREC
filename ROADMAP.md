@@ -56,18 +56,17 @@ optional FFprobe codec/resolution facts. It complements rather than replaces
 `connections.jsonl`. `tikrec --version` reports the package version from the
 same source used by packaging.
 
-## Planned releases
-
 ### v0.3.0 — Recording validation
 
-**Goal:** Make recording health a first-class session result.
+TikREC now supports `tikrec validate TARGET` for completed outputs, retained
+parts directories, and v0.2+ sessions. It reuses the proven decoder and stored
+DTS checks, adds stream/container/duration checks, and compares manifests with
+actual parts, output, finalization state, and available media metadata. Results
+collect concise errors and warnings in human or JSON form while keeping media,
+parts, and manifests read-only. Legacy directories remain supported, and
+interrupted session completeness is reported separately from media integrity.
 
-**Why now:** The v0.1 validator proves the checks, while the v0.2 manifest gives
-their results a durable home.
-
-**Likely scope:** Integrate per-part decode and stored-DTS checks, validate the
-final output, add duration and stream sanity checks, and record a concise health
-summary. This release does not repair damaged media.
+## Planned releases
 
 ### v0.4.0 — Interrupted recording recovery
 

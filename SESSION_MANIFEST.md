@@ -1,8 +1,9 @@
 # TikREC session manifest
 
-TikREC v0.2.0 writes `session.json` in each new parts directory. It is the
-high-level summary of one recording attempt. The existing `connections.jsonl`
-remains the detailed event and connection log; neither file replaces the other.
+TikREC v0.2.0 and later write `session.json` in each new parts directory. It is
+the high-level summary of one recording attempt. The existing
+`connections.jsonl` remains the detailed event and connection log; neither file
+replaces the other.
 
 ## Lifecycle
 
@@ -98,3 +99,16 @@ Signed CDN URLs are not stored. URLs found in failure text are replaced with
 The example's connection count includes the final room-status resolution
 attempt recorded by live capture. `connections.jsonl` provides the detailed
 outcome and timing for each numbered attempt.
+
+## Validation
+
+`tikrec validate` accepts either `session.json` or its containing directory. It
+checks the manifest's part count, output declaration and availability,
+finalization state, and non-null codec/resolution facts against the files and
+FFprobe results. Null optional media fields do not fail validation.
+
+Validation never updates `session.json`. Its report separates media integrity,
+session completeness, and final-output availability, so an interrupted, failed,
+or still-recording session can have healthy retained parts without being
+misreported as corrupt. Persisting health history or recovering an incomplete
+session is outside v0.3.0.
