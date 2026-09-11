@@ -11,6 +11,7 @@ from tikrec.capture import CaptureError, CaptureResult
 from tikrec.cli import main
 from tikrec.flv import FlvFormatError, FlvTag
 from tikrec.live import capture_live
+from tikrec.source import SourceStallError
 from tikrec.tiktok import (
     TikTokOfflineError,
     TikTokResolutionError,
@@ -509,6 +510,46 @@ class LiveCaptureTests(unittest.TestCase):
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual([part.name for part in finalizer_parts[0]], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual(result.connections[0].outcome, "connection_error")
+
+    def test_retries_a_stalled_read_and_records_a_distinct_outcome(self) -> None:
+        actions: list[object] = [
+            "https://cdn.test/one.flv",
+            "https://cdn.test/two.flv",
+            TikTokOfflineError("offline"),
+        ]
+
+        def stalled_stream():
+            yield from stream()
+            raise SourceStallError("source connection stalled after 30s without data")
+
+        def resolver(_: str) -> str:
+            action = actions.pop(0)
+            if isinstance(action, Exception):
+                raise action
+            return str(action)
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = capture_live(
+                "https://www.tiktok.com/@creator/live",
+                parts_directory=root / "parts",
+                resolver=resolver,
+                tag_source=lambda url: stalled_stream() if url.endswith("one.flv") else iter(stream()),
+                sleeper=lambda _: None,
+                offline_confirmation_checks=1,
+            )
+            records = [
+                json.loads(line)
+                for line in (root / "parts" / "connections.jsonl").read_text().splitlines()
+                if "connection" in json.loads(line)
+            ]
+
+        self.assertEqual(result.connections[0].outcome, "stalled")
+        self.assertIn("stalled after 30s", result.connections[0].error or "")
+        self.assertEqual(records[0]["outcome"], "stalled")
+        self.assertEqual([part.name for part in result.parts], [
+            "part-0001.flv", "part-0002.flv",
+        ])
 
     def test_keyboard_interrupt_finalizes_retained_parts_and_stays_interrupted(self) -> None:
         finalizer_calls: list[tuple[Path, ...]] = []

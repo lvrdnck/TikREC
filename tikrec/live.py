@@ -17,7 +17,7 @@ from .finalize import finalize_parts
 from .flv import FlvTag
 from .manifest import SessionManifest
 from .media import MediaInfo, inspect_media
-from .source import RawCopy, iter_url_tags
+from .source import RawCopy, SourceStallError, iter_url_tags
 from .tiktok import (
     TikTokOfflineError,
     TikTokResolutionError,
@@ -219,6 +219,10 @@ def capture_live(
             close_record("resolver_error", error)
             consecutive_failures += 1
             reconnect_reason = _safe_reason(error)
+        except SourceStallError as error:
+            close_record("stalled", error)
+            consecutive_failures += 1
+            reconnect_reason = _safe_reason(error)
         # HTTP reads raise HTTPException (not OSError) when a CDN body ends early.
         except (OSError, EOFError, HTTPException) as error:
             close_record("connection_error", error)
@@ -253,7 +257,6 @@ def capture_live(
             f"connection lost: {reconnect_reason}; reconnecting in {delay:g}s",
         )
         sleeper(delay)
-
 def _report(progress: Callable[[str], None] | None, message: str) -> None:
     if progress is not None:
         progress(message)
