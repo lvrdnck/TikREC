@@ -6,11 +6,13 @@ import os
 import shlex
 import subprocess
 from collections.abc import Callable, Iterable, Iterator
+from fractions import Fraction
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
 
 from .flv import FlvFormatError, avc_configuration_dimensions
+from .frame_rate import inspect_frame_rate, nominal_frame_rate
 from .source import iter_tags
 
 
@@ -25,6 +27,7 @@ def finalize_parts(
     ffmpeg: str | Path = "ffmpeg",
     runner: Callable[..., Any] = subprocess.run,
     progress: Callable[[str], None] | None = None,
+    frame_rate_inspector: Callable[[Path], Fraction] = inspect_frame_rate,
 ) -> Path:
     """Stitch parts into ``output_path`` and report FFmpeg output when requested."""
     ordered_parts = _validate_parts(parts)
@@ -33,6 +36,10 @@ def finalize_parts(
     configurations = tuple(_configuration_for(part) for part in ordered_parts)
     same_configuration = len(set(configurations)) == 1
     target_size = _target_size(configurations) if not same_configuration else None
+    nominal_rate = (
+        nominal_frame_rate(ordered_parts, inspector=frame_rate_inspector)
+        if not same_configuration else None
+    )
     temporary_output = _temporary_output_path(output_path)
     if temporary_output.exists():
         raise FileExistsError(f"temporary output already exists: {temporary_output}")
@@ -47,6 +54,7 @@ def finalize_parts(
             ffmpeg=ffmpeg,
             manifest=manifest,
             target_size=target_size,
+            nominal_rate=nominal_rate,
         )
         if progress is not None:
             if same_configuration:
@@ -243,6 +251,7 @@ def _build_ffmpeg_command(
     ffmpeg: str | Path,
     manifest: Path | None,
     target_size: tuple[int, int] | None,
+    nominal_rate: Fraction | None = None,
 ) -> list[str]:
     command = [str(ffmpeg), "-nostdin", "-n"]
     if manifest is not None:
@@ -252,12 +261,17 @@ def _build_ffmpeg_command(
         ]
 
     assert target_size is not None
+    assert nominal_rate is not None
     for part in parts:
         command.extend(["-i", str(part)])
     command.extend([
         "-filter_complex", _concat_filter(len(parts), target_size),
         "-map", "[v]", "-map", "[a]",
         "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart",
+        # x264's nominal rate affects level selection, not frame timestamps.
+        "-x264-params", f"fps={nominal_rate.numerator}/{nominal_rate.denominator}",
+        # Preserve irregular frame intervals instead of rounding onto a nominal CFR grid.
+        "-fps_mode:v", "passthrough", "-enc_time_base:v", "filter",
         str(temporary_output),
     ])
     return command

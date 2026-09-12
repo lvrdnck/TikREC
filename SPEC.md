@@ -109,11 +109,35 @@ failure. Callers may inject a different positive timeout, or explicitly use
 `None`, but the recording paths use the bounded default.
 
 ### tikrec/finalize.py — stitching
-`finalize_parts(parts, output_path, *, ffmpeg, runner)`.
+`finalize_parts(parts, output_path, *, ffmpeg, runner, progress, frame_rate_inspector)`.
 
 Identical configurations across parts: concat demuxer with `-c copy`.
 Differing configurations: filter_complex, reset timestamps, scale and pad
 to a common size, re-encode.
+
+Re-encoding probes each part's video frame rate with FFprobe, preferring a
+positive `avg_frame_rate` and falling back to a positive `r_frame_rate` when
+the average is unavailable. The average is preferred because `r_frame_rate`
+can describe a timestamp-grid estimate rather than the actual cadence. The
+encoder's nominal rate is the maximum of these per-part rates, not a
+duration-weighted session average: a long slow segment must not dilute the
+nominal rate needed for a faster segment. Missing usable rates fail clearly
+rather than falling back to an arbitrary constant.
+`tikrec/frame_rate.py` owns this bounded FFprobe inspection and rational rate
+selection; the probe runner and finalizer's rate inspector are injectable for
+offline tests.
+
+This rational rate is supplied only through x264's `fps` parameter. Output
+uses timestamp passthrough and the concat filter's microsecond encoder time
+base; no output `-r` or `fps` filter forces constant-rate sampling. Existing
+per-part timestamp resets remain, but variable intervals within each part are
+preserved. x264 selects its H.264 level automatically; no level is hardcoded.
+This prevents mixed-rate concat's unknown frame rate from being mistaken for
+the inverse microsecond time base (1,000,000 fps), which previously made
+`prinske-01` incorrectly declare level 6.2 despite 15/25 fps, 720x1280 media.
+Re-finalization verified automatic level 3.1, a passing full decode, all
+18,935 video frames retained, and exactly preserved within-part video PTS
+intervals. Audio packet payloads and timing matched the original output.
 
 Writes a hidden temporary file preserving the output suffix
 (`.final.partial.mp4`, not `.final.mp4.partial` — ffmpeg infers the muxer

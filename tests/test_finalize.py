@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from fractions import Fraction
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -80,6 +81,7 @@ class FinalizeTests(unittest.TestCase):
                 finalize_parts(
                     [first, second], root / "final.mp4",
                     runner=runner, progress=progress.append,
+                    frame_rate_inspector=lambda part: Fraction(15 if part == first else 25),
                 )
 
             command = runner.commands[0]
@@ -88,6 +90,7 @@ class FinalizeTests(unittest.TestCase):
             self.assertIn("asetpts=PTS-STARTPTS", graph)
             self.assertIn("concat=n=2:v=1:a=1", graph)
             self.assertEqual(command[command.index("-c:v") + 1], "libx264")
+            self.assertEqual(command[command.index("-x264-params") + 1], "fps=25/1")
             self.assertIn(
                 "finalization started: re-encoding 2 part(s); "
                 "this may take several minutes or longer",
