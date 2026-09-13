@@ -1,6 +1,6 @@
 # TikREC
 
-A command-line tool for recording public TikTok LIVE streams to disk.
+A command-line recorder and small remote-control service for public TikTok LIVE streams.
 
 Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops, and you get one MP4 out.
@@ -12,6 +12,11 @@ reconnecting if the connection drops, and you get one MP4 out.
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec validate TARGET [--deep] [--json]
+    tikrec serve [--host IP] [--port PORT] [--token-file FILE]
+    tikrec remote health --server URL [--token-file FILE]
+    tikrec remote status --server URL [--token-file FILE]
+    tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--token-file FILE]
+    tikrec remote stop --server URL [--token-file FILE]
     tikrec --version
 
 `live` records a public LIVE page and reconnects across dropped
@@ -57,6 +62,44 @@ recording directory:
 
     mkdir -p runs
     tikrec live <tiktok-live-page-url> --output runs/recording.mp4
+
+## Remote recording on an always-on PC
+
+The intended setup is Mac -> Tailscale -> main-pc -> TikREC service -> recording
+files on main-pc. Run `tikrec serve` independently through Windows Task Scheduler
+so capture continues when SSH/VS Code closes, the Mac lid shuts, or the Mac loses
+network access. Launching `serve` directly inside SSH still ties the service to
+that shell; Task Scheduler owns the persistent process.
+
+The default is `127.0.0.1:8765`. Remote binding requires an explicit IP and a
+bearer secret from `--token-file FILE` or `TIKREC_TOKEN`. A token file overrides
+the environment. Use the same secret on the Mac. No virtualenv activation is
+needed when invoking the installed executable by absolute path:
+
+```powershell
+C:\Users\Leandro\dev\TikREC\.venv\Scripts\tikrec.exe serve --host 100.x.y.z --token-file C:\Users\Leandro\TikREC-secrets\token.txt
+```
+
+On the Mac (replace the address and username):
+
+```sh
+tikrec remote health --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
+tikrec remote start --server http://main-pc:8765 https://www.tiktok.com/@username/live --output 'C:\Users\Leandro\Videos\name.mp4' --token-file ~/.config/tikrec/token.txt
+tikrec remote status --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
+tikrec remote stop --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
+```
+
+One recording may be active. Start and stop acknowledge requests immediately;
+poll status until `completed` or `failed` to see the final result. Remote stop
+closes/retains the active FLV part, finalizes output, and writes `session.json`.
+It never sends a kill signal to FFmpeg. A stopped job reports `completed` with
+`interrupted: true`; `final_output_path` identifies an actual finalized output.
+Capture/finalizer failure preserves retained parts for `tikrec finalize`.
+
+See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
+Scheduler settings, and deployment verification. v0.4 keeps only the current or
+latest job in memory; service-crash/reboot reconciliation and automatic resume
+remain v0.5 work. There is no Web UI or media-download endpoint.
 
 ## How it works
 
@@ -132,6 +175,7 @@ See SPEC.md.
 
 [SPEC.md](SPEC.md) — architecture, module responsibilities, validation
 notes and the reasoning behind past fixes.
-[ROADMAP.md](ROADMAP.md) — dependency-ordered direction for future releases.
+[ROADMAP.md](ROADMAP.md) — workflow-driven direction for future releases.
+[SERVICE.md](SERVICE.md) — remote API and Windows Task Scheduler deployment.
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md) — `session.json` schema and lifecycle.
 [AGENTS.md](AGENTS.md) — working rules.

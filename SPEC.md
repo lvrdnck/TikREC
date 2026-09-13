@@ -11,14 +11,15 @@ In scope:
 - Public LIVE streams only
 - Recording a stream from the moment I start the tool
 - Reconnecting within a recording when the connection drops
+- One recording owned by an independently launched service, controlled remotely
 
-Out of scope for v0.3.x:
+Out of scope for v0.4.x:
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
 - Watching a handle and starting automatically
 - Predicting when someone will go live
 - Chat collection, transcription, chapters, search, analytics
-- Server/API mode and a Web UI
+- A Web UI, multi-user hosting, and automatic crash/reboot resume
 
 Project-wide security and privacy boundaries:
 - No auth, CAPTCHA, entitlement, access-control, or private request-signing
@@ -31,11 +32,11 @@ expose no stream URLs to anonymous page or API requests, while other public
 rooms resolve normally. This is TikTok making a session-dependent access
 decision, not an offline status. A normal browser User-Agent and Referer were
 tested and did not change the response. Recording those rooms would require
-authenticating as the user, which is out of scope for v0.3.x. A future
+authenticating as the user, which is out of scope for v0.4.x. A future
 authenticated mode may use a session explicitly provided by the user, but must
 not bypass TikTok's access controls.
 
-The v0.3.x commands never wait for a stream to begin. If the room is offline
+The v0.4.x commands never wait for a stream to begin. If the room is offline
 when invoked, that is an error, not a wait state.
 
 ## Commands
@@ -45,6 +46,11 @@ when invoked, that is an error, not a wait state.
     tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec validate TARGET [--deep] [--json]
+    tikrec serve [--host IP] [--port PORT] [--token-file FILE]
+    tikrec remote health --server URL [--token-file FILE]
+    tikrec remote status --server URL [--token-file FILE]
+    tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--token-file FILE]
+    tikrec remote stop --server URL [--token-file FILE]
     tikrec --version
 
 `record` takes a direct FLV URL and is the generic path. It must stay
@@ -62,6 +68,13 @@ length and session validation then decodes both the parts and final artifact.
 
 Exit codes: 0 success, 1 capture/finalization/validation failure, 2 invalid CLI
 usage, 130 interrupted capture.
+
+`serve` runs a loopback-by-default HTTP service. Explicit non-loopback IP binding
+requires a bearer secret; all configured-token endpoints check it. `remote`
+prints JSON from health/status/start/stop. Start/stop acknowledge asynchronously;
+responses reporting a failed job and request failures exit 1. There is one
+active recording and only the latest result is held in memory. See
+[SERVICE.md](SERVICE.md) for the exact API and independent Windows deployment.
 
 ## Modules
 
@@ -266,6 +279,58 @@ never discards bytes still arriving on an open FLV connection.
   second Ctrl-C during finalization terminates FFmpeg; all retained parts
   survive either path.
 
+### tikrec/capture_control.py — cooperative stop
+
+`CaptureControl` checks an optional `threading.Event` around resolver calls,
+between complete tags, and during interruptible retry/confirmation waits.
+`source` also accepts a stop check between chunks, including while parsing a
+large incomplete tag. Sources close deterministically when capture unwinds.
+`CaptureStopped` follows the same writer-close/retain/finalize/manifest path as
+first Ctrl-C. The event never enters finalization. Existing bounded HTTP reads
+can delay stop until their operation finishes or times out. No subprocess is
+killed for a remote stop. Retry waits are inside the first-interrupt handler.
+
+`capture_live` also accepts a state observer and optional session ID. It reports
+resolving/recording/reconnecting/finalizing without signed URLs, and supplies the
+application job's ID to the existing schema-1 manifest. Local CLI defaults and
+interrupt exit codes remain unchanged; no capture algorithm is duplicated.
+
+### tikrec/recording.py — application job ownership
+
+`RecordingController` reserves one slot under a lock, launches a non-daemon
+worker that invokes `capture_live`, and uses its Event for stop. The slot stays
+busy through finalization. Snapshots expose idle or the current/latest job,
+normalized public source, paths, lifecycle times, retained-part count, existing
+writer byte heartbeat, reconnect attempts, interruption, and a bounded redacted
+error. Successful stop is completed/interrupted; capture/finalizer errors are
+failed. Requested output and actual final output are distinct fields. Shutdown
+rejects new starts, requests stop, and joins the worker outside the lock.
+
+### tikrec/service.py — narrow HTTP adapter
+
+`RecordingHTTPServer` uses the standard-library `ThreadingHTTPServer` with a
+custom handler for GET health/recording and POST recording/start/stop only.
+Handlers validate bounded JSON and delegate to the controller. No file serving,
+commands, executable paths, accounts, or browser UI. Default `127.0.0.1:8765`;
+explicit remote IPs require a token checked in constant time. Raw request logs
+and browser-origin requests are disabled; read timeouts bound stalled clients.
+This service is for trusted LAN/Tailscale use, not public internet hosting.
+
+### tikrec/remote.py and tikrec/control_cli.py — remote client and CLI wiring
+
+`RemoteClient` sends injected/testable standard-library HTTP JSON requests,
+refuses redirects and environment proxies, bounds responses, and reports safe
+request errors. It never automatically retries an ambiguous start. The CLI
+loads `--token-file` or `TIKREC_TOKEN` without printing the value; tokens do not
+reach capture or session metadata. Existing local commands are unchanged.
+
+Implementation order for the v0.4 addition: capture_control with LIVE/source
+integration, recording controller, service handler, remote client, control_cli
+and existing CLI wiring. Each layer has offline tests before the next layer.
+Service-crash/reboot recovery, persisted job history, and resume policy remain
+v0.5 scope. Windows Task Scheduler launch, rather than a detached recording
+subprocess, provides independence from SSH/VS Code in this release.
+
 ## Raw-copy storage
 
 `--raw-copy DIR` is off by default. When enabled, it retains the received bytes
@@ -277,7 +342,8 @@ disk use. A copy failure is a warning, never a capture failure.
 ## Recording storage
 
 TikREC has no implicit recording root. `--output` is the authoritative path,
-and a relative path is relative to the process working directory. Recordings
+and a relative local CLI path is relative to the process working directory.
+Remote start requires an absolute .mp4 path on the service machine. Recordings
 should normally use a dedicated directory outside a source checkout. During
 development in this repository, `runs/` is the conventional local destination;
 the repository ignores `runs/`, `*.parts/`, common recorded-media extensions,
@@ -402,7 +468,7 @@ whether a lossless writer fix is possible before replay handling changes.
 
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there remain out of scope until their release is implemented; the
-architecture in this specification describes v0.3.x as it exists today.
+architecture in this specification describes v0.4.x as it exists today.
 
 ## Design principles
 

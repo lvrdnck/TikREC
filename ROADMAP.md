@@ -68,7 +68,7 @@ interrupted session completeness is reported separately from media integrity.
 An optional deep mode fully decodes the completed output when the additional
 time and CPU cost is warranted.
 
-## Planned releases
+## Current release and planned releases
 
 The priority is to reliably record public LIVE streams on an always-on PC,
 control recordings remotely, preserve/finalize media safely, and make failures
@@ -82,6 +82,10 @@ recording, health/status/start/graceful-stop HTTP controls, and a small remote
 CLI. Reuse the LIVE loop and finalizer through an application layer. Default to
 loopback; require a bearer secret for explicit trusted LAN/Tailscale binding.
 Document Windows Task Scheduler deployment. No browser UI or crash-resume.
+
+**Implementation:** v0.4.0 adds these controls with offline coverage. Deployment
+through Task Scheduler/Tailscale and real recording/remote-stop media validation
+still require verification before treating this as a proven remote setup.
 
 ### v0.5.0 ? Environment survival / resumability
 

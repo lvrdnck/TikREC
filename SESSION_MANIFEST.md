@@ -23,7 +23,7 @@ Each update is written to `.session.json.partial`, flushed, and atomically
 replaced over `session.json`. A failed update therefore leaves the preceding
 complete JSON document in place. A hard process or machine stop can still leave
 the last manifest status as `recording`; retained parts remain the source of
-truth for future v0.4 recovery tooling.
+truth for v0.5 environment survival and v0.7 guided recovery tooling.
 
 ## Schema version 1
 

@@ -12,10 +12,13 @@ from typing import TextIO
 
 from . import __version__
 from .capture import CaptureError, CaptureResult, capture_url
+from .control_cli import add_control_commands, run_control_command
 from .finalize import finalize_parts
 from .live import capture_live
 from .manifest import SessionManifest
 from .progress import LiveProgress
+from .remote import RemoteError
+from .service import serve
 from .tiktok import TikTokResolutionError, resolve_live_url
 from .validation import validate_target
 from .validation_report import ValidationResult, render_validation
@@ -29,6 +32,8 @@ def main(
     resolver: Callable[[str], str] = resolve_live_url,
     finalizer: Callable[..., Path] = finalize_parts,
     validator: Callable[..., ValidationResult] = validate_target,
+    service_runner: Callable = serve,
+    remote_opener: Callable | None = None,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
 ) -> int:
@@ -44,6 +49,9 @@ def main(
 
     live_progress: LiveProgress | None = None
     try:
+        if arguments.command in {"serve", "remote"}:
+            return run_control_command(arguments, stdout, service_runner=service_runner,
+                                       remote_opener=remote_opener)
         if arguments.command == "resolve":
             direct_url = resolver(arguments.url)
             print(direct_url, file=stdout)
@@ -106,7 +114,7 @@ def main(
     except KeyboardInterrupt:
         _print_final(live_progress, "tikrec: interrupted", stderr)
         return 130
-    except (CaptureError, TikTokResolutionError, OSError, ValueError) as error:
+    except (CaptureError, TikTokResolutionError, RemoteError, OSError, ValueError) as error:
         _print_final(live_progress, f"tikrec: {_one_line_error(error)}", stderr)
         return 1
     except Exception as error:
@@ -208,6 +216,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--debug", action="store_true", help="print unexpected-error tracebacks")
     subcommands = parser.add_subparsers(dest="command", required=True)
+    add_control_commands(subcommands)
     record = subcommands.add_parser("record", help="record one direct FLV URL")
     record.add_argument("url", metavar="DIRECT_FLV_URL")
     record.add_argument("--output", required=True, metavar="FILE")
