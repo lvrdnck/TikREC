@@ -99,6 +99,7 @@ def iter_url_chunks(
     timeout: float | None = DEFAULT_READ_TIMEOUT,
     raw_copy: RawCopy | None = None,
     on_open: Callable[[], None] | None = None,
+    check_stop: Callable[[], None] | None = None,
 ) -> Iterator[bytes]:
     """Yield byte chunks from one direct HTTP FLV URL without retrying."""
     if chunk_size <= 0:
@@ -106,10 +107,14 @@ def iter_url_chunks(
     if timeout is not None and timeout <= 0:
         raise ValueError("timeout must be positive or None")
     try:
+        if check_stop is not None:
+            check_stop()
         with urlopen(url, timeout=timeout) as response:
             if on_open is not None:
                 on_open()
             while True:
+                if check_stop is not None:
+                    check_stop()
                 try:
                     chunk = response.read(chunk_size)
                 except TimeoutError as error:
@@ -117,6 +122,9 @@ def iter_url_chunks(
                     raise SourceStallError(
                         f"source connection stalled{duration} without data"
                     ) from error
+                # Stop between chunks even if the parser is waiting for one large tag.
+                if check_stop is not None:
+                    check_stop()
                 if not chunk:
                     break
                 # Tee the received bytes before their first parser read.
@@ -135,10 +143,16 @@ def iter_url_tags(
     timeout: float | None = DEFAULT_READ_TIMEOUT,
     raw_copy: RawCopy | None = None,
     on_open: Callable[[], None] | None = None,
+    check_stop: Callable[[], None] | None = None,
 ) -> Iterator[FlvTag]:
     """Yield parsed tags from one direct HTTP FLV URL without retrying."""
-    yield from iter_tags(iter_url_chunks(url, chunk_size=chunk_size, timeout=timeout,
-                                       raw_copy=raw_copy, on_open=on_open))
+    chunks = iter_url_chunks(url, chunk_size=chunk_size, timeout=timeout,
+                             raw_copy=raw_copy, on_open=on_open, check_stop=check_stop)
+    try:
+        yield from iter_tags(chunks)
+    finally:
+        # Closing a parser generator must also release its still-open HTTP response.
+        chunks.close()
 
 
 class _ChunkStream:

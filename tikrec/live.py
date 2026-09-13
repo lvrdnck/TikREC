@@ -6,6 +6,9 @@ import time
 from collections.abc import Callable, Iterable
 from http.client import HTTPException
 from pathlib import Path
+from threading import Event
+
+from .capture_control import CaptureControl, CaptureStopped
 
 from .capture import (
     CaptureError, CaptureResult, ConnectionRecord, _prepare_session,
@@ -56,6 +59,9 @@ def capture_live(
     raw_tag_source: Callable[[str, RawCopy], Iterable[FlvTag]] | None = None,
     warning: Callable[[str], None] | None = None,
     media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
+    stop_event: Event | None = None,
+    state: Callable[[str], None] | None = None,
+    session_id: str | None = None,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until confirmed offline."""
     _validate_limits(max_consecutive_failures, max_consecutive_empty_connections, backoff_seconds,
@@ -63,7 +69,9 @@ def capture_live(
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
     manifest = SessionManifest(parts_directory, output_path, "tiktok_live",
-                               clock=manifest_clock, media_inspector=media_inspector)
+                               clock=manifest_clock, media_inspector=media_inspector,
+                               session_id=session_id)
+    control = CaptureControl(stop_event, sleeper)
 
     records: list[ConnectionRecord] = []
     all_parts: list[Path] = []
@@ -73,6 +81,20 @@ def capture_live(
     connection_number = 0
     previous_end: float | None = None
     session_started = False
+    delay = 0.0
+
+    def finish(interrupted: bool = False) -> CaptureResult:
+        if all_parts:
+            if output_path is not None:
+                _report(state, "finalizing")
+            return finalize_capture_result(
+                all_parts, output_path, finalizer=finalizer, interrupted=interrupted,
+                connections=tuple(records), progress=progress, manifest=manifest,
+            )
+        if manifest.active:
+            finalization = "not_started" if output_path is not None else None
+            manifest.complete(all_parts, interrupted=interrupted, finalization_status=finalization)
+        return CaptureResult((), None, interrupted, tuple(records))
 
     def capture_failure(message: str) -> CaptureError:
         failure = CaptureError(message, tuple(all_parts))
@@ -82,6 +104,13 @@ def capture_live(
         return failure
 
     while True:
+        try:
+            control.check()
+            if connection_number:
+                # Wait before measuring the attempt so reconnect gap evidence includes backoff.
+                control.wait(delay)
+        except (KeyboardInterrupt, CaptureStopped):
+            return finish(interrupted=True)
         connection_number += 1
         started_at = clock()
         connection_parts: list[Path] = []
@@ -128,14 +157,16 @@ def capture_live(
             previous_end = ended_at
 
         try:
+            control.check()
+            _report(state, "resolving")
             _report(progress, "resolving room")
             direct_url = resolve_live_url_confirmed(
                 url,
-                resolver=resolver,
+                resolver=lambda page: control.resolve(resolver, page),
                 capture_started=bool(all_parts),
                 checks=offline_confirmation_checks,
                 interval=offline_confirmation_interval,
-                sleeper=sleeper,
+                sleeper=control.wait,
                 clock=clock,
                 # A pre-capture status must not create the session it failed to start.
                 status_observer=lambda timestamp, status, confirmed: append_room_status_record(
@@ -143,6 +174,7 @@ def capture_live(
                 ) if session_started else None,
             )
             observation.resolved(direct_url)
+            control.check()
             if not session_started:
                 _prepare_session(parts_directory, output_path)
                 session_started = True
@@ -151,6 +183,7 @@ def capture_live(
                 for pending_record in records:
                     append_connection_record(parts_directory / "connections.jsonl", pending_record)
             _report(progress, f"connection {connection_number} opened")
+            _report(state, "recording")
             if raw_copy_dir is not None and raw_tag_source is not None:
                 raw_copy = RawCopy(
                     raw_copy_path(raw_copy_dir, connection_number),
@@ -162,15 +195,18 @@ def capture_live(
                     raw_copy_path(raw_copy_dir, connection_number),
                     lambda message: _warn(warning, progress, message),
                 )
-                tags = iter_url_tags(direct_url, raw_copy=raw_copy, on_open=observation.opened)
+                tags = iter_url_tags(direct_url, raw_copy=raw_copy, on_open=observation.opened,
+                                     check_stop=control.check)
             else:
                 if raw_copy_dir is not None:
                     _warn(warning, progress, "raw copy is unavailable for a custom tag source")
-                tags = (iter_url_tags(direct_url, on_open=observation.opened)
+                tags = (iter_url_tags(direct_url, on_open=observation.opened,
+                                     check_stop=control.check)
                         if tag_source is iter_url_tags else tag_source(direct_url))
+            controlled_tags = control.tags(observation.tags(tags))
             try:
                 written_parts = writer(
-                    observation.tags(tags),
+                    controlled_tags,
                     parts_directory,
                     start_index=next_part_index,
                     on_part_started=part_started,
@@ -182,6 +218,11 @@ def capture_live(
                     **({"on_media_retained": observation.retained} if writer is write_parts else {}),
                 )
             finally:
+                # Explicit closure also covers injected writers that return early.
+                controlled_tags.close()
+                close = getattr(tags, "close", None)
+                if close is not None:
+                    close()
                 if raw_copy is not None:
                     raw_copy.close()
             # Custom writers may not use the callback, while the built-in writer does.
@@ -189,35 +230,15 @@ def capture_live(
                 connection_parts.extend(written_parts)
         except FileExistsError:
             raise
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, CaptureStopped):
             close_record("interrupted")
-            if all_parts:
-                return finalize_capture_result(
-                    all_parts,
-                    output_path,
-                    finalizer=finalizer,
-                    interrupted=True,
-                    connections=tuple(records),
-                    progress=progress,
-                    manifest=manifest,
-                )
-            if manifest.active:
-                finalization = "not_started" if output_path is not None else None
-                manifest.complete(all_parts, interrupted=True, finalization_status=finalization)
-            return CaptureResult(tuple(all_parts), None, True, tuple(records))
+            return finish(interrupted=True)
         except TikTokOfflineError as error:
             close_record("offline", error)
             _report(progress, "room ended")
             if not all_parts:
                 raise capture_failure("TikTok account or room is not live") from error
-            return finalize_capture_result(
-                all_parts,
-                output_path,
-                finalizer=finalizer,
-                connections=tuple(records),
-                progress=progress,
-                manifest=manifest,
-            )
+            return finish()
         except TikTokResolutionTransientError as error:
             close_record("resolver_error", error)
             consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
@@ -259,4 +280,4 @@ def capture_live(
             progress,
             f"connection lost: {reconnect_reason}; reconnecting in {delay:g}s",
         )
-        sleeper(delay)
+        _report(state, "reconnecting")

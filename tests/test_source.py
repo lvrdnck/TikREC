@@ -4,9 +4,11 @@ from collections.abc import Iterator
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from threading import Event
 import unittest
 
 from tikrec.flv import FlvFormatError, FlvTag
+from tikrec.capture_control import CaptureControl, CaptureStopped
 from tikrec.source import (
     DEFAULT_READ_TIMEOUT, RawCopy, SourceStallError,
     iter_tags, iter_url_chunks, iter_url_tags,
@@ -34,6 +36,47 @@ def video(timestamp: int, payload: bytes) -> FlvTag:
 
 
 class TagIterationTests(unittest.TestCase):
+    def test_stop_while_waiting_for_incomplete_tag_closes_http_response(self) -> None:
+        event = Event()
+        closed = []
+
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                closed.append(True)
+
+            def read(self, count):
+                event.set()
+                return b"FLV"
+
+        control = CaptureControl(event, lambda _: None)
+        with patch("tikrec.source.urlopen", return_value=Response()):
+            with self.assertRaises(CaptureStopped):
+                list(iter_url_tags("url", check_stop=control.check))
+        self.assertEqual(closed, [True])
+
+    def test_closing_parser_generator_closes_its_http_response(self) -> None:
+        closed = []
+
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                closed.append(True)
+
+            def read(self, count):
+                return make_stream(video(120, b"\x17\x01keyframe"))
+
+        with patch("tikrec.source.urlopen", return_value=Response()):
+            tags = iter_url_tags("url")
+            next(tags)
+            self.assertEqual(closed, [])
+            tags.close()
+        self.assertEqual(closed, [True])
+
     def setUp(self) -> None:
         self.tags = [
             video(100, b"\x17\x00config"),
