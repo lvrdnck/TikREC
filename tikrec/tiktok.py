@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import html
 import json
-import re
 import time
 from collections.abc import Callable, Mapping
 from http.client import HTTPException
@@ -13,16 +11,12 @@ from urllib.error import URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
+from .tiktok_identity import find_room_id as _find_room_id, room_id_from_page
+
 
 _ROOM_INFO_URL = "https://webcast.tiktok.com/webcast/room/info/"
 _PUBLIC_ROOM_URL = "https://www.tiktok.com/api-live/user/room/"
 _USER_AGENT = "Mozilla/5.0 (compatible; TikREC/0.1)"
-_SCRIPT_PATTERN = re.compile(
-    r"<script\b[^>]*\bid=[\"'](?:SIGI_STATE|__NEXT_DATA__)[\"'][^>]*>(.*?)</script>",
-    re.IGNORECASE | re.DOTALL,
-)
-_ROOM_ID_PATTERN = re.compile(r'["\'](?:roomId|room_id)["\']\s*:\s*["\']?(\d+)')
-_DEEPLINK_ROOM_ID_PATTERN = re.compile(r"snssdk\d*://live\?room_id=(\d+)")
 
 
 class TikTokResolutionError(RuntimeError):
@@ -166,20 +160,10 @@ def _read_public_url(
 
 def _room_id_from_page(page: bytes) -> str | None:
     try:
-        text = html.unescape(page.decode("utf-8"))
-    except UnicodeDecodeError as error:
-        raise TikTokResolutionError("public TikTok page is not valid UTF-8") from error
-    for script in _SCRIPT_PATTERN.findall(text):
-        try:
-            room_id = _find_room_id(json.loads(script))
-        except json.JSONDecodeError:
-            continue
-        if room_id is not None:
-            return room_id
-    match = _ROOM_ID_PATTERN.search(text) or _DEEPLINK_ROOM_ID_PATTERN.search(text)
-    if match:
-        return match.group(1)
-    return None
+        return room_id_from_page(page)
+    except ValueError as error:
+        # Keep the public resolver's exception contract after extracting page parsing.
+        raise TikTokResolutionError(str(error)) from error
 
 
 def _room_id_from_public_lookup(
@@ -196,22 +180,6 @@ def _room_id_from_public_lookup(
     if room_id is None:
         raise TikTokResolutionError("unable to determine room ID from public TikTok response")
     return room_id
-
-
-def _find_room_id(value: Any) -> str | None:
-    if isinstance(value, Mapping):
-        for key, child in value.items():
-            if str(key).replace("_", "").lower() == "roomid" and str(child).isdigit():
-                return str(child)
-            room_id = _find_room_id(child)
-            if room_id is not None:
-                return room_id
-    elif isinstance(value, list):
-        for child in value:
-            room_id = _find_room_id(child)
-            if room_id is not None:
-                return room_id
-    return None
 
 
 def _json_response(response: bytes, description: str) -> Mapping[str, Any]:
