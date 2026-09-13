@@ -14,6 +14,7 @@ from typing import Any
 from .flv import FlvFormatError, avc_configuration_dimensions
 from .frame_rate import inspect_frame_rate, nominal_frame_rate
 from .source import iter_tags
+from .session_parts import part_order
 
 
 class FinalizationError(RuntimeError):
@@ -173,10 +174,9 @@ class _FfmpegProgressReporter:
 
 
 def _validate_parts(parts: Iterable[Path]) -> tuple[Path, ...]:
-    # Writer names parts with zero-padded indexes; the full path breaks ties
-    # deterministically if callers supply identically named files from directories.
+    # Four-digit padding is a minimum; lexical sorting misorders part 10000 before 9999.
     ordered_parts = tuple(
-        sorted((Path(part) for part in parts), key=lambda part: (part.name, str(part)))
+        sorted((Path(part) for part in parts), key=part_order)
     )
     if not ordered_parts:
         raise ValueError("at least one completed FLV part is required")

@@ -1,7 +1,8 @@
 # TikREC session manifest
 
 TikREC v0.2.0 and later write `session.json` in each new parts directory. It is
-the high-level summary of one recording attempt. The existing
+the high-level summary of one logical recording session, including explicit
+continuation attempts. The existing
 `connections.jsonl` remains the detailed event and connection log; neither file
 replaces the other.
 
@@ -18,6 +19,11 @@ replaces the other.
 - `tikrec finalize` updates a v0.2 manifest when one is present and marks that a
   manual recovery was attempted. Older parts directories without a manifest
   continue to finalize normally.
+- Explicit internal resume preserves the session UUID, source type, original
+  started_at and stored facts, reopens recording lifecycle, updates counts, and
+  sets recovery_performed. Its capture_resume event preserves the prior result
+  as evidence before source consumption. No resume_count field is added here;
+  the durable service job owns that counter in later integration.
 
 Each update is written to `.session.json.partial`, flushed, and atomically
 replaced over `session.json`. A failed update therefore leaves the preceding
@@ -46,7 +52,7 @@ are strings in the same absolute or relative form supplied to TikREC.
 | `connection_count` | integer | Recorded source/resolution attempts for this session. |
 | `reconnect_count` | integer | Attempts after the first; `max(connection_count - 1, 0)`. |
 | `interrupted` | boolean | Whether capture or finalization was interrupted. |
-| `recovery_performed` | boolean | Whether `tikrec finalize` attempted manual recovery. |
+| `recovery_performed` | boolean | Whether manual finalize or explicit capture resume attempted recovery. |
 | `finalization` | object | Finalization `status` and optional `error`. |
 | `media` | object | Optional final-output codec and resolution facts. |
 | `error` | string or null | Redacted reason for an abnormal session result. |
@@ -107,7 +113,8 @@ for explicit service intent before media storage exists. It does not change
 `session.json` schema version 1 or replace its media/finalization evidence.
 Public source/room identity and durable stop intent belong to that service
 record; no signed CDN URL or service secret belongs in either file. Runtime
-integration and resume manifest fields remain unfinished. Existing v0.2/v0.3/
+integration remains unfinished. Explicit capture resume uses existing lifecycle,
+count, and recovery fields without expanding media schema 1. Existing v0.2/v0.3/
 v0.4 manifests and their validation behavior are unchanged.
 
 Structured public resolution now exposes a canonical positive decimal room_id;
@@ -117,6 +124,17 @@ record accepts canonical room-ID strings (or null) and cannot accept a
 flv_url is ephemeral transport. Reconciliation will refuse to claim the same
 LIVE when room identity is missing, malformed, or conflicting. Media schema
 version 1 remains unchanged by this identity module.
+
+Explicit resume requires a valid supported manifest; legacy parts without one
+remain finalizable but cannot continue capture. Recording manifests may lag
+promoted part/connection counts; interrupted/failed manifests must match retained
+parts and must not predate newer connection evidence. Path,
+identity, timestamp, count, or connection-log conflicts fail without repair.
+Already completed/finalizing sessions and partial artifacts are refused.
+Capture-only continuation retains the output declaration but records
+not_requested finalization; an explicit finalization path must match the prior
+declaration unless it was null. Completion/interruption then covers all old and
+new parts and elapsed wall time from the original start, including downtime.
 
 ## Validation
 

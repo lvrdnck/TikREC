@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 import os
 import re
 import time
@@ -45,6 +46,26 @@ class SessionManifest:
     def active(self) -> bool:
         """Return whether this session has created its initial manifest."""
         return self._values is not None
+
+    def snapshot(self) -> dict[str, Any]:
+        """Return independent manifest facts for read-only resume preflight."""
+        return deepcopy(self._require_values())
+
+    def resume_capture(self, parts: Iterable[Path], connection_count: int,
+                       *, output_path: Path | None = None) -> None:
+        """Reopen validated capture while preserving identity and original start time."""
+        values = self._require_values()
+        values.update(status="recording", ended_at=None, elapsed_seconds=None,
+                      interrupted=False, recovery_performed=True, error=None,
+                      part_count=len(tuple(parts)), connection_count=connection_count,
+                      reconnect_count=max(0, connection_count - 1))
+        if output_path is not None:
+            values["output_path"] = str(output_path)
+        # Capture-only resume deliberately does not request a new finalization attempt.
+        values["finalization"] = {
+            "status": "pending" if output_path is not None else "not_requested", "error": None,
+        }
+        self._write()
 
     def start(self, *, connection_count: int = 0) -> None:
         """Initialize a recording-state manifest after the session directory exists."""

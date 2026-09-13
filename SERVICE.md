@@ -168,6 +168,24 @@ not safe for status/state. Persist only `result.room_id` in the job record.
 Job schema stays 1, with canonical room-ID validation shared with the resolver.
 None of this wires startup reconciliation or capture resume into the service.
 
+Explicit generic continuation is now implemented in `capture_resume.py` through
+`capture_tags_resume` and `capture_url_resume`. These APIs require a supported
+interrupted/failed/still-recording manifest, completed contiguous parts from
+one, and no ambiguous partial/output state. The caller must ensure the previous
+worker is gone; they do not coordinate multiple service processes. A new writer
+uses the next part index and fresh codec/keyframe/timestamp state. Old FLV files
+remain immutable, connection/resume evidence is appended, and requested
+finalization joins every old and new part. Lightweight framing checks run
+offline without mandatory codec decoding; real media validation is pending.
+
+These APIs deliberately accept supplied tags or one direct FLV URL. They do not
+re-resolve a room, prove same-LIVE eligibility, wait through an outage, or resume
+the service automatically. Existing Task Scheduler startup, remote routes, and
+local CLI behavior remain unchanged. A crashed job with an abandoned partial
+currently fails explicit-resume preflight; no artifact is promoted or repaired.
+The next v0.5 module will reconcile startup using durable job state, public room
+identity, and this continuation machinery. Version remains 0.4.0.
+
 ## Windows Task Scheduler one-time setup
 
 Install the current checkout into the PC's existing virtualenv with

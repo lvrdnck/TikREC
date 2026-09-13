@@ -223,6 +223,74 @@ No cookies, no login, no private signing, no yt-dlp.
 Prepares the session directory once, refuses to reuse an existing one,
 preserves completed parts on error or interrupt, finalizes on clean EOF.
 
+`_capture_session` shares writer unwind and finalization behavior with explicit
+resume. `CaptureResult` adds optional `resumed` (default false) and
+`resume_start_index` (default null); existing callers keep their behavior.
+
+### tikrec/session_parts.py, session_resume.py, and capture_resume.py - explicit continuation
+
+`discover_parts(directory)` returns numerically ordered completed parts plus
+the next writer index. Names must exactly match `part-{index:04d}.flv` for
+positive ASCII decimal indexes; four digits are a minimum, so part 10000 follows
+9999. Parts must be regular files, contiguous from one. Gaps fail even if a log
+could suggest a missing part: this module does not repair or skip evidence.
+Part-looking names, other FLV files, and any `.partial` artifact inside the
+directory fail preflight. Unrelated non-FLV/non-part/non-partial files are
+ignored because they cannot claim a writer index. Symlink parts are refused.
+
+Checks read bounded chunks through the existing FLV parser: writer header,
+complete tags and PreviousTagSize, own AVC sequence header, first media at a
+zero-based video keyframe, AAC configuration before audio media, and no changed
+AVC record inside one part. This scans framing without FFmpeg/FFprobe or codec
+decoding; cost grows with retained bytes and does not prove media health.
+
+`prepare_resume` validates a supported schema-1 manifest and connection evidence
+without writing. Status must be recording/interrupted/failed; finalization must
+be pending/not_started/not_requested. Finalizing, finalized, or cleanly completed
+sessions require the later reconciliation layer instead. It verifies the UUID,
+source type, times/counts/flags, matching parts-directory path, optional expected
+session ID/source type, and canonical room identity when present. A recording
+manifest may lag completed parts; a closed manifest must match their count.
+Recording manifests may also lag flushed connection evidence; closed manifests
+must not predate newer connection records. The next connection is
+one above the greatest manifest/log/resume-boundary allocation, so a crashed
+unclosed attempt is not reused. Truncated/malformed logs, duplicate fields,
+backward/duplicate connection numbers, overlapping part ownership, and missing
+part references fail safely. Relative manifest paths use the original working
+directory; relocated sessions with conflicting paths are not guessed into use.
+
+`capture_tags_resume(tags, *, parts_directory, output_path=None, ...)` and
+`capture_url_resume(direct_flv_url, *, parts_directory, output_path=None, ...)`
+are explicit internal APIs. Callers must own the session and ensure the previous
+writer has exited. A supplied direct URL opens exactly one connection: no
+TikTok resolution, identity decision, reconnect policy, or future-LIVE polling.
+Optional injections cover source/writer/finalizer, clocks, media inspection,
+stop event, expected identity/source, progress, and heartbeat. The session must
+already exist with completed parts and a valid manifest; legacy manifest-free
+directories can still use manual finalize but cannot resume capture.
+
+Preflight finishes before consuming a source. Resume preserves original session
+ID, source type, start time, room identity and other stored facts; it atomically
+reopens recording lifecycle, updates counts and recovery_performed, then appends
+a capture_resume event before the new connection. There is no new manifest
+schema or media resume counter; the service job owns resume_count later.
+The returned connection tuple describes this attempt; older evidence remains
+in connections.jsonl. A new writer always starts at the next index, even with
+identical AVC/AAC bytes. It obtains its own headers/keyframe and never appends
+old media, reuses prior timestamp bases, or offsets DTS across parts.
+
+No output argument means capture-only continuation: the previous output
+declaration is retained, but this attempt marks finalization not_requested.
+An explicit output must match a prior declaration (or establish one if null).
+Existing declared/requested outputs or finalizer temporary artifacts block
+resume even when output finalization is omitted. Requested finalization uses
+all old and new parts in numeric order. Failures retain every part; first
+Ctrl-C/cooperative stop uses the same close/retain/finalize path as fresh capture,
+and a second finalization interrupt retains the existing finalizer semantics.
+Automatic service startup reconciliation, public LIVE resume, remote/CLI resume,
+long outage retries, and reconnect-gap optimization are not implemented here.
+Real-recording part decode/packet validation is still outstanding.
+
 ### tikrec/manifest.py and tikrec/media.py — session metadata
 
 `SessionManifest` owns the versioned `session.json` lifecycle and atomic file

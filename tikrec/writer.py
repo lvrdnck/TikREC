@@ -32,6 +32,8 @@ def write_parts(
 ) -> tuple[Path, ...]:
     """Write media into numbered FLV parts and return the retained paths.
 
+    ``start_index`` is a positive integer, default one; each call owns fresh
+    codec/keyframe/timestamp state independently of previous calls.
     ``on_part_started`` fires when a keyframe makes a part decodable.
     ``on_progress`` receives the active part's final name and written bytes.
     ``on_part_closed`` receives original source timestamps for each retained
@@ -41,7 +43,8 @@ def write_parts(
     ``on_media_retained`` fires only after an audio/video media tag is written,
     excluding configuration tags and media discarded by the keyframe gate.
     """
-    if not isinstance(start_index, int) or start_index < 1:
+    # bool is an int subclass, but it is not an intentional part allocation index.
+    if type(start_index) is not int or start_index < 1:
         raise ValueError("start_index must be a positive integer")
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -153,7 +156,7 @@ class _OpenPart:
 def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _OpenPart:
     final_path = output_dir / f"part-{index:04d}.flv"
     partial_path = output_dir / f".{final_path.name}.partial"
-    if final_path.exists() or partial_path.exists():
+    if final_path.exists() or final_path.is_symlink() or partial_path.exists():
         raise FileExistsError(f"refusing to overwrite {final_path}")
     handle = partial_path.open("xb")
     handle.write(_FLV_HEADER)
@@ -195,6 +198,9 @@ def _close_part(
         part.partial_path.unlink()
         return
     # Rename only a closed file so consumers never see a still-growing part.
+    if part.final_path.exists() or part.final_path.is_symlink():
+        # A collision discovered after opening must preserve both media artifacts.
+        raise FileExistsError(f"refusing to overwrite {part.final_path}")
     os.replace(part.partial_path, part.final_path)
     paths.append(part.final_path)
     if on_part_retained is not None:

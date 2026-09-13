@@ -10,11 +10,13 @@ from pathlib import Path
 from .finalize import finalize_parts
 from .connection_observation import ConnectionObservation
 from .flv import FlvTag
-from .manifest import SessionManifest
+from .manifest import SessionManifest, _safe_reason
 from .media import MediaInfo, inspect_media
 from .source import RawCopy, iter_url_tags
 from .writer import PartTiming, write_parts
 from .connection_log import ConnectionRecord, append_connection_record, append_room_status_record
+from .capture_control import CaptureStopped
+from .session_parts import part_order
 
 
 class CaptureError(RuntimeError):
@@ -33,6 +35,8 @@ class CaptureResult:
     output_path: Path | None
     interrupted: bool = False
     connections: tuple[ConnectionRecord, ...] = ()
+    resumed: bool = False
+    resume_start_index: int | None = None
 
 
 def capture_tags(
@@ -57,17 +61,24 @@ def capture_tags(
     return _capture_session(tags, parts_directory, output_path, manifest, writer, finalizer)
 
 
-def _capture_session(tags, parts_directory, output_path, manifest, writer, finalizer):
+def _capture_session(tags, parts_directory, output_path, manifest, writer, finalizer,
+                     *, retained_parts=(), progress=None):
     """Share writer unwind and finalization semantics between capture entry points."""
     interrupted = False
     try:
-        parts = writer(tags, parts_directory)
-    except KeyboardInterrupt:
+        parts = tuple(retained_parts) + tuple(writer(tags, parts_directory))
+    except (KeyboardInterrupt, CaptureStopped):
         interrupted = True
         parts = _completed_parts(parts_directory)
+        if retained_parts:
+            parts = tuple(sorted(parts, key=part_order))
     except Exception as error:
         parts = _completed_parts(parts_directory)
-        failure = CaptureError(f"capture failed: {error}", parts)
+        if retained_parts:
+            parts = tuple(sorted(parts, key=part_order))
+        # Explicit resume diagnostics must not disclose the supplied ephemeral transport URL.
+        reason = _safe_reason(error) if retained_parts else str(error)
+        failure = CaptureError(f"capture failed: {reason}", parts)
         finalization = "not_started" if output_path is not None else None
         manifest.fail(parts, failure, finalization_status=finalization)
         raise failure from error
@@ -84,7 +95,7 @@ def _capture_session(tags, parts_directory, output_path, manifest, writer, final
         manifest.fail(parts, failure, finalization_status="not_started")
         raise failure
     return finalize_capture_result(parts, output_path, finalizer=finalizer,
-                                   interrupted=interrupted, manifest=manifest)
+                                   interrupted=interrupted, manifest=manifest, progress=progress)
 
 
 def finalize_capture_result(

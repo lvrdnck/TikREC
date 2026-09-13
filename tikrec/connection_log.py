@@ -102,3 +102,13 @@ def _append_jsonl_record(path: Path, values: dict[str, object]) -> None:
         handle.flush()
         # A killed process must not lose the last connection or room-status evidence.
         os.fsync(handle.fileno())
+
+
+def append_resume_record(path: Path, *, timestamp: float, session_id: str,
+                         previous_status: str, connection: int, next_part_index: int) -> None:
+    """Append an explicit process/session continuation boundary without transport URLs."""
+    _append_jsonl_record(path, {
+        "event": "capture_resume", "reason": "explicit_resume", "timestamp": timestamp,
+        "session_id": session_id, "previous_status": previous_status,
+        "connection": connection, "next_part_index": next_part_index,
+    })

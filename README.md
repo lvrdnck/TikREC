@@ -108,6 +108,12 @@ locations. Missing or ambiguous room identity will prevent automatic resume in
 the later reconciliation layer. Storage/recovery is not yet connected to
 `serve`; the version remains v0.4.0. See [SERVICE.md](SERVICE.md) for the boundary.
 
+Internal explicit resume APIs now continue a supported interrupted session into
+new numbered parts. They preserve old FLV files and the session ID, give the new
+connection fresh codec/timestamp state, and can finalize old plus new parts.
+Gaps, abandoned partials, conflicting paths, or existing outputs block resume.
+There is no resume CLI/remote endpoint or automatic service recovery yet.
+
 ## How it works
 
 The stream is written as numbered FLV parts intended to be independently

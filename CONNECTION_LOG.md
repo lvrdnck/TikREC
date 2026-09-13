@@ -79,3 +79,27 @@ Nominal rate is not a measured average or a promise of constant-rate timestamps.
 These fields do not feed resolution selection or encoder settings. Comparing
 labels and actual part facts can expose changes, but a label alone does not
 guarantee stable dimensions: an upstream encoder can change within one rendition.
+
+## Explicit capture-resume boundary
+
+Internal explicit resume appends one event before consuming the supplied new
+connection. It does not replace existing connection or room-status evidence:
+
+```json
+{"event":"capture_resume","reason":"explicit_resume","timestamp":1789300000.0,"session_id":"a738109c-a387-423f-a20b-969ecf656c4b","previous_status":"interrupted","connection":3,"next_part_index":3}
+```
+
+`connection` allocates the upcoming attempt; `next_part_index` forces its new
+writer part. The new connection's closed record follows and contains only new
+parts, while manifest/result part counts cover old plus new parts. Connection
+allocation continues above the greatest manifest/log/resume-event allocation;
+a process can die after allocation but before its closed record is written.
+Historical closed connection numbers must increase and part ranges cannot
+overlap. Incomplete JSONL tails and conflicting/missing part references block
+resume instead of being truncated or repaired. Numeric part gaps and abandoned
+partial files also block resume. New error summaries redact transport URLs.
+
+The event records explicit library-level continuation, not proof of a service
+restart or Windows reboot. Those decisions/evidence belong to the later service
+reconciliation module. No signed FLV URL is included, no media is appended to an
+old FLV, and each new part starts in its own rebased timestamp domain.
