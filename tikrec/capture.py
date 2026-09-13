@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-import os
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
@@ -14,7 +12,8 @@ from .flv import FlvTag
 from .manifest import SessionManifest
 from .media import MediaInfo, inspect_media
 from .source import RawCopy, iter_url_tags
-from .writer import PartTiming, write_parts
+from .writer import write_parts
+from .connection_log import ConnectionRecord, append_connection_record, append_room_status_record
 
 
 class CaptureError(RuntimeError):
@@ -23,21 +22,6 @@ class CaptureError(RuntimeError):
     def __init__(self, message: str, parts: tuple[Path, ...] = ()) -> None:
         super().__init__(message)
         self.parts = parts
-
-
-@dataclass(frozen=True)
-class ConnectionRecord:
-    """One closed live connection and the retained parts it produced."""
-
-    number: int
-    started_at: float
-    ended_at: float
-    gap_before: float | None
-    parts: tuple[Path, ...]
-    outcome: str
-    error: str | None = None
-    part_timings: tuple[PartTiming, ...] = ()
-    raw_copy: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -219,67 +203,6 @@ def capture_url(
 
 def raw_copy_path(directory: Path, connection_number: int) -> Path:
     return Path(directory) / f"connection-{connection_number:04d}.raw"
-
-
-def append_connection_record(path: Path, record: ConnectionRecord) -> None:
-    """Append one durable connection record, including any successful raw copy."""
-    values = {
-        "connection": record.number,
-        "started_at": record.started_at,
-        "ended_at": record.ended_at,
-        "gap_before": record.gap_before,
-        "part_start": record.parts[0].name if record.parts else None,
-        "part_end": record.parts[-1].name if record.parts else None,
-        "part_timings": [
-            {
-                "name": timing.path.name,
-                "configuration_timestamp": timing.configuration_timestamp,
-                "first_media_timestamp": timing.first_media_timestamp,
-                "first_keyframe_timestamp": timing.first_keyframe_timestamp,
-                "keyframe_gate_duration": timing.keyframe_gate_duration,
-                "last_tag_timestamp": timing.last_tag_timestamp,
-                "timestamp_replays": [
-                    {
-                        "position": replay.position,
-                        "previous_timestamp": replay.previous_timestamp,
-                        "timestamp": replay.timestamp,
-                        "magnitude": replay.magnitude,
-                        "replayed_tag_count": replay.replayed_tag_count,
-                        "recovered": replay.recovered,
-                    }
-                    for replay in timing.timestamp_replays
-                ],
-            }
-            for timing in record.part_timings
-        ],
-        "outcome": record.outcome,
-        "error": record.error,
-        "raw_copy": None if record.raw_copy is None else record.raw_copy.name,
-    }
-    _append_jsonl_record(path, values)
-
-
-def append_room_status_record(
-    path: Path,
-    timestamp: float,
-    status: object,
-    confirmation_reached: bool,
-) -> None:
-    """Append durable evidence from a room-status confirmation response."""
-    _append_jsonl_record(path, {
-        "event": "room_status",
-        "timestamp": timestamp,
-        "status": status,
-        "confirmation_reached": confirmation_reached,
-    })
-
-
-def _append_jsonl_record(path: Path, values: dict[str, object]) -> None:
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(values, sort_keys=True) + "\n")
-        handle.flush()
-        # A killed process must not lose the last connection or room-status evidence.
-        os.fsync(handle.fileno())
 
 
 def _prepare_session(parts_directory: Path, output_path: Path | None) -> None:
