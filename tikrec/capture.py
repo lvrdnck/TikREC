@@ -54,6 +54,11 @@ def capture_tags(
     manifest = SessionManifest(parts_directory, output_path, source_type,
                                clock=clock, media_inspector=media_inspector)
     manifest.start(connection_count=connection_count)
+    return _capture_session(tags, parts_directory, output_path, manifest, writer, finalizer)
+
+
+def _capture_session(tags, parts_directory, output_path, manifest, writer, finalizer):
+    """Share writer unwind and finalization semantics between capture entry points."""
     interrupted = False
     try:
         parts = writer(tags, parts_directory)
