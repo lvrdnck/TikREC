@@ -9,17 +9,17 @@ recordings, then expose those capabilities through local and remote interfaces.
 
 That growth must not weaken the project's core boundaries. TikREC will not
 bypass authentication, CAPTCHA, access controls, or private request signing.
-Any future authenticated capture must use a session supplied by the user and
-only access streams that account is legitimately allowed to view. Features
+Private/gated access, future-start monitoring, and schedule prediction remain
+outside the current plan. Features
 should support recordings the user chose to make, not covertly track people.
 
 ## Release philosophy
 
 TikREC uses small 0.x releases. Each minor release should deliver one meaningful
 capability, or a tightly related set, that can be tested and used on its own.
-Dependencies determine the order: durable metadata precedes integrated
-validation, validation precedes recovery, and the local library precedes APIs
-and user interfaces. Patch releases remain available for focused bug fixes and
+Actual use determines the order: remote recording control comes before
+environment survival, gap reduction, guided recovery, and configuration.
+Patch releases remain available for focused bug fixes and
 reliability improvements between roadmap milestones.
 
 This roadmap is directional rather than a promise of exact scope or dates. It
@@ -70,183 +70,77 @@ time and CPU cost is warranted.
 
 ## Planned releases
 
-### v0.4.0 — Interrupted recording recovery
+The priority is to reliably record public LIVE streams on an always-on PC,
+control recordings remotely, preserve/finalize media safely, and make failures
+recoverable. The proven setup is Mac -> Tailscale -> main-pc -> TikREC service
+-> files stored on main-pc. Closing SSH or VS Code must not end a recording.
 
-**Goal:** Turn retained capture artifacts into a guided, repeatable recovery
-workflow.
+### v0.4.0 ? Remote service and recording control
 
-**Why now:** Recovery can safely choose inputs only after sessions and their
-parts have machine-readable identity and validation results.
+**Goal:** Run capture under an independently launched service with one active
+recording, health/status/start/graceful-stop HTTP controls, and a small remote
+CLI. Reuse the LIVE loop and finalizer through an application layer. Default to
+loopback; require a bearer secret for explicit trusted LAN/Tailscale binding.
+Document Windows Task Scheduler deployment. No browser UI or crash-resume.
 
-**Likely scope:** Discover incomplete sessions, assess salvageable parts, resume
-or repeat finalization safely, and update recovery outcomes without overwriting
-or deleting evidence. It cannot reconstruct media TikTok never delivered.
+### v0.5.0 ? Environment survival / resumability
 
-### v0.5.0 — Configuration and defaults
+**Goal:** Make service crashes, PC reboots, network loss, and disk/environment
+failures recoverable. Establish restart/session reconciliation and explicit
+resume policy without overwriting retained evidence or claiming missing media
+was captured. An independent service launch in v0.4 solves SSH lifetime only.
 
-**Goal:** Move frequently repeated CLI choices into an explicit user
-configuration with predictable overrides.
+### v0.6.0 ? Reconnect-gap reduction
 
-**Why now:** Stable session, validation, and recovery behavior defines which
-settings are worth persisting before more subsystems add their own options.
+**Goal:** Use connection milestones and real recordings to reduce avoidable
+reconnect gaps. Improve bounded retry/read behavior only with evidence, while
+preserving codec configuration, part safety, and conservative room-end checks.
 
-**Likely scope:** Documented config discovery and precedence for recording
-locations, file/session naming, capture retry policy, validation, logging, and
-similar safe defaults. TikTok credentials and multi-profile account management
-are not part of this release.
+### v0.7.0 ? Guided interrupted-session recovery
 
-### v0.6.0 — Chat logging
+**Goal:** Discover incomplete sessions, validate salvageable parts, guide safe
+repeat finalization, and record outcomes. Keep manual `tikrec finalize` available
+throughout. Recovery cannot reconstruct media TikTok never delivered.
 
-**Goal:** Preserve time-aligned public LIVE chat and selected LIVE events beside
-the recording.
+### v0.8.0 ? Configuration and defaults
 
-**Why now:** The manifest can identify event artifacts and configuration can
-hold opt-in collection and retention choices.
+**Goal:** Persist proven choices for output locations/naming, retry policy,
+validation, and logging with documented discovery and CLI override precedence.
+No TikTok credentials or account profiles.
 
-**Likely scope:** Durable, timestamped messages, gifts, joins, and relevant LIVE
-events; connection/reconnect state; and clear partial-data reporting. This
-release does not add transcription, search, analytics, or authenticated room
-access.
+### v0.9+ ? Library, playback, and UI based on proven use
 
-### v0.7.0 — Transcription
+**Goal:** Catalog sessions and artifacts, browse history/health, and provide
+playback and eventual UI controls when actual use establishes the requirements.
+Build presentation on the existing service boundary; text/analytics artifacts
+are optional and are not dependencies for recording control or a library.
 
-**Goal:** Produce a time-aligned transcript from recorded audio.
+## Later / backlog (not current priorities)
 
-**Why now:** Validated media, stable session metadata, and configuration provide
-the inputs and provenance a transcript needs.
+These ideas are preserved without promised versions or implementation order:
 
-**Likely scope:** An explicit post-processing command or stage, timestamped
-machine-readable transcripts and subtitle output such as SRT, failure reporting,
-and a documented engine boundary. Library-wide indexing and semantic search
-come later.
-
-### v0.8.0 — Local library and history
-
-**Goal:** Make completed and recoverable sessions browsable as a coherent local
-collection.
-
-**Why now:** Manifests, health results, chat, and transcripts provide useful
-records to catalog rather than merely a directory of media files.
-
-**Likely scope:** Local indexing, session history, filtering, video and raw-part
-artifact paths, metadata/chat/transcript/diagnostic links, health summaries, and
-safe rebuilds from source manifests. No server or browser UI is required here.
-
-### v0.9.0 — Search
-
-**Goal:** Search the local recording library across session metadata and
-available text artifacts.
-
-**Why now:** Search needs the normalized catalog introduced in v0.8 rather than
-scanning unrelated files ad hoc.
-
-**Likely scope:** CLI-accessible filtering and text search over metadata,
-transcripts, and chat, with results linked back to sessions and timestamps.
-Remote search and predictive ranking are excluded.
-
-### v0.10.0 — Server and API mode
-
-**Goal:** Expose recording and library operations through a stable service
-boundary.
-
-**Why now:** The API can be designed around proven capture, processing,
-library, and search workflows instead of guessing at future domain objects.
-
-**Likely scope:** A reusable application/service layer, local API endpoints for
-jobs and session data, progress/status reporting, and controlled capture
-lifecycle. This is not yet a Web UI or a hardened VPS deployment.
-
-### v0.11.0 — Web UI
-
-**Goal:** Provide a browser interface for the capabilities already exposed by
-the API.
-
-**Why now:** Building on v0.10 keeps presentation separate from capture and
-avoids a second private control path.
-
-**Likely scope:** Start/stop controls, recording progress, session history,
-health, playback links, and search. Multi-user hosting and TikTok account
-management are not part of this release.
-
-### v0.12.0 — VPS and headless operation
-
-**Goal:** Run TikREC unattended on a remote or always-on host.
-
-**Why now:** Headless operation depends on stable service controls and an
-interface that does not require terminal access.
-
-**Likely scope:** Service lifecycle, Docker and/or systemd deployment guidance,
-persistent paths, logging, disk-pressure safeguards, restart behavior, and
-secure remote access. This release does not bypass TikTok access controls or
-introduce account auth.
-
-### v0.13.0 — TikTok authentication and session management
-
-**Goal:** Manage a user-provided TikTok session safely and transparently.
-
-**Why now:** Credentials should enter only after headless storage, logging,
-configuration, and service boundaries can protect and redact them consistently.
-
-**Likely scope:** Explicit sign-in/session import, secure local storage,
-expiration and revocation handling, redaction, and clear active-account state.
-Authenticated or gated capture itself remains for v0.14.
-
-### v0.14.0 — Authorized authenticated and gated LIVE capture
-
-**Goal:** Record streams the configured TikTok account is legitimately
-authorized to view.
-
-**Why now:** Capture must build on the reviewed session-management boundary,
-not mix credential handling into the resolver as an incidental feature.
-
-**Likely scope:** Authenticated resolution and media/event access, permission
-errors, and provenance in the session manifest. There will be no CAPTCHA,
-subscription, entitlement, access-control, or private-signing bypass.
-
-### v0.15.0 — Activity statistics
-
-**Goal:** Derive transparent summary statistics from the user's own recording
-library and captured events.
-
-**Why now:** Useful statistics require a substantial, normalized history and
-clear provenance for public and authenticated sessions.
-
-**Likely scope:** Start-time and day-of-week distributions, stream frequency and
-duration, gaps between recorded streams, recent schedule changes, reconnect and
-health trends, and chat/event activity. Aggregates remain traceable to source
-sessions; this is not a general-purpose person-tracking or surveillance system.
-
-### v0.16.0 — Predictions
-
-**Goal:** Offer opt-in estimates based on the user's recorded history, with
-uncertainty made explicit.
-
-**Why now:** Prediction is meaningful only after enough reliable historical
-data and explainable statistics exist.
-
-**Likely scope:** Probable LIVE time windows, confidence values, schedule trends,
-changing activity patterns, evaluation against held-out history, and controls
-to disable or delete derived data. Transcript-derived schedule hints can wait;
-there is no promise of accurate LIVE schedules and no covert monitoring.
-
-## Beyond v0.16
-
-Possible areas, deliberately not assigned versions, include richer Web UI and
-remote management, better exports and integrations, deeper analytics and
-session comparison, improved search and transcript/chat presentation, storage
-and retention management, multi-platform capture adapters, deployment and
-packaging improvements, and continued reliability work driven by long
-recordings. These ideas should become releases only when a concrete user need
-and their dependencies are understood.
+- **Chat logging:** opt-in timestamped public chat, gifts, joins, LIVE events,
+  reconnect evidence, and clear partial-data reporting beside a session.
+- **Transcription:** explicit post-processing of recorded audio into timestamped
+  transcripts/subtitles with engine provenance and failure reporting.
+- **Search:** metadata and available transcript/chat search linked to sessions
+  and timestamps, after a useful library exists.
+- **Statistics and analytics:** explainable summaries of the user's recordings,
+  including duration, reconnect health, event activity, and session comparison.
+- **Prediction ideas:** retained for reconsideration only; future-start
+  monitoring and schedule prediction are outside the current project scope.
+- **Deployment/integrations:** additional headless packaging, exports, storage
+  and retention tools, and multi-platform adapters driven by demonstrated use.
+- **Authentication/gated-access ideas:** retained as historical possibilities,
+  outside the public-only plan; no credentials, private/gated capture, auth,
+  CAPTCHA, entitlement, or private-signing bypass is authorized.
 
 ## Architectural direction
 
-The existing modules should evolve only when a release needs the separation;
-this is not a request for a speculative reorganization.
+Evolve separation only when a release needs it; do not scaffold future systems.
 
-- **Capture:** resolver, authentication, media source, recorder.
-- **Events:** chat, gifts, joins, LIVE state and events.
-- **Processing:** finalization, validation, transcription.
-- **Library:** sessions, history, search, statistics.
-- **Service/API:** shared interface for the CLI, Web UI, and remote operation.
-- **Intelligence:** activity analysis and LIVE predictions.
+- **Capture:** public resolver, one HTTP media source, writer, LIVE orchestration.
+- **Processing:** retained-part finalization and read-only validation.
+- **Application/service:** one recording job, cooperative lifecycle, safe status.
+- **Interfaces:** existing local CLI, narrow HTTP API, remote CLI; eventual UI.
+- **Later optional layers:** library, events, transcripts, search, analytics.
