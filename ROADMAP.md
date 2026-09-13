@@ -84,8 +84,9 @@ loopback; require a bearer secret for explicit trusted LAN/Tailscale binding.
 Document Windows Task Scheduler deployment. No browser UI or crash-resume.
 
 **Implementation:** v0.4.0 adds these controls with offline coverage. Deployment
-through Task Scheduler/Tailscale and real recording/remote-stop media validation
-still require verification before treating this as a proven remote setup.
+through Task Scheduler/Tailscale on main-pc has been validated: recording
+survived SSH/VS Code disconnection, remote stop finalized successfully, and
+retained-session and deep output validation passed.
 
 ### v0.5.0 ? Environment survival / resumability
 
@@ -93,6 +94,17 @@ still require verification before treating this as a proven remote setup.
 failures recoverable. Establish restart/session reconciliation and explicit
 resume policy without overwriting retained evidence or claiming missing media
 was captured. An independent service launch in v0.4 solves SSH lifetime only.
+
+**Progress:** Atomic, validated service job-intent storage is implemented with
+59 offline tests. Controller persistence, same-room identity integration,
+resumable capture, patient transient retries, startup/finalization
+reconciliation, and recovery status remain unfinished. The package remains
+0.4.0; v0.5 deployment crash/reboot tests and tagging remain pending.
+
+Implementation order: durable job state, public room identity, retained-session
+resume, outage retry policy, reconciliation, controller/service integration,
+then release documentation/version. Each module gets offline tests before the
+next begins. Successful reconnect-gap measurement/reduction remains v0.6.
 
 ### v0.6.0 ? Reconnect-gap reduction
 

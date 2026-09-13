@@ -306,6 +306,26 @@ error. Successful stop is completed/interrupted; capture/finalizer errors are
 failed. Requested output and actual final output are distinct fields. Shutdown
 rejects new starts, requests stop, and joins the worker outside the lock.
 
+### tikrec/job_state.py - durable service intent (v0.5 work in progress)
+
+`JobState` and `JobStateStore` provide validated, atomic storage for the latest
+explicitly started service job. Intent exists independently of `session.json`
+because the service must persist acceptance before resolution creates media
+storage. The job record owns the public page URL, requested paths, job identity,
+lifecycle, stop flag, finalization-completed flag, optional public room ID,
+resume count, and fixed recovery reason. The manifest continues to own media
+facts and connection counts. See [SERVICE.md](SERVICE.md) for job schema 1.
+
+Non-terminal intent needs reconciliation unless finalization is complete.
+Capture resume additionally requires a saved room ID, no stop request, and a
+capture lifecycle state; callers must still verify that the current room ID
+matches. Finalizing jobs may only reconcile finalization. Malformed, duplicate,
+missing, or unknown fields fail safely without modifying stored evidence.
+
+This module has offline tests but is not yet wired into the controller or CLI.
+Service startup still begins idle; automatic crash/reboot resume is unfinished.
+The package remains v0.4.0 until the remaining v0.5 layers are implemented.
+
 ### tikrec/service.py — narrow HTTP adapter
 
 `RecordingHTTPServer` uses the standard-library `ThreadingHTTPServer` with a

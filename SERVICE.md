@@ -104,6 +104,53 @@ failed job, which returns 1. Request failures also return 1. If a start
 request loses its response, query status before retrying: the job may already
 be running. Stopping the client or closing its terminal does not stop the job.
 
+## Durable job intent - v0.5 implementation in progress
+
+`tikrec/job_state.py` implements storage only. It is not yet called by `serve`
+or the recording controller, and no state-file CLI option exists yet. Service
+crash/reboot resume and outage recovery therefore retain v0.4 behavior today.
+The service-owned record is separate from the media-owned `session.json`:
+explicit job intent must eventually be committed before the capture worker
+starts, including when initial resolution has not created a session directory.
+It is one latest job, not a history database or account-monitoring registry.
+
+Job schema version 1 contains:
+
+| Field | Meaning |
+| --- | --- |
+| `schema_version` | Job schema, independently versioned from the media manifest |
+| `session_id` | Canonical UUID shared with the recording session |
+| `source_url` | Canonical HTTPS public LIVE page; no query or fragment |
+| `output_path`, `parts_directory` | Absolute MP4 path and its matching `<stem>.parts` directory |
+| `started_at`, `ended_at` | Finite nonnegative Unix seconds; end is null while active |
+| `state` | resolving/recovering/reconciling/resuming/recording/reconnecting/finalizing/completed/failed |
+| `stop_requested` | Durable explicit stop intent |
+| `finalization_completed` | Completed finalization guard |
+| `room_id` | Non-secret decimal public room identity, or null |
+| `resume_count` | Nonnegative number of recording resumes |
+| `recovery_reason` | Null or a fixed machine-readable recovery reason |
+
+Reasons are `process_restart`, `user_stop`, `room_ended`, `live_changed`,
+`identity_unavailable`, `recovery_finalization`, `existing_output`,
+`failed_resume`, `ambiguous_state`, and `unusable_media`. Process restart does
+not by itself prove a Windows reboot. No arbitrary error strings, service
+tokens, cookies, authentication data, or signed CDN URLs belong in this record.
+
+Writes flush and fsync complete JSON in a unique sibling temporary file, close
+it for Windows rename compatibility, and atomically replace committed state.
+POSIX additionally fsyncs the parent directory. This prevents exposing
+half-written JSON; it does not promise survival of filesystem/hardware loss.
+Abandoned temporary records remain evidence and are never loaded as committed
+intent. Malformed JSON, duplicate/unknown fields, missing safety fields, or an
+unsupported schema fail safely. One service process owns the store; concurrent
+service-process coordination is not implemented by this storage module.
+
+Eligibility is conservative: stopped, terminal, finalized, and finalizing jobs
+cannot resume capture. An active job without a saved room ID also cannot resume.
+Eligibility alone does not prove that the source is the same LIVE or that
+retained media is usable; those checks belong to the remaining reconciliation
+work. Non-terminal stopped/finalizing jobs still need finalization assessment.
+
 ## Windows Task Scheduler one-time setup
 
 Install the current checkout into the PC's existing virtualenv with

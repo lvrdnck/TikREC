@@ -101,6 +101,10 @@ Scheduler settings, and deployment verification. v0.4 keeps only the current or
 latest job in memory; service-crash/reboot reconciliation and automatic resume
 remain v0.5 work. There is no Web UI or media-download endpoint.
 
+v0.5 implementation has started with an offline-tested durable job-state
+module. It is not yet connected to `serve`; current runtime behavior remains
+v0.4.0. See [SERVICE.md](SERVICE.md) for the storage boundary and schema.
+
 ## How it works
 
 The stream is written as numbered FLV parts intended to be independently

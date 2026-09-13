@@ -100,6 +100,16 @@ The example's connection count includes the final room-status resolution
 attempt recorded by live capture. `connections.jsonl` provides the detailed
 outcome and timing for each numbered attempt.
 
+## Service intent boundary (v0.5 work in progress)
+
+The new `job_state.py` storage module uses an independent job schema version 1
+for explicit service intent before media storage exists. It does not change
+`session.json` schema version 1 or replace its media/finalization evidence.
+Public source/room identity and durable stop intent belong to that service
+record; no signed CDN URL or service secret belongs in either file. Runtime
+integration and resume manifest fields remain unfinished. Existing v0.2/v0.3/
+v0.4 manifests and their validation behavior are unchanged.
+
 ## Validation
 
 `tikrec validate` accepts either `session.json` or its containing directory. It
