@@ -11,6 +11,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
+from .tiktok_identity import canonical_room_id
+
 
 JOB_SCHEMA_VERSION = 1
 _CAPTURE_STATES = {"resolving", "recovering", "reconciling", "resuming",
@@ -79,7 +81,7 @@ class JobState:
                 and type(self.resume_count) is int and self.resume_count >= 0
                 and (self.room_id is None or
                      (isinstance(self.room_id, str) and
-                      re.fullmatch(r"[0-9]+", self.room_id) is not None))
+                      canonical_room_id(self.room_id) == self.room_id))
                 and self.recovery_reason in _REASONS
             )
         except (ValueError, TypeError, AttributeError, OverflowError):

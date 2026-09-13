@@ -80,6 +80,7 @@ def test_completed_finalization_does_not_need_reconciliation(tmp_path):
     {"state": "unknown"}, {"stop_requested": "false"},
     {"finalization_completed": 1}, {"resume_count": -1}, {"resume_count": True},
     {"room_id": "https://cdn.test/secret"}, {"room_id": 123}, {"room_id": ""},
+    {"room_id": "0"}, {"room_id": "00123"}, {"room_id": "１２３"},
     {"recovery_reason": "Bearer secret"},
     {"state": "completed"}, {"state": "failed"},
 ])
@@ -217,3 +218,19 @@ def test_committed_file_is_synced_before_promotion(tmp_path):
             patch("tikrec.job_state.os.replace", side_effect=promoted):
         store.save(intent(tmp_path))
     assert events[:2] == ["sync", "promote"]
+
+
+def test_resolved_room_identity_is_persisted_without_signed_transport(tmp_path):
+    from tests.test_tiktok import _Opener, live_page, live_room
+    from tikrec.tiktok import resolve_live
+
+    signed = "https://cdn.test/live.flv?signature=do-not-persist"
+    result = resolve_live(PAGE, opener=_Opener([live_page("00123"), live_room({"HD1": signed})]))
+    store = JobStateStore(tmp_path / "job.json")
+    store.save(replace(intent(tmp_path), room_id=result.room_id))
+    assert store.load().room_id == "123"
+    body = store.path.read_text(encoding="utf-8")
+    assert signed not in body and "do-not-persist" not in body and "flv_url" not in body
+    with pytest.raises(JobStateError):
+        store.save(replace(intent(tmp_path), room_id=result))
+    assert store.load().room_id == "123"

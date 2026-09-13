@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from collections.abc import Callable, Mapping
 from http.client import HTTPException
@@ -11,7 +12,9 @@ from urllib.error import URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
-from .tiktok_identity import find_room_id as _find_room_id, room_id_from_page
+from .tiktok_identity import (LiveResolution, find_room_id as _find_room_id,
+                              room_id_from_page, same_live, verify_room_identity,
+                              _unique_object)
 
 
 _ROOM_INFO_URL = "https://webcast.tiktok.com/webcast/room/info/"
@@ -26,10 +29,11 @@ class TikTokResolutionError(RuntimeError):
 class TikTokOfflineError(TikTokResolutionError):
     """Raised only after room-info confirms that a room is not live."""
 
-    def __init__(self, message: str, status: Any = None) -> None:
+    def __init__(self, message: str, status: Any = None, room_id: str | None = None) -> None:
         super().__init__(message)
         # Keep the JSON value unchanged so outage evidence distinguishes strings and numbers.
         self.status = status
+        self.room_id = room_id
 
 
 class TikTokResolutionTransientError(TikTokResolutionError):
@@ -40,12 +44,13 @@ class _ResolvedLiveUrl(str):
     """A string-compatible URL carrying raw room status and the selected rendition."""
 
     def __new__(cls, url: str, status: Any, label: str | None = None,
-                source: str | None = None) -> _ResolvedLiveUrl:
+                source: str | None = None, room_id: str | None = None) -> _ResolvedLiveUrl:
         value = super().__new__(cls, url)
         # A str subclass preserves the resolver's public contract for callers and CLI output.
         value.room_status = status
         value.rendition_label = label
         value.rendition_source = source
+        value.room_id = room_id
         return value
 
 
@@ -56,6 +61,19 @@ def resolve_live_url(
     timeout: float = 15,
 ) -> str:
     """Resolve one public TikTok LIVE page URL to its current HTTPS FLV URL."""
+    result = resolve_live(url, opener=opener, timeout=timeout)
+    # Preserve the string URL and its existing observation attributes for legacy callers.
+    return _ResolvedLiveUrl(result.flv_url, result.room_status, result.rendition_label,
+                            result.rendition_source, result.room_id)
+
+
+def resolve_live(
+    url: str,
+    *,
+    opener: Callable[..., Any] = urlopen,
+    timeout: float = 15,
+) -> LiveResolution:
+    """Resolve current public LIVE identity and transport; never wait for a future LIVE."""
     username = _validate_live_page_url(url)
     if timeout <= 0:
         raise ValueError("timeout must be positive")
@@ -67,7 +85,7 @@ def resolve_live_url(
         _read_public_url(room_info_url, opener=opener, timeout=timeout),
         "room-info",
     )
-    room = _live_room(room_info)
+    room = _live_room(room_info, room_id)
     renditions = _flv_renditions(room)
     if not renditions:
         raise TikTokResolutionError(
@@ -79,8 +97,8 @@ def resolve_live_url(
         key=lambda item: (-_quality_score(item[0]), item[1], item[0], item[2]),
     )[0]
     # Carry the existing choice without persisting signed CDN URLs or changing ranking.
-    return _ResolvedLiveUrl(selected_url, room.get("status"), label,
-                            ("flv_pull_url", "rtmp_pull_url")[source_rank])
+    return LiveResolution(room_id, selected_url, room.get("status"), label,
+                          ("flv_pull_url", "rtmp_pull_url")[source_rank])
 
 
 def resolve_live_url_confirmed(
@@ -153,8 +171,9 @@ def _read_public_url(
     # Short or malformed HTTP bodies raise HTTPException during ``read()``,
     # after a connection has opened but before a usable TikTok response exists.
     except (HTTPException, OSError, URLError) as error:
+        # Transport diagnostics may contain signed URLs even though identity never uses them.
         raise TikTokResolutionTransientError(
-            f"TikTok network request failed: {error}"
+            "TikTok network request failed: " + re.sub(r"https?://\S+", "[URL redacted]", str(error))
         ) from error
 
 
@@ -176,7 +195,10 @@ def _room_id_from_public_lookup(
     )
     if str(response.get("statusCode", response.get("status_code", 0))) != "0":
         raise TikTokResolutionError("unable to determine room ID from public TikTok response")
-    room_id = _find_room_id(response.get("data"))
+    try:
+        room_id = _find_room_id(response.get("data"))
+    except ValueError as error:
+        raise TikTokResolutionError(str(error)) from error
     if room_id is None:
         raise TikTokResolutionError("unable to determine room ID from public TikTok response")
     return room_id
@@ -184,16 +206,18 @@ def _room_id_from_public_lookup(
 
 def _json_response(response: bytes, description: str) -> Mapping[str, Any]:
     try:
-        value = json.loads(response)
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        value = json.loads(response, object_pairs_hook=_unique_object)
+    except (UnicodeDecodeError, ValueError) as error:
         raise TikTokResolutionError(f"malformed {description} JSON response") from error
     if not isinstance(value, Mapping):
         raise TikTokResolutionError(f"malformed {description} response")
     return value
 
 
-def _live_room(response: Mapping[str, Any]) -> Mapping[str, Any]:
+def _live_room(response: Mapping[str, Any], room_id: str) -> Mapping[str, Any]:
     status_code = response.get("status_code", response.get("statusCode", 0))
+    if not _numeric_status(status_code):
+        raise TikTokResolutionError("malformed room-info status code")
     if str(status_code) == "4003110":
         raise TikTokResolutionError(
             "this room's stream is not available to anonymous requests -- "
@@ -206,11 +230,26 @@ def _live_room(response: Mapping[str, Any]) -> Mapping[str, Any]:
     if not isinstance(data, Mapping):
         raise TikTokResolutionError("malformed room-info response data")
     room = data.get("room")
+    if "room" in data and not isinstance(room, Mapping):
+        raise TikTokResolutionError("malformed room-info room data")
     room = room if isinstance(room, Mapping) else data
+    try:
+        verify_room_identity(room, room_id)
+    except ValueError as error:
+        raise TikTokResolutionError(str(error)) from error
     room_status = room.get("status")
+    if not _numeric_status(room_status):
+        # Missing or nonnumeric status is malformed evidence, not confirmation of offline.
+        raise TikTokResolutionError("malformed room-info room status")
     if str(room_status) != "2":
-        raise TikTokOfflineError("TikTok account or room is not live", room_status)
+        raise TikTokOfflineError("TikTok account or room is not live", room_status, room_id)
     return room
+
+
+def _numeric_status(value: Any) -> bool:
+    # JSON booleans and missing/container values cannot establish room end evidence.
+    return ((type(value) is int and value >= 0) or
+            (type(value) is str and re.fullmatch(r"[0-9]+", value) is not None))
 
 
 def _flv_renditions(room: Mapping[str, Any]) -> list[tuple[str, int, str]]:

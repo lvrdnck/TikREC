@@ -126,7 +126,7 @@ Job schema version 1 contains:
 | `state` | resolving/recovering/reconciling/resuming/recording/reconnecting/finalizing/completed/failed |
 | `stop_requested` | Durable explicit stop intent |
 | `finalization_completed` | Completed finalization guard |
-| `room_id` | Non-secret decimal public room identity, or null |
+| `room_id` | Canonical positive ASCII decimal public room identity, or null; no leading zeros |
 | `resume_count` | Nonnegative number of recording resumes |
 | `recovery_reason` | Null or a fixed machine-readable recovery reason |
 
@@ -150,6 +150,23 @@ cannot resume capture. An active job without a saved room ID also cannot resume.
 Eligibility alone does not prove that the source is the same LIVE or that
 retained media is usable; those checks belong to the remaining reconciliation
 work. Non-terminal stopped/finalizing jobs still need finalization assessment.
+
+Public room identity is now available through `resolve_live()` and its frozen
+`LiveResolution` result. `same_live(saved_room_id, result)` compares canonical
+room IDs: equal is eligible for further reconciliation, different/missing is
+false. A username names the account, not a LIVE. Signed CDN URLs are ephemeral
+transport, never identity. Public discovery rejects malformed/conflicting IDs
+and verifies any ID echoed by room-info against the queried ID. There is no
+documented TikTok guarantee against room-ID reuse; the ID in a successful public
+room-info query is the strongest identity currently available here.
+
+Offline is a typed `TikTokOfflineError` with raw status and queried room_id.
+Transient network errors and malformed public responses remain distinct typed
+resolution failures. No future-LIVE polling is introduced. Result repr and
+`safe_diagnostics()` omit signed transport; generic dataclass serialization is
+not safe for status/state. Persist only `result.room_id` in the job record.
+Job schema stays 1, with canonical room-ID validation shared with the resolver.
+None of this wires startup reconciliation or capture resume into the service.
 
 ## Windows Task Scheduler one-time setup
 

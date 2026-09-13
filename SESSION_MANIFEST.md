@@ -110,6 +110,14 @@ record; no signed CDN URL or service secret belongs in either file. Runtime
 integration and resume manifest fields remain unfinished. Existing v0.2/v0.3/
 v0.4 manifests and their validation behavior are unchanged.
 
+Structured public resolution now exposes a canonical positive decimal room_id;
+it identifies the LIVE, whereas username identifies only its account. The job
+record accepts canonical room-ID strings (or null) and cannot accept a
+`LiveResolution` object as identity. Only its room_id may be saved; the signed
+flv_url is ephemeral transport. Reconciliation will refuse to claim the same
+LIVE when room identity is missing, malformed, or conflicting. Media schema
+version 1 remains unchanged by this identity module.
+
 ## Validation
 
 `tikrec validate` accepts either `session.json` or its containing directory. It

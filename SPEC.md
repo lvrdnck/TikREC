@@ -163,12 +163,52 @@ Structured FFmpeg output time is reported as encoding progress; other progress
 fields are suppressed, while real diagnostics remain available for failures.
 
 ### tikrec/tiktok.py — resolution
-`resolve_live_url(url, *, opener, timeout)` for a public LIVE page.
+`resolve_live(url, *, opener, timeout) -> LiveResolution` for a public LIVE page.
+`resolve_live_url(...) -> str` remains the compatibility wrapper, including raw
+room status and rendition observation attributes; it now also carries room_id.
 
 Finds the room ID from public page state, falls back to the public
 api-live user/room lookup. Queries webcast room/info. Live means room
 status equals 2. Picks a rendition by deterministic quality preference.
-Returns only http(s) URLs ending in `.flv`.
+The structured result contains room_id, flv_url, raw room_status, rendition_label,
+and rendition_source. Its transport URL remains HTTP(S) with a `.flv` path.
+
+`tikrec/tiktok_identity.py` owns public identity discovery, `LiveResolution`,
+`canonical_room_id`, and `same_live` (also exposed from `tiktok`). Room IDs are
+positive ASCII decimal strings with leading zeros removed; large IDs retain
+their digits without narrowing to a fixed integer width. Empty, zero,
+malformed, duplicate JSON fields, or conflicting public identities fail safely.
+Repeated numerically equivalent IDs are accepted. Discovery considers all room
+IDs in recognized page state instead of guessing from traversal order. A page
+with no identity falls back to the public lookup; a malformed or conflicting
+identity is an error. Room-info's explicit id/id_str/roomId/room_id must agree
+with the queried ID; nested account-owner IDs are not LIVE identities.
+
+`same_live(saved_room_id, resolution)` compares canonical room IDs only. Equal
+IDs are eligible for consideration as the same LIVE; different IDs or missing/
+unprovable identity return false. Username identifies an account, not one LIVE.
+Signed FLV URLs, CDN hostnames, timestamps, and media similarity prove nothing
+about identity. When room-info omits its ID, the result retains the ID used in
+the successful public room-info query. This is the strongest public identity
+available to TikREC, not a documented TikTok guarantee against future ID reuse.
+Automatic resume must remain conservative if identity cannot be established.
+
+Both resolver APIs make a single resolution attempt, never monitor future LIVE
+starts, and preserve typed failures. A valid numeric room status other than 2
+raises `TikTokOfflineError` carrying raw status and queried room_id. Missing or
+nonnumeric status, malformed room data, and conflicting identity raise
+`TikTokResolutionError`; HTTP/network failures remain
+`TikTokResolutionTransientError`. Existing offline-confirmation and retry
+policies are unchanged.
+
+The frozen structured result excludes signed URLs and untrusted rendition
+metadata from repr/str. `safe_diagnostics()` contains only room_id and live=true.
+Its flv_url is internal transport data: generic dataclass `asdict` serialization
+still includes it and must never be used for status or persistence. The legacy
+URL wrapper intentionally remains the actual URL for source/CLI compatibility.
+Network-error messages redact HTTP(S) URLs. Durable jobs store only room_id,
+never the resolution object or its URL. Job-state validation shares the
+canonical identity helper without a resolver-to-service dependency.
 
 `rtmp_pull_url` may contain an HTTPS FLV URL despite its name, so it is also
 considered after `flv_pull_url`; the latter wins equal-quality ties. An actual

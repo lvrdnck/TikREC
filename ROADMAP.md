@@ -95,11 +95,13 @@ failures recoverable. Establish restart/session reconciliation and explicit
 resume policy without overwriting retained evidence or claiming missing media
 was captured. An independent service launch in v0.4 solves SSH lifetime only.
 
-**Progress:** Atomic, validated service job-intent storage is implemented with
-59 offline tests. Controller persistence, same-room identity integration,
-resumable capture, patient transient retries, startup/finalization
-reconciliation, and recovery status remain unfinished. The package remains
-0.4.0; v0.5 deployment crash/reboot tests and tagging remain pending.
+**Progress:** Atomic service job-intent storage and stable public room identity
+are implemented. `resolve_live` exposes canonical room IDs plus internal FLV
+transport, `resolve_live_url` remains compatible, and `same_live` conservatively
+compares room IDs. The suite passes 413 offline tests plus 17 subtests.
+Controller persistence, resumable capture, patient transient retries,
+startup/finalization reconciliation, and recovery status remain unfinished.
+The package remains 0.4.0; v0.5 crash/reboot tests and tagging remain pending.
 
 Implementation order: durable job state, public room identity, retained-session
 resume, outage retry policy, reconciliation, controller/service integration,
