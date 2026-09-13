@@ -98,6 +98,7 @@ def iter_url_chunks(
     chunk_size: int = 64 * 1024,
     timeout: float | None = DEFAULT_READ_TIMEOUT,
     raw_copy: RawCopy | None = None,
+    on_open: Callable[[], None] | None = None,
 ) -> Iterator[bytes]:
     """Yield byte chunks from one direct HTTP FLV URL without retrying."""
     if chunk_size <= 0:
@@ -106,6 +107,8 @@ def iter_url_chunks(
         raise ValueError("timeout must be positive or None")
     try:
         with urlopen(url, timeout=timeout) as response:
+            if on_open is not None:
+                on_open()
             while True:
                 try:
                     chunk = response.read(chunk_size)
@@ -131,9 +134,11 @@ def iter_url_tags(
     chunk_size: int = 64 * 1024,
     timeout: float | None = DEFAULT_READ_TIMEOUT,
     raw_copy: RawCopy | None = None,
+    on_open: Callable[[], None] | None = None,
 ) -> Iterator[FlvTag]:
     """Yield parsed tags from one direct HTTP FLV URL without retrying."""
-    yield from iter_tags(iter_url_chunks(url, chunk_size=chunk_size, timeout=timeout, raw_copy=raw_copy))
+    yield from iter_tags(iter_url_chunks(url, chunk_size=chunk_size, timeout=timeout,
+                                       raw_copy=raw_copy, on_open=on_open))
 
 
 class _ChunkStream:

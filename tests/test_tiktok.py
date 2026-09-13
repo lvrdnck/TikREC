@@ -67,6 +67,15 @@ class TikTokResolverTests(unittest.TestCase):
 
         self.assertEqual(result.room_status, "2")
 
+    def test_preserves_selected_label_and_source_without_changing_selection(self) -> None:
+        for renditions, rtmp, expected in (
+            ({"HD1": "https://cdn.test/hd.flv"}, None, ("hd1", "flv_pull_url")),
+            ({}, "https://cdn.test/rtmp.flv", ("default", "rtmp_pull_url")),
+        ):
+            opener = _Opener([live_page(), live_room(renditions, rtmp_pull_url=rtmp)])
+            result = resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+            self.assertEqual((result.rendition_label, result.rendition_source), expected)
+
     def test_prefers_flv_pull_url_when_quality_tiers_match(self) -> None:
         opener = _Opener([live_page(), live_room(
             {"default": "https://cdn.test/from-flv-field.flv"},

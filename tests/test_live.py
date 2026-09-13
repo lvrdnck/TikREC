@@ -239,7 +239,7 @@ class LiveCaptureTests(unittest.TestCase):
             "first_keyframe_timestamp": 120,
             "keyframe_gate_duration": 0,
             "last_tag_timestamp": 120,
-            "timestamp_replays": [],
+            "timestamp_replays": [], "width": None, "height": None, "nominal_frame_rate": None, "nominal_frame_rate_source": None,
         }])
         self.assertEqual(result.connections[0].part_timings[0].keyframe_gate_duration, 0)
         self.assertEqual(result.connections[1].gap_before, 10.0)

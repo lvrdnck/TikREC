@@ -43,12 +43,15 @@ class TikTokResolutionTransientError(TikTokResolutionError):
 
 
 class _ResolvedLiveUrl(str):
-    """A string-compatible direct URL carrying its raw live room status."""
+    """A string-compatible URL carrying raw room status and the selected rendition."""
 
-    def __new__(cls, url: str, status: Any) -> _ResolvedLiveUrl:
+    def __new__(cls, url: str, status: Any, label: str | None = None,
+                source: str | None = None) -> _ResolvedLiveUrl:
         value = super().__new__(cls, url)
         # A str subclass preserves the resolver's public contract for callers and CLI output.
         value.room_status = status
+        value.rendition_label = label
+        value.rendition_source = source
         return value
 
 
@@ -77,11 +80,13 @@ def resolve_live_url(
             "live room has no public HTTP(S) FLV rendition in flv_pull_url or "
             "rtmp_pull_url"
         )
-    selected_url = sorted(
+    label, source_rank, selected_url = sorted(
         renditions,
         key=lambda item: (-_quality_score(item[0]), item[1], item[0], item[2]),
-    )[0][2]
-    return _ResolvedLiveUrl(selected_url, room.get("status"))
+    )[0]
+    # Carry the existing choice without persisting signed CDN URLs or changing ranking.
+    return _ResolvedLiveUrl(selected_url, room.get("status"), label,
+                            ("flv_pull_url", "rtmp_pull_url")[source_rank])
 
 
 def resolve_live_url_confirmed(

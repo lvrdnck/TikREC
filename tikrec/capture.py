@@ -8,11 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .finalize import finalize_parts
+from .connection_observation import ConnectionObservation
 from .flv import FlvTag
 from .manifest import SessionManifest
 from .media import MediaInfo, inspect_media
 from .source import RawCopy, iter_url_tags
-from .writer import write_parts
+from .writer import PartTiming, write_parts
 from .connection_log import ConnectionRecord, append_connection_record, append_room_status_record
 
 
@@ -140,6 +141,7 @@ def capture_url(
     warning: Callable[[str], None] | None = None,
     writer: Callable[[Iterable[FlvTag], Path], tuple[Path, ...]] = write_parts,
     finalizer: Callable[[Iterable[Path], Path], Path] = finalize_parts,
+    observation_clock: Callable[[], float] = time.time,
 ) -> CaptureResult:
     """Record one direct FLV URL, optionally retaining its raw HTTP bytes."""
     raw_copy: RawCopy | None = None
@@ -147,11 +149,14 @@ def capture_url(
     outcome = "closed"
     connection_error: Exception | None = None
     started_at = time.time()
+    observation = ConnectionObservation(observation_clock)
+    part_timings: list[PartTiming] = []
 
     def source() -> Iterable[FlvTag]:
         nonlocal raw_copy
         if raw_copy_dir is None:
-            yield from tag_source(url)
+            yield from (iter_url_tags(url, on_open=observation.opened)
+                        if tag_source is iter_url_tags else tag_source(url))
             return
         if raw_tag_source is not None:
             raw_copy = RawCopy(raw_copy_path(raw_copy_dir, 1), warning)
@@ -159,18 +164,24 @@ def capture_url(
             return
         if tag_source is iter_url_tags:
             raw_copy = RawCopy(raw_copy_path(raw_copy_dir, 1), warning)
-            yield from iter_url_tags(url, raw_copy=raw_copy)
+            yield from iter_url_tags(url, raw_copy=raw_copy, on_open=observation.opened)
             return
         if warning is not None:
             warning("raw copy is unavailable for a custom tag source")
         yield from tag_source(url)
 
+    def observed_writer(tags: Iterable[FlvTag], directory: Path) -> tuple[Path, ...]:
+        if writer is write_parts:
+            return write_parts(tags, directory, on_media_retained=observation.retained,
+                               on_part_closed=part_timings.append)
+        return writer(tags, directory)
+
     try:
         result = capture_tags(
-            source(),
+            observation.tags(source()),
             parts_directory=parts_directory,
             output_path=output_path,
-            writer=writer,
+            writer=observed_writer,
             finalizer=finalizer,
             source_type="direct_flv",
             connection_count=1,
@@ -196,7 +207,9 @@ def capture_url(
                     parts,
                     outcome,
                     None if connection_error is None else str(connection_error),
+                    part_timings=tuple(part_timings),
                     raw_copy=raw_copy.saved_path,
+                    **observation.values(),
                 ),
             )
 

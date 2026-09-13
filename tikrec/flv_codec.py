@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from fractions import Fraction
+
+
 class FlvFormatError(ValueError):
     """Raised when bytes do not form the FLV or AVC structure being parsed."""
 
@@ -40,6 +43,11 @@ class _BitReader:
 
 def sps_dimensions(sps: bytes) -> tuple[int, int]:
     """Extract the displayed width and height from an H.264 SPS NAL unit."""
+    width, height, _ = _sps_geometry(sps)
+    return width, height
+
+
+def _sps_geometry(sps: bytes) -> tuple[int, int, _BitReader]:
     if not sps or (sps[0] & 0x1F) != 7:
         raise FlvFormatError("expected an H.264 SPS NAL unit")
 
@@ -103,7 +111,51 @@ def sps_dimensions(sps: bytes) -> tuple[int, int]:
     )
     if width <= 0 or height <= 0:
         raise FlvFormatError("H.264 SPS cropping produces invalid dimensions")
-    return width, height
+    return width, height, reader
+
+
+def avc_configuration_facts(configuration: bytes) -> tuple[int | None, int | None, str | None]:
+    """Read optional displayed dimensions and the SPS VUI nominal picture rate.
+
+    Missing or damaged diagnostic fields must never reject otherwise retained
+    media. A missing VUI rate stays unknown rather than inventing a cadence.
+    """
+    try:
+        width, height = avc_configuration_dimensions(configuration)
+    except FlvFormatError:
+        return None, None, None
+    try:
+        sps, _ = _read_length_prefixed_nal(configuration, 6)
+        _, _, reader = _sps_geometry(sps)
+        rate = _vui_frame_rate(reader)
+    except FlvFormatError:
+        rate = None
+    return width, height, None if rate is None else f"{rate.numerator}/{rate.denominator}"
+
+
+def _vui_frame_rate(reader: _BitReader) -> Fraction | None:
+    # VUI timing follows optional display/color fields in the SPS syntax.
+    if not reader.read(1):  # vui_parameters_present_flag
+        return None
+    if reader.read(1):  # aspect_ratio_info_present_flag
+        if reader.read(8) == 255:  # Extended_SAR carries two 16-bit dimensions.
+            reader.read(32)
+    if reader.read(1):  # overscan_info_present_flag
+        reader.read(1)
+    if reader.read(1):  # video_signal_type_present_flag
+        reader.read(4)  # video_format and video_full_range_flag
+        if reader.read(1):  # colour_description_present_flag
+            reader.read(24)
+    if reader.read(1):  # chroma_loc_info_present_flag
+        reader.unsigned_exp_golomb()
+        reader.unsigned_exp_golomb()
+    if not reader.read(1):  # timing_info_present_flag
+        return None
+    units, scale = reader.read(32), reader.read(32)
+    fixed_rate = reader.read(1)
+    # H.264 timing counts two clock ticks per nominal frame, not one per picture.
+    # A non-fixed VUI can describe a millisecond clock grid (TikTok often says 1000 Hz).
+    return Fraction(scale, 2 * units) if units and scale and fixed_rate else None
 
 
 def avc_configuration_dimensions(configuration: bytes) -> tuple[int, int]:

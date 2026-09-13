@@ -23,6 +23,13 @@ class ConnectionRecord:
     error: str | None = None
     part_timings: tuple[PartTiming, ...] = ()
     raw_copy: Path | None = None
+    resolved_at: float | None = None
+    http_opened_at: float | None = None
+    first_media_tag_at: float | None = None
+    first_retained_media_at: float | None = None
+    last_retained_media_at: float | None = None
+    rendition_label: str | None = None
+    rendition_source: str | None = None
 
 
 def append_connection_record(path: Path, record: ConnectionRecord) -> None:
@@ -32,6 +39,13 @@ def append_connection_record(path: Path, record: ConnectionRecord) -> None:
         "started_at": record.started_at,
         "ended_at": record.ended_at,
         "gap_before": record.gap_before,
+        "resolved_at": record.resolved_at,
+        "http_opened_at": record.http_opened_at,
+        "first_media_tag_at": record.first_media_tag_at,
+        "first_retained_media_at": record.first_retained_media_at,
+        "last_retained_media_at": record.last_retained_media_at,
+        "rendition_label": record.rendition_label,
+        "rendition_source": record.rendition_source,
         "part_start": record.parts[0].name if record.parts else None,
         "part_end": record.parts[-1].name if record.parts else None,
         "part_timings": [
@@ -42,6 +56,10 @@ def append_connection_record(path: Path, record: ConnectionRecord) -> None:
                 "first_keyframe_timestamp": timing.first_keyframe_timestamp,
                 "keyframe_gate_duration": timing.keyframe_gate_duration,
                 "last_tag_timestamp": timing.last_tag_timestamp,
+                "width": timing.width,
+                "height": timing.height,
+                "nominal_frame_rate": timing.nominal_frame_rate,
+                "nominal_frame_rate_source": timing.nominal_frame_rate_source,
                 "timestamp_replays": [
                     {
                         "position": replay.position,
@@ -84,4 +102,3 @@ def _append_jsonl_record(path: Path, values: dict[str, object]) -> None:
         handle.flush()
         # A killed process must not lose the last connection or room-status evidence.
         os.fsync(handle.fileno())
-

@@ -13,6 +13,7 @@ from .capture import (
     raw_copy_path,
 )
 from .finalize import finalize_parts
+from .connection_observation import ConnectionObservation
 from .flv import FlvTag
 from .manifest import SessionManifest
 from .media import MediaInfo, inspect_media
@@ -48,6 +49,7 @@ def capture_live(
     sleeper: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.time,
     manifest_clock: Callable[[], float] = time.time,
+    observation_clock: Callable[[], float] = time.time,
     progress: Callable[[str], None] | None = None,
     heartbeat: Callable[[Path, int], None] | None = None,
     raw_copy_dir: Path | None = None,
@@ -85,6 +87,7 @@ def capture_live(
         connection_parts: list[Path] = []
         part_timings: list[PartTiming] = []
         raw_copy: RawCopy | None = None
+        observation = ConnectionObservation(observation_clock)
 
         def retained(path: Path) -> None:
             # This callback preserves a part even when Ctrl-C interrupts writer.
@@ -112,6 +115,7 @@ def capture_live(
                 None if error is None else str(error),
                 tuple(part_timings),
                 None if raw_copy is None else raw_copy.saved_path,
+                **observation.values(),
             )
             if session_started:
                 append_connection_record(parts_directory / "connections.jsonl", record)
@@ -138,6 +142,7 @@ def capture_live(
                     parts_directory / "connections.jsonl", timestamp, status, confirmed
                 ) if session_started else None,
             )
+            observation.resolved(direct_url)
             if not session_started:
                 _prepare_session(parts_directory, output_path)
                 session_started = True
@@ -157,14 +162,15 @@ def capture_live(
                     raw_copy_path(raw_copy_dir, connection_number),
                     lambda message: _warn(warning, progress, message),
                 )
-                tags = iter_url_tags(direct_url, raw_copy=raw_copy)
+                tags = iter_url_tags(direct_url, raw_copy=raw_copy, on_open=observation.opened)
             else:
                 if raw_copy_dir is not None:
                     _warn(warning, progress, "raw copy is unavailable for a custom tag source")
-                tags = tag_source(direct_url)
+                tags = (iter_url_tags(direct_url, on_open=observation.opened)
+                        if tag_source is iter_url_tags else tag_source(direct_url))
             try:
                 written_parts = writer(
-                    tags,
+                    observation.tags(tags),
                     parts_directory,
                     start_index=next_part_index,
                     on_part_started=part_started,
@@ -172,6 +178,8 @@ def capture_live(
                     on_part_retained=retained,
                     on_part_closed=part_closed,
                     on_timestamp_replay=timestamp_replay,
+                    # Older injected writers need not implement the new observation hook.
+                    **({"on_media_retained": observation.retained} if writer is write_parts else {}),
                 )
             finally:
                 if raw_copy is not None:

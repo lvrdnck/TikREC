@@ -33,7 +33,7 @@ class TimestampReplay:
 
 @dataclass(frozen=True)
 class PartTiming:
-    """Source timestamps for one completed FLV part.
+    """Source timestamps and optional codec/metadata facts for a completed part.
 
     ``configuration_timestamp`` is diagnostic-only: live FLV sequence headers
     are commonly timestamped zero even when media uses a later clock origin.
@@ -45,6 +45,10 @@ class PartTiming:
     first_keyframe_timestamp: int
     last_tag_timestamp: int
     timestamp_replays: tuple[TimestampReplay, ...] = ()
+    width: int | None = None
+    height: int | None = None
+    nominal_frame_rate: str | None = None
+    nominal_frame_rate_source: str | None = None
 
     @property
     def keyframe_gate_duration(self) -> int:

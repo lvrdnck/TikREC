@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import BinaryIO
 
 from .flv import FLV_AUDIO_TAG, FlvTag
+from .flv_codec import avc_configuration_facts
+from .flv_metadata import metadata_frame_rate
 from .writer_events import (PartTiming, TimestampReplay, _PendingTimestampReplay,
                             _observe_timestamp, _finish_timestamp_replay)
 
@@ -26,6 +28,7 @@ def write_parts(
     on_part_retained: Callable[[Path], None] | None = None,
     on_part_closed: Callable[[PartTiming], None] | None = None,
     on_timestamp_replay: Callable[[TimestampReplay], None] | None = None,
+    on_media_retained: Callable[[], None] | None = None,
 ) -> tuple[Path, ...]:
     """Write media into numbered FLV parts and return the retained paths.
 
@@ -35,6 +38,8 @@ def write_parts(
     part, before timestamp rebasing makes its keyframe-gate interval opaque.
     ``on_timestamp_replay`` receives completed backward-clock intervals without
     suppressing any of their source tags.
+    ``on_media_retained`` fires only after an audio/video media tag is written,
+    excluding configuration tags and media discarded by the keyframe gate.
     """
     if not isinstance(start_index, int) or start_index < 1:
         raise ValueError("start_index must be a positive integer")
@@ -44,9 +49,18 @@ def write_parts(
     part: _OpenPart | None = None
     configuration: bytes | None = None
     latest_audio_configuration: FlvTag | None = None
+    metadata_rate: str | None = None
 
     try:
         for tag in tags:
+            if tag.tag_type == 18:
+                # Inspect script metadata without changing whether the writer retains it.
+                rate = metadata_frame_rate(tag.payload)
+                if rate is not None:
+                    metadata_rate = rate
+                    # Metadata can announce the next config; do not relabel a started part.
+                    if part is not None and (not part.started or part.metadata_rate is None):
+                        part.metadata_rate = rate
             if tag.tag_type == FLV_AUDIO_TAG and tag.is_configuration:
                 latest_audio_configuration = tag
                 if part is not None and part.started:
@@ -64,6 +78,7 @@ def write_parts(
                     _close_part(part, paths, on_part_retained, on_part_closed, on_timestamp_replay)
                     part = None
                     part = _open_part(output_dir, start_index + len(paths), tag)
+                    part.metadata_rate = metadata_rate
                     configuration = next_configuration
                     continue
 
@@ -96,6 +111,8 @@ def write_parts(
                     on_part_started(part.final_path)
 
             _write_tag(part, tag, on_timestamp_replay=on_timestamp_replay)
+            if tag.is_media and on_media_retained is not None:
+                on_media_retained()
             _report_progress(part, on_progress)
     finally:
         # Iteration can be interrupted by Ctrl-C or a malformed source. Close
@@ -130,6 +147,7 @@ class _OpenPart:
         self.pending_replays: dict[int, _PendingTimestampReplay] = {}
         self.timestamp_replays: list[TimestampReplay] = []
         self.closed = False
+        self.metadata_rate: str | None = None
 
 
 def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _OpenPart:
@@ -185,6 +203,10 @@ def _close_part(
     assert part.first_media_timestamp is not None
     assert part.last_tag_timestamp is not None
     if on_part_closed is not None:
+        # Codec-header diagnostics avoid a subprocess delay on the reconnect path.
+        width, height, rate = avc_configuration_facts(part.configuration_tag.payload[5:])
+        nominal_rate = part.metadata_rate or rate
+        rate_source = "onMetaData" if part.metadata_rate else "sps_vui" if rate else None
         on_part_closed(PartTiming(
             part.final_path,
             part.configuration_timestamp,
@@ -192,6 +214,7 @@ def _close_part(
             part.first_keyframe_timestamp,
             part.last_tag_timestamp,
             tuple(part.timestamp_replays),
+            width, height, nominal_rate, rate_source,
         ))
 
 
