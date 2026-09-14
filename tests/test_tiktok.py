@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 from http.client import IncompleteRead
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 import unittest
+import pytest
 
 from tikrec.tiktok import (
     TikTokOfflineError,
@@ -169,7 +170,7 @@ class TikTokResolverTests(unittest.TestCase):
 
     def test_reports_network_failures(self) -> None:
         def failing_opener(*_: object, **__: object):
-            raise URLError("connection refused")
+            raise URLError(ConnectionRefusedError("connection refused"))
 
         with self.assertRaisesRegex(TikTokResolutionTransientError, "network request failed"):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=failing_opener)
@@ -220,6 +221,25 @@ class _Response:
         if isinstance(self._body, Exception):
             raise self._body
         return self._body
+
+
+@pytest.mark.parametrize("code", [408, 425, 429, 500, 502, 503, 504, 400, 403, 404])
+def test_public_http_boundary_preserves_retryability_and_safe_wait_hint(code):
+    signed = "https://cdn.test/live.flv?secret=hidden"
+    error = HTTPError(signed, code, signed, {"Retry-After": "60"}, None)
+    expected = TikTokResolutionTransientError if code >= 500 or code in {408, 425, 429} else TikTokResolutionError
+    with pytest.raises(expected) as caught:
+        resolve_live_url("https://www.tiktok.com/@creator/live", opener=_Opener([error]))
+    assert isinstance(caught.value, TikTokResolutionTransientError) == (expected is TikTokResolutionTransientError)
+    assert "secret" not in str(caught.value)
+    if expected is TikTokResolutionTransientError:
+        assert caught.value.kind == "http" and caught.value.retry_after == 60
+
+
+def test_public_http_boundary_does_not_retry_local_permission_failure():
+    with pytest.raises(TikTokResolutionError) as caught:
+        resolve_live_url("https://www.tiktok.com/@creator/live", opener=_Opener([PermissionError("denied")]))
+    assert not isinstance(caught.value, TikTokResolutionTransientError)
 
 
 if __name__ == "__main__":

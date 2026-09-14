@@ -123,8 +123,9 @@ in order. In-process reconnects retain ordinary numbered connection evidence.
 
 room_ended/live_changed record observed reconciliation decisions, not exact room
 end during downtime. New room ID and signed CDN URL are never written into these
-boundaries. Transient failures append identity_unavailable while keeping job intent
-and manifest unchanged. Malformed storage/logs are preserved rather than appended
+boundaries. The internal single-attempt reconciliation API can still append
+identity_unavailable and return deferred. The service's default patient worker
+uses the outage boundaries below. Malformed storage/logs are preserved rather than appended
 to or repaired; safe failure diagnostics remain available through service status.
 Timestamp is when TikREC actually observed recovery, never an inferred crash time
 or proof of a PC reboot. Existing logs without these events remain compatible;
@@ -133,3 +134,29 @@ preflight validates new boundaries before any future continuation.
 A resumed recording's later reconnect that proves a different room closes its
 numbered attempt with outcome=live_changed and finalizes the prior session. It
 never invents an offline room_status response for the account's new ongoing LIVE.
+
+## Patient network recovery observations
+
+One `network_recovery` boundary records outage entry; another summarizes recovery,
+exhaustion, proven end, stop, or nonretryable failure. These append to the existing
+log and never allocate a connection or include transport URLs/error reprs:
+
+```json
+{"event":"network_recovery","timestamp":1789300030.0,"session_id":"a738109c-a387-423f-a20b-969ecf656c4b","phase":"exhausted","retry_attempt":7,"outage_elapsed_seconds":900.0,"failure_kind":"dns"}
+```
+
+Fields are exactly those shown. Phases are entered, recovered, exhausted, offline,
+live_changed, user_stop, failed; kinds are dns, timeout, connection, http, network.
+retry_attempt counts classified failures in the episode; elapsed uses monotonic
+time and timestamp is the observed wall clock. Startup `recovered` means valid
+identity resolution returned; service_recovery then records the same/different-room
+decision. During active capture, useful retained media ends the episode; merely
+resolving the same room does not reset a persistently failing CDN's window.
+
+Waits and repeated resolver-only failures inside an outage do not append individual
+records or rewrite the manifest. Their counts appear in the closing summary.
+The first resolver failure and actual source attempts retain ordinary numbered
+records; connection numbers can therefore have monotonic gaps. In-memory capture
+records keep all attempts, and the manifest flushes total allocations on capture
+completion/failure. Strict resume preflight validates these event fields and
+session identity; malformed evidence is preserved and blocks continuation.

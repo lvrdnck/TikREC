@@ -36,7 +36,12 @@ def persist_snapshot(store, snapshot):
 
 def progress_snapshot(job, *, parts, active, current_part, current_bytes, resolutions, clock):
     """Derive safe retained-byte progress while surviving concurrent filesystem changes."""
-    snapshot = dict(job)
+    snapshot = {k: v for k, v in job.items() if not k.startswith("_")}
+    if job.get("recovery_state") == "recovery_wait":
+        # Status countdowns are derived in memory, never saved every second.
+        now = job["_recovery_clock"]()
+        snapshot["next_retry_in_seconds"] = max(0.0, job["_next_retry_at"] - now)
+        snapshot["outage_elapsed_seconds"] += max(0.0, now - job["_outage_observed_at"])
     if parts is None:
         return {**snapshot, "active": False}
     sizes = {}
@@ -53,3 +58,36 @@ def progress_snapshot(job, *, parts, active, current_part, current_bytes, resolu
                     bytes_written=sum(sizes.values()) + extra,
                     elapsed_seconds=max(0, end - snapshot["started_at"]))
     return snapshot
+
+
+def update_network_status(job, status, *, clock):
+    """Apply safe outage progress while keeping volatile countdown clocks out of persistence."""
+    phase = status["phase"]
+    job.update({k: v for k, v in status.items() if k != "phase"})
+    now = clock()
+    job.update(_recovery_clock=clock, _next_retry_at=now + status["next_retry_in_seconds"],
+               _outage_observed_at=now)
+    if phase in {"entered", "wait"}:
+        job.update(state="recovering_network", recovery_state="recovery_wait", recovery_reason="network_outage")
+    elif phase == "recovered":
+        job.update(recovery_state=None, recovery_reason="network_recovered", next_retry_in_seconds=0)
+    elif phase in {"offline", "live_changed", "user_stop"}:
+        job.update(recovery_state=None, next_retry_in_seconds=0,
+                   recovery_reason={"offline": "room_ended", "live_changed": "live_changed",
+                                    "user_stop": "user_stop"}[phase])
+    elif phase == "exhausted":
+        job.update(recovery_state="exhausted", recovery_reason="outage_timeout", next_retry_in_seconds=0)
+    elif phase == "failed":
+        job.update(recovery_state="failed", recovery_reason=None, next_retry_in_seconds=0)
+
+
+def update_capture_state(job, state):
+    """Keep resolver attempts visibly recovering while persisting only real phase changes."""
+    if state == "resolving" and job.get("recovery_state") == "recovery_wait":
+        # A DNS retry is still the same outage, not a new durable capture phase.
+        state = "recovering_network"
+    changed = job["state"] != state
+    job["state"] = state
+    if state == "recording":
+        job["recovery_state"] = None
+    return changed

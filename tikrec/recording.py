@@ -14,7 +14,11 @@ from urllib.parse import urlsplit
 from .capture import CaptureResult
 from .live import capture_live
 from .reconciliation import StartupReconciler
-from .service_job import job_snapshot, persist_snapshot, progress_snapshot
+from .service_job import (job_snapshot, persist_snapshot, progress_snapshot,
+                          update_network_status, update_capture_state)
+from .capture_control import CaptureControl
+from .retry_policy import RetryPolicy
+from .live_recovery import OutageCaptureError
 
 
 class RecordingBusy(ValueError):
@@ -42,21 +46,23 @@ class RecordingController:
     """Serialize starts and expose snapshots while capture runs in a worker."""
 
     def __init__(self, *, capture: Callable[..., CaptureResult] = capture_live,
-                 clock: Callable[[], float] = time.time, store=None, reconciler=None) -> None:
+                 clock: Callable[[], float] = time.time, store=None, reconciler=None,
+                 retry_policy=RetryPolicy(), recovery_clock=time.monotonic,
+                 recovery_waiter=None) -> None:
         self._capture = capture
         self._clock = clock
         self._lock = Lock()
         self._stop = Event()
         self._worker: Thread | None = None
-        self._active = False
+        self._active = self._blocked = False
         self._closed = False
         self._job: dict = {"state": "idle"}
         self._parts: Path | None = None
         self._current_part: Path | None = None
         self._current_bytes = 0
         self._resolutions = 0
+        self._retry_policy, self._recovery_clock, self._recovery_waiter = retry_policy, recovery_clock, recovery_waiter
         self._store = store
-        self._blocked = False
         self._reconciler = reconciler or (StartupReconciler(
             store, clock=clock, save_job=self._save_recovery, should_stop=self._user_stop)
             if store else None)
@@ -160,10 +166,10 @@ class RecordingController:
         """Reject new jobs, stop capture, and wait for safe finalization to finish."""
         with self._lock:
             self._closed = True
-            if self._active and not self._blocked:
+            if self._active:
                 self._job["stop_requested"] = True
                 self._persist()
-            # Unresolved recovery shutdown must not invent a user stop request.
+            # Inactive deferred recovery preserves intent for the next startup assessment.
             self._stop.set()
             worker = self._worker
         if worker is not None:
@@ -172,12 +178,10 @@ class RecordingController:
 
     def _state(self, state: str) -> None:
         with self._lock:
-            self._job["state"] = state
-            if state == "recording":
-                self._job["recovery_state"] = None
-            self._persist()
             if state == "resolving":
                 self._resolutions += 1
+            if update_capture_state(self._job, state):
+                self._persist()
 
     def _heartbeat(self, path: Path, byte_count: int) -> None:
         with self._lock:
@@ -187,7 +191,9 @@ class RecordingController:
     def _run(self, url: str, output_path: Path, recovery=None) -> None:
         try:
             options = dict(stop_event=self._stop, state=self._state, heartbeat=self._heartbeat,
-                           room_identity=self._identity)
+                           room_identity=self._identity, recovery_observer=self._network_status,
+                           retry_policy=self._retry_policy, recovery_clock=self._recovery_clock,
+                           recovery_waiter=self._recovery_waiter)
             if recovery is None:
                 result = self._capture(url, parts_directory=self._parts, output_path=output_path,
                                        session_id=self._job["session_id"], **options)
@@ -198,7 +204,10 @@ class RecordingController:
             with self._lock:
                 phase = self._job["state"]
                 self._job.update(state="failed", error=safe_error(error) or type(error).__name__)
-                if recovery is not None:
+                if isinstance(error, OutageCaptureError):
+                    self._job.update(recovery_state="exhausted", recovery_reason="outage_timeout")
+                    self._blocked = False
+                elif recovery is not None:
                     self._blocked = True
                     phase = "finalizing" if phase == "finalizing" else "recovering"
                     self._job.update(state=phase, recovery_state="failed", recovery_reason="failed_resume")
@@ -249,9 +258,18 @@ class RecordingController:
         with self._lock:
             return self._job.get("stop_requested", False)
 
+    def _network_status(self, status):
+        with self._lock:
+            update_network_status(self._job, status, clock=self._recovery_clock)
+            if status["phase"] in {"entered", "recovered", "offline", "live_changed", "user_stop"}:
+                self._persist()
+
     def _recover(self):
         try:
-            result = self._reconciler.reconcile(observe=self._recovery_observed)
+            result = self._reconciler.reconcile(observe=self._recovery_observed,
+                retry_policy=self._retry_policy, recovery_clock=self._recovery_clock,
+                control=CaptureControl(self._stop, time.sleep, waiter=self._recovery_waiter),
+                recovery_observer=self._network_status)
             with self._lock:
                 if result.job is not None:
                     stopped = self._job.get("stop_requested", False) or result.job.stop_requested
@@ -261,6 +279,8 @@ class RecordingController:
                     self._job.update(state="recovering", recovery_state=result.outcome,
                                      recovery_reason=result.reason, error=result.error or "startup recovery failed")
                 self._active = result.outcome == "resume"
+                if result.outcome == "exhausted":
+                    self._job.update(recovery_state="exhausted", error=result.error)
             if result.outcome == "resume":
                 self._run(result.job.source_url, Path(result.job.output_path), recovery=result)
         except BaseException:

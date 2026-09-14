@@ -158,11 +158,19 @@ failure. End timestamps are observed reconciliation times, never guessed crash
 or room-end times. Successful completion settles durable job intent too.
 
 Existing output needs matching committed finalization completion and bounded
-matching media evidence. Ambiguous output/partials remain untouched. Transient
-public-resolution failure leaves this manifest unchanged and durable intent
-non-terminal, while service health/status expose deferred recovery and starts
-remain blocked. Successfully completed jobs are never relaunched. Patient outage
-handling and deeper finalization reconciliation remain pending; real resumed-media
+matching media evidence. Ambiguous output/partials remain untouched. While patient
+startup identity recovery waits, this manifest stays unchanged and durable intent
+remains non-terminal (`recovering_network`/`network_outage` in service job state).
+Active capture retains completed parts; repeated resolver-only failures coalesce
+disk evidence and allocation counts are flushed when capture ends. Recovery waits
+do not mark the room offline or start FFmpeg. After 15 minutes without useful
+continuation or terminal room evidence, exhaustion uses existing `failed` status,
+`finalization.status=not_started`, a fixed redacted failure reason, and an observed
+end timestamp. Parts and any existing output remain untouched. Durable job state
+is terminal `failed` with `outage_timeout`; it will not relaunch on restart.
+Stop during recovery instead uses existing interrupted/finalization semantics.
+No media-manifest fields or schema version change. Successfully completed jobs are
+never relaunched. Deeper finalization reconciliation remains pending; real resumed-media
 validation is outstanding and version remains 0.4.0.
 
 ## Validation

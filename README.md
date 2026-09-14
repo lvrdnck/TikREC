@@ -114,11 +114,21 @@ skips TikTok resolution and retries only safe finalization. Completed jobs do no
 restart; an idle maintenance restart stays idle. This never means monitor this
 username and record the next LIVE.
 
-A transient resolver failure keeps the service alive in recovery_state=deferred,
-preserves non-terminal intent, and blocks new starts (HTTP 409). Health/status
-remain readable; remote status exits 1 for deferred/failed recovery. Restarting
-the service makes one new reconciliation attempt; there is no patient retry loop
-yet. Malformed identity/storage also blocks starts with a fixed safe error.
+During an established LIVE or startup reconciliation, temporary DNS/internet,
+timeout, connection-reset, and HTTP 408/425/429/5xx failures enter patient recovery.
+Waits are 1, 2, 5, 10, 10, then 30 seconds, capped at 30 seconds, for up to 15
+minutes from the first transient failure. Retry-After can increase a wait to that
+cap. Status reports `state=recovering_network`, `recovery_state=recovery_wait`,
+attempt/countdown/elapsed fields; health/status stay readable and starts return
+409. Stop or service shutdown wakes retry waits and finalizes retained media.
+Same-room recovery continues into fresh parts; offline/different-room evidence
+ends the prior LIVE. Healthy reconnect timing and offline confirmation stay unchanged.
+
+Exhaustion reports `failed`, `recovery_reason=outage_timeout`, retains all parts,
+and leaves output unfinalized because room end is unproven. The service permits a
+new explicit job; restart never relaunches an exhausted job. A crash during an
+unfinished outage preserves non-terminal intent and starts a fresh recovery window
+on reconciliation. Malformed identity/storage also blocks starts with a fixed safe error.
 Abandoned partials need manual assessment. Existing output is preserved and
 accepted only with matching committed completion and bounded media evidence;
 ambiguous output is never replaced. Real resumed-media validation is outstanding.
@@ -146,7 +156,8 @@ timings, the preceding gap, per-part timestamp diagnostics, and the optional
 raw-copy filename. Live recordings also contain `room_status` event records
 during end confirmation. Each event has a timestamp, the raw TikTok room-status
 value, and whether that response reached the confirmation threshold. A live
-response that cancels confirmation is recorded too.
+response that cancels confirmation is recorded too. Coalesced `network_recovery`
+boundaries summarize outage entry and outcome without logging every retry wait.
 
 Every recording session also writes `session.json` alongside the parts. It is
 an atomically updated, high-level summary of the session lifecycle, result,

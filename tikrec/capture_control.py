@@ -13,9 +13,10 @@ class CaptureStopped(BaseException):
 class CaptureControl:
     """Check a stop event at blocking-operation and complete-tag boundaries."""
 
-    def __init__(self, event: Event | None, sleeper: Callable[[float], None]) -> None:
+    def __init__(self, event: Event | None, sleeper: Callable[[float], None], *, waiter=None) -> None:
         self.event = event
         self.sleeper = sleeper
+        self.waiter = waiter
 
     def check(self) -> None:
         """Raise only during capture; the finalizer never receives this event."""
@@ -28,7 +29,11 @@ class CaptureControl:
         if self.event is None:
             self.sleeper(seconds)
         else:
-            self.event.wait(seconds)
+            # Tests may inject the Event wait itself; ordinary sleeps cannot wake on stop.
+            if self.waiter is None:
+                self.event.wait(seconds)
+            else:
+                self.waiter(self.event, seconds)
         self.check()
 
     def resolve(self, resolver: Callable[[str], str], url: str) -> str:

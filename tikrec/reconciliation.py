@@ -12,6 +12,10 @@ from .media import inspect_media
 from .recovery_evidence import append_recovery_record
 from .recovery_session import completed_output_is_proven, inspect_recovery_session
 from .session_resume import prepare_resume
+from .capture_control import CaptureControl, CaptureStopped
+from .network_evidence import append_network_record
+from .retry_policy import RecoveryExhausted
+from .startup_network import resolve_startup_patiently
 from .tiktok import (LiveResolution, TikTokOfflineError, TikTokResolutionTransientError,
                      _is_http_flv_url, resolve_live, same_live)
 
@@ -20,7 +24,7 @@ from .tiktok import (LiveResolution, TikTokOfflineError, TikTokResolutionTransie
 class ReconciliationResult:
     """Safe typed decision; the signed resolution is private transient transport."""
 
-    outcome: Literal["idle", "settled", "resume", "deferred", "failed"]
+    outcome: Literal["idle", "settled", "resume", "deferred", "failed", "exhausted"]
     job: JobState | None = None
     reason: str | None = None
     resolution: LiveResolution | None = field(default=None, repr=False, compare=False)
@@ -40,7 +44,7 @@ class DeferredReconciliationResult(ReconciliationResult):
 
 
 class StartupReconciler:
-    """One conservative resolution attempt; no future-LIVE monitoring or retry loop."""
+    """Conservative startup decisions with optional bounded patient identity recovery."""
 
     def __init__(self, store: JobStateStore, *, resolver: Callable = resolve_live,
                  finalizer: Callable = finalize_parts, resume_capture: Callable | None = None,
@@ -58,7 +62,9 @@ class StartupReconciler:
             resume_capture = capture_live_resume
         self.resume_capture = resume_capture
 
-    def reconcile(self, *, observe: Callable = lambda job: None) -> ReconciliationResult:
+    def reconcile(self, *, observe: Callable = lambda job: None, retry_policy=None,
+                  recovery_clock=time.monotonic, control=None,
+                  recovery_observer: Callable = lambda status: None) -> ReconciliationResult:
         """Load, validate, and settle intent before any resumed connection opens."""
         job = None
         session = None
@@ -104,13 +110,39 @@ class StartupReconciler:
                 return self._finalize(replace(job, stop_requested=True), session, "user_stop", observe)
             try:
                 failure_message = "public LIVE identity could not be established; preserve artifacts"
-                resolution = self.resolver(job.source_url)
+                if retry_policy is None:
+                    resolution = self.resolver(job.source_url)
+                else:
+                    def network_observed(phase, recovery):
+                        nonlocal job
+                        if phase in {"entered", "recovered"}:
+                            job = self.save_job(replace(job,
+                                state="recovering_network" if phase == "entered" else "reconciling",
+                                recovery_reason="network_outage" if phase == "entered" else "network_recovered"))
+                            observe(job)
+                        if phase != "wait":
+                            append_network_record(Path(job.parts_directory) / "connections.jsonl",
+                                timestamp=self.clock(), session_id=job.session_id, phase=phase, recovery=recovery)
+                        recovery_observer({**recovery.status(), "phase": phase})
+                    resolution = resolve_startup_patiently(self.resolver, job.source_url,
+                        policy=retry_policy, control=control or CaptureControl(None, time.sleep),
+                        clock=recovery_clock, wall_clock=self.clock, notify=network_observed)
+            except (CaptureStopped, KeyboardInterrupt):
+                return self._finalize(replace(job, stop_requested=True), session, "user_stop", observe)
+            except RecoveryExhausted:
+                # Exhaustion ends automatic capture eligibility without inventing room-end evidence.
+                session.manifest.fail(session.retained.parts, "patient recovery window exhausted; room end is unproven",
+                                      finalization_status="not_started")
+                job = self.save_job(replace(job, state="failed", ended_at=self.clock(),
+                                            recovery_reason="outage_timeout"))
+                return ReconciliationResult("exhausted", job, "outage_timeout",
+                    error="patient recovery window exhausted; room end is unproven; retained parts preserved")
             except TikTokOfflineError:
                 return self._finalize(job, session, "room_ended", observe)
             except TikTokResolutionTransientError:
                 self._event(job, session, "identity_unavailable")
                 return DeferredReconciliationResult(job=job, reason="identity_unavailable",
-                    error="temporary public LIVE resolution failure; restart service to retry")
+                    error="temporary public LIVE resolution failure; recovery remains pending")
             if (not isinstance(resolution, LiveResolution)
                     or not isinstance(resolution.flv_url, str)
                     or not _is_http_flv_url(resolution.flv_url)):

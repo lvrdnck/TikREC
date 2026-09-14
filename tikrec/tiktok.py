@@ -11,6 +11,7 @@ from typing import Any
 from urllib.error import URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
+from .network_errors import classify_failure
 
 from .tiktok_identity import (LiveResolution, find_room_id as _find_room_id,
                               room_id_from_page, same_live, verify_room_identity,
@@ -38,6 +39,10 @@ class TikTokOfflineError(TikTokResolutionError):
 
 class TikTokResolutionTransientError(TikTokResolutionError):
     """Raised for a network failure that a live capture may retry."""
+
+    def __init__(self, message, *, kind="network", retry_after=None):
+        super().__init__(message)
+        self.kind, self.retry_after = kind, retry_after
 
 
 class _ResolvedLiveUrl(str):
@@ -172,9 +177,13 @@ def _read_public_url(
     # after a connection has opened but before a usable TikTok response exists.
     except (HTTPException, OSError, URLError) as error:
         # Transport diagnostics may contain signed URLs even though identity never uses them.
-        raise TikTokResolutionTransientError(
-            "TikTok network request failed: " + re.sub(r"https?://\S+", "[URL redacted]", str(error))
-        ) from error
+        failure = classify_failure(error, transport=True, now=time.time())
+        message = "TikTok network request failed: " + re.sub(r"https?://\S+", "[URL redacted]", str(error))
+        if failure.category == "transient":
+            raise TikTokResolutionTransientError(message, kind=failure.reason,
+                                                 retry_after=failure.retry_after) from error
+        # Permanent HTTP and local permission/configuration errors must never enter patient retry.
+        raise TikTokResolutionError(message) from error
 
 
 def _room_id_from_page(page: bytes) -> str | None:

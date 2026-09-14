@@ -16,11 +16,12 @@ from .tiktok_identity import canonical_room_id
 
 JOB_SCHEMA_VERSION = 1
 _CAPTURE_STATES = {"resolving", "recovering", "reconciling", "resuming",
-                   "recording", "reconnecting"}
+                   "recording", "reconnecting", "recovering_network", "recovery_wait"}
 _TERMINAL_STATES = {"completed", "failed"}
 _REASONS = {None, "process_restart", "user_stop", "room_ended", "live_changed",
             "identity_unavailable", "recovery_finalization", "existing_output",
-            "failed_resume", "ambiguous_state", "unusable_media"}
+            "failed_resume", "ambiguous_state", "unusable_media", "network_outage",
+            "network_recovered", "outage_timeout"}
 _PUBLIC_PAGE = re.compile(r"https://www\.tiktok\.com/@[A-Za-z0-9_.]+/live")
 
 

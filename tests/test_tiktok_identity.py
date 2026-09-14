@@ -218,7 +218,7 @@ def test_malformed_echoed_room_identity_is_not_used(field):
 
 def test_transient_error_message_redacts_urls():
     def failed(*args, **kwargs):
-        raise URLError("request failed " + SIGNED)
+        raise URLError(ConnectionResetError("request failed " + SIGNED))
     with pytest.raises(TikTokResolutionTransientError) as failure:
         resolve_live(PAGE, opener=failed)
     assert SIGNED not in str(failure.value) and "secret" not in str(failure.value)

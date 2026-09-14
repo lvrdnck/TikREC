@@ -48,7 +48,8 @@ def test_health_and_conflict_while_resolution_is_pending(tmp_path):
         entered.set()
         assert release.wait(2)
         raise TikTokResolutionTransientError("DNS " + SIGNED)
-    controller = RecordingController(store=store, reconciler=reconciler(store, resolver=resolve))
+    # Explicit single-attempt mode keeps the original deferred-result contract covered.
+    controller = RecordingController(store=store, reconciler=reconciler(store, resolver=resolve), retry_policy=None)
     before = store.path.read_bytes()
     try:
         assert entered.wait(2)

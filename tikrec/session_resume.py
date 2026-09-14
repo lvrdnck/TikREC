@@ -164,6 +164,10 @@ def _read_connections(directory, retained, identity):
             if not isinstance(record, dict):
                 raise ValueError("malformed connection record")
             event = record.get("event")
+            if event == "network_recovery":
+                from .network_evidence import validate_network_record
+                validate_network_record(record, identity)
+                continue
             if event == "service_recovery":
                 from .recovery_evidence import validate_recovery_record
                 validate_recovery_record(record, identity)

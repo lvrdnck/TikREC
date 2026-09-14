@@ -15,7 +15,7 @@ def test_custom_source_keeps_url_and_warns_when_raw_copy_unavailable(tmp_path):
         "direct", number=3, raw_copy_dir=tmp_path, raw_tag_source=None,
         tag_source=source, observation=None, control=None, warning=warnings.append,
     )
-    assert result is tags and raw is None and seen == ["direct"]
+    assert list(result) == [] and raw is None and seen == ["direct"]
     assert warnings == ["raw copy is unavailable for a custom tag source"]
 
 

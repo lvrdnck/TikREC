@@ -100,16 +100,19 @@ session continuation, and service startup reconciliation/controller persistence
 are implemented. Startup validates retained storage before new-job acceptance,
 resumes only the prior explicitly-started same room, and safely finalizes ended/
 offline/different-room or stopped/finalizing sessions when output is absent.
-Deferred transient identity failure preserves intent and keeps the service alive
-but unavailable for starts; health/status expose recovery and a later restart
-retries once. Partial/ambiguous output cases remain blocked. This never monitors
+Patient transient DNS/network recovery now uses one shared bounded policy for
+active capture and startup identity resolution. Health/status remain responsive,
+stop/shutdown wake waits, and meaningful transitions preserve durable intent.
+Exhaustion retains unfinalized parts, reports outage_timeout, and releases the
+service slot without auto-relaunching the job. Partial/ambiguous output cases remain blocked. This never monitors
 an account for its next LIVE. Signed transport stays out of persistence/status.
 
-The suite passes 596 offline tests plus 17 subtests. Real resumed-media and
-crash/reboot deployment checks, patient transient network/DNS recovery and longer
-outage policy, deeper finalization reconciliation, and release tagging remain
-pending. The package remains 0.4.0; v0.5 is not complete. The next module is patient
-transient network/DNS recovery and longer outage policy, without gap optimization.
+The suite passes 693 offline tests plus 17 subtests. Real resumed-media and
+crash/reboot/outage deployment checks, deeper finalization reconciliation, and
+release tagging remain pending. The package remains 0.4.0; v0.5 is not complete.
+The next module is deeper finalization reconciliation. Patient recovery uses a
+15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; normal successful
+reconnect-gap measurement and reduction remain v0.6 work.
 
 Implementation order: durable job state, public room identity, retained-session
 resume, service startup reconciliation with controller integration, outage retry

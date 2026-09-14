@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable, Iterable
-from http.client import HTTPException
 from pathlib import Path
 from threading import Event
 
@@ -12,8 +11,7 @@ from .capture_control import CaptureControl, CaptureStopped
 
 from .capture import (
     CaptureError, CaptureResult, ConnectionRecord, _prepare_session,
-    append_connection_record, append_room_status_record, finalize_capture_result,
-    raw_copy_path,
+    append_connection_record, append_room_status_record,
 )
 from .finalize import finalize_parts
 from .connection_observation import ConnectionObservation
@@ -33,6 +31,8 @@ from .writer import PartTiming, TimestampReplay, write_parts
 
 from .live_source import connection_source
 from .live_session import finish_live, fail_live, close_live_connection
+from .live_recovery import LiveRecovery, OutageCaptureError, SourceNetworkError, resolve_bound_live
+from .retry_policy import RetryPolicy, RecoveryExhausted
 from .live_support import (_report, _warn, _safe_reason, _timestamp_replay_message,
                            _next_failure_counts, _validate_limits, LiveChangedError)
 
@@ -66,6 +66,10 @@ def capture_live(
     session_id: str | None = None,
     room_identity: Callable[[str], None] | None = None,
     _resume_session=None,
+    retry_policy: RetryPolicy | None = RetryPolicy(),
+    recovery_clock: Callable[[], float] = time.monotonic,
+    recovery_observer: Callable[[dict], None] | None = None,
+    recovery_waiter=None,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until confirmed offline."""
     _validate_limits(max_consecutive_failures, max_consecutive_empty_connections, backoff_seconds,
@@ -75,7 +79,7 @@ def capture_live(
     manifest = SessionManifest(parts_directory, output_path, "tiktok_live",
                                clock=manifest_clock, media_inspector=media_inspector,
                                session_id=session_id)
-    control = CaptureControl(stop_event, sleeper)
+    control = CaptureControl(stop_event, sleeper, waiter=recovery_waiter)
 
     records: list[ConnectionRecord] = []
     all_parts: list[Path] = []
@@ -95,20 +99,34 @@ def capture_live(
         previous_end = _resume_session.previous_end
         session_started = True
 
+    saved_room_id = manifest.snapshot().get("room_id") if manifest.active else None
+    recovery = LiveRecovery(retry_policy or RetryPolicy(), clock=recovery_clock, wall_clock=manifest_clock,
+                            directory=parts_directory, manifest=manifest, observer=recovery_observer)
+
     def finish(interrupted: bool = False) -> CaptureResult:
         return finish_live(all_parts, output_path, manifest=manifest, records=records,
-                           finalizer=finalizer, state=state, progress=progress, interrupted=interrupted)
+                           finalizer=finalizer, state=state, progress=progress, interrupted=interrupted,
+                           connection_count=connection_number)
 
     def capture_failure(message: str) -> CaptureError:
-        return fail_live(message, all_parts, manifest=manifest, output_path=output_path)
+        return fail_live(message, all_parts, manifest=manifest, output_path=output_path, connection_count=connection_number)
 
     while True:
         try:
             control.check()
             if connection_number:
                 # Wait before measuring the attempt so reconnect gap evidence includes backoff.
-                control.wait(delay)
+                if recovery.outage.active:
+                    recovery.notify("wait")
+                    recovery.outage.wait(control)
+                else:
+                    control.wait(delay)
+        except RecoveryExhausted as error:
+            recovery.end("exhausted")
+            failure = capture_failure(str(error))
+            raise OutageCaptureError(str(failure), failure.parts) from error
         except (KeyboardInterrupt, CaptureStopped):
+            recovery.end("user_stop")
             return finish(interrupted=True)
         connection_number += 1
         started_at = clock()
@@ -137,7 +155,9 @@ def capture_live(
                 outcome=outcome, error=error,
                 previous_end=previous_end, parts=connection_parts, timings=part_timings,
                 raw_copy=raw_copy, observation=observation, session_started=session_started,
-                records=records, all_parts=all_parts, manifest=manifest, clock=clock)
+                records=records, all_parts=all_parts, manifest=manifest, clock=clock,
+                # Repeated resolver-only failures are coalesced by the outage boundaries.
+                persist_record=not (outcome == "resolver_error" and recovery.outage.active))
             # This advances from writer output, rather than inspecting the directory.
             next_part_index += len(connection_parts)
             previous_end = ended_at
@@ -148,7 +168,8 @@ def capture_live(
             _report(progress, "resolving room")
             direct_url = resolve_live_url_confirmed(
                 url,
-                resolver=lambda page: control.resolve(resolver, page),
+                resolver=lambda page: control.resolve(
+                    lambda target: resolve_bound_live(resolver, target, saved_room_id, wall_clock=manifest_clock), page),
                 capture_started=bool(all_parts),
                 checks=offline_confirmation_checks,
                 interval=offline_confirmation_interval,
@@ -162,6 +183,7 @@ def capture_live(
             observation.resolved(direct_url)
             control.check()
             resolved_room = getattr(direct_url, "room_id", None)
+            saved_room_id = saved_room_id or resolved_room
             if resolved_room is not None and room_identity is not None:
                 # Durable identity is committed before opening the first media connection.
                 room_identity(resolved_room)
@@ -211,13 +233,16 @@ def capture_live(
             raise
         except (KeyboardInterrupt, CaptureStopped):
             close_record("interrupted")
+            recovery.end("user_stop")
             return finish(interrupted=True)
         except LiveChangedError as error:
             # A proven different room is an end without a fabricated non-live status response.
             close_record("live_changed", error)
+            recovery.end("live_changed")
             return finish()
         except TikTokOfflineError as error:
             close_record("offline", error)
+            recovery.end("offline")
             _report(progress, "room ended")
             if not all_parts:
                 raise capture_failure("TikTok account or room is not live") from error
@@ -226,25 +251,26 @@ def capture_live(
             close_record("resolver_error", error)
             consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
             reconnect_reason = _safe_reason(error)
-        except SourceStallError as error:
-            close_record("stalled", error)
+            error_for_retry = error
+        except SourceNetworkError as error:
+            close_record("stalled" if isinstance(error.original, SourceStallError) else "connection_error", error)
             consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
             reconnect_reason = _safe_reason(error)
-        # HTTP reads raise HTTPException (not OSError) when a CDN body ends early.
-        except (OSError, EOFError, HTTPException) as error:
-            close_record("connection_error", error)
-            consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
-            reconnect_reason = _safe_reason(error)
+            error_for_retry = error
         except TikTokResolutionError as error:
             close_record("resolution_error", error)
+            recovery.end("failed")
             raise capture_failure(
                 f"TikTok LIVE resolution failed: {_safe_reason(error)}"
             ) from error
         except Exception as error:
             close_record("capture_error", error)
+            recovery.end("failed")
             raise capture_failure(f"live capture failed: {_safe_reason(error)}") from error
         else:
             close_record("closed")
+            if connection_parts:
+                recovery.end("recovered")
             consecutive_failures = 0
             consecutive_empty = 0 if connection_parts else consecutive_empty + 1
             reconnect_reason = "connection closed"
@@ -253,14 +279,20 @@ def capture_live(
                     "live capture stopped after consecutive connections with no media"
                 )
 
-        if consecutive_failures >= max_consecutive_failures:
+        if retry_policy is not None and saved_room_id is not None and reconnect_reason != "connection closed":
+            if connection_parts:
+                recovery.end("recovered")
+            # A source error after useful media starts a new outage, rather than exhausting the old one.
+            recovery.failure(error_for_retry)
+        elif consecutive_failures >= max_consecutive_failures:
             raise capture_failure(
                 "live capture stopped after consecutive connection failures"
             )
         # Re-resolving after every close gets a fresh signed CDN URL.
-        delay = backoff_seconds * (2 ** max(0, consecutive_failures - 1))
+        delay = (recovery.outage.status()["next_retry_in_seconds"] if recovery.outage.active
+                 else backoff_seconds * (2 ** max(0, consecutive_failures - 1)))
         _report(
             progress,
             f"connection lost: {reconnect_reason}; reconnecting in {delay:g}s",
         )
-        _report(state, "reconnecting")
+        _report(state, "recovering_network" if recovery.outage.active else "reconnecting")

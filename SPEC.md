@@ -200,9 +200,10 @@ Both resolver APIs make a single resolution attempt, never monitor future LIVE
 starts, and preserve typed failures. A valid numeric room status other than 2
 raises `TikTokOfflineError` carrying raw status and queried room_id. Missing or
 nonnumeric status, malformed room data, and conflicting identity raise
-`TikTokResolutionError`; HTTP/network failures remain
-`TikTokResolutionTransientError`. Existing offline-confirmation and retry
-policies are unchanged.
+`TikTokResolutionError`. Classified transport failures and HTTP 408/425/429/5xx
+raise `TikTokResolutionTransientError`, carrying a safe failure kind and optional
+Retry-After hint. Permanent HTTP/local failures cannot enter patient retry.
+Offline confirmation is unchanged; the shared outage policy below governs retries.
 
 The frozen structured result excludes signed URLs and untrusted rendition
 metadata from repr/str. `safe_diagnostics()` contains only room_id and live=true.
@@ -291,7 +292,8 @@ all old and new parts in numeric order. Failures retain every part; first
 Ctrl-C/cooperative stop uses the same close/retain/finalize path as fresh capture,
 and a second finalization interrupt retains the existing finalizer semantics.
 Service startup now uses this session continuation through `live_resume.py`.
-There is no resume CLI/remote endpoint, patient long-outage policy, or gap optimization.
+There is no resume CLI/remote endpoint or reconnect-gap optimization. LIVE continuation
+uses the patient outage policy below; generic direct/tag resume remains one connection.
 Real-recording part decode/packet validation is still outstanding.
 
 ### tikrec/manifest.py and tikrec/media.py — session metadata
@@ -357,14 +359,14 @@ never discards bytes still arriving on an open FLV connection.
   timestamps, so continuing the preceding writer state could create backward
   or zero timestamps.
 - Only `TikTokOfflineError`, raised from a successful room-info response
-  whose room status is not `2`, means offline. Resolver network, timeout,
-  and HTTP failures are transient and retry with backoff. A live response
+  whose room status is not `2`, means offline. Classified resolver network,
+  timeout, and temporary HTTP failures retry with the patient policy. A live response
   during confirmation cancels the sequence and capture resumes; a later
   non-live response starts a new sequence at one.
 - An open CDN response that delivers no bytes for 30 seconds raises
   `SourceStallError`. Live capture records the connection outcome as `stalled`,
   preserves any completed part, and retries it as a transient failure under the
-  existing backoff and consecutive-failure limit.
+  shared bounded patient policy once a canonical LIVE identity is anchored.
 - Room offline at the first resolve is an error. Room offline after retained
   media and successful confirmation is a normal end and triggers optional
   finalization.
@@ -373,17 +375,20 @@ never discards bytes still arriving on an open FLV connection.
 - As each connection closes, `connections.jsonl` receives and flushes one
   record with wall-clock start/end, its preceding gap, retained part range,
   outcome, error, and optional raw-copy filename. `CaptureResult.connections`
-  exposes the same connection records. End confirmation also appends and
+  exposes every attempt. Repeated resolver-only failures during an outage coalesce
+  disk evidence into network_recovery summaries, so persisted connection numbers
+  may have monotonic gaps. End confirmation also appends and
   flushes one `room_status` event per checked response. Each event contains
   `timestamp`, the raw `status` value, and `confirmation_reached`; a live
   response that cancels confirmation is included as evidence.
 - `session.json` is initialized only after resolution creates a real session,
   then its part and connection counts are updated as attempts close. Initial
   offline or unresolved rooms still leave no session directory.
-- Defaults stop capture after three consecutive transient failures or three
-  consecutive connections retaining no media. Non-live confirmation defaults
-  to three checks spaced five seconds apart. All three limits, confirmation
-  spacing, the clock, and sleeper are injectable for offline tests.
+- An anchored LIVE uses the shared 15-minute patient transient window below.
+  Initial unresolved capture and legacy injected resolvers without room identity
+  retain the three-failure limit. Three clean connections retaining no media still
+  fail. Healthy EOF reconnects retain a 1-second delay; non-live confirmation remains
+  three checks spaced five seconds apart. Policy, limits, clocks and waits are injectable.
 - Programming errors, invalid arguments, and malformed FLV data do not retry.
   The first Ctrl-C closes the writer and finalizes retained parts when an
   output was requested, but still exits 130 because capture ended early. A
@@ -440,6 +445,42 @@ or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
 is added. Only the latest job is stored, with one owning service process/account.
 The package remains v0.4.0 until the remaining v0.5 layers are implemented.
 
+### Patient outage policy and transport classification
+
+`network_errors.py` classifies terminal LIVE evidence, user stop, transient
+transport, malformed response, and local/programming failures. DNS, timeout,
+reset/abort/refusal, network-unreachable, incomplete reads/EOF errors and matching
+urllib causes retry. HTTP 408/425/429 and 500–599 retry; permanent HTTP, malformed
+payloads, disk/permission errors and programming errors fail conservatively.
+Bare OSError with no errno is accepted only at known transport boundaries for
+legacy injected sources; exception text is never used to infer retryability.
+
+`retry_policy.py` provides one immutable injectable RetryPolicy and monotonic
+OutageRecovery shared by active LIVE and startup. Default waits are 1, 2, 5, 10,
+10, then 30 seconds, capped at 30; Retry-After seconds/HTTP dates can increase
+waits up to that cap. The window is 900 seconds from the first transient error,
+with waits clamped to remaining time and no new attempt at expiry. Existing
+bounded HTTP calls may finish after the deadline. Stop wins over expiry.
+
+`live_recovery.py` binds every established reconnect to the chosen room ID and
+adapts the shared policy to capture. A same-room resolve alone cannot reset a
+persistently failing CDN episode; useful retained media closes it. `live_source.py`
+marks only source creation/read failures, leaving writer errors nonretryable.
+`startup_network.py` retries identity resolution after storage preflight, inside
+the existing service worker. `network_evidence.py` appends strict coalesced entry/
+outcome summaries; `live_session.py` owns capture completion/failure and connection
+closure. Timestamp, codec and keyframe algorithms are unchanged.
+
+Stop/shutdown uses Event.wait to wake retry waits and finalize retained media.
+Timeout instead fails capture without finalizing or claiming offline, leaves all
+parts intact and finalization not_started, and persists terminal failed/outage_timeout.
+The service releases its slot; that job never auto-relaunches. A process death
+during non-terminal recovering_network preserves explicit identity/intent; restart
+reconciles the same room with a fresh window. No deadline is persisted. Only
+meaningful transitions are saved; safe API counters/countdowns are computed in
+memory. Job schema remains 1 with extended state/reason enums, media schema stays 1.
+This is v0.5 outage survival; successful reconnect-gap optimization remains v0.6.
+
 ### tikrec/reconciliation.py - service startup decisions
 
 `StartupReconciler` loads durable intent and inspects owned storage independently
@@ -454,7 +495,7 @@ strict `prepare_resume` checks and requires manifest room_id equal to durable
 room_id. Only an interrupted capture-phase explicitly-started job with no user
 stop and a missing final output can proceed to public identity resolution.
 
-One `resolve_live` attempt proves the same room ID before resume. Different LIVE
+Patient `resolve_live` attempts prove the same room ID before resume. Different LIVE
 or explicit offline means the prior LIVE ended during downtime and safely
 finalizes retained parts. It never monitors a username for the next LIVE. Stop
 intent outranks identity; stopped/finalizing jobs skip TikTok and only assess
@@ -464,12 +505,13 @@ without overwriting it. Finalization retries only absent output without encoder
 partials. Failures retain media and a finalizing job. Abandoned partials and deeper
 crash-during-FFmpeg recovery remain for later finalization reconciliation.
 
-Typed transient resolution failure returns `DeferredReconciliationResult`, keeps
-committed intent/manifest unchanged, and leaves the service alive but blocked.
-GET health/status work; POST start returns 409, and remote status returns 1 for
-deferred/failed recovery. A later service restart makes one new attempt; no retry
-loop is added. Malformed public data/storage or programming failures produce
-fixed safe failure diagnostics and never count as offline.
+The service injects the shared patient policy; transient failures save
+recovering_network/network_outage and retry in-process without repeating storage
+preflight. GET health/status work and POST start returns 409 while unresolved.
+Timeout returns an unblocked exhausted result and terminal failed/outage_timeout
+job. The direct reconcile API without a policy retains its single-attempt typed
+DeferredReconciliationResult contract. Malformed public data/storage or programming
+failures produce fixed safe failure diagnostics and never count as offline.
 
 ### tikrec/live_resume.py and recovery_evidence.py - service continuation
 
@@ -477,9 +519,9 @@ fixed safe failure diagnostics and never count as offline.
 then seeds the existing LIVE loop with old parts and the proven first resolution.
 It preserves session ID/start/room identity, opens a new direct connection, starts
 the next numeric part, and resets timestamps/codec/keyframe state. Later ordinary
-reconnects continue under current limits but must match saved room ID; a different
-LIVE is never connected. `live_source.py` holds unchanged per-connection source/
-raw-copy selection. Local CLI and direct-FLV command interfaces stay unchanged.
+reconnects use the shared patient policy and must match saved room ID; a different
+LIVE is never connected. `live_source.py` retains per-connection source/raw-copy
+selection with a source-error classification boundary. CLI interfaces stay unchanged.
 
 The job's resuming phase and incremented resume_count are atomically saved before
 media continuation; concurrent remote stop cannot be overwritten by that decision.
@@ -490,7 +532,7 @@ stays 1 with optional room_id; old manifests retain validation/manual-finalize
 compatibility. Automatic capture resume requires proven persisted identity.
 
 Real resumed-media validation and process-death/reboot deployment checks remain
-outstanding. Patient network/DNS retry and longer outage policy is the next module;
+outstanding. Deeper finalization reconciliation remains the next module;
 no future-LIVE monitoring or Task Scheduler modification is implemented.
 
 ### tikrec/service.py — narrow HTTP adapter
@@ -514,7 +556,7 @@ reach capture or session metadata. Existing local commands are unchanged.
 Implementation order for the v0.4 addition: capture_control with LIVE/source
 integration, recording controller, service handler, remote client, control_cli
 and existing CLI wiring. Each layer has offline tests before the next layer.
-Patient outage handling and deeper finalization reconciliation remain v0.5 scope;
+Deeper finalization reconciliation remains v0.5 scope;
 startup resume now covers the conservative cases above. No job history is added. Windows Task Scheduler launch, rather than a detached recording
 subprocess, provides independence from SSH/VS Code in this release.
 
