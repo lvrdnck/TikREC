@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 from .capture import CaptureResult
 from .live import capture_live
 from .reconciliation import StartupReconciler
-from .service_job import job_snapshot, persist_snapshot
+from .service_job import job_snapshot, persist_snapshot, progress_snapshot
 
 
 class RecordingBusy(ValueError):
@@ -271,20 +271,6 @@ class RecordingController:
                                  recovery_reason="ambiguous_state", error="startup recovery failed")
 
     def _snapshot(self) -> dict:
-        snapshot = dict(self._job)
-        if self._parts is None:
-            return {**snapshot, "active": False}
-        sizes = {}
-        try:
-            for path in self._parts.glob("part-*.flv"):
-                sizes[path] = path.stat().st_size
-        except OSError:
-            # A status read must survive disk trouble while capture reports its own failure.
-            pass
-        extra = self._current_bytes if self._active and self._current_part not in sizes else 0
-        end = snapshot["ended_at"] if snapshot["ended_at"] is not None else self._clock()
-        snapshot.update(active=self._active, part_count=len(sizes),
-                        reconnect_count=max(0, self._resolutions - 1),
-                        bytes_written=sum(sizes.values()) + extra,
-                        elapsed_seconds=max(0, end - snapshot["started_at"]))
-        return snapshot
+        return progress_snapshot(self._job, parts=self._parts, active=self._active,
+                                 current_part=self._current_part, current_bytes=self._current_bytes,
+                                 resolutions=self._resolutions, clock=self._clock)

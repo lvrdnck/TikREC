@@ -32,3 +32,24 @@ def persist_snapshot(store, snapshot):
     values = {name: snapshot[name] for name in JobState.__dataclass_fields__ if name in snapshot}
     values["finalization_completed"] = snapshot.get("final_output_path") is not None
     store.save(JobState(**values))
+
+
+def progress_snapshot(job, *, parts, active, current_part, current_bytes, resolutions, clock):
+    """Derive safe retained-byte progress while surviving concurrent filesystem changes."""
+    snapshot = dict(job)
+    if parts is None:
+        return {**snapshot, "active": False}
+    sizes = {}
+    try:
+        for path in parts.glob("part-*.flv"):
+            sizes[path] = path.stat().st_size
+    except OSError:
+        # A status read must survive disk trouble while capture reports its own failure.
+        pass
+    extra = current_bytes if active and current_part not in sizes else 0
+    end = snapshot["ended_at"] if snapshot["ended_at"] is not None else clock()
+    snapshot.update(active=active, part_count=len(sizes),
+                    reconnect_count=max(0, resolutions - 1),
+                    bytes_written=sum(sizes.values()) + extra,
+                    elapsed_seconds=max(0, end - snapshot["started_at"]))
+    return snapshot

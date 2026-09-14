@@ -32,6 +32,7 @@ from .writer import PartTiming, TimestampReplay, write_parts
 
 
 from .live_source import connection_source
+from .live_session import finish_live, fail_live, close_live_connection
 from .live_support import (_report, _warn, _safe_reason, _timestamp_replay_message,
                            _next_failure_counts, _validate_limits, LiveChangedError)
 
@@ -95,24 +96,11 @@ def capture_live(
         session_started = True
 
     def finish(interrupted: bool = False) -> CaptureResult:
-        if all_parts:
-            if output_path is not None:
-                _report(state, "finalizing")
-            return finalize_capture_result(
-                all_parts, output_path, finalizer=finalizer, interrupted=interrupted,
-                connections=tuple(records), progress=progress, manifest=manifest,
-            )
-        if manifest.active:
-            finalization = "not_started" if output_path is not None else None
-            manifest.complete(all_parts, interrupted=interrupted, finalization_status=finalization)
-        return CaptureResult((), None, interrupted, tuple(records))
+        return finish_live(all_parts, output_path, manifest=manifest, records=records,
+                           finalizer=finalizer, state=state, progress=progress, interrupted=interrupted)
 
     def capture_failure(message: str) -> CaptureError:
-        failure = CaptureError(message, tuple(all_parts))
-        if manifest.active:
-            finalization = "not_started" if output_path is not None else None
-            manifest.fail(all_parts, failure, finalization_status=finalization)
-        return failure
+        return fail_live(message, all_parts, manifest=manifest, output_path=output_path)
 
     while True:
         try:
@@ -144,25 +132,12 @@ def capture_live(
 
         def close_record(outcome: str, error: Exception | None = None) -> None:
             nonlocal previous_end, next_part_index
-            ended_at = clock()
-            record = ConnectionRecord(
-                connection_number,
-                started_at,
-                ended_at,
-                None if previous_end is None else started_at - previous_end,
-                tuple(connection_parts),
-                outcome,
-                None if error is None else _safe_reason(error),
-                tuple(part_timings),
-                None if raw_copy is None else raw_copy.saved_path,
-                **observation.values(),
-            )
-            if session_started:
-                append_connection_record(parts_directory / "connections.jsonl", record)
-            records.append(record)
-            all_parts.extend(connection_parts)
-            if manifest.active:
-                manifest.update_capture(all_parts, connection_count=connection_number)
+            ended_at = close_live_connection(
+                directory=parts_directory, number=connection_number, started_at=started_at,
+                outcome=outcome, error=error,
+                previous_end=previous_end, parts=connection_parts, timings=part_timings,
+                raw_copy=raw_copy, observation=observation, session_started=session_started,
+                records=records, all_parts=all_parts, manifest=manifest, clock=clock)
             # This advances from writer output, rather than inspecting the directory.
             next_part_index += len(connection_parts)
             previous_end = ended_at
