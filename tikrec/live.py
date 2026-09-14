@@ -31,6 +31,7 @@ from .tiktok import (
 from .writer import PartTiming, TimestampReplay, write_parts
 
 
+from .live_source import connection_source
 from .live_support import (_report, _warn, _safe_reason, _timestamp_replay_message,
                            _next_failure_counts, _validate_limits)
 
@@ -184,25 +185,12 @@ def capture_live(
                     append_connection_record(parts_directory / "connections.jsonl", pending_record)
             _report(progress, f"connection {connection_number} opened")
             _report(state, "recording")
-            if raw_copy_dir is not None and raw_tag_source is not None:
-                raw_copy = RawCopy(
-                    raw_copy_path(raw_copy_dir, connection_number),
-                    lambda message: _warn(warning, progress, message),
-                )
-                tags = raw_tag_source(direct_url, raw_copy)
-            elif raw_copy_dir is not None and tag_source is iter_url_tags:
-                raw_copy = RawCopy(
-                    raw_copy_path(raw_copy_dir, connection_number),
-                    lambda message: _warn(warning, progress, message),
-                )
-                tags = iter_url_tags(direct_url, raw_copy=raw_copy, on_open=observation.opened,
-                                     check_stop=control.check)
-            else:
-                if raw_copy_dir is not None:
-                    _warn(warning, progress, "raw copy is unavailable for a custom tag source")
-                tags = (iter_url_tags(direct_url, on_open=observation.opened,
-                                     check_stop=control.check)
-                        if tag_source is iter_url_tags else tag_source(direct_url))
+            tags, raw_copy = connection_source(
+                direct_url, number=connection_number, raw_copy_dir=raw_copy_dir,
+                raw_tag_source=raw_tag_source, tag_source=tag_source,
+                observation=observation, control=control,
+                warning=lambda message: _warn(warning, progress, message),
+            )
             controlled_tags = control.tags(observation.tags(tags))
             try:
                 written_parts = writer(
