@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import time
 import uuid
+from dataclasses import replace
 from collections.abc import Callable
 from pathlib import Path
 from threading import Event, Lock, Thread
@@ -12,6 +13,8 @@ from urllib.parse import urlsplit
 
 from .capture import CaptureResult
 from .live import capture_live
+from .reconciliation import StartupReconciler
+from .service_job import job_snapshot, persist_snapshot
 
 
 class RecordingBusy(ValueError):
@@ -39,7 +42,7 @@ class RecordingController:
     """Serialize starts and expose snapshots while capture runs in a worker."""
 
     def __init__(self, *, capture: Callable[..., CaptureResult] = capture_live,
-                 clock: Callable[[], float] = time.time) -> None:
+                 clock: Callable[[], float] = time.time, store=None, reconciler=None) -> None:
         self._capture = capture
         self._clock = clock
         self._lock = Lock()
@@ -52,6 +55,38 @@ class RecordingController:
         self._current_part: Path | None = None
         self._current_bytes = 0
         self._resolutions = 0
+        self._store = store
+        self._blocked = False
+        self._reconciler = reconciler or (StartupReconciler(
+            store, clock=clock, save_job=self._save_recovery, should_stop=self._user_stop)
+            if store else None)
+        if reconciler is not None:
+            reconciler.save_job = self._save_recovery
+            reconciler.should_stop = self._user_stop
+        if store is not None:
+            try:
+                saved = store.load()
+            except Exception:
+                self._blocked = True
+                self._job = {"state": "recovering", "recovery_state": "failed",
+                             "recovery_reason": "ambiguous_state",
+                             "error": "invalid durable state; preserve artifacts"}
+            else:
+                if saved is not None:
+                    self._job = job_snapshot(saved)
+                    self._parts = Path(saved.parts_directory)
+                    if saved.needs_reconciliation:
+                        # Reserve recovery before exposing this controller to HTTP handlers.
+                        self._active = self._blocked = True
+                        self._job.update(state="reconciling", recovery_state="reconciling")
+                        self._worker = Thread(target=self._recover, name="tikrec-recovery", daemon=False)
+                        try:
+                            self._worker.start()
+                        except Exception:
+                            self._active = False
+                            self._worker = None
+                            self._job.update(state="recovering", recovery_state="failed",
+                                             error="could not start recovery worker")
 
     def health(self) -> dict:
         """Report whether the service can accept another recording."""
@@ -59,8 +94,10 @@ class RecordingController:
 
         with self._lock:
             return {"service": "tikrec", "version": __version__,
-                    "available": not self._active and not self._closed,
-                    "active": self._active, "shutting_down": self._closed}
+                    "available": not self._active and not self._closed and not self._blocked,
+                    "active": self._active, "shutting_down": self._closed,
+                    "recovery_state": self._job.get("recovery_state"),
+                    "recovery_reason": self._job.get("recovery_reason")}
 
     def status(self) -> dict:
         """Return current progress or the most recent result, without CDN URLs."""
@@ -76,8 +113,8 @@ class RecordingController:
         if output_path.suffix.lower() != ".mp4":
             raise ValueError("output must have an .mp4 extension")
         with self._lock:
-            if self._active or self._closed:
-                raise RecordingBusy("recording already active or service shutting down")
+            if self._active or self._closed or self._blocked:
+                raise RecordingBusy("recording active, recovery unresolved, or service shutting down")
             self._parts = output_path.with_name(f"{output_path.stem}.parts")
             if output_path.exists() or self._parts.exists():
                 raise ValueError("output or retained parts already exist; choose a new output")
@@ -91,10 +128,13 @@ class RecordingController:
                 "output_path": str(output_path), "final_output_path": None,
                 "parts_directory": str(self._parts), "stop_requested": False,
                 "interrupted": False, "error": None,
+                "room_id": None, "resumed": False, "resume_count": 0,
+                "recovery_state": None, "recovery_reason": None,
             }
             self._worker = Thread(target=self._run, args=(url, output_path),
                                   name="tikrec-recording", daemon=False)
             try:
+                self._persist()
                 # Reserve the slot before starting; concurrent HTTP starts see it immediately.
                 self._worker.start()
             except Exception:
@@ -102,14 +142,16 @@ class RecordingController:
                 self._worker = None
                 self._job.update(state="failed", error="could not start recording worker",
                                  ended_at=self._clock())
+                self._persist()
                 raise RuntimeError("could not start recording worker") from None
             return self._snapshot()
 
     def stop(self) -> dict:
         """Request cooperative stop, including during resolution or reconnect."""
         with self._lock:
-            if self._active:
+            if (self._active or self._blocked) and self._parts is not None:
                 self._job["stop_requested"] = True
+                self._persist()
                 self._stop.set()
             # Repeated stop is harmless, including while the finalizer is already running.
             return self._snapshot()
@@ -118,9 +160,11 @@ class RecordingController:
         """Reject new jobs, stop capture, and wait for safe finalization to finish."""
         with self._lock:
             self._closed = True
-            self._stop.set()
-            if self._active:
+            if self._active and not self._blocked:
                 self._job["stop_requested"] = True
+                self._persist()
+            # Unresolved recovery shutdown must not invent a user stop request.
+            self._stop.set()
             worker = self._worker
         if worker is not None:
             # Never join under the lock: the worker needs it to publish its final result.
@@ -129,6 +173,9 @@ class RecordingController:
     def _state(self, state: str) -> None:
         with self._lock:
             self._job["state"] = state
+            if state == "recording":
+                self._job["recovery_state"] = None
+            self._persist()
             if state == "resolving":
                 self._resolutions += 1
 
@@ -137,17 +184,24 @@ class RecordingController:
             self._current_part = path
             self._current_bytes = byte_count
 
-    def _run(self, url: str, output_path: Path) -> None:
+    def _run(self, url: str, output_path: Path, recovery=None) -> None:
         try:
-            result = self._capture(
-                url, parts_directory=self._parts, output_path=output_path,
-                stop_event=self._stop, state=self._state, heartbeat=self._heartbeat,
-                session_id=self._job["session_id"],
-            )
+            options = dict(stop_event=self._stop, state=self._state, heartbeat=self._heartbeat,
+                           room_identity=self._identity)
+            if recovery is None:
+                result = self._capture(url, parts_directory=self._parts, output_path=output_path,
+                                       session_id=self._job["session_id"], **options)
+            else:
+                result = self._reconciler.resume(recovery, **options)
         except BaseException as error:
             # Contain even an injected worker interrupt; HTTP threads must remain available.
             with self._lock:
+                phase = self._job["state"]
                 self._job.update(state="failed", error=safe_error(error) or type(error).__name__)
+                if recovery is not None:
+                    self._blocked = True
+                    phase = "finalizing" if phase == "finalizing" else "recovering"
+                    self._job.update(state=phase, recovery_state="failed", recovery_reason="failed_resume")
         else:
             with self._lock:
                 self._job.update(state="completed", interrupted=result.interrupted,
@@ -157,7 +211,64 @@ class RecordingController:
         finally:
             with self._lock:
                 self._job["ended_at"] = self._clock()
+                try:
+                    self._persist()
+                except Exception:
+                    self._blocked = True
+                    self._job.update(recovery_state="failed", error="could not persist recording result")
+                finally:
+                    self._active = False
+
+    def _persist(self):
+        if self._store is not None:
+            persist_snapshot(self._store, self._job)
+
+    def _identity(self, room_id):
+        with self._lock:
+            if self._job["room_id"] is None:
+                self._job["room_id"] = room_id
+                self._persist()
+
+    def _recovery_observed(self, job):
+        with self._lock:
+            stopped = self._job.get("stop_requested", False) or job.stop_requested
+            self._job.update(job_snapshot(job), recovery_state=job.state, stop_requested=stopped)
+
+    def _save_recovery(self, job):
+        with self._lock:
+            if self._job.get("stop_requested"):
+                job = replace(job, stop_requested=True)
+                if job.state == "resuming":
+                    # A stop arriving during resolution wins over the pending resume decision.
+                    job = replace(job, state="finalizing", resume_count=self._job["resume_count"],
+                                  recovery_reason="user_stop")
+            self._store.save(job)
+            return job
+
+    def _user_stop(self):
+        with self._lock:
+            return self._job.get("stop_requested", False)
+
+    def _recover(self):
+        try:
+            result = self._reconciler.reconcile(observe=self._recovery_observed)
+            with self._lock:
+                if result.job is not None:
+                    stopped = self._job.get("stop_requested", False) or result.job.stop_requested
+                    self._job.update(job_snapshot(result.job), stop_requested=stopped)
+                self._blocked = result.blocked
+                if result.blocked:
+                    self._job.update(state="recovering", recovery_state=result.outcome,
+                                     recovery_reason=result.reason, error=result.error or "startup recovery failed")
+                self._active = result.outcome == "resume"
+            if result.outcome == "resume":
+                self._run(result.job.source_url, Path(result.job.output_path), recovery=result)
+        except BaseException:
+            with self._lock:
                 self._active = False
+                self._blocked = True
+                self._job.update(state="recovering", recovery_state="failed",
+                                 recovery_reason="ambiguous_state", error="startup recovery failed")
 
     def _snapshot(self) -> dict:
         snapshot = dict(self._job)

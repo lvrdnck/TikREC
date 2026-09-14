@@ -33,7 +33,7 @@ from .writer import PartTiming, TimestampReplay, write_parts
 
 from .live_source import connection_source
 from .live_support import (_report, _warn, _safe_reason, _timestamp_replay_message,
-                           _next_failure_counts, _validate_limits)
+                           _next_failure_counts, _validate_limits, LiveChangedError)
 
 
 def capture_live(
@@ -63,6 +63,8 @@ def capture_live(
     stop_event: Event | None = None,
     state: Callable[[str], None] | None = None,
     session_id: str | None = None,
+    room_identity: Callable[[str], None] | None = None,
+    _resume_session=None,
 ) -> CaptureResult:
     """Record a public LIVE page through reconnects until confirmed offline."""
     _validate_limits(max_consecutive_failures, max_consecutive_empty_connections, backoff_seconds,
@@ -83,6 +85,14 @@ def capture_live(
     previous_end: float | None = None
     session_started = False
     delay = 0.0
+    if _resume_session is not None:
+        # Explicit preflight owns old media; each loop iteration still creates a fresh writer.
+        manifest = _resume_session.manifest
+        all_parts = list(_resume_session.retained.parts)
+        next_part_index = _resume_session.retained.next_index
+        connection_number = _resume_session.next_connection - 1
+        previous_end = _resume_session.previous_end
+        session_started = True
 
     def finish(interrupted: bool = False) -> CaptureResult:
         if all_parts:
@@ -142,7 +152,7 @@ def capture_live(
                 None if previous_end is None else started_at - previous_end,
                 tuple(connection_parts),
                 outcome,
-                None if error is None else str(error),
+                None if error is None else _safe_reason(error),
                 tuple(part_timings),
                 None if raw_copy is None else raw_copy.saved_path,
                 **observation.values(),
@@ -152,7 +162,7 @@ def capture_live(
             records.append(record)
             all_parts.extend(connection_parts)
             if manifest.active:
-                manifest.update_capture(all_parts, connection_count=len(records))
+                manifest.update_capture(all_parts, connection_count=connection_number)
             # This advances from writer output, rather than inspecting the directory.
             next_part_index += len(connection_parts)
             previous_end = ended_at
@@ -176,6 +186,10 @@ def capture_live(
             )
             observation.resolved(direct_url)
             control.check()
+            resolved_room = getattr(direct_url, "room_id", None)
+            if resolved_room is not None and room_identity is not None:
+                # Durable identity is committed before opening the first media connection.
+                room_identity(resolved_room)
             if not session_started:
                 _prepare_session(parts_directory, output_path)
                 session_started = True
@@ -183,6 +197,8 @@ def capture_live(
                 # Preserve transient attempts once resolution creates a real session.
                 for pending_record in records:
                     append_connection_record(parts_directory / "connections.jsonl", pending_record)
+            if resolved_room is not None:
+                manifest.record_room_identity(resolved_room)
             _report(progress, f"connection {connection_number} opened")
             _report(state, "recording")
             tags, raw_copy = connection_source(
@@ -221,6 +237,10 @@ def capture_live(
         except (KeyboardInterrupt, CaptureStopped):
             close_record("interrupted")
             return finish(interrupted=True)
+        except LiveChangedError as error:
+            # A proven different room is an end without a fabricated non-live status response.
+            close_record("live_changed", error)
+            return finish()
         except TikTokOfflineError as error:
             close_record("offline", error)
             _report(progress, "room ended")

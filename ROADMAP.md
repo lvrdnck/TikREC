@@ -95,16 +95,21 @@ failures recoverable. Establish restart/session reconciliation and explicit
 resume policy without overwriting retained evidence or claiming missing media
 was captured. An independent service launch in v0.4 solves SSH lifetime only.
 
-**Progress:** Atomic service job-intent storage, stable public room identity,
-and explicit generic session continuation are implemented.
-`resolve_live` exposes canonical room IDs plus internal FLV
-transport, `resolve_live_url` remains compatible, and `same_live` conservatively
-compares room IDs. Explicit resume preserves old parts/session identity and
-starts fresh writer state at the next numeric index; gaps/partials block reuse.
-The suite passes 515 offline tests plus 17 subtests. Real resumed-media checks,
-controller persistence, patient transient retries, startup/finalization
-reconciliation, and recovery status remain unfinished.
-The package remains 0.4.0; v0.5 crash/reboot tests and tagging remain pending.
+**Progress:** Atomic service job intent, canonical public room identity, explicit
+session continuation, and service startup reconciliation/controller persistence
+are implemented. Startup validates retained storage before new-job acceptance,
+resumes only the prior explicitly-started same room, and safely finalizes ended/
+offline/different-room or stopped/finalizing sessions when output is absent.
+Deferred transient identity failure preserves intent and keeps the service alive
+but unavailable for starts; health/status expose recovery and a later restart
+retries once. Partial/ambiguous output cases remain blocked. This never monitors
+an account for its next LIVE. Signed transport stays out of persistence/status.
+
+The suite passes 596 offline tests plus 17 subtests. Real resumed-media and
+crash/reboot deployment checks, patient transient network/DNS recovery and longer
+outage policy, deeper finalization reconciliation, and release tagging remain
+pending. The package remains 0.4.0; v0.5 is not complete. The next module is patient
+transient network/DNS recovery and longer outage policy, without gap optimization.
 
 Implementation order: durable job state, public room identity, retained-session
 resume, service startup reconciliation with controller integration, outage retry

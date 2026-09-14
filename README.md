@@ -97,22 +97,37 @@ It never sends a kill signal to FFmpeg. A stopped job reports `completed` with
 Capture/finalizer failure preserves retained parts for `tikrec finalize`.
 
 See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
-Scheduler settings, and deployment verification. v0.4 keeps only the current or
-latest job in memory; service-crash/reboot reconciliation and automatic resume
-remain v0.5 work. There is no Web UI or media-download endpoint.
+Scheduler settings, startup recovery, and deployment verification. There is no
+Web UI or media-download endpoint. Version remains v0.4.0 while v0.5 is built.
 
-v0.5 implementation includes offline-tested durable job-state storage and
-structured public room resolution. The numeric room ID identifies the LIVE;
-username identifies the account, and signed CDN URLs are temporary transport
-locations. Missing or ambiguous room identity will prevent automatic resume in
-the later reconciliation layer. Storage/recovery is not yet connected to
-`serve`; the version remains v0.4.0. See [SERVICE.md](SERVICE.md) for the boundary.
+The service now persists its latest explicitly started job. After an unexpected
+process death and Task Scheduler restart, it checks that job against retained
+parts/session evidence before accepting new recordings. Automatic resume applies
+only to the explicitly-started prior LIVE, proven by the same canonical room ID.
+It preserves the job/session ID and old FLV files, increments resume_count, and
+starts a fresh connection and the next numbered part. Normal reconnects continue;
+a later different room is never connected by a resumed recording.
 
-Internal explicit resume APIs now continue a supported interrupted session into
-new numbered parts. They preserve old FLV files and the session ID, give the new
-connection fresh codec/timestamp state, and can finalize old plus new parts.
-Gaps, abandoned partials, conflicting paths, or existing outputs block resume.
-There is no resume CLI/remote endpoint or automatic service recovery yet.
+Confirmed offline or a different LIVE ends the prior session and safely finalizes
+its retained parts when output is missing. A prior stop request or finalizing job
+skips TikTok resolution and retries only safe finalization. Completed jobs do not
+restart; an idle maintenance restart stays idle. This never means monitor this
+username and record the next LIVE.
+
+A transient resolver failure keeps the service alive in recovery_state=deferred,
+preserves non-terminal intent, and blocks new starts (HTTP 409). Health/status
+remain readable; remote status exits 1 for deferred/failed recovery. Restarting
+the service makes one new reconciliation attempt; there is no patient retry loop
+yet. Malformed identity/storage also blocks starts with a fixed safe error.
+Abandoned partials need manual assessment. Existing output is preserved and
+accepted only with matching committed completion and bounded media evidence;
+ambiguous output is never replaced. Real resumed-media validation is outstanding.
+
+State lives at %LOCALAPPDATA%\TikREC\job.json on Windows and
+${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json elsewhere, independent of the
+working directory. Use the same task account and one service instance. Existing
+v0.4 recordings with no durable job are not inferred from directories or usernames.
+Internal generic resume APIs remain available; no resume CLI/remote endpoint is added.
 
 ## How it works
 

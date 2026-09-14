@@ -23,7 +23,7 @@ replaces the other.
   started_at and stored facts, reopens recording lifecycle, updates counts, and
   sets recovery_performed. Its capture_resume event preserves the prior result
   as evidence before source consumption. No resume_count field is added here;
-  the durable service job owns that counter in later integration.
+  the durable service job now owns that counter.
 
 Each update is written to `.session.json.partial`, flushed, and atomically
 replaced over `session.json`. A failed update therefore leaves the preceding
@@ -42,6 +42,7 @@ are strings in the same absolute or relative form supplied to TikREC.
 | `session_id` | string | Random UUID identifying the session independently of its path. |
 | `tikrec_version` | string | TikREC version that created the session. |
 | `source_type` | string | `tiktok_live`, `direct_flv`, or `tag_stream`. |
+| `room_id` | optional string | Canonical public LIVE identity from structured resolution; absent for older/generic sessions. |
 | `started_at` | number | Time the recording session was initialized. |
 | `ended_at` | number or null | Time a handled capture/finalization path ended. |
 | `elapsed_seconds` | number or null | `ended_at - started_at`; not media duration. |
@@ -112,8 +113,8 @@ The new `job_state.py` storage module uses an independent job schema version 1
 for explicit service intent before media storage exists. It does not change
 `session.json` schema version 1 or replace its media/finalization evidence.
 Public source/room identity and durable stop intent belong to that service
-record; no signed CDN URL or service secret belongs in either file. Runtime
-integration remains unfinished. Explicit capture resume uses existing lifecycle,
+record; no signed CDN URL or service secret belongs in either file. Controller
+persistence and service startup reconciliation are now integrated. Explicit capture resume uses existing lifecycle,
 count, and recovery fields without expanding media schema 1. Existing v0.2/v0.3/
 v0.4 manifests and their validation behavior are unchanged.
 
@@ -121,9 +122,9 @@ Structured public resolution now exposes a canonical positive decimal room_id;
 it identifies the LIVE, whereas username identifies only its account. The job
 record accepts canonical room-ID strings (or null) and cannot accept a
 `LiveResolution` object as identity. Only its room_id may be saved; the signed
-flv_url is ephemeral transport. Reconciliation will refuse to claim the same
+flv_url is ephemeral transport. Reconciliation refuses to claim the same
 LIVE when room identity is missing, malformed, or conflicting. Media schema
-version 1 remains unchanged by this identity module.
+version 1 accepts optional room_id without requiring it in legacy validation.
 
 Explicit resume requires a valid supported manifest; legacy parts without one
 remain finalizable but cannot continue capture. Recording manifests may lag
@@ -135,6 +136,34 @@ Capture-only continuation retains the output declaration but records
 not_requested finalization; an explicit finalization path must match the prior
 declaration unless it was null. Completion/interruption then covers all old and
 new parts and elapsed wall time from the original start, including downtime.
+
+## Service startup recovery (v0.5 unfinished)
+
+New structured LIVE captures retain their first canonical room_id in schema 1.
+Startup checks compare it with the explicit durable job; both must agree before
+capture resume. Older manifests missing identity still validate and manually
+finalize, but cannot prove automatic capture eligibility. Paths/UUID/counts and
+connection evidence must also pass strict continuation checks.
+
+Same LIVE resume preserves original metadata, uses begin_resume to reopen capture
+and append capture_resume, and allocates the next connection and fresh numbered
+part. Service resume_count belongs only to the job. Manifest counts include prior
+attempts; elapsed wall time includes downtime without claiming missing media.
+
+Offline/different-LIVE recovery and prior stop/finalizing recovery use the existing
+finalizer only when output is absent and no abandoned partial is present. They
+mark recovery_performed/running before FFmpeg and close the observed recovery
+attempt as interrupted/completed-finalization on success, or failed on encoder
+failure. End timestamps are observed reconciliation times, never guessed crash
+or room-end times. Successful completion settles durable job intent too.
+
+Existing output needs matching committed finalization completion and bounded
+matching media evidence. Ambiguous output/partials remain untouched. Transient
+public-resolution failure leaves this manifest unchanged and durable intent
+non-terminal, while service health/status expose deferred recovery and starts
+remain blocked. Successfully completed jobs are never relaunched. Patient outage
+handling and deeper finalization reconciliation remain pending; real resumed-media
+validation is outstanding and version remains 0.4.0.
 
 ## Validation
 

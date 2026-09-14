@@ -157,9 +157,11 @@ def test_bind_defaults_and_explicit_remote_security():
         validate_bind(DEFAULT_HOST, "short")
 
 
-def test_server_constructs_loopback_by_default_without_opening_socket():
+def test_server_constructs_loopback_by_default_without_opening_socket(tmp_path):
+    # Default persistence must never inspect the developer's real job or open its LIVE.
     with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None) as constructor:
-        server = RecordingHTTPServer()
+        with patch("tikrec.service.default_job_state_path", return_value=tmp_path / "job.json"):
+            server = RecordingHTTPServer()
     assert constructor.call_args.args[0] == ("127.0.0.1", 8765)
     assert server.controller.status()["state"] == "idle"
 

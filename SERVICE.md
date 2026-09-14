@@ -1,4 +1,4 @@
-# TikREC v0.4 remote recording
+# TikREC remote recording and startup recovery
 
 Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 
@@ -46,9 +46,9 @@ one Content-Length, and 1–8192 bytes; transfer encoding is unsupported.
 
 | Request | Body | Result |
 | --- | --- | --- |
-| `GET /health` | none | 200: service, version, available, active, shutting_down |
+| `GET /health` | none | 200: service, version, available, active, shutting_down, recovery_state, recovery_reason |
 | `GET /recording` | none | 200: idle or current/latest job snapshot |
-| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4"}` | 202: job accepted; 409 if active/shutting down |
+| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4"}` | 202: job accepted; 409 if active/recovery unresolved/shutting down |
 | `POST /recording/stop` | `{}` | 202: stop requested/current snapshot; harmless when idle or repeated |
 
 Start accepts only `url` and `output` string fields. LIVE URLs must use
@@ -66,14 +66,16 @@ failure appears in job status. These failures do not shut down the service.
 
 ## Job status and stop
 
-States are `idle`, `resolving`, `recording`, `reconnecting`, `finalizing`,
-`completed`, and `failed`. A fresh service returns `{"state":"idle","active":false}`.
-Only the latest job is retained, until another start or a service restart.
+States are `idle`, `resolving`, `reconciling`, `recovering`, `resuming`, `recording`,
+`reconnecting`, `finalizing`, `completed`, and `failed`. Without saved intent,
+a fresh service returns `{"state":"idle","active":false}`. The latest job survives
+service restart; there is no job history database.
 
 Job snapshots contain session_id, normalized source_url, started_at/ended_at
 (Unix seconds), active/state, parts_directory, output_path (requested),
 final_output_path (actual result or null), stop_requested, interrupted, error,
-part_count (closed retained parts), reconnect_count (resolution attempts after
+room_id, resumed, resume_count, recovery_state, recovery_reason,
+part_count (closed retained parts), reconnect_count (this process's resolution attempts after
 the first), bytes_written, and elapsed_seconds (wall time, not media duration).
 Bytes include heartbeat evidence for the open part during capture. The job ID
 is supplied to `session.json`; manifest start time begins after resolution,
@@ -100,19 +102,27 @@ A local first Ctrl-C on `serve` requests cooperative capture stop and waits for
 finalization before exiting. Ending a Scheduled Task is an abrupt process stop.
 
 Remote commands print JSON. Accepted responses return 0 unless they report a
-failed job, which returns 1. Request failures also return 1. If a start
+failed job or deferred/failed recovery, which returns 1. Request failures also
+return 1. If a start
 request loses its response, query status before retrying: the job may already
 be running. Stopping the client or closing its terminal does not stop the job.
 
 ## Durable job intent - v0.5 implementation in progress
 
-`tikrec/job_state.py` implements storage only. It is not yet called by `serve`
-or the recording controller, and no state-file CLI option exists yet. Service
-crash/reboot resume and outage recovery therefore retain v0.4 behavior today.
-The service-owned record is separate from the media-owned `session.json`:
-explicit job intent must eventually be committed before the capture worker
-starts, including when initial resolution has not created a session directory.
+`tikrec/job_state.py` is now wired into `serve` and the controller. Acceptance is
+atomically committed before the capture worker starts, room_id before media opens,
+stop intent before its Event is signalled, and lifecycle/results at transitions.
+The service-owned record remains separate from media-owned `session.json`.
 It is one latest job, not a history database or account-monitoring registry.
+
+Default storage is `%LOCALAPPDATA%\TikREC\job.json` on Windows (normally
+`C:\Users\Leandro\AppData\Local\TikREC\job.json`), or
+`${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json` elsewhere. No state-file CLI
+option is added. Use a consistent task account; the path is independent of the
+working directory. One service process owns this store; multiple services under
+one account on different ports are unsupported. A failed socket bind cannot
+start a recovery worker. Pre-integration v0.4 recordings without durable intent
+are never adopted by scanning storage.
 
 Job schema version 1 contains:
 
@@ -148,43 +158,90 @@ service-process coordination is not implemented by this storage module.
 Eligibility is conservative: stopped, terminal, finalized, and finalizing jobs
 cannot resume capture. An active job without a saved room ID also cannot resume.
 Eligibility alone does not prove that the source is the same LIVE or that
-retained media is usable; those checks belong to the remaining reconciliation
-work. Non-terminal stopped/finalizing jobs still need finalization assessment.
+retained media is usable; startup reconciliation now performs those checks.
+Non-terminal stopped/finalizing jobs still need finalization assessment.
 
-Public room identity is now available through `resolve_live()` and its frozen
-`LiveResolution` result. `same_live(saved_room_id, result)` compares canonical
-room IDs: equal is eligible for further reconciliation, different/missing is
-false. A username names the account, not a LIVE. Signed CDN URLs are ephemeral
-transport, never identity. Public discovery rejects malformed/conflicting IDs
-and verifies any ID echoed by room-info against the queried ID. There is no
-documented TikTok guarantee against room-ID reuse; the ID in a successful public
-room-info query is the strongest identity currently available here.
+Public `resolve_live()` returns a canonical room ID and transient signed FLV URL.
+`same_live` compares room IDs only. A username identifies an account. Offline,
+transient network failure, and malformed public data remain distinct typed errors.
+Persist only room_id; generic resolution serialization is unsafe for status/state.
 
-Offline is a typed `TikTokOfflineError` with raw status and queried room_id.
-Transient network errors and malformed public responses remain distinct typed
-resolution failures. No future-LIVE polling is introduced. Result repr and
-`safe_diagnostics()` omit signed transport; generic dataclass serialization is
-not safe for status/state. Persist only `result.room_id` in the job record.
-Job schema stays 1, with canonical room-ID validation shared with the resolver.
-None of this wires startup reconciliation or capture resume into the service.
+Generic explicit continuation uses `capture_tags_resume`/`capture_url_resume`:
+validated supported manifest, contiguous completed parts, no partial/output
+ambiguity, and one owning process. Old files remain immutable; each new connection
+has fresh codec/keyframe/timestamp state and the next numeric part. Real resumed
+media validation remains pending.
 
-Explicit generic continuation is now implemented in `capture_resume.py` through
-`capture_tags_resume` and `capture_url_resume`. These APIs require a supported
-interrupted/failed/still-recording manifest, completed contiguous parts from
-one, and no ambiguous partial/output state. The caller must ensure the previous
-worker is gone; they do not coordinate multiple service processes. A new writer
-uses the next part index and fresh codec/keyframe/timestamp state. Old FLV files
-remain immutable, connection/resume evidence is appended, and requested
-finalization joins every old and new part. Lightweight framing checks run
-offline without mandatory codec decoding; real media validation is pending.
+Generic APIs still accept supplied tags or one direct URL without TikTok policy.
+`live_resume.py` shares explicit session preflight/begin-resume with them, then
+seeds the existing LIVE loop from retained media and the proven first resolution.
+It resets writer state on every connection. Later reconnects re-resolve and
+require the saved room ID too; a different LIVE ends this session without opening
+its CDN connection. Ordinary local `live`, direct-FLV commands, and remote routes
+retain their interfaces. Version remains 0.4.0.
 
-These APIs deliberately accept supplied tags or one direct FLV URL. They do not
-re-resolve a room, prove same-LIVE eligibility, wait through an outage, or resume
-the service automatically. Existing Task Scheduler startup, remote routes, and
-local CLI behavior remain unchanged. A crashed job with an abandoned partial
-currently fails explicit-resume preflight; no artifact is promoted or repaired.
-The next v0.5 module will reconcile startup using durable job state, public room
-identity, and this continuation machinery. Version remains 0.4.0.
+## Service startup reconciliation (v0.5 module, release unfinished)
+
+`StartupReconciler` in `reconciliation.py` decides recovery independently of HTTP.
+Resolver, resume capture, finalizer, store, clock, and storage/media inspection are
+injectable. `recovery_session.py` validates storage; `recovery_evidence.py` appends
+fixed evidence. The controller reserves recovery before HTTP accepts any start.
+
+1. Reserve the listening address, load committed job intent, and validate it.
+2. Missing intent is idle; completed/failed/finalization-completed intent is settled
+   and never relaunches capture. A stopped and successfully finalized job stays done.
+3. A non-terminal job occupies the slot in `reconciling`. Validate session UUID,
+   source, room/output/parts paths, contiguous completed FLV parts, and connection
+   evidence. Missing storage or identities and abandoned partials block recovery.
+4. Existing requested output is never overwritten. Matching committed manifest
+   completion plus a nonempty regular output and bounded matching codec/container/
+   positive-duration inspection can settle completion. Otherwise expose ambiguity.
+5. Stop-requested/finalizing jobs never resolve TikTok or resume capture. If output
+   is absent and no finalizer partial exists, retry finalization of retained parts.
+6. Capture-phase jobs with saved identity and explicit-resume-compatible storage
+   make exactly one structured public resolution attempt. Decide using the table.
+7. Persist `resuming`, process_restart reason, and incremented resume_count before
+   media continuation. Preserve session/job ID, paths, saved room ID and start time.
+   Finalization also commits its phase before starting the encoder.
+
+| Startup observation | Action |
+| --- | --- |
+| Same room ID | Resume only the prior explicitly-started LIVE, opening a new direct FLV connection and next numbered part; no append or reused timestamp/config/keyframe state. |
+| Different room ID | Never record the new LIVE automatically. Retain saved identity, treat prior LIVE as ended during downtime, and finalize its retained parts if safe. |
+| Explicit `TikTokOfflineError` | Prior LIVE ended; finalize retained parts if safe. No future-LIVE monitoring or polling. |
+| Typed transient DNS/timeout/HTTP failure | Return `DeferredReconciliationResult`; keep committed non-terminal job and manifest unchanged, append safe evidence, remain alive with `state=recovering`, `recovery_state=deferred`, `recovery_reason=identity_unavailable`. |
+| Malformed public data/programming/storage failure | Preserve evidence/media and expose fixed failure diagnostics. Remain blocked with `recovery_state=failed`; never treat this as offline. |
+
+Automatic resume applies only to the explicitly-started prior LIVE. It never means
+monitor this username and record the next LIVE. Username/output path alone prove
+neither explicit intent nor LIVE identity. The signed resolution URL is transient
+transport; it never enters job state or API diagnostics.
+
+The interim transient policy is **remain alive and unavailable**, with no retry
+loop or endpoint. GET health/status remain useful; `available=false`, and POST
+start returns 409 throughout unresolved recovery. `remote status` prints JSON and
+returns 1 for deferred/failed recovery without a traceback. A later service restart
+makes another single attempt. Task Scheduler restart-on-failure still handles
+process/bind failures, but does not automatically restart this healthy deferred
+process. Patient network/DNS retry and longer outage policy is the next module.
+
+Remote stop during recovery commits stop intent and prevents capture even if
+same-room resolution is finishing. Stop during deferred recovery is retained for
+the next startup's finalization assessment; it does not launch a retry immediately.
+Shutdown of a deferred service preserves that pending intent. A resume/preflight
+worker failure keeps a non-terminal recovery state and blocks new starts.
+
+Safe finalization recovery uses the existing no-overwrite finalizer, includes all
+retained parts, and updates the manifest and terminal job on success. Encoder
+failure keeps parts and a non-terminal finalizing job for a later safe retry.
+Abandoned encoder partials, ambiguous existing outputs, and missing completed
+outputs need manual assessment; deeper crash-during-FFmpeg reconciliation is still
+future v0.5 work. No partial is promoted, removed, or guessed complete here.
+
+`connections.jsonl` appends `service_recovery` observations plus the shared
+`capture_resume` boundary and new numbered connection records. Times describe
+observed reconciliation/resume/finalization, never exact crash time or proof of a
+Windows reboot. See [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Windows Task Scheduler one-time setup
 
@@ -211,7 +268,8 @@ Create a task named **TikREC Service** manually:
    than ...** (the scheduler otherwise defaults to a time limit). Choose **Do
    not start a new instance** when already running. Enable restart on failure,
    for example after one minute, to retry a startup bind before Tailscale is
-   ready. Restarting the service does not resume a crashed recording in v0.4.
+   ready. On restart, this v0.5 module reconciles saved explicitly-started jobs.
+   TikREC never edits Task Scheduler itself.
 6. Save and **Run** the task. Check `remote health` from the Mac. Task Scheduler
    can display `0x41301` while the persistent task is running.
 
@@ -237,6 +295,6 @@ final output. Validate retained parts and the MP4 through `tikrec validate`
 checks; its null-muxer warning distinguishes timestamp resynthesis notices
 from actual decoder failure.
 
-v0.5 owns crash/reboot reconciliation, persisted service jobs, automatic resume,
-and broader environment-failure policy. Existing manifests and retained parts
-remain durable evidence now. No release tag is created by this implementation.
+The original v0.4 deployment is validated. Real resumed-media/process-death
+restart checks, patient outage handling and deeper finalization reconciliation
+remain pending. Version stays 0.4.0; v0.5 is unfinished and no tag is created.

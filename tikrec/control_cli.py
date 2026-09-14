@@ -65,4 +65,5 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         result = getattr(client, arguments.action)()
     print(json.dumps(result, indent=2, sort_keys=True), file=stdout)
     # Starting/stopping acknowledges a request; status exposes any asynchronous failure.
-    return 1 if result.get("state") == "failed" else 0
+    return 1 if (result.get("state") == "failed"
+                 or result.get("recovery_state") in {"deferred", "failed"}) else 0

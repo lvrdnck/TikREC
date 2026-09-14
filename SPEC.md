@@ -19,7 +19,10 @@ Out of scope for v0.4.x:
 - Watching a handle and starting automatically
 - Predicting when someone will go live
 - Chat collection, transcription, chapters, search, analytics
-- A Web UI, multi-user hosting, and automatic crash/reboot resume
+- A Web UI and multi-user hosting
+
+The current checkout adds v0.5 service startup reconciliation described below;
+the package version remains 0.4.0 and v0.5 is unfinished.
 
 Project-wide security and privacy boundaries:
 - No auth, CAPTCHA, entitlement, access-control, or private request-signing
@@ -73,7 +76,7 @@ usage, 130 interrupted capture.
 requires a bearer secret; all configured-token endpoints check it. `remote`
 prints JSON from health/status/start/stop. Start/stop acknowledge asynchronously;
 responses reporting a failed job and request failures exit 1. There is one
-active recording and only the latest result is held in memory. See
+active recording; latest explicit intent is persisted for startup reconciliation. See
 [SERVICE.md](SERVICE.md) for the exact API and independent Windows deployment.
 
 ## Modules
@@ -247,7 +250,7 @@ decoding; cost grows with retained bytes and does not prove media health.
 `prepare_resume` validates a supported schema-1 manifest and connection evidence
 without writing. Status must be recording/interrupted/failed; finalization must
 be pending/not_started/not_requested. Finalizing, finalized, or cleanly completed
-sessions require the later reconciliation layer instead. It verifies the UUID,
+sessions require finalization reconciliation instead of capture continuation. It verifies the UUID,
 source type, times/counts/flags, matching parts-directory path, optional expected
 session ID/source type, and canonical room identity when present. A recording
 manifest may lag completed parts; a closed manifest must match their count.
@@ -273,7 +276,7 @@ Preflight finishes before consuming a source. Resume preserves original session
 ID, source type, start time, room identity and other stored facts; it atomically
 reopens recording lifecycle, updates counts and recovery_performed, then appends
 a capture_resume event before the new connection. There is no new manifest
-schema or media resume counter; the service job owns resume_count later.
+schema or media resume counter; the service job owns resume_count.
 The returned connection tuple describes this attempt; older evidence remains
 in connections.jsonl. A new writer always starts at the next index, even with
 identical AVC/AAC bytes. It obtains its own headers/keyframe and never appends
@@ -287,8 +290,8 @@ resume even when output finalization is omitted. Requested finalization uses
 all old and new parts in numeric order. Failures retain every part; first
 Ctrl-C/cooperative stop uses the same close/retain/finalize path as fresh capture,
 and a second finalization interrupt retains the existing finalizer semantics.
-Automatic service startup reconciliation, public LIVE resume, remote/CLI resume,
-long outage retries, and reconnect-gap optimization are not implemented here.
+Service startup now uses this session continuation through `live_resume.py`.
+There is no resume CLI/remote endpoint, patient long-outage policy, or gap optimization.
 Real-recording part decode/packet validation is still outstanding.
 
 ### tikrec/manifest.py and tikrec/media.py — session metadata
@@ -430,9 +433,65 @@ capture lifecycle state; callers must still verify that the current room ID
 matches. Finalizing jobs may only reconcile finalization. Malformed, duplicate,
 missing, or unknown fields fail safely without modifying stored evidence.
 
-This module has offline tests but is not yet wired into the controller or CLI.
-Service startup still begins idle; automatic crash/reboot resume is unfinished.
+The controller now persists explicit starts before workers, room identity before
+media opens, stop intent before signalling, and lifecycle/result changes. Default
+state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
+or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
+is added. Only the latest job is stored, with one owning service process/account.
 The package remains v0.4.0 until the remaining v0.5 layers are implemented.
+
+### tikrec/reconciliation.py - service startup decisions
+
+`StartupReconciler` loads durable intent and inspects owned storage independently
+of HTTP. The controller reserves an unresolved job before accepting new starts;
+its worker exposes reconciling/recovering/resuming. Missing intent is idle and
+terminal/completed intent is never relaunched. Maintenance restart while idle
+stays idle; pre-integration recordings without intent are never inferred.
+
+`recovery_session.py` checks supported manifest, matching UUID/source/room/paths,
+contiguous completed parts and connection evidence. Capture resume also passes
+strict `prepare_resume` checks and requires manifest room_id equal to durable
+room_id. Only an interrupted capture-phase explicitly-started job with no user
+stop and a missing final output can proceed to public identity resolution.
+
+One `resolve_live` attempt proves the same room ID before resume. Different LIVE
+or explicit offline means the prior LIVE ended during downtime and safely
+finalizes retained parts. It never monitors a username for the next LIVE. Stop
+intent outranks identity; stopped/finalizing jobs skip TikTok and only assess
+finalization. Existing output needs committed manifest completion and bounded
+matching codec/container/positive-duration evidence; ambiguity blocks recovery
+without overwriting it. Finalization retries only absent output without encoder
+partials. Failures retain media and a finalizing job. Abandoned partials and deeper
+crash-during-FFmpeg recovery remain for later finalization reconciliation.
+
+Typed transient resolution failure returns `DeferredReconciliationResult`, keeps
+committed intent/manifest unchanged, and leaves the service alive but blocked.
+GET health/status work; POST start returns 409, and remote status returns 1 for
+deferred/failed recovery. A later service restart makes one new attempt; no retry
+loop is added. Malformed public data/storage or programming failures produce
+fixed safe failure diagnostics and never count as offline.
+
+### tikrec/live_resume.py and recovery_evidence.py - service continuation
+
+`capture_live_resume` shares explicit preflight/begin-resume with generic resume,
+then seeds the existing LIVE loop with old parts and the proven first resolution.
+It preserves session ID/start/room identity, opens a new direct connection, starts
+the next numeric part, and resets timestamps/codec/keyframe state. Later ordinary
+reconnects continue under current limits but must match saved room ID; a different
+LIVE is never connected. `live_source.py` holds unchanged per-connection source/
+raw-copy selection. Local CLI and direct-FLV command interfaces stay unchanged.
+
+The job's resuming phase and incremented resume_count are atomically saved before
+media continuation; concurrent remote stop cannot be overwritten by that decision.
+`service_recovery` events append observed restart/decision/finalization evidence,
+followed by `capture_resume` and new numbered connections. No exact crash time is
+invented, and no signed URL enters persistence or status. Media manifest schema
+stays 1 with optional room_id; old manifests retain validation/manual-finalize
+compatibility. Automatic capture resume requires proven persisted identity.
+
+Real resumed-media validation and process-death/reboot deployment checks remain
+outstanding. Patient network/DNS retry and longer outage policy is the next module;
+no future-LIVE monitoring or Task Scheduler modification is implemented.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -455,8 +514,8 @@ reach capture or session metadata. Existing local commands are unchanged.
 Implementation order for the v0.4 addition: capture_control with LIVE/source
 integration, recording controller, service handler, remote client, control_cli
 and existing CLI wiring. Each layer has offline tests before the next layer.
-Service-crash/reboot recovery, persisted job history, and resume policy remain
-v0.5 scope. Windows Task Scheduler launch, rather than a detached recording
+Patient outage handling and deeper finalization reconciliation remain v0.5 scope;
+startup resume now covers the conservative cases above. No job history is added. Windows Task Scheduler launch, rather than a detached recording
 subprocess, provides independence from SSH/VS Code in this release.
 
 ## Raw-copy storage
@@ -596,7 +655,7 @@ whether a lossless writer fix is possible before replay handling changes.
 
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there remain out of scope until their release is implemented; the
-architecture in this specification describes v0.4.x as it exists today.
+architecture describes the current checkout, including unfinished v0.5 modules.
 
 ## Design principles
 

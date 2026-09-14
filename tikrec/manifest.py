@@ -51,6 +51,14 @@ class SessionManifest:
         """Return independent manifest facts for read-only resume preflight."""
         return deepcopy(self._require_values())
 
+    def record_room_identity(self, room_id: str) -> None:
+        """Retain the first public LIVE identity without signed transport data."""
+        from .tiktok_identity import canonical_room_id
+        values = self._require_values()
+        if values.get("room_id") is None:
+            values["room_id"] = canonical_room_id(room_id)
+            self._write()
+
     def resume_capture(self, parts: Iterable[Path], connection_count: int,
                        *, output_path: Path | None = None) -> None:
         """Reopen validated capture while preserving identity and original start time."""

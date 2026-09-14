@@ -29,6 +29,16 @@ class ResumeSession:
     previous_end: float | None
 
 
+def begin_resume(session: ResumeSession, *, output_path, clock=time.time) -> None:
+    """Persist explicit session continuation before a fresh source can be consumed."""
+    from .connection_log import append_resume_record
+    session.manifest.resume_capture(session.retained.parts, session.next_connection,
+                                    output_path=output_path)
+    append_resume_record(session.manifest.path.parent / "connections.jsonl", timestamp=clock(),
+                         session_id=session.session_id, previous_status=session.previous_status,
+                         connection=session.next_connection, next_part_index=session.retained.next_index)
+
+
 def prepare_resume(
     parts_directory: Path, *, output_path: Path | None = None,
     session_id: str | None = None, source_type: str | None = None,
@@ -58,7 +68,8 @@ def prepare_resume(
                          max(values["connection_count"], count) + 1, previous_end)
 
 
-def _validate_manifest(values, directory, retained, expected_id, expected_type):
+def _validate_manifest(values, directory, retained, expected_id, expected_type,
+                       *, finalization_recovery=False):
     if not isinstance(values, dict):
         raise ValueError("manifest must be an object")
     if type(values.get("schema_version")) is not int or values["schema_version"] != SCHEMA_VERSION:
@@ -73,7 +84,10 @@ def _validate_manifest(values, directory, retained, expected_id, expected_type):
         raise ValueError("unsupported session source type")
     if expected_type is not None and source_type != expected_type:
         raise ValueError("conflicting requested source type")
-    if values["status"] not in {"recording", "interrupted", "failed"}:
+    statuses = {"recording", "interrupted", "failed"}
+    if finalization_recovery:
+        statuses.add("completed")
+    if values["status"] not in statuses:
         raise ValueError("session capture is already terminal or unsupported")
     stored_directory = values["parts_directory"]
     if not isinstance(stored_directory, str) or Path(stored_directory).resolve() != directory.resolve():
@@ -102,7 +116,11 @@ def _validate_manifest(values, directory, retained, expected_id, expected_type):
         raise ValueError("invalid interruption evidence")
     if values["status"] == "interrupted" and not values["interrupted"]:
         raise ValueError("conflicting interruption evidence")
-    if values["finalization"]["status"] not in {"pending", "not_started", "not_requested"}:
+    finalizations = {"pending", "not_started", "not_requested"}
+    if finalization_recovery:
+        # Finalization inspection may see running/completed output; capture preflight may not.
+        finalizations |= {"running", "completed", "failed", "interrupted"}
+    if values["finalization"]["status"] not in finalizations:
         raise ValueError("finalization must be reconciled separately before capture resume")
     room_id = values.get("room_id")
     if room_id is not None and canonical_room_id(room_id) != room_id:
@@ -146,6 +164,10 @@ def _read_connections(directory, retained, identity):
             if not isinstance(record, dict):
                 raise ValueError("malformed connection record")
             event = record.get("event")
+            if event == "service_recovery":
+                from .recovery_evidence import validate_recovery_record
+                validate_recovery_record(record, identity)
+                continue
             if event == "room_status":
                 if (not _timestamp(record["timestamp"]) or "status" not in record or
                         type(record["confirmation_reached"]) is not bool):

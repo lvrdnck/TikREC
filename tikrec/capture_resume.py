@@ -10,13 +10,13 @@ from threading import Event
 
 from .capture import CaptureResult, _capture_session
 from .capture_control import CaptureControl, CaptureStopped
-from .connection_log import ConnectionRecord, append_connection_record, append_resume_record
+from .connection_log import ConnectionRecord, append_connection_record
 from .connection_observation import ConnectionObservation
 from .finalize import finalize_parts
 from .flv import FlvTag
 from .manifest import _safe_reason
 from .media import MediaInfo, inspect_media
-from .session_resume import prepare_resume
+from .session_resume import begin_resume, prepare_resume
 from .source import iter_url_tags
 from .writer import write_parts
 
@@ -66,11 +66,7 @@ def _resume_connection(
     session = prepare_resume(directory, output_path=output, session_id=session_id,
                              source_type=source_type, clock=clock, media_inspector=media_inspector)
     started_at = clock()
-    session.manifest.resume_capture(session.retained.parts, session.next_connection, output_path=output)
-    # Persist the boundary before any source iterator can open a new network connection.
-    append_resume_record(directory / "connections.jsonl", timestamp=started_at,
-                         session_id=session.session_id, previous_status=session.previous_status,
-                         connection=session.next_connection, next_part_index=session.retained.next_index)
+    begin_resume(session, output_path=output, clock=lambda: started_at)
     control = CaptureControl(stop_event, time.sleep)
     observation = ConnectionObservation(observation_clock)
     raw_tags = None

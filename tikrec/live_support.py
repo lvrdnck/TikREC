@@ -10,6 +10,10 @@ from .writer import TimestampReplay
 _URL_PATTERN = re.compile(r"https?://\S+")
 
 
+class LiveChangedError(RuntimeError):
+    """A proven new LIVE ends a resumed session without inventing offline status."""
+
+
 def _report(progress: Callable[[str], None] | None, message: str) -> None:
     if progress is not None:
         progress(message)

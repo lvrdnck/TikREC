@@ -9,6 +9,8 @@ import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .recording import RecordingBusy, RecordingController
+from .job_state import JobStateStore
+from .service_job import default_job_state_path
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -40,11 +42,17 @@ class RecordingHTTPServer(ThreadingHTTPServer):
         host = validate_bind(host, token)
         if not 0 <= port <= 65535:
             raise ValueError("port must be between 0 and 65535")
-        self.controller = controller if controller is not None else RecordingController()
         self.token = token
         # Explicit IPv6 loopback/tailnet binding uses the appropriate socket family.
         self.address_family = socket.AF_INET6 if ":" in host else socket.AF_INET
         super().__init__((host, port), RecordingHandler, bind_and_activate=bind_and_activate)
+        try:
+            # Reserve the listening address before recovery can open a second media writer.
+            self.controller = controller if controller is not None else RecordingController(
+                store=JobStateStore(default_job_state_path()))
+        except BaseException:
+            self.server_close()
+            raise
 
 
 class RecordingHandler(BaseHTTPRequestHandler):
@@ -123,7 +131,7 @@ class RecordingHandler(BaseHTTPRequestHandler):
         try:
             status = self.server.controller.start(body["url"], body["output"])
         except RecordingBusy:
-            self._json(409, {"error": "recording already active or service shutting down"})
+            self._json(409, {"error": "recording active, recovery unresolved, or service shutting down"})
         except (ValueError, OSError):
             # Fixed validation errors avoid reflecting arbitrary request content or secrets.
             self._json(400, {"error": "invalid LIVE page or absolute .mp4 output; "

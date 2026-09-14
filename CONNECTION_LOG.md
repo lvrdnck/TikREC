@@ -100,6 +100,36 @@ resume instead of being truncated or repaired. Numeric part gaps and abandoned
 partial files also block resume. New error summaries redact transport URLs.
 
 The event records explicit library-level continuation, not proof of a service
-restart or Windows reboot. Those decisions/evidence belong to the later service
-reconciliation module. No signed FLV URL is included, no media is appended to an
+restart or Windows reboot. The service now appends separate recovery evidence. No signed FLV URL is included, no media is appended to an
 old FLV, and each new part starts in its own rebased timestamp domain.
+
+## Service recovery observations
+
+Startup reconciliation appends fixed, non-secret boundaries to valid existing
+logs. A service_recovery event never allocates a connection or replaces evidence:
+
+```json
+{"event":"service_recovery","timestamp":1789300000.0,"session_id":"a738109c-a387-423f-a20b-969ecf656c4b","reason":"process_restart","resume_count":1}
+```
+
+Fields are exactly event, timestamp, session_id, reason, resume_count. Reasons
+include process_restart, room_ended, live_changed, user_stop, recovery_finalization,
+existing_output, identity_unavailable, ambiguous_state, and failed_resume. A
+process_restart observation before resolution carries the prior counter; a second
+one after committed same-room resume carries the incremented counter. The ensuing
+capture_resume records the concrete connection/part allocation before media opens.
+Closed numbered connection records and existing room_status evidence then continue
+in order. In-process reconnects retain ordinary numbered connection evidence.
+
+room_ended/live_changed record observed reconciliation decisions, not exact room
+end during downtime. New room ID and signed CDN URL are never written into these
+boundaries. Transient failures append identity_unavailable while keeping job intent
+and manifest unchanged. Malformed storage/logs are preserved rather than appended
+to or repaired; safe failure diagnostics remain available through service status.
+Timestamp is when TikREC actually observed recovery, never an inferred crash time
+or proof of a PC reboot. Existing logs without these events remain compatible;
+preflight validates new boundaries before any future continuation.
+
+A resumed recording's later reconnect that proves a different room closes its
+numbered attempt with outcome=live_changed and finalizes the prior session. It
+never invents an offline room_status response for the account's new ongoing LIVE.
