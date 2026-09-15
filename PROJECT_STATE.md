@@ -9,12 +9,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task:** Issue #13, verify and select the highest-fidelity
   available LIVE rendition.
-- **Status:** Paused after the offline audit and two suitable real-LIVE
-  comparisons; a dataset with genuinely distinct public candidates is required
-  before production policy can change or the issue closes.
+- **Status:** Paused after the offline audit and three real-LIVE comparisons,
+  including one public FLV/HLS choice; genuinely distinct simultaneous source
+  media remain outstanding before the issue closes.
 - **Pending owner action:** None. Resume safely when another suitable
-  anonymously public LIVE is available for bounded multi-rendition comparison,
-  especially one exposing distinct media or public HLS.
+  anonymously public LIVE exposes distinct simultaneous source media.
 - **Next queued task:** None while issue #13 remains active. Issues #9 and #8
   remain open for real-capture evidence and replay-corruption investigation.
 
@@ -66,12 +65,25 @@ new work; calendar entries are reminders only.
   unchanged audio/video configuration and no timestamp replay. Representative
   stream-copy finalization produced a 30.037-second MP4 that passed deep output
   validation.
-- These two independent datasets show misleading/alias labels rather than an
-  objectively dominant candidate. They also show that the same labels can carry
-  materially different dimensions, cadence, and bitrate across rooms. They do
-  not establish how to rank genuinely distinct alternatives. Resume #13 with a
-  public LIVE exposing distinct renditions or FLV/HLS choices; escalate if
-  verified resolution, cadence, bitrate, codec, or reliability goals conflict.
+- A third anonymous comparison on `theo_fitness1` exposed the same alias FLVs
+  plus the first public HLS choice. FLV and HLS carried matching H.264/AAC source
+  content at 720x1280 and 15 fps in the short sample. Over the longer matched
+  window, 3,894 video frames and 3,775 normalized AAC payloads agreed; both
+  transports had the same cadence gaps and passed decoding/timestamp checks.
+  HLS started in 2.813 seconds versus FLV's 0.610 seconds and was 18.964 seconds
+  farther from the live edge. Neither disconnected, while maximum observed
+  output-growth pauses were 10.828 seconds for HLS and 6.422 for FLV.
+- The source changed configurations repeatedly within the selected `hd1` FLV:
+  640x1280, 320x640, 432x864, and 720x1280 all appeared. TikREC stream-copy
+  finalization preserved every configuration and passed deep output validation;
+  a diagnostic HLS stream copy also passed.
+- All three datasets show alias labels, and the same labels carry materially
+  different dimensions, cadence, and bitrate across rooms. Dataset three
+  supports the existing FLV choice for equal fidelity with lower latency, but
+  one FLV/HLS run cannot establish global transport reliability. Production
+  selection remains unchanged. Resume #13 with genuinely distinct simultaneous
+  source media; escalate if resolution, cadence, bitrate, codec, or reliability
+  goals conflict.
 
 ## v0.5 and diagnostic handoff
 
