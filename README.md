@@ -41,8 +41,14 @@ available.
 `--raw-copy DIR` optionally saves the exact bytes received from every source
 connection before FLV parsing, as `connection-0001.raw`,
 `connection-0002.raw`, and so on. `connections.jsonl` identifies the raw file
-for each connection. A raw-copy error only emits a warning; recording
-continues. Raw copies roughly double the recording's disk use.
+for each connection. A matching `connection-NNNN.arrivals.jsonl` sidecar records
+the local HTTP-read time and byte range for each returned chunk, and the
+connection record names it in `raw_arrivals`. These timings diagnose where a
+stall became visible to TikREC; buffering means they are not TCP/TLS packet
+boundaries or exact network/server arrival times. Raw-copy and arrival-log errors
+only emit warnings; recording continues. Raw copies roughly double the
+recording's disk use, with additional small arrival-log overhead. See
+[CONNECTION_LOG.md](CONNECTION_LOG.md) for the evidence contract.
 
 An open media connection that delivers no bytes for 30 seconds is treated as a
 stall. Live capture records a `stalled` connection outcome and reconnects under
@@ -153,7 +159,7 @@ re-encoded when they don't.
 Each live recording, and each direct recording using `--raw-copy`, writes
 `connections.jsonl` alongside the parts. Connection records contain wall-clock
 timings, the preceding gap, per-part timestamp diagnostics, and the optional
-raw-copy filename. Live recordings also contain `room_status` event records
+raw-copy and raw-arrival filenames. Live recordings also contain `room_status` event records
 during end confirmation. Each event has a timestamp, the raw TikTok room-status
 value, and whether that response reached the confirmation threshold. A live
 response that cancels confirmation is recorded too. Coalesced `network_recovery`

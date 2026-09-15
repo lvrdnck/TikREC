@@ -132,10 +132,13 @@ class CaptureTests(unittest.TestCase):
             manifest = json.loads((root / "session" / "session.json").read_text())
 
             self.assertEqual((root / "raw" / "connection-0001.raw").read_bytes(), b"unmodified source bytes")
+            arrivals = root / "raw" / "connection-0001.arrivals.jsonl"
+            self.assertEqual(json.loads(arrivals.read_text().splitlines()[1])["count"], 23)
 
         self.assertEqual(len(result.parts), 1)
         self.assertEqual(record["connection"], 1)
         self.assertEqual(record["raw_copy"], "connection-0001.raw")
+        self.assertEqual(record["raw_arrivals"], "connection-0001.arrivals.jsonl")
         self.assertEqual(manifest["source_type"], "direct_flv")
         self.assertEqual(manifest["connection_count"], 1)
         self.assertEqual(manifest["reconnect_count"], 0)

@@ -51,7 +51,8 @@ def close_live_connection(*, directory, number, started_at, previous_end, parts,
         outcome,
         None if error is None else _safe_reason(error),
         tuple(timings),
-        None if raw_copy is None else raw_copy.saved_path,
+        raw_copy=None if raw_copy is None else raw_copy.saved_path,
+        raw_arrivals=None if raw_copy is None else raw_copy.saved_arrivals_path,
         **observation.values(),
     )
     if session_started and persist_record:

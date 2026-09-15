@@ -164,9 +164,13 @@ class LiveCaptureTests(unittest.TestCase):
             ]
 
             self.assertEqual((root / "raw" / "connection-0001.raw").read_bytes(), b"unmodified connection bytes")
+            arrival = json.loads((root / "raw" / "connection-0001.arrivals.jsonl").read_text().splitlines()[1])
+            self.assertEqual((arrival["connection"], arrival["count"]), (1, 27))
 
         self.assertEqual(records[0]["raw_copy"], "connection-0001.raw")
+        self.assertEqual(records[0]["raw_arrivals"], "connection-0001.arrivals.jsonl")
         self.assertIsNone(records[1]["raw_copy"])
+        self.assertIsNone(records[1]["raw_arrivals"])
 
     def test_redacts_a_signed_url_from_a_connection_loss_reason(self) -> None:
         progress: list[str] = []

@@ -1,5 +1,7 @@
 """Open one LIVE connection with the existing optional raw-copy behavior."""
 
+import time
+
 from .capture import raw_copy_path
 from .source import RawCopy, iter_url_tags
 from .live_recovery import SourceNetworkError
@@ -41,6 +43,8 @@ def _connection_source(direct_url, *, number, raw_copy_dir, raw_tag_source,
         raw_copy = RawCopy(
             raw_copy_path(raw_copy_dir, number),
             warning,
+            connection_number=number,
+            wall_clock=getattr(observation, "clock", time.time),
         )
         try:
             tags = raw_tag_source(direct_url, raw_copy)
@@ -52,6 +56,8 @@ def _connection_source(direct_url, *, number, raw_copy_dir, raw_tag_source,
         raw_copy = RawCopy(
             raw_copy_path(raw_copy_dir, number),
             warning,
+            connection_number=number,
+            wall_clock=getattr(observation, "clock", time.time),
         )
         tags = iter_url_tags(direct_url, raw_copy=raw_copy, on_open=observation.opened,
                              check_stop=control.check)

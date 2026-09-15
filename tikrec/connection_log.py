@@ -30,6 +30,8 @@ class ConnectionRecord:
     last_retained_media_at: float | None = None
     rendition_label: str | None = None
     rendition_source: str | None = None
+    # Keep new evidence last so legacy positional construction retains its meaning.
+    raw_arrivals: Path | None = None
 
 
 def append_connection_record(path: Path, record: ConnectionRecord) -> None:
@@ -77,6 +79,7 @@ def append_connection_record(path: Path, record: ConnectionRecord) -> None:
         "outcome": record.outcome,
         "error": record.error,
         "raw_copy": None if record.raw_copy is None else record.raw_copy.name,
+        "raw_arrivals": None if record.raw_arrivals is None else record.raw_arrivals.name,
     }
     _append_jsonl_record(path, values)
 

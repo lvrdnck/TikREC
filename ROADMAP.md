@@ -126,6 +126,45 @@ next begins. Successful reconnect-gap measurement/reduction remains v0.6.
 reconnect gaps. Improve bounded retry/read behavior only with evidence, while
 preserving codec configuration, part safety, and conservative room-end checks.
 
+**Diagnostic foundation:** Opt-in raw-copy sessions now preserve local HTTP-read
+byte ranges and monotonic timing beside the byte-exact source. This supports
+source-versus-writer replay investigation and later gap measurement; it does not
+itself reduce reconnect gaps or enable simultaneous capture.
+
+### v0.6.5 — Redundant simultaneous capture (conditional)
+
+**Goal:** Eliminate reconnect gaps by maintaining more than one concurrent
+connection to the same LIVE and filling each gap from whichever connection
+had coverage.
+
+**Why conditional:** This is only worth building if v0.6 measurement shows
+the remaining gap is large enough to justify doubled bandwidth, doubled
+disk, and substantially more complex media assembly. If v0.6 reduces the
+per-reconnect loss to a second or two, this release should be dropped.
+
+**Hard dependency on issue #8.** Joining two connections means deliberately
+splicing two encoder outputs together. That is exactly the operation that
+currently produces malformed H.264 at CDN replay boundaries. Building
+redundant capture before understanding why a splice fails would make the
+core operation of this release the project's one known unsolved defect.
+
+**Likely scope:**
+- Two or more concurrent connections per session, independently resolved.
+- Alignment on FLV media timestamps, which originate from TikTok's encoder
+  and are shared across connections. Wall-clock arrival time is not used;
+  no external time source is required or useful.
+- Gap filling only at clean random-access points, never mid-GOP.
+- Evidence recording which connection supplied each region.
+- A validation path proving the joined output decodes across every seam.
+
+**Explicitly not in scope:** better video quality. Concurrent connections
+deliver the same rendition TikTok is already serving. Redundancy improves
+completeness, not resolution, bitrate, or frame rate.
+
+**Open risks:** TikTok may rate-limit or refuse concurrent connections from
+one address; each additional connection is a second chance to hit the
+replay defect rather than a mitigation of it.
+
 ### v0.7.0 ? Guided interrupted-session recovery
 
 **Goal:** Discover incomplete sessions, validate salvageable parts, guide safe

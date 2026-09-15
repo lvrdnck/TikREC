@@ -46,6 +46,48 @@ Direct-FLV raw-copy records also contain observed media times, but have no room
 resolution or selected rendition. Their existing attempt interval includes
 optional finalization, unlike live-capture connection intervals.
 
+## Raw copy and byte-arrival evidence
+
+When `--raw-copy DIR` successfully opens both diagnostics, each connection has
+`connection-NNNN.raw` and `connection-NNNN.arrivals.jsonl`. Its closed numbered
+record in `connections.jsonl` names them in `raw_copy` and `raw_arrivals`.
+Either field is `null` when that diagnostic was disabled or failed. Older
+records omit `raw_arrivals` or read it as unknown; the session manifest schema
+does not change.
+
+The arrival sidecar is UTF-8 JSON Lines. Records are emitted in this order:
+
+1. One `clock_reference` record has `connection`, Unix `wall_time`, process-local
+   `monotonic_time`, and `boundary="raw_copy_write"`.
+2. Each successful HTTP body read has a `byte_arrival` record with `connection`,
+   zero-based raw-file `offset`, positive byte `count`, process-local
+   `monotonic_time`, and `elapsed_seconds` from the clock reference. The byte
+   range is `[offset, offset + count)` and successful ranges are contiguous.
+3. A clean EOF or observed read failure may end with a `read_end` record. Its
+   `reason` is `eof`, `timeout`, or `error`, with the same monotonic fields.
+
+The byte timestamp is sampled immediately after Python's HTTP `read1()` returns
+and before raw-file writing, cooperative-stop handling, FLV parsing, or writer
+retention. `read1()` makes at most one underlying buffered read, allowing bytes
+already available to be returned before a later stall. Sources without `read1()`
+use the compatible `read()` fallback. Injected custom raw sources may write raw
+bytes without producing a `read_end` boundary.
+
+These observations show when this TikREC process received each returned byte
+range at its HTTP-library boundary. They do **not** identify TCP/TLS packet
+boundaries, exact socket arrival or server-send time, FLV tag boundaries, or
+media that could have been recovered after a disconnect. OS, TLS, socket, and
+Python buffering can combine data, while scheduling and disk work add local
+delay. Monotonic values are comparable only within the connection; `wall_time`
+is an approximate bridge to `connections.jsonl`, not a conversion guarantee.
+
+Like the raw byte copy, the sidecar is diagnostic and best-effort. Lines are
+flushed but not fsynced per body read, so a process or machine crash may leave a
+missing or incomplete tail. Any open/write/flush/close failure warns, disables
+that diagnostic, and never interrupts recording. Existing files are never
+overwritten; a sidecar collision disables only the sidecar while the raw copy
+may continue. Partial or unreferenced diagnostic files remain evidence.
+
 ## Rendition and part facts
 
 Each live connection records `rendition_label` (the selection's normalized,

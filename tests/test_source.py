@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -178,6 +179,53 @@ class UrlChunkTests(unittest.TestCase):
                     [b"first", b"second"],
                 )
             self.assertEqual(path.read_bytes(), b"firstsecond")
+            records = [json.loads(line) for line in path.with_suffix(".arrivals.jsonl").read_text().splitlines()]
+            self.assertEqual([record["event"] for record in records],
+                             ["clock_reference", "byte_arrival", "byte_arrival", "read_end"])
+            self.assertEqual([(record["offset"], record["count"]) for record in records[1:3]],
+                             [(0, 5), (5, 6)])
+            self.assertEqual(records[-1]["reason"], "eof")
+
+    def test_arrival_log_open_failure_keeps_raw_copy_and_capture(self) -> None:
+        response = _Response([b"first", b""])
+        warnings: list[str] = []
+
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "connection-0001.raw"
+            path.with_suffix(".arrivals.jsonl").write_text("existing evidence\n")
+            raw_copy = RawCopy(path, warnings.append)
+            with patch("tikrec.source.urlopen", return_value=response):
+                self.assertEqual(list(iter_url_chunks("url", raw_copy=raw_copy)), [b"first"])
+            self.assertEqual(path.read_bytes(), b"first")
+
+        self.assertEqual(raw_copy.saved_path, path)
+        self.assertIsNone(raw_copy.saved_arrivals_path)
+        self.assertIn("could not open raw arrival log", warnings[0])
+
+    def test_read1_preserves_partial_bytes_and_times_stall_or_disconnect(self) -> None:
+        for failure, reason in ((TimeoutError("timed out"), "timeout"),
+                                (ConnectionResetError("reset"), "error")):
+            with self.subTest(reason=reason), TemporaryDirectory() as directory:
+                path = Path(directory) / "connection-0007.raw"
+                readings = iter((10.0, 11.0, 14.0, 20.0))
+                raw_copy = RawCopy(path, connection_number=7, wall_clock=lambda: 2000.0,
+                                   monotonic_clock=lambda: next(readings))
+                chunks = iter_url_chunks("https://example.test/live", raw_copy=raw_copy)
+                with patch("tikrec.source.urlopen", return_value=_Read1Response(failure)):
+                    self.assertEqual(next(chunks), b"first")
+                    self.assertEqual(next(chunks), b"tail")
+                    with self.assertRaises((SourceStallError, ConnectionResetError)):
+                        next(chunks)
+                records = [json.loads(line) for line in raw_copy.arrivals_path.read_text().splitlines()]
+
+                self.assertEqual(path.read_bytes(), b"firsttail")
+                self.assertEqual([(item["offset"], item["count"]) for item in records[1:3]],
+                                 [(0, 5), (5, 4)])
+                self.assertEqual(records[0]["connection"], 7)
+                self.assertEqual(records[0]["wall_time"], 2000.0)
+                self.assertEqual(records[2]["elapsed_seconds"], 4.0)
+                self.assertEqual(records[3]["reason"], reason)
+                self.assertEqual(records[3]["elapsed_seconds"], 10.0)
 
     def test_raw_copy_open_failure_warns_without_stopping_the_stream(self) -> None:
         response = _Response([b"first", b""])
@@ -207,7 +255,7 @@ class UrlChunkTests(unittest.TestCase):
                     )
 
         self.assertIsNone(raw_copy.saved_path)
-        self.assertIn("could not write raw copy", warnings[0])
+        self.assertTrue(any("could not write raw copy" in message for message in warnings))
 
 
 class _Response:
@@ -230,6 +278,21 @@ class _StalledResponse(_Response):
 
     def read(self, _: int) -> bytes:
         raise TimeoutError("timed out")
+
+
+class _Read1Response(_Response):
+    def __init__(self, failure: Exception) -> None:
+        super().__init__([])
+        self._results = iter((b"first", b"tail", failure))
+
+    def read1(self, _: int) -> bytes:
+        result = next(self._results)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    def read(self, _: int) -> bytes:
+        raise AssertionError("read1 must avoid full-buffer response.read")
 
 
 class _WriteFailingHandle:

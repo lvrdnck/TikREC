@@ -175,11 +175,13 @@ def capture_url(
                         if tag_source is iter_url_tags else tag_source(url))
             return
         if raw_tag_source is not None:
-            raw_copy = RawCopy(raw_copy_path(raw_copy_dir, 1), warning)
+            raw_copy = RawCopy(raw_copy_path(raw_copy_dir, 1), warning,
+                               connection_number=1, wall_clock=observation_clock)
             yield from raw_tag_source(url, raw_copy)
             return
         if tag_source is iter_url_tags:
-            raw_copy = RawCopy(raw_copy_path(raw_copy_dir, 1), warning)
+            raw_copy = RawCopy(raw_copy_path(raw_copy_dir, 1), warning,
+                               connection_number=1, wall_clock=observation_clock)
             yield from iter_url_tags(url, raw_copy=raw_copy, on_open=observation.opened)
             return
         if warning is not None:
@@ -225,6 +227,7 @@ def capture_url(
                     None if connection_error is None else str(connection_error),
                     part_timings=tuple(part_timings),
                     raw_copy=raw_copy.saved_path,
+                    raw_arrivals=raw_copy.saved_arrivals_path,
                     **observation.values(),
                 ),
             )

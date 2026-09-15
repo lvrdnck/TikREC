@@ -115,8 +115,19 @@ Parses incrementally, never buffers the whole stream. Validates the FLV
 header and initial PreviousTagSize. No retries, no TikTok-specific logic.
 This is the primitive for exactly one direct FLV connection. When requested,
 `RawCopy` tees each received byte chunk to `connection-NNNN.raw` before the
-parser consumes it. A raw-copy open, write, or close failure warns and disables
-only the copy; capture continues.
+parser consumes it. It also records local HTTP-read boundaries in a best-effort
+`connection-NNNN.arrivals.jsonl` sidecar and links that file from the numbered
+connection's `raw_arrivals` field. A raw-copy or arrival-log open, write, flush,
+or close failure warns and disables only the affected diagnostic; capture
+continues. Existing diagnostic paths are never overwritten.
+
+HTTP responses use `read1()` when available so a single underlying buffered
+read can return bytes already available before a later stall; sources without it
+retain the `read()` fallback. Arrival timestamps are sampled after that call and
+before raw writing, stop handling, parsing, or writer retention. They describe
+this process's local HTTP-library boundary, not TCP/TLS packets, exact socket or
+server timing, FLV tags, or proof that missing media was recoverable. See
+[CONNECTION_LOG.md](CONNECTION_LOG.md) for the persistent record contract.
 
 HTTP source operations default to a 30-second timeout. A timeout after the
 response has opened is raised as `SourceStallError`, distinguishing an open
@@ -566,7 +577,11 @@ subprocess, provides independence from SSH/VS Code in this release.
 of every direct FLV connection before parsing so source behaviour can be
 compared directly with TikREC output. The files are named by the connection
 number recorded in `connections.jsonl`. This roughly doubles the session's
-disk use. A copy failure is a warning, never a capture failure.
+disk use. A matching arrival sidecar records the local timing and byte range of
+each successful HTTP body read plus the observed read end. Both diagnostics are
+best-effort; their failure is a warning, never a capture failure. Arrival logs
+add small variable storage and per-read JSON/flush work only when raw copying is
+explicitly enabled.
 
 ## Recording storage
 
