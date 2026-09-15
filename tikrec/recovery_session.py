@@ -4,7 +4,6 @@ import json
 import math
 from pathlib import Path
 
-from .finalize import _temporary_output_path
 from .manifest import SessionManifest
 from .session_parts import discover_parts
 from .session_resume import (_read_connections, _unique_values, _validate_manifest,
@@ -33,10 +32,6 @@ def inspect_recovery_session(job, *, clock, media_inspector):
     manifest = SessionManifest.load(path, clock=clock, media_inspector=media_inspector)
     if manifest is None or manifest.snapshot() != values:
         raise ValueError("manifest changed during recovery inspection")
-    temporary = _temporary_output_path(output)
-    if temporary.exists() or temporary.is_symlink():
-        # An abandoned encoder artifact needs the later finalization reconciliation policy.
-        raise ValueError("finalizer partial requires manual recovery")
     if output.is_symlink() or (output.exists() and not output.is_file()):
         raise ValueError("requested output is not a regular file")
     return ResumeSession(manifest, retained, job.session_id, values["status"],

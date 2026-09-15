@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Callable, Literal
 
 from .capture import CaptureResult
+from .finalization_recovery import (plan_finalization_partial,
+                                       preserve_finalization_partial)
 from .finalize import finalize_parts
 from .job_state import JobState, JobStateStore
 from .media import inspect_media
@@ -85,16 +87,22 @@ class StartupReconciler:
             if output.exists():
                 failure_reason = "existing_output"
                 failure_message = "existing output lacks matching completion evidence; preserve it"
+            values = session.manifest.snapshot()
+            partial = plan_finalization_partial(
+                output, job.session_id, job_state=job.state,
+                finalization_status=values["finalization"]["status"],
+            )
+            if output.exists():
                 if not completed_output_is_proven(session, output, self.media_inspector):
                     raise ValueError("existing output is ambiguous")
                 return self._completed(job, session, "existing_output")
-            if session.manifest.snapshot()["finalization"]["status"] == "completed":
+            if values["finalization"]["status"] == "completed":
                 failure_reason = "existing_output"
                 failure_message = "completed session output is missing; manual recovery required"
                 raise ValueError("completed manifest has no output")
             if job.stop_requested or job.state == "finalizing":
                 reason = "user_stop" if job.stop_requested else "recovery_finalization"
-                return self._finalize(job, session, reason, observe)
+                return self._finalize(job, session, reason, observe, partial=partial)
             if not job.may_resume:
                 failure_reason = "identity_unavailable" if job.room_id is None else "ambiguous_state"
                 failure_message = "saved job is ineligible for automatic capture resume"
@@ -197,7 +205,7 @@ class StartupReconciler:
         job = self.save_job(job)
         return ReconciliationResult("settled", job, reason)
 
-    def _finalize(self, job, session, reason, observe):
+    def _finalize(self, job, session, reason, observe, *, partial=None):
         job = replace(job, state="finalizing", recovery_reason=reason)
         job = self.save_job(job)
         observe(job)
@@ -205,6 +213,8 @@ class StartupReconciler:
         self._event(job, session, "recovery_finalization")
         session.manifest.mark_recovery(Path(job.output_path), session.retained.parts)
         try:
+            if partial is not None:
+                preserve_finalization_partial(partial)
             self.finalizer(session.retained.parts, Path(job.output_path))
         except Exception:
             # Close the observed recovery attempt so a later retry has a valid end boundary.
