@@ -197,9 +197,39 @@ room status and rendition observation attributes; it now also carries room_id.
 
 Finds the room ID from public page state, falls back to the public
 api-live user/room lookup. Queries webcast room/info. Live means room
-status equals 2. Picks a rendition by deterministic quality preference.
+status equals 2. Picks a rendition by deterministic label preference.
 The structured result contains room_id, flv_url, raw room_status, rendition_label,
 and rendition_source. Its transport URL remains HTTP(S) with a `.flv` path.
+
+The accepted `flv_pull_url` and `rtmp_pull_url` values provide a rendition label,
+source field, and transport URL to TikREC. The resolver has no validated
+per-candidate dimensions, native cadence, bitrate, codec, or reliability facts.
+`_quality_score` is therefore a conservative label heuristic, not measured media
+quality: known label families form tiers, then source field, normalized label,
+and URL provide deterministic tie-breaks. Unrecognized labels remain below known
+tiers rather than having arbitrary numbers or adjectives interpreted as facts.
+The presence of `hls_pull_url` does not alter FLV selection because TikREC does
+not currently support HLS capture. No sibling or embedded SDK field may affect
+production ranking until its meaning is verified against delivered media.
+
+Selected label/source evidence is recorded for each connection. After capture,
+part evidence supplies displayed SPS dimensions and an optional advertised or
+fixed-VUI nominal cadence; the completed manifest supplies output codec and
+dimensions. These observations explain what the selected stream delivered, not
+why another candidate would have been better. A real `hd1` service session
+validated successfully at 640x1280 H.264, 25 fps, and about 1.07 Mbit/s overall,
+which demonstrates that a label alone is not a resolution or bitrate guarantee.
+
+Before changing the default policy, a bounded developer-only comparison must
+hold signed URLs in memory and identify samples only by non-sensitive source
+field, normalized label, and protocol. Capture short same-window samples from
+every legitimately exposed public FLV/HLS candidate where practical; compare
+codec, dimensions, packet cadence, duration, delivered bitrate, startup, and
+manual visual quality. Then compare longer same-window samples for stalls,
+disconnects, recovery, truncation, timestamp replays, configuration changes,
+decoder/validation errors, and finalization behavior. Repeat on multiple public
+LIVEs before inferring a global transport policy. This investigation does not
+add a public CLI or make normal recording multi-rendition.
 
 `tikrec/tiktok_identity.py` owns public identity discovery, `LiveResolution`,
 `canonical_room_id`, and `same_live` (also exposed from `tiktok`). Room IDs are

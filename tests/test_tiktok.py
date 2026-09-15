@@ -24,10 +24,13 @@ def live_room(
     renditions: dict[str, str],
     status: object = 2,
     rtmp_pull_url: str | None = None,
+    hls_pull_url: str | None = None,
 ) -> bytes:
     stream_url: dict[str, object] = {"flv_pull_url": renditions}
     if rtmp_pull_url is not None:
         stream_url["rtmp_pull_url"] = rtmp_pull_url
+    if hls_pull_url is not None:
+        stream_url["hls_pull_url"] = hls_pull_url
     return json.dumps({
         "status_code": 0,
         "data": {"status": status, "stream_url": stream_url},
@@ -60,6 +63,39 @@ class TikTokResolverTests(unittest.TestCase):
             resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener),
             "https://cdn.test/full-hd.flv",
         )
+
+    def test_ambiguous_top_tier_labels_use_a_deterministic_fallback(self) -> None:
+        opener = _Opener([live_page(), live_room({
+            "ORIGIN": "https://cdn.test/origin.flv",
+            "FULL_HD1": "https://cdn.test/full-hd.flv",
+        })])
+
+        result = resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+        self.assertEqual(result, "https://cdn.test/full-hd.flv")
+        self.assertEqual(result.rendition_label, "full_hd1")
+
+    def test_unrecognized_resolution_like_label_is_not_treated_as_media_evidence(self) -> None:
+        opener = _Opener([live_page(), live_room({
+            "2160_CUSTOM": "https://cdn.test/unverified.flv",
+            "SD1": "https://cdn.test/sd.flv",
+        })])
+
+        result = resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+        self.assertEqual(result, "https://cdn.test/sd.flv")
+        self.assertEqual(result.rendition_label, "sd1")
+
+    def test_hls_presence_does_not_change_supported_flv_selection(self) -> None:
+        opener = _Opener([live_page(), live_room(
+            {"HD1": "https://cdn.test/live.flv"},
+            hls_pull_url="https://cdn.test/live.m3u8",
+        )])
+
+        result = resolve_live_url("https://www.tiktok.com/@creator/live", opener=opener)
+
+        self.assertEqual(result, "https://cdn.test/live.flv")
+        self.assertEqual(result.rendition_source, "flv_pull_url")
 
     def test_preserves_the_raw_live_status_for_confirmation_evidence(self) -> None:
         opener = _Opener([live_page(), live_room({"HD1": "https://cdn.test/live.flv"}, "2")])

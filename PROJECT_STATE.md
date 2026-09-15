@@ -7,13 +7,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** None. Issue #12, CLI help discoverability, is complete.
-- **Status:** Paused; no implementation task is active pending the next approved
-  `Continue TikREC` reconciliation.
-- **Pending owner action:** None.
-- **Next queued task:** Issue #13, verify and select the highest-fidelity
-  available LIVE rendition. Issues #9 and #8 remain open for real-capture
-  evidence and replay-corruption investigation, respectively.
+- **Active issue/task:** Issue #13, verify and select the highest-fidelity
+  available LIVE rendition.
+- **Status:** Paused after the offline audit; suitable real-LIVE comparison
+  evidence is required before production policy can change or the issue closes.
+- **Pending owner action:** None. Resume safely when a suitable anonymously
+  public LIVE is available for bounded multi-rendition comparison.
+- **Next queued task:** None while issue #13 remains active. Issues #9 and #8
+  remain open for real-capture evidence and replay-corruption investigation.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -30,6 +31,24 @@ new work; calendar entries are reminders only.
   are also published from their existing tags.
 - **Development target:** v0.5.0 environment survival/resumability. It is
   unfinished and must not be described as released or tagged.
+
+## Issue #13 rendition investigation
+
+- Current production selection remains unchanged: known rendition labels form
+  heuristic tiers, with deterministic source/label/URL tie-breaks. The public
+  response evidence audited so far does not validate per-candidate resolution,
+  native FPS, bitrate, codec, or reliability metadata.
+- Current logs already retain selected label/source, per-part SPS dimensions and
+  optional nominal cadence, plus completed-output codec/dimensions. Explaining a
+  future stronger choice additionally needs a safe candidate inventory,
+  selection-policy identifier, and verified metadata provenance without URLs.
+- A prior real `hd1` service recording passes TikREC validation and measures
+  640x1280 H.264 at 25 fps and about 1.07 Mbit/s overall. It proves delivered
+  facts can be compared with a label, but it contains no alternative candidates.
+- On 2026-09-15, the supplied TomWhoASMR room was offline, TikTok's public LIVE
+  page exposed no static room list, no in-app browser was available, and a
+  bounded anonymous lookup found no current public candidate. Short and longer
+  multi-rendition FLV/HLS comparison therefore remain outstanding.
 
 ## v0.5 and diagnostic handoff
 

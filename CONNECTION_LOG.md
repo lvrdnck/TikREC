@@ -121,6 +121,10 @@ Nominal rate is not a measured average or a promise of constant-rate timestamps.
 These fields do not feed resolution selection or encoder settings. Comparing
 labels and actual part facts can expose changes, but a label alone does not
 guarantee stable dimensions: an upstream encoder can change within one rendition.
+The current evidence also cannot compare candidates that were not selected.
+Doing that safely requires a non-sensitive candidate inventory, an explicit
+selection-policy identifier, and the provenance of any verified metadata; those
+fields are not added until public response semantics and real media agree.
 
 ## Explicit capture-resume boundary
 
