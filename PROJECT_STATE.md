@@ -86,6 +86,10 @@ new work; calendar entries are reminders only.
   30.061-second MP4 that passed deep validation. Room metadata advertised
   `HD1` as 720p but supplied zero dimensions; earlier `hd1` media was 640 pixels
   wide, so the label claim remains unsuitable as verified quality evidence.
+- A later attempt on `vandaelesir` found that the supplied LIVE had ended before
+  comparison. The normal anonymous resolver and two short rechecks returned the
+  same room with status 3; no candidates, transport URLs, media, or fifth dataset
+  were collected.
 - All four datasets show alias labels, and the same labels carry materially
   different dimensions, cadence, and bitrate across rooms. Dataset three
   supports the existing FLV choice for equal fidelity with lower latency, but
