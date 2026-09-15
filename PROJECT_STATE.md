@@ -9,7 +9,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task:** Issue #13, verify and select the highest-fidelity
   available LIVE rendition.
-- **Status:** Paused after the offline audit and four real-LIVE comparisons,
+- **Status:** Paused after the offline audit and five real-LIVE comparisons,
   including one public FLV/HLS choice; genuinely distinct simultaneous source
   media remain outstanding before the issue closes.
 - **Pending owner action:** None. Resume safely when another suitable
@@ -88,9 +88,18 @@ new work; calendar entries are reminders only.
   wide, so the label claim remains unsuitable as verified quality evidence.
 - A later attempt on `vandaelesir` found that the supplied LIVE had ended before
   comparison. The normal anonymous resolver and two short rechecks returned the
-  same room with status 3; no candidates, transport URLs, media, or fifth dataset
-  were collected.
-- All four datasets show alias labels, and the same labels carry materially
+  same room with status 3; no candidates, transport URLs, media, or dataset from
+  that attempt were collected.
+- A fifth anonymous comparison on `brycebennet1` exposed only `hd1` through
+  `flv_pull_url` and `default` through `rtmp_pull_url`, both as HTTPS FLV, with
+  no public HLS. The aligned 30-second files were byte-identical, including all
+  451 video and 704 audio payloads. Both delivered stable 720x1280 H.264
+  High/AAC at measured 15 fps and about 0.922 Mbit/s, started delivering output
+  in 2.984 seconds, and passed structure, decoder, DTS, configuration, and
+  timestamp checks. Representative stream-copy finalization produced a
+  30.059-second MP4 that passed deep validation. The conclusive alias result did
+  not justify a longer duplicate-media comparison.
+- All five datasets show alias labels, and the same labels carry materially
   different dimensions, cadence, and bitrate across rooms. Dataset three
   supports the existing FLV choice for equal fidelity with lower latency, but
   one FLV/HLS run cannot establish global transport reliability. Production
