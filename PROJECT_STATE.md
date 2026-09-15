@@ -99,6 +99,13 @@ new work; calendar entries are reminders only.
   timestamp checks. Representative stream-copy finalization produced a
   30.059-second MP4 that passed deep validation. The conclusive alias result did
   not justify a longer duplicate-media comparison.
+- A subsequent ordered screening pass checked six owner-supplied public LIVE
+  pages without capturing routine inventories. `lxkt16`, `thorben1891`, and
+  `thethomb` were live but each exposed only the familiar HTTPS FLV
+  `hd1`/`default` pair, no HLS, and no additional quality tier. `wukiyampi`,
+  `tim_tokii`, and `imullaa` did not yield a current room ID through TikREC's
+  anonymous public path. No promising room, media capture, signed-URL artifact,
+  or sixth dataset resulted from this screening.
 - All five datasets show alias labels, and the same labels carry materially
   different dimensions, cadence, and bitrate across rooms. Dataset three
   supports the existing FLV choice for equal fidelity with lower latency, but
