@@ -111,7 +111,7 @@ Remote commands print JSON; failed job/deferred/failed recovery or request error
 return 1, other accepted responses 0. If start loses its response, query status
 before retrying; it may already be running. Closing the client does not stop it.
 
-## Durable job intent - v0.5 implementation in progress
+## Durable job intent - v0.5 implemented, release pending
 
 job_state.py is wired into serve/controller: commit acceptance before worker start,
 room_id before media opens, stop before signalling its Event, and lifecycle/results
@@ -168,7 +168,7 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Real resumed media validation remains pending; CLI/routes stay unchanged, version 0.4.0.
 
-## Service startup reconciliation (v0.5 module, release unfinished)
+## Service startup reconciliation (v0.5 implemented, release pending)
 
 `StartupReconciler` in `reconciliation.py` decides recovery independently of HTTP.
 Resolver, resume capture, finalizer, store, clock, and storage/media inspection are
@@ -244,8 +244,12 @@ A resume/preflight failure keeps non-terminal recovery and blocks new starts.
 
 Safe recovery finalizes all retained parts without overwriting output, updating
 manifest/job on success. Encoder failure retains parts and non-terminal finalizing
-intent. Ambiguous/missing outputs and abandoned partials need manual assessment;
-deeper crash-during-FFmpeg reconciliation remains v0.5 work. No partial is altered.
+intent. A nonempty finalizer temporary is recoverable only when durable job state
+is `finalizing`, manifest finalization is `running`, and output is absent. It is
+atomically preserved under a collision-safe session evidence name before all
+retained parts are re-finalized. Empty/nonregular/unproven temporaries, evidence
+name collisions, and coexisting output/temporary artifacts remain untouched and
+block for manual assessment.
 
 `connections.jsonl` appends `service_recovery` observations plus the shared
 `capture_resume` boundary and new numbered connection records. Times describe
@@ -301,5 +305,8 @@ continued. Stop remotely, wait for output, then validate parts and MP4 with
 tikrec validate (--deep for output). See SPEC.md's FFprobe decoder/DTS checks and
 null-muxer warning distinguishing resynthesis notices from decoder failure.
 
-v0.4 deployment is validated; real resumed-media/crash/restart/outage checks and
-deeper finalization reconciliation remain pending. Version is 0.4.0; v0.5 unfinished.
+v0.4 deployment is validated. All planned v0.5 implementation slices, including
+interrupted-FFmpeg finalization reconciliation, are complete and covered offline;
+a real-media finalization-recovery smoke also decoded cleanly. Real same-room
+resume across process death/Task Scheduler restart and real outage behavior still
+require deployment validation. Version is 0.4.0; v0.5 remains unreleased.

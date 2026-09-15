@@ -126,7 +126,7 @@ failures recoverable. Establish restart/session reconciliation and explicit
 resume policy without overwriting retained evidence or claiming missing media
 was captured. An independent service launch in v0.4 solves SSH lifetime only.
 
-**Progress:** Atomic service job intent, canonical public room identity, explicit
+**Implementation:** Atomic service job intent, canonical public room identity, explicit
 session continuation, and service startup reconciliation/controller persistence
 are implemented. Startup validates retained storage before new-job acceptance,
 resumes only the prior explicitly-started same room, and safely finalizes ended/
@@ -137,21 +137,39 @@ stop/shutdown wake waits, and meaningful transitions preserve durable intent.
 Exhaustion retains unfinalized parts, reports outage_timeout, and releases the
 service slot without auto-relaunching the job. Partial/ambiguous output cases
 remain blocked. This startup-recovery path never monitors an account for its
-next LIVE. Signed transport stays out of persistence/status.
+next LIVE. Signed transport stays out of persistence/status. Interrupted FFmpeg
+finalization reconciliation is also implemented: a partial is recoverable only
+with matching durable finalization-in-progress evidence, is preserved under a
+collision-safe evidence name, and all retained parts are re-finalized. Ambiguous
+artifacts remain untouched and block automatic recovery.
 
-The suite passes 693 offline tests plus 17 subtests. Real resumed-media and
-crash/reboot/outage deployment checks, deeper finalization reconciliation, and
-v0.5 release tagging remain pending. The current package and released version
-remain v0.4.0; v0.5 is a development target, not complete.
-The next module is deeper finalization reconciliation. Patient recovery uses a
-15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; normal successful
+**Release-readiness audit (2026-09-15):** No missing v0.5 implementation slice
+was found. The full offline suite passes 707 tests plus 19 subtests. The existing
+real-media finalization-recovery smoke decoded cleanly.
+
+**Release-blocking validation:** Exercise the independently deployed service on
+a public LIVE across abrupt process death/Task Scheduler restart, prove same-room
+continuation into fresh numbered parts, then stop/finalize and validate retained
+parts and output. Exercise a real temporary network outage during active capture
+or startup recovery and verify responsive status/stop plus safe recovery.
+
+**Release bookkeeping after validation:** Synchronize the package version and
+release documentation for v0.5.0, rerun required checks, review the exact release
+commit, and only then create the annotated tag and published GitHub Release under
+separate authorization. The current package and released version remain v0.4.0;
+v0.5 is still an untagged development target.
+
+Issues #9 and #8 remain open for rare real stall/replay evidence, and issue #13
+is intentionally paused pending an opportunistic distinct-rendition encounter.
+Those evidence investigations do not block v0.5 readiness. Patient recovery uses
+a 15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; successful
 reconnect-gap measurement and reduction remain v0.6 work.
 
-Implementation order: durable job state, public room identity, retained-session
-resume, service startup reconciliation with controller integration, outage retry
-policy, recovery status, then release documentation/version.
-Each module gets offline tests before the
-next begins. Successful reconnect-gap measurement/reduction remains v0.6.
+Completed implementation order: durable job state, public room identity,
+retained-session resume, service startup reconciliation with controller
+integration, outage retry policy/recovery status, and interrupted-finalization
+reconciliation. Release validation and bookkeeping remain; successful
+reconnect-gap measurement/reduction remains v0.6.
 
 ### v0.6.0 ? Reconnect-gap reduction
 

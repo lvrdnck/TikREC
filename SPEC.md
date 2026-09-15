@@ -477,7 +477,7 @@ error. Successful stop is completed/interrupted; capture/finalizer errors are
 failed. Requested output and actual final output are distinct fields. Shutdown
 rejects new starts, requests stop, and joins the worker outside the lock.
 
-### tikrec/job_state.py - durable service intent (v0.5 work in progress)
+### tikrec/job_state.py - durable service intent (v0.5 implemented, release pending)
 
 `JobState` and `JobStateStore` provide validated, atomic storage for the latest
 explicitly started service job. Intent exists independently of `session.json`
@@ -498,7 +498,8 @@ media opens, stop intent before signalling, and lifecycle/result changes. Defaul
 state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
 or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
 is added. Only the latest job is stored, with one owning service process/account.
-The package remains v0.4.0 until the remaining v0.5 layers are implemented.
+The package remains v0.4.0 until v0.5 deployment validation and release
+bookkeeping are complete.
 
 ### Patient outage policy and transport classification
 
@@ -556,9 +557,13 @@ finalizes retained parts. It never monitors a username for the next LIVE. Stop
 intent outranks identity; stopped/finalizing jobs skip TikTok and only assess
 finalization. Existing output needs committed manifest completion and bounded
 matching codec/container/positive-duration evidence; ambiguity blocks recovery
-without overwriting it. Finalization retries only absent output without encoder
-partials. Failures retain media and a finalizing job. Abandoned partials and deeper
-crash-during-FFmpeg recovery remain for later finalization reconciliation.
+without overwriting it. Finalization retries only with absent output. A nonempty
+encoder temporary is recoverable only when durable job state is `finalizing` and
+manifest finalization is `running`; it is atomically preserved under a
+collision-safe session evidence name before every retained part is re-finalized.
+Empty/nonregular/unproven temporaries, evidence-name collisions, and coexisting
+output/temporary artifacts remain untouched and block. Failures retain media,
+preserved evidence, and a finalizing job for a later retry.
 
 The service injects the shared patient policy; transient failures save
 recovering_network/network_outage and retry in-process without repeating storage
@@ -586,8 +591,9 @@ invented, and no signed URL enters persistence or status. Media manifest schema
 stays 1 with optional room_id; old manifests retain validation/manual-finalize
 compatibility. Automatic capture resume requires proven persisted identity.
 
-Real resumed-media validation and process-death/reboot deployment checks remain
-outstanding. Deeper finalization reconciliation remains the next module;
+All planned v0.5 implementation slices, including interrupted-FFmpeg
+finalization reconciliation, are complete. Real resumed-media validation and
+process-death/Task Scheduler restart/outage deployment checks remain outstanding;
 no future-LIVE monitoring or Task Scheduler modification is implemented.
 
 ### tikrec/service.py — narrow HTTP adapter
@@ -611,9 +617,10 @@ reach capture or session metadata. Existing local commands are unchanged.
 Implementation order for the v0.4 addition: capture_control with LIVE/source
 integration, recording controller, service handler, remote client, control_cli
 and existing CLI wiring. Each layer has offline tests before the next layer.
-Deeper finalization reconciliation remains v0.5 scope;
-startup resume now covers the conservative cases above. No job history is added. Windows Task Scheduler launch, rather than a detached recording
-subprocess, provides independence from SSH/VS Code in this release.
+Startup resume and interrupted-finalization reconciliation cover the conservative
+v0.5 cases above. No job history is added. Windows Task Scheduler launch, rather
+than a detached recording subprocess, provides independence from SSH/VS Code in
+this release.
 
 ## Raw-copy storage
 

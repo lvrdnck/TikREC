@@ -140,9 +140,13 @@ and leaves output unfinalized because room end is unproven. The service permits 
 new explicit job; restart never relaunches an exhausted job. A crash during an
 unfinished outage preserves non-terminal intent and starts a fresh recovery window
 on reconciliation. Malformed identity/storage also blocks starts with a fixed safe error.
-Abandoned partials need manual assessment. Existing output is preserved and
-accepted only with matching committed completion and bounded media evidence;
-ambiguous output is never replaced. Real resumed-media validation is outstanding.
+A nonempty FFmpeg partial is automatically preserved under a collision-safe
+session evidence name and all retained parts are re-finalized only when durable
+job and manifest state prove finalization was running. Unproven, empty,
+nonregular, colliding, or output-coexisting partials need manual assessment.
+Existing output is preserved and accepted only with matching committed completion
+and bounded media evidence; ambiguous output is never replaced. Real resumed-media
+and process-restart/outage deployment validation is outstanding.
 
 State lives at %LOCALAPPDATA%\TikREC\job.json on Windows and
 ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json elsewhere, independent of the

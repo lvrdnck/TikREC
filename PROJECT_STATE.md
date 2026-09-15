@@ -7,15 +7,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #13, verify and select the highest-fidelity
-  available LIVE rendition.
-- **Status:** Paused after the offline audit and five real-LIVE comparisons,
-  including one public FLV/HLS choice; genuinely distinct simultaneous source
-  media remain outstanding before the issue closes.
-- **Pending owner action:** None. Resume safely when another suitable
-  anonymously public LIVE exposes distinct simultaneous source media.
-- **Next queued task:** None while issue #13 remains active. Issues #9 and #8
-  remain open for real-capture evidence and replay-corruption investigation.
+- **Active task:** v0.5 release readiness. The implementation audit found no
+  missing v0.5 behavior slice; required real deployment/recording validation
+  comes before release bookkeeping.
+- **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
+  screening has stopped. Resume it opportunistically only when normal use
+  exposes genuinely distinct simultaneous public source media.
+- **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
+  and timestamp-replay completion criteria. Collect that rare evidence during
+  suitable future recordings; neither issue blocks ordinary v0.5 readiness.
+- **Pending owner action:** None. No product or release action is authorized by
+  this reconciliation.
+- **Next queued task:** Perform the required real v0.5 service restart/resume
+  and outage deployment validation, then reassess release bookkeeping.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -35,6 +39,11 @@ new work; calendar entries are reminders only.
 
 ## Issue #13 rendition investigation
 
+- Owner sequencing decision on 2026-09-15: issue #13 is intentionally paused
+  and non-blocking. Do not actively hunt random public LIVEs; resume only when
+  normal use reveals potentially distinct simultaneous sources. TikREC still
+  aims for the highest genuine public source quality and native FPS, without
+  upscaling or synthesized frames. Escalate a measured quality/FPS conflict.
 - Current production selection remains unchanged: known rendition labels form
   heuristic tiers, with deterministic source/label/URL tie-breaks. The public
   response evidence audited so far does not validate per-candidate resolution,
@@ -110,9 +119,9 @@ new work; calendar entries are reminders only.
   different dimensions, cadence, and bitrate across rooms. Dataset three
   supports the existing FLV choice for equal fidelity with lower latency, but
   one FLV/HLS run cannot establish global transport reliability. Production
-  selection remains unchanged. Resume #13 with genuinely distinct simultaneous
-  source media; escalate if resolution, cadence, bitrate, codec, or reliability
-  goals conflict.
+  selection remains unchanged. Resume #13 opportunistically when normal use
+  exposes genuinely distinct simultaneous source media; escalate if resolution,
+  cadence, bitrate, codec, or reliability goals conflict.
 
 ## v0.5 and diagnostic handoff
 
@@ -124,10 +133,22 @@ new work; calendar entries are reminders only.
   record HTTP-read byte ranges/timing in `connection-NNNN.arrivals.jsonl` without
   interrupting capture. It supports issue #8 investigation but does not reduce
   reconnect gaps or alter resume/finalization policy.
-- Offline coverage previously passed (focused: 145; full: 703). Real
-  resumed-media/crash-reboot/outage validation and an opt-in raw-copy comparison
-  remain useful evidence before v0.5 closure; see ROADMAP.md, SPEC.md, and
-  SERVICE.md for the exact boundaries.
+- A 2026-09-15 release-readiness audit found no missing v0.5 implementation
+  slice. The full offline suite passes: 707 tests and 19 subtests.
+- **Required real validation:** abruptly terminate/restart the independently
+  deployed service during a public LIVE, prove same-room continuation into fresh
+  numbered parts, stop/finalize, and validate retained parts plus the completed
+  output. Also exercise a real temporary network outage during active capture or
+  startup recovery and verify responsive status/stop plus safe recovery. The
+  interrupted-FFmpeg path already has a clean real-media recovery smoke; include
+  its full service-startup path in the deployment pass when practical.
+- **Release bookkeeping after validation:** synchronize the v0.5.0 package and
+  release documentation, rerun required checks, review the exact release commit,
+  then create the annotated tag and published GitHub Release in a separately
+  authorized release action. No version, tag, or release changed here.
+- **Optional non-blocking evidence:** issue #9's real raw-copy stall-boundary
+  check, issue #8's replay with matching raw bytes, and issue #13's distinct
+  rendition comparison remain open for opportunistic collection.
 
 ## Durable decisions and risks
 

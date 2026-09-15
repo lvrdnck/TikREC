@@ -107,7 +107,7 @@ The example's connection count includes the final room-status resolution
 attempt recorded by live capture. `connections.jsonl` provides the detailed
 outcome and timing for each numbered attempt.
 
-## Service intent boundary (v0.5 work in progress)
+## Service intent boundary (v0.5 implemented, release pending)
 
 The new `job_state.py` storage module uses an independent job schema version 1
 for explicit service intent before media storage exists. It does not change
@@ -137,7 +137,7 @@ not_requested finalization; an explicit finalization path must match the prior
 declaration unless it was null. Completion/interruption then covers all old and
 new parts and elapsed wall time from the original start, including downtime.
 
-## Service startup recovery (v0.5 unfinished)
+## Service startup recovery (v0.5 implemented, release pending)
 
 New structured LIVE captures retain their first canonical room_id in schema 1.
 Startup checks compare it with the explicit durable job; both must agree before
@@ -151,11 +151,15 @@ part. Service resume_count belongs only to the job. Manifest counts include prio
 attempts; elapsed wall time includes downtime without claiming missing media.
 
 Offline/different-LIVE recovery and prior stop/finalizing recovery use the existing
-finalizer only when output is absent and no abandoned partial is present. They
-mark recovery_performed/running before FFmpeg and close the observed recovery
-attempt as interrupted/completed-finalization on success, or failed on encoder
-failure. End timestamps are observed reconciliation times, never guessed crash
-or room-end times. Successful completion settles durable job intent too.
+finalizer only when output is absent. A nonempty FFmpeg temporary is eligible for
+automatic recovery only when durable job state is `finalizing` and this manifest
+records finalization `running`; it is atomically preserved under a collision-safe
+session evidence name before every retained part is re-finalized. Empty,
+nonregular, unproven, colliding, or output-coexisting partials remain untouched
+and block. Recovery marks `recovery_performed`/`running` before FFmpeg and closes
+the observed attempt as interrupted/completed-finalization on success, or failed
+on encoder failure. End timestamps are observed reconciliation times, never
+guessed crash or room-end times. Successful completion settles durable job intent.
 
 Existing output needs matching committed finalization completion and bounded
 matching media evidence. Ambiguous output/partials remain untouched. While patient
@@ -170,8 +174,9 @@ end timestamp. Parts and any existing output remain untouched. Durable job state
 is terminal `failed` with `outage_timeout`; it will not relaunch on restart.
 Stop during recovery instead uses existing interrupted/finalization semantics.
 No media-manifest fields or schema version change. Successfully completed jobs are
-never relaunched. Deeper finalization reconciliation remains pending; real resumed-media
-validation is outstanding and version remains 0.4.0.
+never relaunched. Finalization reconciliation is implemented; real same-room
+resume and process-restart/outage deployment validation remain outstanding, and
+version remains 0.4.0.
 
 ## Validation
 
