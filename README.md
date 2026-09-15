@@ -108,8 +108,8 @@ Capture/finalizer failure preserves retained parts for `tikrec finalize`.
 
 See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
 Scheduler settings, startup recovery, and deployment verification. There is no
-Web UI or media-download endpoint in the current service. Version remains v0.4.0
-while v0.5 is built.
+Web UI or media-download endpoint in the current service. The package version is
+v0.4.0, the current tagged GitHub Release; v0.5 is a development target.
 
 The service now persists its latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks that job against retained

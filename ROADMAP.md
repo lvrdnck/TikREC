@@ -38,6 +38,16 @@ environment survival, gap reduction, guided recovery, and configuration.
 Patch releases remain available for focused bug fixes and
 reliability improvements between roadmap milestones.
 
+### Release terminology and completion
+
+The **package version** comes from packaging metadata. A **tagged version** is
+an immutable annotated Git tag at a reviewed historical commit. A **GitHub
+Release** is the published GitHub release object for that tag. The **current
+released version** is the latest version for which those records and the
+documentation are synchronized; the **development target** is unfinished work
+and is not a release. See AGENTS.md for the mandatory release-completion
+checklist.
+
 This roadmap is directional rather than a promise of exact scope or dates. It
 will evolve when implementation and real recordings reveal new dependencies.
 
@@ -105,6 +115,10 @@ through Task Scheduler/Tailscale on main-pc has been validated: recording
 survived SSH/VS Code disconnection, remote stop finalized successfully, and
 retained-session and deep output validation passed.
 
+**Release record:** package version v0.4.0, annotated `v0.4.0` tag at
+`9f8e4104f8bc24f439a3e927ca72da29257c41fa`, and the published GitHub Release
+`TikREC v0.4.0` are synchronized. This is the current released version.
+
 ### v0.5.0 ? Environment survival / resumability
 
 **Goal:** Make service crashes, PC reboots, network loss, and disk/environment
@@ -127,7 +141,8 @@ next LIVE. Signed transport stays out of persistence/status.
 
 The suite passes 693 offline tests plus 17 subtests. Real resumed-media and
 crash/reboot/outage deployment checks, deeper finalization reconciliation, and
-release tagging remain pending. The package remains 0.4.0; v0.5 is not complete.
+v0.5 release tagging remain pending. The current package and released version
+remain v0.4.0; v0.5 is a development target, not complete.
 The next module is deeper finalization reconciliation. Patient recovery uses a
 15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; normal successful
 reconnect-gap measurement and reduction remain v0.6 work.

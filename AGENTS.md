@@ -28,9 +28,10 @@ Before changing any file:
 2. At the start of the task, run `git pull --rebase --autostash` before reading
    or editing project files. GitHub is the source of truth across the MacBook
    and Windows PC. If rebase conflicts, stop and report the conflict.
-3. For requests such as `continue TikREC`, `continue`, or `next task`, inspect
-   ROADMAP.md and the actual repository state, then select the next unfinished
-   logical roadmap slice.
+3. For requests such as `continue TikREC`, `continue`, or `next task`, reconcile
+   PROJECT_STATE.md, ROADMAP.md, relevant open GitHub issues, and the actual
+   repository state. Continue the active task when one exists; otherwise select
+   the next unfinished logical roadmap slice.
 4. Classify the task and select the lowest suitable model:
 
    | Task class | Default model |
@@ -89,6 +90,30 @@ the recommended solution. Ordinary technical questions are Codex decisions.
 Preserve unrelated user changes. Never use destructive Git operations to obtain
 a clean worktree. Do not create releases, tags, force-pushes, or other major
 external release actions unless explicitly requested.
+
+## Project coordination
+
+GitHub issues and PROJECT_STATE.md are authoritative for active and pending
+TikREC work. ROADMAP.md provides the reconciled product sequence; calendar
+entries are reminders only and never independently define project authority.
+
+- Before starting or recommending an implementation task, reconcile
+  PROJECT_STATE.md, ROADMAP.md, relevant open issues, and repository state.
+- Normally only one implementation task is active. Parallel work needs explicit
+  approval.
+- PROJECT_STATE.md must concisely record the active issue/task, whether it is
+  active, blocked, or paused, any pending owner action, and the next queued task
+  when known.
+- If work is intentionally paused or interrupted after meaningful progress,
+  promptly journal completed work, remaining work, Git/release state, and a safe
+  resume action in its GitHub issue. Do not silently move to another issue.
+- Before a significant external action (including tags, GitHub Releases, or
+  destructive operations), re-check the active issue and repository state.
+  Journal what actually succeeded afterward.
+
+`Continue TikREC` means reconcile that authoritative state and continue the
+active task, or select the next safe task only when no active task remains. It
+does not authorize stale chat or calendar instructions on their own.
 
 ## Layout
 
@@ -149,6 +174,32 @@ Deferred work belongs in GitHub issues, not TODO comments. When implementing an
 existing issue, include `Closes #N` in the commit message and add a concise
 comment describing what was actually done. Do not open issues for work being
 completed in the same session.
+
+## Release bookkeeping
+
+Use these terms precisely: **package version** is the version from packaging
+metadata; **tagged version** is an immutable annotated Git tag and its peeled
+commit; **GitHub Release** is the published GitHub object for that tag;
+**current released version** is the newest version with synchronized package
+metadata, tag, and GitHub Release; and **development target** is unfinished
+future work, not a release.
+
+A release is not complete until all of the following are true and recorded:
+
+1. Package version and release documentation describe the intended version and
+   supported behavior accurately.
+2. Relevant offline tests pass; media, codec, part-boundary, or finalization
+   changes also receive real-recording validation when available, with any
+   outstanding check documented.
+3. The exact release commit is reviewed and an immutable annotated tag points
+   to it. Verify existing tags rather than recreating or moving them.
+4. A published, non-draft GitHub Release exists for that tag with accurate,
+   historically scoped notes.
+5. PROJECT_STATE.md, ROADMAP.md, and any affected README/specification documents
+   distinguish the current released version from the development target and
+   record the synchronized state.
+6. The release issue is journaled with what succeeded, then closed only after
+   this checklist and the repository state have been verified.
 
 ## Environment
 

@@ -15,7 +15,7 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - One recording owned by an independently launched service, controlled remotely
 
 The current checkout adds unfinished v0.5 service startup reconciliation while
-the released package remains v0.4.0.
+the package version and current released/tagged GitHub Release remain v0.4.0.
 
 ### Not implemented yet
 

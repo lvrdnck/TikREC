@@ -5,84 +5,51 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
-## Release and target
+## Coordination
 
-- **Current released package:** v0.4.0.
-- **Development target:** v0.5 environment survival/resumability. The release
-  code is largely implemented, but real-world recovery verification and release
-  documentation/version work remain before declaring v0.5 complete.
+- **Active issue/task:** None. Issue #11, release bookkeeping, is complete.
+- **Status:** Paused; no implementation task is active pending the next approved
+  `Continue TikREC` reconciliation.
+- **Pending owner action:** None.
+- **Next queued task:** Issue #12, improve CLI help discoverability for normal
+  TikTok LIVE recording. Do not begin it as part of issue #11.
 
-## Completed v0.5 work
+GitHub issues and this file are authoritative for active/pending work. Reconcile
+this file, ROADMAP.md, relevant open issues, and repository state before choosing
+new work; calendar entries are reminders only.
 
-- Durable service job intent, canonical public room identity, explicit retained
-  session continuation, conservative startup reconciliation, and bounded patient
-  network recovery are committed in `b6f190b` through `35d69fc`.
-- `a384dd3` adds crash-during-FFmpeg finalization reconciliation: it preserves
-  only a proven nonempty encoder partial under a collision-safe evidence name,
-  then re-finalizes retained parts. Output/partial collisions and other ambiguous
-  artifacts remain blocked without mutation.
+## Released version and development target
 
-See the v0.5 sections of ROADMAP.md and SERVICE.md for the exact lifecycle and
-security constraints. The roadmap/docs still describe deeper finalization
-reconciliation as pending; they need an intentional status update once the
-completed `a384dd3` slice and its remaining verification boundary are agreed.
+- **Package version:** v0.4.0, from `tikrec.__version__`/packaging metadata.
+- **Tagged version:** annotated `v0.4.0`, which peels to
+  `9f8e4104f8bc24f439a3e927ca72da29257c41fa`.
+- **GitHub Release:** published `TikREC v0.4.0` for `v0.4.0`.
+- **Current released version:** v0.4.0; its package version, tag, and GitHub
+  Release are synchronized. Historical GitHub Releases for v0.3.0 and v0.3.1
+  are also published from their existing tags.
+- **Development target:** v0.5.0 environment survival/resumability. It is
+  unfinished and must not be described as released or tagged.
 
-## Completed raw-arrival diagnostic slice
+## v0.5 and diagnostic handoff
 
-The previously preserved work is complete as a separate diagnostic change. It
-is **not** v0.5 finalization reconciliation:
-
-- `RawCopy` now writes a best-effort `connection-NNNN.arrivals.jsonl` beside an
-  optional byte-exact raw copy. It records one paired wall/monotonic reference,
-  per-chunk byte offset/count/monotonic elapsed time, and EOF/timeout/error at
-  the HTTP read boundary.
-- HTTP reads prefer `read1()` so already buffered bytes are preserved and timed
-  before a later stall/disconnect. Direct and LIVE capture include the sidecar
-  filename as `raw_arrivals` in the associated `connections.jsonl` record.
-- Tests cover direct/LIVE propagation, raw-copy logging, partial-byte preservation,
-  timeout/reset/EOF boundaries, diagnostic-failure isolation, the existing
-  fallback behavior, and legacy positional `ConnectionRecord` compatibility.
-
-This is diagnostic evidence work for the unresolved source-versus-writer replay
-corruption investigation in SPEC.md, and it supports later reconnect-gap/
-conditional redundant-capture investigation (issue #8 / v0.6.5). It does not
-change finalization policy, session schema, or automatic-resume decisions.
-
-The persistent contract is documented in CONNECTION_LOG.md and summarized in
-SPEC.md and README.md. ROADMAP.md records it only as diagnostic groundwork; it
-does not claim reconnect-gap reduction or simultaneous capture is implemented.
-
-## Verification status
-
-- Focused raw-arrival/capture/resume regression suite: 145 passed.
-- Full offline suite: 703 passed using a unique repository-local pytest base
-  temp. This safely bypassed the inaccessible shared Windows pytest temp root;
-  the task-created directory was removed after the run.
-- Real resumed-media, crash/reboot, and outage deployment validation remain
-  outstanding; media correctness requirements remain in SPEC.md.
-- A real opt-in raw-copy comparison also remains useful but does not block this
-  instrumentation commit. On a suitable public LIVE, compare sidecar byte ranges
-  with the `.raw` file and `connections.jsonl`; if a replay/stall occurs, align
-  it with parser timestamp-replay evidence. Confirm diagnostics remain linked
-  and recording continues. A normal run cannot prove the replay defect's cause.
-
-## Exact next step
-
-Do not begin another roadmap feature as part of this slice. The next separately
-approved task should reassess v0.5 release closure from real recovery evidence
-and current docs; the raw-copy comparison can be scheduled when a suitable LIVE
-is available.
+- Durable service job intent, canonical public room identity, retained-session
+  continuation, startup reconciliation, bounded network recovery, and safe
+  interrupted-FFmpeg finalization reconciliation are committed in `b6f190b`
+  through `a384dd3`.
+- The opt-in raw-arrival diagnostic slice is separately complete: raw copies can
+  record HTTP-read byte ranges/timing in `connection-NNNN.arrivals.jsonl` without
+  interrupting capture. It supports issue #8 investigation but does not reduce
+  reconnect gaps or alter resume/finalization policy.
+- Offline coverage previously passed (focused: 145; full: 703). Real
+  resumed-media/crash-reboot/outage validation and an opt-in raw-copy comparison
+  remain useful evidence before v0.5 closure; see ROADMAP.md, SPEC.md, and
+  SERVICE.md for the exact boundaries.
 
 ## Durable decisions and risks
 
-- Current support is one manually supplied public LIVE; creator-list monitoring,
-  future-LIVE automatic recording, and authentication are deferred product work.
-- Permanent boundaries prohibit bypassing authentication/access controls/private
-  signing, covert surveillance, and destructive recovery of user data/evidence.
+- TikREC supports one manually supplied public LIVE; creator monitoring,
+  future-LIVE automatic recording, and authentication remain deferred.
 - Automatic resume requires the same canonical room ID and valid retained
-  evidence; ambiguous outputs/partials are preserved and blocked.
-- Raw copies are best-effort and must never interrupt capture. Arrival timestamps
-  describe local read/processing boundaries, not provable source-byte arrival.
-- The diagnostic changes HTTP read behavior only when reading any HTTP source,
-  while sidecar I/O occurs only with explicit raw copying. Offline regression
-  coverage passes; real raw-copy comparison remains evidence, not a commit gate.
+  evidence. Ambiguous outputs/partials remain preserved and blocked.
+- Raw-copy diagnostics are best-effort and record local processing boundaries,
+  not provable source-byte arrival.
