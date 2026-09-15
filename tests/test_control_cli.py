@@ -26,6 +26,30 @@ def test_serve_defaults_and_existing_commands(monkeypatch):
         assert parser.parse_args([command, *args]).command == command
 
 
+def test_help_guides_normal_live_recording_and_advanced_sources(capsys):
+    assert main(["--help"]) == 0
+    top_level_help = capsys.readouterr().out
+    assert "Normal use:" in top_level_help
+    assert "tikrec live https://www.tiktok.com/@creator/live --output creator.mp4" in top_level_help
+    assert "normal use: record a public TikTok LIVE page" in top_level_help
+    assert "advanced direct FLV/media URL, not a TikTok page" in top_level_help
+
+    assert main(["live", "--help"]) == 0
+    live_help = capsys.readouterr().out
+    assert "public TikTok LIVE page URL" in live_help
+    assert "tikrec live https://www.tiktok.com/@creator/live --output creator.mp4" in live_help
+
+    assert main(["record", "--help"]) == 0
+    record_help = capsys.readouterr().out
+    assert "advanced direct FLV/media URL" in record_help
+    assert "does not accept a TikTok LIVE page URL" in record_help.replace("\n", " ")
+
+    assert main(["resolve", "--help"]) == 0
+    resolve_help = capsys.readouterr().out
+    assert "public TikTok LIVE page URL" in resolve_help
+    assert "direct FLV/media URL" in resolve_help
+
+
 def test_non_loopback_requires_token_and_does_not_print_it(monkeypatch):
     monkeypatch.delenv("TIKREC_TOKEN", raising=False)
     stderr = StringIO()

@@ -212,23 +212,53 @@ def _finish_recovery(
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="tikrec")
+    parser = argparse.ArgumentParser(
+        prog="tikrec",
+        description="Record public TikTok LIVE streams or advanced direct media sources.",
+        epilog=(
+            "Normal use:\n"
+            "  tikrec live https://www.tiktok.com/@creator/live --output creator.mp4\n\n"
+            "Use `live` for a TikTok LIVE page. `record` is for an advanced direct "
+            "FLV/media URL, not a TikTok page."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--debug", action="store_true", help="print unexpected-error tracebacks")
     subcommands = parser.add_subparsers(dest="command", required=True)
     add_control_commands(subcommands)
-    record = subcommands.add_parser("record", help="record one direct FLV URL")
-    record.add_argument("url", metavar="DIRECT_FLV_URL")
-    record.add_argument("--output", required=True, metavar="FILE")
+    record = subcommands.add_parser(
+        "record",
+        help="advanced: record a direct FLV/media URL, not a TikTok page",
+        description=(
+            "Record an advanced direct FLV/media URL. This command does not accept "
+            "a TikTok LIVE page URL; use `tikrec live` for a public TikTok LIVE page."
+        ),
+    )
+    record.add_argument("url", metavar="DIRECT_FLV_URL", help="direct FLV/media URL, not a TikTok page")
+    record.add_argument("--output", required=True, metavar="FILE", help="output MP4 file")
     record.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     finalize = subcommands.add_parser("finalize", help="stitch retained FLV parts")
     finalize.add_argument("parts_directory", metavar="PARTS_DIRECTORY")
     finalize.add_argument("--output", required=True, metavar="FILE")
-    resolve = subcommands.add_parser("resolve", help="resolve one public TikTok LIVE page")
-    resolve.add_argument("url", metavar="TIKTOK_LIVE_URL")
-    live = subcommands.add_parser("live", help="record a public TikTok LIVE page")
-    live.add_argument("url", metavar="TIKTOK_LIVE_URL")
-    live.add_argument("--output", required=True, metavar="FILE")
+    resolve = subcommands.add_parser(
+        "resolve",
+        help="print the direct media URL for a TikTok LIVE page",
+        description="Resolve a public TikTok LIVE page URL and print its direct FLV/media URL.",
+    )
+    resolve.add_argument("url", metavar="TIKTOK_LIVE_URL", help="public TikTok LIVE page URL")
+    live = subcommands.add_parser(
+        "live",
+        help="normal use: record a public TikTok LIVE page",
+        description="Record one manually selected public TikTok LIVE from its page URL.",
+        epilog=(
+            "Example:\n"
+            "  tikrec live https://www.tiktok.com/@creator/live --output creator.mp4"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    live.add_argument("url", metavar="TIKTOK_LIVE_URL", help="public TikTok LIVE page URL")
+    live.add_argument("--output", required=True, metavar="FILE", help="output MP4 file")
     live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     validate = subcommands.add_parser("validate", help="check recording health")
     validate.add_argument("target", metavar="TARGET")

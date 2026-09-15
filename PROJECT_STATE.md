@@ -7,12 +7,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** None. Issue #11, release bookkeeping, is complete.
+- **Active issue/task:** None. Issue #12, CLI help discoverability, is complete.
 - **Status:** Paused; no implementation task is active pending the next approved
   `Continue TikREC` reconciliation.
 - **Pending owner action:** None.
-- **Next queued task:** Issue #12, improve CLI help discoverability for normal
-  TikTok LIVE recording. Do not begin it as part of issue #11.
+- **Next queued task:** Issue #13, verify and select the highest-fidelity
+  available LIVE rendition. Issues #9 and #8 remain open for real-capture
+  evidence and replay-corruption investigation, respectively.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
