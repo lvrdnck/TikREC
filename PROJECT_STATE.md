@@ -9,10 +9,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task:** Issue #13, verify and select the highest-fidelity
   available LIVE rendition.
-- **Status:** Paused after the offline audit; suitable real-LIVE comparison
-  evidence is required before production policy can change or the issue closes.
-- **Pending owner action:** None. Resume safely when a suitable anonymously
-  public LIVE is available for bounded multi-rendition comparison.
+- **Status:** Paused after the offline audit and first suitable real-LIVE
+  comparison; additional datasets are required before production policy can
+  change or the issue closes.
+- **Pending owner action:** None. Resume safely when another suitable
+  anonymously public LIVE is available for bounded multi-rendition comparison,
+  especially one exposing distinct media or public HLS.
 - **Next queued task:** None while issue #13 remains active. Issues #9 and #8
   remain open for real-capture evidence and replay-corruption investigation.
 
@@ -45,10 +47,22 @@ new work; calendar entries are reminders only.
 - A prior real `hd1` service recording passes TikREC validation and measures
   640x1280 H.264 at 25 fps and about 1.07 Mbit/s overall. It proves delivered
   facts can be compared with a label, but it contains no alternative candidates.
-- On 2026-09-15, the supplied TomWhoASMR room was offline, TikTok's public LIVE
-  page exposed no static room list, no in-app browser was available, and a
-  bounded anonymous lookup found no current public candidate. Short and longer
-  multi-rendition FLV/HLS comparison therefore remain outstanding.
+- On 2026-09-15, `ninika_live` anonymously resolved through TikREC's existing
+  public path. The room exposed `hd1` through `flv_pull_url` and `default`
+  through `rtmp_pull_url`, both as HTTPS FLV, with no public HLS candidate.
+  Aligned 30-second and three-minute samples showed that the two labels carried
+  identical H.264/AAC media payloads. The longer samples delivered 720x1280
+  H.264 High video at a measured 29.983 fps and about 1.999 Mbit/s average;
+  startup was 0.406 seconds, the longest observed output-growth pause was 1.407
+  seconds, and neither candidate disconnected, changed configuration, replayed
+  timestamps, or failed decoder/DTS checks. Both stream-copy finalizations also
+  passed deep output validation.
+- This is one comparative dataset showing misleading/alias labels rather than
+  an objectively dominant candidate. Repeat the bounded comparison on
+  additional suitable public LIVEs before changing policy or closing #13,
+  preferably including genuinely distinct renditions or public FLV/HLS choices.
+  Escalate only if verified resolution, cadence, bitrate, codec, or reliability
+  goals conflict.
 
 ## v0.5 and diagnostic handoff
 
