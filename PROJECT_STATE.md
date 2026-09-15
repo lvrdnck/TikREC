@@ -9,9 +9,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task:** Issue #13, verify and select the highest-fidelity
   available LIVE rendition.
-- **Status:** Paused after the offline audit and first suitable real-LIVE
-  comparison; additional datasets are required before production policy can
-  change or the issue closes.
+- **Status:** Paused after the offline audit and two suitable real-LIVE
+  comparisons; a dataset with genuinely distinct public candidates is required
+  before production policy can change or the issue closes.
 - **Pending owner action:** None. Resume safely when another suitable
   anonymously public LIVE is available for bounded multi-rendition comparison,
   especially one exposing distinct media or public HLS.
@@ -57,12 +57,21 @@ new work; calendar entries are reminders only.
   seconds, and neither candidate disconnected, changed configuration, replayed
   timestamps, or failed decoder/DTS checks. Both stream-copy finalizations also
   passed deep output validation.
-- This is one comparative dataset showing misleading/alias labels rather than
-  an objectively dominant candidate. Repeat the bounded comparison on
-  additional suitable public LIVEs before changing policy or closing #13,
-  preferably including genuinely distinct renditions or public FLV/HLS choices.
-  Escalate only if verified resolution, cadence, bitrate, codec, or reliability
-  goals conflict.
+- A second anonymous comparison on `noahdksl` exposed the same two source/label
+  candidates and no public HLS. The aligned 30-second files were byte-identical,
+  including all 740 video and 704 audio payloads. Both delivered 640x1280 H.264
+  High/AAC at a 40 ms median packet interval (nominal 25 fps), measured 24.631
+  packets/s across the sample, and about 0.626 Mbit/s average. Both started in
+  about 1.4 seconds and passed FLV structure, decoder, and DTS checks with one
+  unchanged audio/video configuration and no timestamp replay. Representative
+  stream-copy finalization produced a 30.037-second MP4 that passed deep output
+  validation.
+- These two independent datasets show misleading/alias labels rather than an
+  objectively dominant candidate. They also show that the same labels can carry
+  materially different dimensions, cadence, and bitrate across rooms. They do
+  not establish how to rank genuinely distinct alternatives. Resume #13 with a
+  public LIVE exposing distinct renditions or FLV/HLS choices; escalate if
+  verified resolution, cadence, bitrate, codec, or reliability goals conflict.
 
 ## v0.5 and diagnostic handoff
 
