@@ -5,6 +5,10 @@ A command-line recorder and small remote-control service for public TikTok LIVE 
 Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops, and you get one MP4 out.
 
+This reliability-first implementation is the foundation of a broader future
+livestream recording platform. Creator automation, a library, playback, and web
+workflows are product direction, but they are not commands or service features today.
+
 ## Usage
 
     tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
@@ -104,7 +108,8 @@ Capture/finalizer failure preserves retained parts for `tikrec finalize`.
 
 See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
 Scheduler settings, startup recovery, and deployment verification. There is no
-Web UI or media-download endpoint. Version remains v0.4.0 while v0.5 is built.
+Web UI or media-download endpoint in the current service. Version remains v0.4.0
+while v0.5 is built.
 
 The service now persists its latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks that job against retained
@@ -212,9 +217,22 @@ validation notes in SPEC.md for why.
 
 ## Scope
 
-Public LIVE streams only. No authenticated or gated access, no private
-API signing, no waiting for a stream to start, no monitoring anyone.
-See SPEC.md.
+**Today:** TikREC records one manually supplied public LIVE and exposes the
+commands and four service endpoints documented above. It does not currently
+store creator lists, wait for future LIVEs, monitor configured handles, record
+multiple creators, authenticate to TikTok, or provide a library/Web UI/playback.
+
+**Future product:** explicitly configured public-creator monitoring and automatic
+recording are planned after the reliability foundation. Library/history/playback,
+a web interface, and other predecessor capabilities remain in long-term planning;
+their old implementation and architecture are not authoritative.
+
+**Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
+entitlements, access controls, or private request signing, and will not support
+covert surveillance or destructive handling of user recordings/evidence. A
+separately designed future authenticated mode may use authorization explicitly
+supplied by the user while respecting platform controls. See SPEC.md and
+ROADMAP.md.
 
 ## Design
 
@@ -223,4 +241,5 @@ notes and the reasoning behind past fixes.
 [ROADMAP.md](ROADMAP.md) — workflow-driven direction for future releases.
 [SERVICE.md](SERVICE.md) — remote API and Windows Task Scheduler deployment.
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md) — `session.json` schema and lifecycle.
+[PROJECT_STATE.md](PROJECT_STATE.md) — concise current development handoff.
 [AGENTS.md](AGENTS.md) — working rules.

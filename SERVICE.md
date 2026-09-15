@@ -5,6 +5,11 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
+This document is the exact contract for the current v0.4 service plus unfinished
+v0.5 recovery work. Future creator automation, multiple recordings, library,
+download, and browser-control capabilities may extend or replace this boundary,
+but no such endpoint or behavior exists until its own specification is implemented.
+
 ## Bind and secret
 
 `tikrec serve` defaults to `127.0.0.1:8765`. `--host` accepts an explicit IPv4 or
@@ -30,8 +35,8 @@ to the internet. Plain HTTP relies on Tailscale for encrypted transport. The
 token authorizes recording to any unused MP4 path writable by the task account;
 there are no per-user permissions. The client disables environment proxies and
 redirects so bearer secrets stay with the explicit server. Browser-origin
-requests are refused. No accounts, TLS termination, TikTok credentials, shell
-commands, executable-path options, or file serving exist.
+requests are refused. The current service has no accounts, TLS termination,
+TikTok credentials, shell commands, executable-path options, or file serving.
 
 Python's [HTTP server documentation](https://docs.python.org/3.11/library/http.server.html)
 describes its limited production security. TikREC supplies a narrow custom
@@ -81,7 +86,8 @@ the first), bytes_written, and elapsed_seconds (wall time, not media duration).
 Bytes include heartbeat evidence for the open part during capture. The job ID
 is supplied to `session.json`; manifest start time begins after resolution,
 whereas job start time includes resolution. Errors are bounded, single-line,
-and redact HTTP URLs. No library history or persistent job database is added.
+and redact HTTP URLs. This service version adds no library history or persistent
+job database.
 
 During outages snapshots add retry_attempt, next_retry_in_seconds,
 outage_elapsed_seconds, recovery_window_seconds, and network_failure_kind.

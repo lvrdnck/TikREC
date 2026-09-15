@@ -1,45 +1,59 @@
 # TikREC — a recorder for public TikTok LIVE streams
 
-## Goal
+## Current implementation goal
 
 Record a single public TikTok LIVE stream to disk, reliably and completely,
 from a URL supplied manually. Stop when the stream ends or when I stop it.
 
 ## Scope
 
-In scope:
+### Current
+
 - Public LIVE streams only
 - Recording a stream from the moment I start the tool
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
 
-Out of scope for v0.4.x:
+The current checkout adds unfinished v0.5 service startup reconciliation while
+the released package remains v0.4.0.
+
+### Not implemented yet
+
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
-- Watching a handle and starting automatically
-- Predicting when someone will go live
+- Persistent creator lists, public-handle monitoring, automatic start, and re-arming
+- Multiple simultaneous creator recordings or redundant same-LIVE capture
+- Schedule prediction from recording history
 - Chat collection, transcription, chapters, search, analytics
-- A Web UI and multi-user hosting
+- A recording library, browser playback/downloads, or Web/PWA interface
+- Notifications, cloud publishing/storage, accounts, or multi-user/mobile operation
 
-The current checkout adds v0.5 service startup reconciliation described below;
-the package version remains 0.4.0 and v0.5 is unfinished.
+These are release/product scope statements, not permanent prohibitions. Public
+creator monitoring and automatic recording are planned future capabilities;
+library/history/playback and a web interface are also part of the product
+direction. Other items remain possible later. ROADMAP.md owns sequencing and
+capability status; this specification remains authoritative for behavior that
+exists in the current checkout.
 
-Project-wide security and privacy boundaries:
+### Permanent security and privacy boundaries
+
 - No auth, CAPTCHA, entitlement, access-control, or private request-signing
   bypass
 - No feature whose purpose is covertly tracking a person rather than
   supporting streams and recordings the user legitimately chose to access
+- No silent destruction or overwrite of recordings, retained evidence, or user
+  data
 
 Some rooms that are visibly live return room-info status code `4003110` and
 expose no stream URLs to anonymous page or API requests, while other public
 rooms resolve normally. This is TikTok making a session-dependent access
 decision, not an offline status. A normal browser User-Agent and Referer were
 tested and did not change the response. Recording those rooms would require
-authenticating as the user, which is out of scope for v0.4.x. A future
+authenticating as the user, which the current checkout does not implement. A future
 authenticated mode may use a session explicitly provided by the user, but must
 not bypass TikTok's access controls.
 
-The v0.4.x commands never wait for a stream to begin. If the room is offline
+The current commands never wait for a stream to begin. If the room is offline
 when invoked, that is an error, not a wait state.
 
 ## Commands
@@ -230,7 +244,7 @@ considered after `flv_pull_url`; the latter wins equal-quality ties. An actual
 `rtmp://` URL is not supported. `hls_pull_url` may also be present, but HLS
 capture is not supported.
 
-No cookies, no login, no private signing, no yt-dlp.
+The current resolver uses no cookies, login, private signing, or yt-dlp.
 
 ### tikrec/capture.py — orchestration
 `capture_tags`, `capture_url`, `CaptureResult`, `CaptureError`.
@@ -711,7 +725,8 @@ whether a lossless writer fix is possible before replay handling changes.
 ## Roadmap
 
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
-listed there remain out of scope until their release is implemented; the
+listed there are unavailable until their release is implemented; that does not
+make deferred product capabilities permanently prohibited. The
 architecture describes the current checkout, including unfinished v0.5 modules.
 
 ## Design principles

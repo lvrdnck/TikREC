@@ -100,8 +100,9 @@ Nothing belongs at the repository root except configuration and documentation.
 
 ## Project constraints
 
-- TikREC records one manually selected public TikTok LIVE stream. See SPEC.md
-  for scope, module responsibilities, and security boundaries.
+- TikREC currently records one manually selected public TikTok LIVE stream.
+  Treat deferred product capabilities separately from permanent security/privacy
+  boundaries; see SPEC.md and ROADMAP.md for authoritative scope and sequencing.
 - Python 3.11+. Use the standard library for FLV handling; ffmpeg and ffprobe
   are external subprocesses. Do not add dependencies without owner approval.
 - Keep every source file under 300 lines; split modules instead.

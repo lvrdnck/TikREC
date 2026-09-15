@@ -75,8 +75,10 @@ is available.
 
 ## Durable decisions and risks
 
-- Public LIVE only; no authentication, private signing, future-LIVE monitoring,
-  or user-data-destructive recovery.
+- Current support is one manually supplied public LIVE; creator-list monitoring,
+  future-LIVE automatic recording, and authentication are deferred product work.
+- Permanent boundaries prohibit bypassing authentication/access controls/private
+  signing, covert surveillance, and destructive recovery of user data/evidence.
 - Automatic resume requires the same canonical room ID and valid retained
   evidence; ambiguous outputs/partials are preserved and blocked.
 - Raw copies are best-effort and must never interrupt capture. Arrival timestamps
