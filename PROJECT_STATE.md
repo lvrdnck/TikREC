@@ -9,7 +9,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task:** Issue #13, verify and select the highest-fidelity
   available LIVE rendition.
-- **Status:** Paused after the offline audit and three real-LIVE comparisons,
+- **Status:** Paused after the offline audit and four real-LIVE comparisons,
   including one public FLV/HLS choice; genuinely distinct simultaneous source
   media remain outstanding before the issue closes.
 - **Pending owner action:** None. Resume safely when another suitable
@@ -77,7 +77,16 @@ new work; calendar entries are reminders only.
   640x1280, 320x640, 432x864, and 720x1280 all appeared. TikREC stream-copy
   finalization preserved every configuration and passed deep output validation;
   a diagnostic HLS stream copy also passed.
-- All three datasets show alias labels, and the same labels carry materially
+- A fourth anonymous comparison on `sbomberbomp1` again exposed only alias
+  `hd1`/`default` FLVs and no public HLS. The aligned 30-second files were
+  byte-identical, including all 451 video and 703 audio payloads. Both delivered
+  stable 720x1280 H.264 High/AAC at measured 15 fps and about 0.992 Mbit/s,
+  started in 1.266 seconds, and passed structure, decoder, DTS, configuration,
+  and timestamp checks. Representative stream-copy finalization produced a
+  30.061-second MP4 that passed deep validation. Room metadata advertised
+  `HD1` as 720p but supplied zero dimensions; earlier `hd1` media was 640 pixels
+  wide, so the label claim remains unsuitable as verified quality evidence.
+- All four datasets show alias labels, and the same labels carry materially
   different dimensions, cadence, and bitrate across rooms. Dataset three
   supports the existing FLV choice for equal fidelity with lower latency, but
   one FLV/HLS run cannot establish global transport reliability. Production
