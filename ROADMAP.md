@@ -143,15 +143,21 @@ with matching durable finalization-in-progress evidence, is preserved under a
 collision-safe evidence name, and all retained parts are re-finalized. Ambiguous
 artifacts remain untouched and block automatic recovery.
 
-**Release-readiness audit (2026-09-15):** No missing v0.5 implementation slice
-was found. The full offline suite passes 707 tests plus 19 subtests. The existing
-real-media finalization-recovery smoke decoded cleanly.
+**Release-readiness evidence:** The 2026-09-15 offline audit found no missing
+slice; 707 tests plus 19 subtests pass, and the real-media finalization-recovery
+smoke decoded cleanly. The first deployed abrupt-restart test on 2026-09-16 then
+exposed issue #14: a normal active `.part-0001.flv.partial` survived the Task
+Scheduler stop, but startup recovery classified storage as `ambiguous_state` and
+did not resume the still-live same room. The 11,789,861-byte partial ended at a
+clean FLV tag boundary and passed decoder/DTS checks, so this is a recovery-policy
+gap rather than damaged-media evidence.
 
-**Release-blocking validation:** Exercise the independently deployed service on
-a public LIVE across abrupt process death/Task Scheduler restart, prove same-room
-continuation into fresh numbered parts, then stop/finalize and validate retained
-parts and output. Exercise a real temporary network outage during active capture
-or startup recovery and verify responsive status/stop plus safe recovery.
+**Release-blocking implementation and validation:** Implement issue #14 without
+deleting or silently promoting crash evidence, then repeat abrupt process-death/
+Task Scheduler restart and prove same-session continuation into fresh numbered
+parts. Only after that passes, exercise a real temporary network outage, graceful
+stop/finalization, retained-session validation, and deep output validation. The
+failed run stopped before those later phases.
 
 **Release bookkeeping after validation:** Synchronize the package version and
 release documentation for v0.5.0, rerun required checks, review the exact release
@@ -165,11 +171,12 @@ Those evidence investigations do not block v0.5 readiness. Patient recovery uses
 a 15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; successful
 reconnect-gap measurement and reduction remain v0.6 work.
 
-Completed implementation order: durable job state, public room identity,
+Implemented sequence: durable job state, public room identity,
 retained-session resume, service startup reconciliation with controller
 integration, outage retry policy/recovery status, and interrupted-finalization
-reconciliation. Release validation and bookkeeping remain; successful
-reconnect-gap measurement/reduction remains v0.6.
+reconciliation. Issue #14 is the newly discovered active-writer-partial gap;
+release validation and bookkeeping remain after it. Successful reconnect-gap
+measurement/reduction remains v0.6.
 
 ### v0.6.0 ? Reconnect-gap reduction
 

@@ -131,7 +131,10 @@ remain finalizable but cannot continue capture. Recording manifests may lag
 promoted part/connection counts; interrupted/failed manifests must match retained
 parts and must not predate newer connection evidence. Path,
 identity, timestamp, count, or connection-log conflicts fail without repair.
-Already completed/finalizing sessions and partial artifacts are refused.
+Already completed/finalizing sessions and partial artifacts are refused. This
+currently includes the active writer `.part-NNNN.flv.partial` left by an abrupt
+service death, even when it is structurally complete; issue #14 owns the required
+evidence-preserving recovery policy.
 Capture-only continuation retains the output declaration but records
 not_requested finalization; an explicit finalization path must match the prior
 declaration unless it was null. Completion/interruption then covers all old and

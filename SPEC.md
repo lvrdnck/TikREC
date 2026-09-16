@@ -296,6 +296,10 @@ could suggest a missing part: this module does not repair or skip evidence.
 Part-looking names, other FLV files, and any `.partial` artifact inside the
 directory fail preflight. Unrelated non-FLV/non-part/non-partial files are
 ignored because they cannot claim a writer index. Symlink parts are refused.
+The first real v0.5 abrupt-restart validation confirmed that this blanket rule
+also blocks the normal writer-owned active part after service death, despite a
+clean tag boundary and successful decoder/DTS checks. Issue #14 must add a
+conservative, evidence-preserving policy before v0.5 release.
 
 Checks read bounded chunks through the existing FLV parser: writer header,
 complete tags and PreviousTagSize, own AVC sequence header, first media at a
@@ -591,10 +595,12 @@ invented, and no signed URL enters persistence or status. Media manifest schema
 stays 1 with optional room_id; old manifests retain validation/manual-finalize
 compatibility. Automatic capture resume requires proven persisted identity.
 
-All planned v0.5 implementation slices, including interrupted-FFmpeg
-finalization reconciliation, are complete. Real resumed-media validation and
-process-death/Task Scheduler restart/outage deployment checks remain outstanding;
-no future-LIVE monitoring or Task Scheduler modification is implemented.
+Interrupted-FFmpeg finalization reconciliation is complete, but real deployment
+validation exposed issue #14: the active FLV writer partial left by abrupt service
+death blocks startup before same-room resolution/resume. Process-death validation
+must be repeated after that implementation; network-outage and final completed-
+media validation remain outstanding. No future-LIVE monitoring or Task Scheduler
+modification is implemented.
 
 ### tikrec/service.py — narrow HTTP adapter
 

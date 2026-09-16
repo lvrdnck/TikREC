@@ -1,25 +1,27 @@
 # TikREC current state
 
-Last reviewed: 2026-09-15. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-16. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Active task:** v0.5 release readiness. The implementation audit found no
-  missing v0.5 behavior slice; required real deployment/recording validation
-  comes before release bookkeeping.
+- **Active issue/task:** Issue #14, recover the active FLV writer partial after
+  abrupt service death. It blocks v0.5 release readiness.
+- **Status:** Real deployment validation stopped in phase B. Restart preserved
+  the original job/session/media but startup reconciliation rejected the normal
+  active `.part-0001.flv.partial` as ambiguous and did not resume.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
-- **Pending owner action:** None. No product or release action is authorized by
-  this reconciliation.
-- **Next queued task:** Perform the required real v0.5 service restart/resume
-  and outage deployment validation, then reassess release bookkeeping.
+- **Pending owner action:** None. Preserve the failed-validation artifacts and
+  durable job state; no release action is authorized.
+- **Next queued task:** Implement issue #14 conservatively, then repeat the
+  abrupt restart, network-outage, graceful-stop, and deep-validation phases.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -133,15 +135,25 @@ new work; calendar entries are reminders only.
   record HTTP-read byte ranges/timing in `connection-NNNN.arrivals.jsonl` without
   interrupting capture. It supports issue #8 investigation but does not reduce
   reconnect gaps or alter resume/finalization policy.
-- A 2026-09-15 release-readiness audit found no missing v0.5 implementation
-  slice. The full offline suite passes: 707 tests and 19 subtests.
-- **Required real validation:** abruptly terminate/restart the independently
-  deployed service during a public LIVE, prove same-room continuation into fresh
-  numbered parts, stop/finalize, and validate retained parts plus the completed
-  output. Also exercise a real temporary network outage during active capture or
-  startup recovery and verify responsive status/stop plus safe recovery. The
-  interrupted-FFmpeg path already has a clean real-media recovery smoke; include
-  its full service-startup path in the deployment pass when practical.
+- The 2026-09-15 offline audit found no missing slice and the full suite passed
+  707 tests plus 19 subtests, but the 2026-09-16 real deployment run exposed
+  issue #14 at the first abrupt-process-death boundary.
+- **Failed phase-B evidence:** Task Scheduler stopped the actively recording
+  deployed service without graceful cleanup. Restart kept session
+  `41dd234c-3d8c-42c3-ba36-742de92367d7`, room `7685987454411344653`, durable
+  `recording` intent, and the original 11,789,861-byte writer partial, but health
+  reported `failed`/`ambiguous_state` and no new part or connection opened while
+  the same room remained live. The partial ends at a clean FLV tag boundary,
+  contains 3,765 media tags through 86.653 seconds, and passes decoder/DTS checks.
+  It remains ignored/local under `runs/v05-deployment-allynwd04-20260916.parts/`.
+- **Implementation gap:** `discover_parts()` rejects every `.partial` artifact
+  before establishing whether the proven writer-owned active part is safely
+  recoverable. Issue #14 must define evidence-preserving clean/truncated partial
+  handling without weakening ambiguity checks.
+- **Validation still required after #14:** repeat abrupt restart and prove
+  same-session continuation, then exercise a real temporary network outage,
+  graceful stop/finalization, retained-session validation, and deep output
+  validation. No outage or completed-output claim was attempted in the failed run.
 - **Release bookkeeping after validation:** synchronize the v0.5.0 package and
   release documentation, rerun required checks, review the exact release commit,
   then create the annotated tag and published GitHub Release in a separately
@@ -155,6 +167,7 @@ new work; calendar entries are reminders only.
 - TikREC supports one manually supplied public LIVE; creator monitoring,
   future-LIVE automatic recording, and authentication remain deferred.
 - Automatic resume requires the same canonical room ID and valid retained
-  evidence. Ambiguous outputs/partials remain preserved and blocked.
+  evidence. Active writer partials currently remain preserved and blocked even
+  when structurally complete; issue #14 owns that release blocker.
 - Raw-copy diagnostics are best-effort and record local processing boundaries,
   not provable source-byte arrival.

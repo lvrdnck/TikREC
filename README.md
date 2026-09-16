@@ -148,6 +148,12 @@ Existing output is preserved and accepted only with matching committed completio
 and bounded media evidence; ambiguous output is never replaced. Real resumed-media
 and process-restart/outage deployment validation is outstanding.
 
+A hard service stop can leave the active writer file named
+`.part-NNNN.flv.partial`. Startup currently preserves and blocks on that artifact
+even when it ends at a clean tag boundary and decodes successfully. Issue #14 is
+the v0.5 release blocker for conservative ownership/structure validation and
+continuation; operators must not rename, truncate, or delete the evidence.
+
 State lives at %LOCALAPPDATA%\TikREC\job.json on Windows and
 ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json elsewhere, independent of the
 working directory. Use the same task account and one service instance. Existing

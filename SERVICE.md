@@ -166,7 +166,9 @@ Explicit capture_tags_resume/capture_url_resume require supported manifest,
 contiguous parts, no partial/output ambiguity, and one owner. Old files stay
 immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
-Real resumed media validation remains pending; CLI/routes stay unchanged, version 0.4.0.
+The first real abrupt-restart validation found that the active writer partial
+blocks this preflight before identity resolution, even when structurally complete;
+see issue #14. CLI/routes stay unchanged and version remains 0.4.0.
 
 ## Service startup reconciliation (v0.5 implemented, release pending)
 
@@ -181,6 +183,8 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
 3. A non-terminal job occupies the slot in `reconciling`. Validate session UUID,
    source, room/output/parts paths, contiguous completed FLV parts, and connection
    evidence. Missing storage or identities and abandoned partials block recovery.
+   This includes the normal active writer partial left by abrupt service death;
+   issue #14 must safely distinguish that owned artifact from ambiguity.
 4. Existing requested output is never overwritten. Matching committed manifest
    completion plus a nonempty regular output and bounded matching codec/container/
    positive-duration inspection can settle completion. Otherwise expose ambiguity.
@@ -305,8 +309,9 @@ continued. Stop remotely, wait for output, then validate parts and MP4 with
 tikrec validate (--deep for output). See SPEC.md's FFprobe decoder/DTS checks and
 null-muxer warning distinguishing resynthesis notices from decoder failure.
 
-v0.4 deployment is validated. All planned v0.5 implementation slices, including
-interrupted-FFmpeg finalization reconciliation, are complete and covered offline;
-a real-media finalization-recovery smoke also decoded cleanly. Real same-room
-resume across process death/Task Scheduler restart and real outage behavior still
-require deployment validation. Version is 0.4.0; v0.5 remains unreleased.
+v0.4 deployment is validated. The first v0.5 abrupt Task Scheduler restart test
+on 2026-09-16 preserved durable intent and media, but recovery failed closed on
+the clean active writer partial with `ambiguous_state`; no resume occurred while
+the same room remained live. Issue #14 blocks release. Network-outage and graceful
+finalization/deep-output phases remain unrun until that defect is fixed and the
+restart phase passes. Version is 0.4.0; v0.5 remains unreleased.
