@@ -7,11 +7,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #14, recover the active FLV writer partial after
-  abrupt service death. It blocks v0.5 release readiness.
-- **Status:** Real deployment validation stopped in phase B. Restart preserved
-  the original job/session/media but startup reconciliation rejected the normal
-  active `.part-0001.flv.partial` as ambiguous and did not resume.
+- **Active issue/task:** Issue #14 remains open for repeat deployed validation.
+  Its conservative writer-partial recovery implementation is complete offline.
+- **Status:** Startup now salvages only the exact writer-owned crash partial,
+  preserves its original bytes as session evidence, and resumes after admitting
+  a separately validated complete FLV prefix. The failed real artifact is untouched.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
@@ -20,8 +20,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
 - **Pending owner action:** None. Preserve the failed-validation artifacts and
   durable job state; no release action is authorized.
-- **Next queued task:** Implement issue #14 conservatively, then repeat the
-  abrupt restart, network-outage, graceful-stop, and deep-validation phases.
+- **Next queued task:** Review issue #14, then separately repeat the abrupt
+  restart validation before attempting outage, graceful-stop, and deep validation.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -146,11 +146,19 @@ new work; calendar entries are reminders only.
   the same room remained live. The partial ends at a clean FLV tag boundary,
   contains 3,765 media tags through 86.653 seconds, and passes decoder/DTS checks.
   It remains ignored/local under `runs/v05-deployment-allynwd04-20260916.parts/`.
-- **Implementation gap:** `discover_parts()` rejects every `.partial` artifact
-  before establishing whether the proven writer-owned active part is safely
-  recoverable. Issue #14 must define evidence-preserving clean/truncated partial
-  handling without weakening ambiguity checks.
-- **Validation still required after #14:** repeat abrupt restart and prove
+- **Implemented #14 policy:** generic `discover_parts()` remains strict. Startup
+  alone may recover the canonical next writer partial when durable recording job,
+  manifest identity/lifecycle/paths/counts, connection evidence, output absence,
+  artifact inventory, FLV structure, and FFprobe decoder/DTS checks all agree.
+  It durably marks recovery first, atomically preserves the exact original under
+  a session/index evidence name, admits only a separately copied complete prefix,
+  and records its SHA-256 plus byte counts/discarded tail in manifest evidence.
+  Clean and torn-tail cases resume at a fresh connection/next part; arbitrary,
+  empty, malformed, unowned, conflicting, colliding, or nonregular artifacts block.
+- **Offline verification:** 728 tests plus 19 subtests pass, including byte-exact
+  preservation, truncated-tail salvage, recovery-restart idempotence, count/timing
+  honesty, correct next part/connection allocation, and the fail-closed matrix.
+- **Validation still required for #14:** repeat abrupt restart and prove
   same-session continuation, then exercise a real temporary network outage,
   graceful stop/finalization, retained-session validation, and deep output
   validation. No outage or completed-output claim was attempted in the failed run.
@@ -167,7 +175,7 @@ new work; calendar entries are reminders only.
 - TikREC supports one manually supplied public LIVE; creator monitoring,
   future-LIVE automatic recording, and authentication remain deferred.
 - Automatic resume requires the same canonical room ID and valid retained
-  evidence. Active writer partials currently remain preserved and blocked even
-  when structurally complete; issue #14 owns that release blocker.
+  evidence. Only the exact proven active writer partial is recoverable; all
+  unowned or conflicting partials remain preserved and blocked.
 - Raw-copy diagnostics are best-effort and record local processing boundaries,
   not provable source-byte arrival.

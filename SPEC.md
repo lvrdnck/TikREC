@@ -296,16 +296,29 @@ could suggest a missing part: this module does not repair or skip evidence.
 Part-looking names, other FLV files, and any `.partial` artifact inside the
 directory fail preflight. Unrelated non-FLV/non-part/non-partial files are
 ignored because they cannot claim a writer index. Symlink parts are refused.
-The first real v0.5 abrupt-restart validation confirmed that this blanket rule
-also blocks the normal writer-owned active part after service death, despite a
-clean tag boundary and successful decoder/DTS checks. Issue #14 must add a
-conservative, evidence-preserving policy before v0.5 release.
+This generic rule remains unchanged. Service startup uses a separate recovery
+planner for the exact canonical active writer partial only.
 
 Checks read bounded chunks through the existing FLV parser: writer header,
 complete tags and PreviousTagSize, own AVC sequence header, first media at a
 zero-based video keyframe, AAC configuration before audio media, and no changed
 AVC record inside one part. This scans framing without FFmpeg/FFprobe or codec
 decoding; cost grows with retained bytes and does not prove media health.
+
+`writer_recovery.py` admits that partial only when durable job and manifest both
+prove active recording ownership, UUID/source/room/output/parts paths and counts
+agree, prior parts are contiguous, output/finalizer temp are absent, and no second,
+wrong-index, same-index, unowned, colliding, symlink, or nonregular artifact exists.
+It finds the last complete tag with the existing parser; malformed framing before
+a merely incomplete trailing tag blocks. Recovery intent is persisted before the
+exact original is atomically moved to a deterministic evidence-only name. A new
+copy contains either all bytes or only that complete prefix and must pass writer
+structure, FFprobe decoding/DTS, and recognizable-video inspection before atomic
+publication. Evidence bytes are never changed. Optional schema-1 manifest records
+make preservation/publication retryable and bind part/evidence names plus source
+SHA-256, original/recovered, and discarded byte counts. Resume then uses a fresh
+connection and next part; no timestamps, duration, or counts claim the downtime
+was captured.
 
 `prepare_resume` validates a supported schema-1 manifest and connection evidence
 without writing. Status must be recording/interrupted/failed; finalization must
@@ -595,12 +608,10 @@ invented, and no signed URL enters persistence or status. Media manifest schema
 stays 1 with optional room_id; old manifests retain validation/manual-finalize
 compatibility. Automatic capture resume requires proven persisted identity.
 
-Interrupted-FFmpeg finalization reconciliation is complete, but real deployment
-validation exposed issue #14: the active FLV writer partial left by abrupt service
-death blocks startup before same-room resolution/resume. Process-death validation
-must be repeated after that implementation; network-outage and final completed-
-media validation remain outstanding. No future-LIVE monitoring or Task Scheduler
-modification is implemented.
+Interrupted-FFmpeg finalization and active-writer-partial reconciliation are
+implemented. Issue #14 remains open for repeat process-death deployment validation;
+network-outage and final completed-media validation remain outstanding. No future-
+LIVE monitoring or Task Scheduler modification is implemented.
 
 ### tikrec/service.py — narrow HTTP adapter
 

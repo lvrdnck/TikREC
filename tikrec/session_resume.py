@@ -15,6 +15,9 @@ from .manifest import SCHEMA_VERSION, SessionManifest
 from .media import MediaInfo, inspect_media
 from .session_parts import RetainedParts, discover_parts, part_index
 from .tiktok_identity import canonical_room_id
+from .writer_recovery_evidence import (evidence_name, recovery_records,
+                                       validate_record_schema, validate_recorded_evidence)
+from .writer_recovery import WriterPartialPlan
 
 
 @dataclass(frozen=True)
@@ -27,6 +30,7 @@ class ResumeSession:
     previous_status: str
     next_connection: int
     previous_end: float | None
+    writer_recovery: WriterPartialPlan | None = None
 
 
 def begin_resume(session: ResumeSession, *, output_path, clock=time.time) -> None:
@@ -125,6 +129,16 @@ def _validate_manifest(values, directory, retained, expected_id, expected_type,
     room_id = values.get("room_id")
     if room_id is not None and canonical_room_id(room_id) != room_id:
         raise ValueError("invalid stored public room identity")
+    recoveries = recovery_records(values)
+    validate_record_schema(recoveries, _timestamp)
+    if recoveries and count < max(part_index(Path(record["part"])) for record in recoveries):
+        raise ValueError("manifest count predates writer recovery evidence")
+    for recovery in recoveries:
+        index = part_index(Path(recovery["part"]))
+        if recovery["evidence"] != evidence_name(identity, index):
+            raise ValueError("writer recovery evidence name conflicts with session identity")
+    evidence = tuple(directory / record["evidence"] for record in recoveries)
+    validate_recorded_evidence(directory, retained, recoveries, evidence)
 
 
 def _check_output(declared, requested):

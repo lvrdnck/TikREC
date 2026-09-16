@@ -149,10 +149,15 @@ and bounded media evidence; ambiguous output is never replaced. Real resumed-med
 and process-restart/outage deployment validation is outstanding.
 
 A hard service stop can leave the active writer file named
-`.part-NNNN.flv.partial`. Startup currently preserves and blocks on that artifact
-even when it ends at a clean tag boundary and decodes successfully. Issue #14 is
-the v0.5 release blocker for conservative ownership/structure validation and
-continuation; operators must not rename, truncate, or delete the evidence.
+`.part-NNNN.flv.partial`. Startup recovery accepts only the canonical next part
+proven by matching durable recording intent, manifest identity/lifecycle, paths,
+counts, artifact inventory, output absence, FLV structure, and decoder/DTS checks.
+It preserves the exact original under a session/index evidence name, separately
+copies either the complete file or its last parser-proven complete-tag prefix,
+then resumes with a fresh connection and next part. Every unowned, conflicting,
+malformed, empty, colliding, or nonregular partial remains untouched and blocks.
+Issue #14 still requires repeat real deployment validation; operators must not
+rename, truncate, or delete crash evidence.
 
 State lives at %LOCALAPPDATA%\TikREC\job.json on Windows and
 ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json elsewhere, independent of the

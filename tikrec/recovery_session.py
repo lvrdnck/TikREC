@@ -5,19 +5,20 @@ import math
 from pathlib import Path
 
 from .manifest import SessionManifest
-from .session_parts import discover_parts
 from .session_resume import (_read_connections, _unique_values, _validate_manifest,
                              ResumeSession)
+from .writer_recovery import inspect_writer_storage
 
 
 def inspect_recovery_session(job, *, clock, media_inspector):
     """Validate owned storage without relaxing explicit capture-resume eligibility."""
     directory, output = Path(job.parts_directory), Path(job.output_path)
-    retained = discover_parts(directory)
     path = directory / "session.json"
     if not path.is_file() or path.is_symlink():
         raise ValueError("recovery needs a supported regular manifest")
     values = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_values)
+    storage = inspect_writer_storage(directory, job, values)
+    retained = storage.retained
     _validate_manifest(values, directory, retained, job.session_id, "tiktok_live",
                        finalization_recovery=True)
     # A service job always requests an output; null/different declarations are contradictions.
@@ -35,7 +36,8 @@ def inspect_recovery_session(job, *, clock, media_inspector):
     if output.is_symlink() or (output.exists() and not output.is_file()):
         raise ValueError("requested output is not a regular file")
     return ResumeSession(manifest, retained, job.session_id, values["status"],
-                         max(count, values["connection_count"]) + 1, previous_end)
+                         max(count, values["connection_count"]) + 1, previous_end,
+                         storage.recovery)
 
 
 def completed_output_is_proven(session, output, media_inspector):

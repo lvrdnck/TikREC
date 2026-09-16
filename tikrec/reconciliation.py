@@ -20,6 +20,8 @@ from .retry_policy import RecoveryExhausted
 from .startup_network import resolve_startup_patiently
 from .tiktok import (LiveResolution, TikTokOfflineError, TikTokResolutionTransientError,
                      _is_http_flv_url, resolve_live, same_live)
+from .writer_recovery import recover_writer_partial
+from .writer_recovery_evidence import recovery_record
 
 
 @dataclass(frozen=True)
@@ -53,10 +55,12 @@ class StartupReconciler:
                  clock: Callable = time.time, media_inspector: Callable = inspect_media,
                  inspector: Callable = inspect_recovery_session,
                  resume_preflight: Callable = prepare_resume, save_job: Callable | None = None,
-                 should_stop: Callable = lambda: False):
+                 should_stop: Callable = lambda: False,
+                 writer_validator: Callable[[Path], None] | None = None):
         self.store, self.resolver, self.finalizer = store, resolver, finalizer
         self.clock, self.media_inspector = clock, media_inspector
         self.inspector, self.resume_preflight = inspector, resume_preflight
+        self.writer_validator = writer_validator
         self.save_job = save_job or self._save
         self.should_stop = should_stop
         if resume_capture is None:
@@ -83,6 +87,23 @@ class StartupReconciler:
             observe(replace(job, state="reconciling"))
             failure_message = "invalid or conflicting session storage; preserve artifacts"
             session = self.inspector(job, clock=self.clock, media_inspector=self.media_inspector)
+            if session.writer_recovery is not None:
+                plan = session.writer_recovery
+                if not (job.state == "recovering"
+                        and job.recovery_reason == "writer_partial_recovery"):
+                    job = self.save_job(replace(
+                        job, state="recovering", recovery_reason="writer_partial_recovery"
+                    ))
+                    observe(job)
+                recover_writer_partial(plan, validator=self.writer_validator)
+                session.manifest.record_writer_recovery(
+                    recovery_record(plan, self.clock()), session.retained.parts
+                )
+                session = self.inspector(
+                    job, clock=self.clock, media_inspector=self.media_inspector
+                )
+                if session.writer_recovery is not None:
+                    raise ValueError("writer recovery did not settle storage")
             output = Path(job.output_path)
             if output.exists():
                 failure_reason = "existing_output"

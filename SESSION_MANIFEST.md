@@ -53,7 +53,8 @@ are strings in the same absolute or relative form supplied to TikREC.
 | `connection_count` | integer | Recorded source/resolution attempts for this session. |
 | `reconnect_count` | integer | Attempts after the first; `max(connection_count - 1, 0)`. |
 | `interrupted` | boolean | Whether capture or finalization was interrupted. |
-| `recovery_performed` | boolean | Whether manual finalize or explicit capture resume attempted recovery. |
+| `recovery_performed` | boolean | Whether writer salvage, manual finalize, or explicit resume performed recovery. |
+| `writer_recoveries` | array, optional | Fixed evidence for service-recovered active writer parts. |
 | `finalization` | object | Finalization `status` and optional `error`. |
 | `media` | object | Optional final-output codec and resolution facts. |
 | `error` | string or null | Redacted reason for an abnormal session result. |
@@ -131,10 +132,10 @@ remain finalizable but cannot continue capture. Recording manifests may lag
 promoted part/connection counts; interrupted/failed manifests must match retained
 parts and must not predate newer connection evidence. Path,
 identity, timestamp, count, or connection-log conflicts fail without repair.
-Already completed/finalizing sessions and partial artifacts are refused. This
-currently includes the active writer `.part-NNNN.flv.partial` left by an abrupt
-service death, even when it is structurally complete; issue #14 owns the required
-evidence-preserving recovery policy.
+Already completed/finalizing sessions and arbitrary partial artifacts are refused.
+Service startup alone may recover the canonical next `.part-NNNN.flv.partial`
+when the durable recording job, this manifest, retained files, connection counts,
+room/paths, and absent output prove ownership. Generic explicit resume remains strict.
 Capture-only continuation retains the output declaration but records
 not_requested finalization; an explicit finalization path must match the prior
 declaration unless it was null. Completion/interruption then covers all old and
@@ -152,6 +153,20 @@ Same LIVE resume preserves original metadata, uses begin_resume to reopen captur
 and append capture_resume, and allocates the next connection and fresh numbered
 part. Service resume_count belongs only to the job. Manifest counts include prior
 attempts; elapsed wall time includes downtime without claiming missing media.
+
+An eligible active writer partial is first validated read-only through its last
+complete FLV tag. Durable job state records `writer_partial_recovery` before the
+original is atomically moved to a session/index evidence-only name. TikREC copies
+the complete file, or only the largest parser-proven prefix when the final tag is
+torn, into a separate staging file; normal writer structure and FFprobe decoder/
+DTS checks must pass before atomic part publication. The original evidence never
+changes. Optional `writer_recoveries` entries record timestamp, bare evidence/part
+names, source SHA-256, source/recovered bytes, and discarded trailing bytes. Counts
+include only
+published parts; the next resume boundary creates a fresh connection and next
+part, while wall elapsed time may include downtime without claiming media coverage.
+Missing/mutated evidence, duplicate indexes, collisions, incompatible lifecycle,
+malformed media, symlinks/nonregular files, or any ownership conflict block.
 
 Offline/different-LIVE recovery and prior stop/finalizing recovery use the existing
 finalizer only when output is absent. A nonempty FFmpeg temporary is eligible for
@@ -176,10 +191,10 @@ continuation or terminal room evidence, exhaustion uses existing `failed` status
 end timestamp. Parts and any existing output remain untouched. Durable job state
 is terminal `failed` with `outage_timeout`; it will not relaunch on restart.
 Stop during recovery instead uses existing interrupted/finalization semantics.
-No media-manifest fields or schema version change. Successfully completed jobs are
-never relaunched. Finalization reconciliation is implemented; real same-room
-resume and process-restart/outage deployment validation remain outstanding, and
-version remains 0.4.0.
+Schema version remains 1; `writer_recoveries` is optional, validated evidence.
+Successfully completed jobs are never relaunched. Writer-partial and finalization
+reconciliation are implemented; repeat real process-restart/outage deployment
+validation remains outstanding, and version remains 0.4.0.
 
 ## Validation
 

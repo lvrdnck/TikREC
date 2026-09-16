@@ -42,11 +42,24 @@ def part_order(path: Path) -> tuple[str, int, str, str]:
 
 def discover_parts(directory: Path) -> RetainedParts:
     """Require contiguous completed parts from one and refuse ambiguous artifacts."""
+    return _discover_parts(directory)
+
+
+def _discover_parts(
+    directory: Path,
+    *,
+    permitted_artifacts: tuple[Path, ...] = (),
+    require_media: bool = True,
+) -> RetainedParts:
+    """Share strict completed-part checks with the startup-only crash planner."""
     directory = Path(directory)
     if not directory.is_dir() or directory.is_symlink():
         raise ValueError("resume requires an existing regular parts directory")
+    permitted = {Path(path) for path in permitted_artifacts}
     parts = []
     for path in directory.iterdir():
+        if path in permitted:
+            continue
         name = path.name.lower()
         if ".partial" in name:
             # A crash may have left media or JSON here; never promote, skip, or delete it.
@@ -58,7 +71,7 @@ def discover_parts(directory: Path) -> RetainedParts:
             parts.append(path)
         # Non-part, non-FLV, non-partial files cannot claim a writer index and are ignored.
     ordered = tuple(sorted(parts, key=part_order))
-    if not ordered:
+    if not ordered and require_media:
         raise ValueError("resume requires completed parts; no completed parts found")
     for expected, path in enumerate(ordered, 1):
         if part_index(path) != expected:
@@ -67,14 +80,28 @@ def discover_parts(directory: Path) -> RetainedParts:
     return RetainedParts(ordered, len(ordered) + 1)
 
 
-def _check_structure(path: Path) -> None:
+def _check_structure(path: Path, *, byte_count: int | None = None) -> None:
+    """Require writer framing through the whole file or an exact prefix."""
     try:
         with path.open("rb") as handle:
             # Retained TikREC parts always use this header, including video-only captures.
             if handle.read(len(_FLV_HEADER)) != _FLV_HEADER:
                 raise ValueError("part has a non-writer FLV header")
             handle.seek(0)
-            tags = iter_tags(iter(lambda: handle.read(64 * 1024), b""))
+            remaining = byte_count
+
+            def chunks():
+                nonlocal remaining
+                while remaining is None or remaining > 0:
+                    size = 64 * 1024 if remaining is None else min(64 * 1024, remaining)
+                    chunk = handle.read(size)
+                    if not chunk:
+                        break
+                    if remaining is not None:
+                        remaining -= len(chunk)
+                    yield chunk
+
+            tags = iter_tags(chunks())
             first = next(tags, None)
             if first is None or not first.is_avc_configuration or len(first.payload) < 6:
                 raise ValueError("part must begin with its own AVC sequence header")
@@ -92,6 +119,8 @@ def _check_structure(path: Path) -> None:
                     has_media = True
             if not has_media:
                 raise ValueError("part contains no decodable-start media")
+            if remaining not in {None, 0}:
+                raise ValueError("part is shorter than its validated prefix")
     except (OSError, EOFError, FlvFormatError, ValueError) as error:
         # Framing proves only structural suitability, never actual codec decode health.
         raise ValueError(f"retained part failed structural checks: {path.name}") from error

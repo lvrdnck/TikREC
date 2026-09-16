@@ -19,7 +19,6 @@ from .media import MediaInfo, inspect_media
 SCHEMA_VERSION = 1
 _URL_PATTERN = re.compile(r"https?://\S+")
 
-
 class SessionManifest:
     """Create and atomically update ``session.json`` for one capture."""
 
@@ -116,6 +115,11 @@ class SessionManifest:
             values["connection_count"] = connection_count
             values["reconnect_count"] = max(0, connection_count - 1)
         self._write()
+
+    def record_writer_recovery(self, recovery: dict, parts: Iterable[Path]) -> None:
+        """Commit fixed crash-part evidence without changing the capture timeline."""
+        from .writer_recovery_evidence import commit_manifest_recovery
+        commit_manifest_recovery(self, recovery, parts)
 
     def mark_finalizing(self, parts: Iterable[Path]) -> None:
         """Record that capture ended and requested finalization has started."""
@@ -289,7 +293,6 @@ def _media_values(info: MediaInfo | None) -> dict[str, str | int | None]:
         "width": info.width,
         "height": info.height,
     }
-
 
 def _safe_reason(error: BaseException | str | None) -> str | None:
     if error is None:

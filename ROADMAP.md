@@ -152,12 +152,22 @@ did not resume the still-live same room. The 11,789,861-byte partial ended at a
 clean FLV tag boundary and passed decoder/DTS checks, so this is a recovery-policy
 gap rather than damaged-media evidence.
 
-**Release-blocking implementation and validation:** Implement issue #14 without
-deleting or silently promoting crash evidence, then repeat abrupt process-death/
-Task Scheduler restart and prove same-session continuation into fresh numbered
-parts. Only after that passes, exercise a real temporary network outage, graceful
-stop/finalization, retained-session validation, and deep output validation. The
-failed run stopped before those later phases.
+**Issue #14 implementation:** Startup-only recovery now requires matching durable
+recording intent, manifest identity/lifecycle/paths/counts, safe output state,
+canonical next-index ownership, unambiguous regular artifacts, parser-proven FLV
+framing, and decoder/DTS validation. It preserves the exact crash file under a
+session/index evidence name and publishes a separately copied complete prefix;
+an incomplete trailing tag is excluded only from that copy. Optional manifest
+evidence records source SHA-256 and original/recovered/discarded byte counts.
+Generic completed-part
+discovery remains strict. The 728-test plus 19-subtest suite covers clean and torn
+tails, interrupted recovery, correct next allocation, and fail-closed conflicts.
+
+**Release-blocking validation:** Repeat abrupt process-death/Task Scheduler
+restart and prove same-session continuation into fresh numbered parts. Only after
+that passes, exercise a real temporary network outage, graceful stop/finalization,
+retained-session validation, and deep output validation. The original failed run
+stopped before those later phases and its artifact remains untouched.
 
 **Release bookkeeping after validation:** Synchronize the package version and
 release documentation for v0.5.0, rerun required checks, review the exact release
@@ -174,8 +184,8 @@ reconnect-gap measurement and reduction remain v0.6 work.
 Implemented sequence: durable job state, public room identity,
 retained-session resume, service startup reconciliation with controller
 integration, outage retry policy/recovery status, and interrupted-finalization
-reconciliation. Issue #14 is the newly discovered active-writer-partial gap;
-release validation and bookkeeping remain after it. Successful reconnect-gap
+reconciliation, and conservative active-writer-partial recovery. Issue #14 still
+requires deployed validation; release validation/bookkeeping remain after it. Successful reconnect-gap
 measurement/reduction remains v0.6.
 
 ### v0.6.0 ? Reconnect-gap reduction

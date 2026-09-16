@@ -145,7 +145,7 @@ Job schema version 1 contains:
 Reasons are `process_restart`, `user_stop`, `room_ended`, `live_changed`,
 `identity_unavailable`, `recovery_finalization`, `existing_output`,
 `failed_resume`, `ambiguous_state`, `unusable_media`, `network_outage`,
-`network_recovered`, and `outage_timeout`. Process restart does
+`network_recovered`, `outage_timeout`, and `writer_partial_recovery`. Process restart does
 not by itself prove a Windows reboot. No arbitrary error strings, service
 tokens, cookies, authentication data, or signed CDN URLs belong in this record.
 
@@ -166,9 +166,9 @@ Explicit capture_tags_resume/capture_url_resume require supported manifest,
 contiguous parts, no partial/output ambiguity, and one owner. Old files stay
 immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
-The first real abrupt-restart validation found that the active writer partial
-blocks this preflight before identity resolution, even when structurally complete;
-see issue #14. CLI/routes stay unchanged and version remains 0.4.0.
+Startup additionally has a narrow writer-partial recovery step described below;
+ordinary explicit resume and completed-part discovery still reject partials.
+CLI/routes stay unchanged and version remains 0.4.0.
 
 ## Service startup reconciliation (v0.5 implemented, release pending)
 
@@ -182,18 +182,25 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    and never relaunches capture. A stopped and successfully finalized job stays done.
 3. A non-terminal job occupies the slot in `reconciling`. Validate session UUID,
    source, room/output/parts paths, contiguous completed FLV parts, and connection
-   evidence. Missing storage or identities and abandoned partials block recovery.
-   This includes the normal active writer partial left by abrupt service death;
-   issue #14 must safely distinguish that owned artifact from ambiguity.
-4. Existing requested output is never overwritten. Matching committed manifest
+   evidence. Missing storage or identities and arbitrary partials block recovery.
+4. The exact canonical next writer partial is eligible only for an active recording
+   job/manifest with matching identity, paths/counts, absent output/finalizer temp,
+   one regular artifact, and valid writer FLV structure. Persist
+   `recovering/writer_partial_recovery` before moving bytes. Atomically preserve the
+   original under `.tikrec-writer-crash-SESSION-part-NNNN.evidence`, copy only its
+   parser-proven complete prefix, pass normal structure plus FFprobe decoder/DTS
+   checks, and atomically publish `part-NNNN.flv`. A torn final tag is excluded only
+   from the new copy. Manifest evidence records source SHA-256 and byte counts.
+   Recovery interrupted after preservation or publication is safely retryable.
+5. Existing requested output is never overwritten. Matching committed manifest
    completion plus a nonempty regular output and bounded matching codec/container/
    positive-duration inspection can settle completion. Otherwise expose ambiguity.
-5. Stop-requested/finalizing jobs never resolve TikTok or resume capture. If output
+6. Stop-requested/finalizing jobs never resolve TikTok or resume capture. If output
    is absent and no finalizer partial exists, retry finalization of retained parts.
-6. Capture-phase jobs with saved identity and explicit-resume-compatible storage
+7. Capture-phase jobs with saved identity and explicit-resume-compatible storage
    resolve public identity with the bounded patient policy below, in the worker.
    Storage preflight is performed once before that loop. Decide using the table.
-7. Persist `resuming`, process_restart reason, and incremented resume_count before
+8. Persist `resuming`, process_restart reason, and incremented resume_count before
    media continuation. Preserve session/job ID, paths, saved room ID and start time.
    Finalization also commits its phase before starting the encoder.
 
@@ -310,8 +317,8 @@ tikrec validate (--deep for output). See SPEC.md's FFprobe decoder/DTS checks an
 null-muxer warning distinguishing resynthesis notices from decoder failure.
 
 v0.4 deployment is validated. The first v0.5 abrupt Task Scheduler restart test
-on 2026-09-16 preserved durable intent and media, but recovery failed closed on
-the clean active writer partial with `ambiguous_state`; no resume occurred while
-the same room remained live. Issue #14 blocks release. Network-outage and graceful
-finalization/deep-output phases remain unrun until that defect is fixed and the
-restart phase passes. Version is 0.4.0; v0.5 remains unreleased.
+on 2026-09-16 preserved durable intent/media but exposed the writer-partial gap.
+Issue #14 now implements that policy and passes 728 tests plus 19 subtests; the
+original artifact was not used as a fixture or modified. A repeat abrupt-restart
+deployment test remains required. Network-outage and graceful finalization/deep-
+output phases remain unrun until restart passes. Version is 0.4.0; v0.5 is unreleased.

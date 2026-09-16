@@ -21,7 +21,7 @@ _TERMINAL_STATES = {"completed", "failed"}
 _REASONS = {None, "process_restart", "user_stop", "room_ended", "live_changed",
             "identity_unavailable", "recovery_finalization", "existing_output",
             "failed_resume", "ambiguous_state", "unusable_media", "network_outage",
-            "network_recovered", "outage_timeout"}
+            "network_recovered", "outage_timeout", "writer_partial_recovery"}
 _PUBLIC_PAGE = re.compile(r"https://www\.tiktok\.com/@[A-Za-z0-9_.]+/live")
 
 
