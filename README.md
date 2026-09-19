@@ -108,8 +108,9 @@ Capture/finalizer failure preserves retained parts for `tikrec finalize`.
 
 See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
 Scheduler settings, startup recovery, and deployment verification. There is no
-Web UI or media-download endpoint in the current service. The package version is
-v0.4.0, the current tagged GitHub Release; v0.5 is a development target.
+Web UI or media-download endpoint in the current service. Package version v0.5.0
+is the release candidate being prepared; v0.4.0 remains the current tagged and
+published GitHub Release until the separately authorized v0.5.0 tag and release.
 
 The service now persists its latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks that job against retained
@@ -145,8 +146,9 @@ session evidence name and all retained parts are re-finalized only when durable
 job and manifest state prove finalization was running. Unproven, empty,
 nonregular, colliding, or output-coexisting partials need manual assessment.
 Existing output is preserved and accepted only with matching committed completion
-and bounded media evidence; ambiguous output is never replaced. Real resumed-media
-and process-restart/outage deployment validation is outstanding.
+and bounded media evidence; ambiguous output is never replaced. Real abrupt-
+restart, temporary-outage, graceful-stop/finalization, retained-session, and deep-
+output deployment validation have passed on preserved evidence.
 
 A hard service stop can leave the active writer file named
 `.part-NNNN.flv.partial`. Startup recovery accepts only the canonical next part
@@ -156,8 +158,8 @@ It preserves the exact original under a session/index evidence name, separately
 copies either the complete file or its last parser-proven complete-tag prefix,
 then resumes with a fresh connection and next part. Every unowned, conflicting,
 malformed, empty, colliding, or nonregular partial remains untouched and blocks.
-Issue #14 still requires repeat real deployment validation; operators must not
-rename, truncate, or delete crash evidence.
+Issue #14's repeat real deployment validation passed; operators must not rename,
+truncate, or delete crash evidence.
 
 State lives at %LOCALAPPDATA%\TikREC\job.json on Windows and
 ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json elsewhere, independent of the

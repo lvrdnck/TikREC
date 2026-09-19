@@ -17,5 +17,8 @@ tikrec = "tikrec.cli:main"
 [tool.setuptools.dynamic]
 version = {attr = "tikrec.__version__"}
 
+[tool.setuptools]
+packages = ["tikrec"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -14,8 +14,9 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
 
-The current checkout adds unfinished v0.5 service startup reconciliation while
-the package version and current released/tagged GitHub Release remain v0.4.0.
+The current checkout is the v0.5.0 release candidate with implemented service
+startup reconciliation. Package version is v0.5.0; current released/tagged GitHub
+Release remains v0.4.0 until the separately authorized tag and publication.
 
 ### Not implemented yet
 
@@ -366,7 +367,8 @@ and a second finalization interrupt retains the existing finalizer semantics.
 Service startup now uses this session continuation through `live_resume.py`.
 There is no resume CLI/remote endpoint or reconnect-gap optimization. LIVE continuation
 uses the patient outage policy below; generic direct/tag resume remains one connection.
-Real-recording part decode/packet validation is still outstanding.
+Real-recording part decoder/DTS validation passed during the completed v0.5
+deployment validation.
 
 ### tikrec/manifest.py and tikrec/media.py — session metadata
 
@@ -515,8 +517,8 @@ media opens, stop intent before signalling, and lifecycle/result changes. Defaul
 state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
 or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
 is added. Only the latest job is stored, with one owning service process/account.
-The package remains v0.4.0 until v0.5 deployment validation and release
-bookkeeping are complete.
+Package version is v0.5.0 for the release candidate; v0.4.0 remains the current
+released version until the separately authorized v0.5.0 tag and publication.
 
 ### Patient outage policy and transport classification
 
@@ -630,8 +632,9 @@ and completed finalization. All retained parts passed decoder/DTS checks; the
 output rather than represented as capture. After proxy retirement and an idle
 service restart, status also restores the completed manifest's reconnect count;
 active capture avoids reading the manifest while its atomic replacement may be
-in progress. All v0.5 real deployment-validation phases are complete, while the
-package remains v0.4.0 pending separate release authorization.
+in progress. All v0.5 real deployment-validation phases are complete. Package
+version is 0.5.0 for the release candidate; v0.4.0 remains current until the
+separate tag and GitHub Release action.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -801,7 +804,7 @@ whether a lossless writer fix is possible before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The
-architecture describes the current checkout, including unfinished v0.5 modules.
+architecture describes the v0.5.0 release candidate.
 
 ## Design principles
 

@@ -7,23 +7,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** All real v0.5 deployment-validation phases passed on
-  2026-09-19. Issue #14's abrupt-restart requirement remains complete.
-- **Status:** The outage session stopped gracefully, retained coherent recovery
-  evidence, finalized four parts, and passed retained-session and deep-output
-  validation. The temporary proxy is retired and the service is normally idle.
+- **Active issue/task:** Issue #15 tracks v0.5.0 release-candidate preparation.
+- **Status:** All real v0.5 deployment validation passed. The package source now
+  identifies the v0.5.0 candidate; no v0.5.0 tag or GitHub Release exists yet.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
-- **Pending owner action:** Separately authorize v0.5.0 release-candidate/release
-  bookkeeping. Preserve all three deployment datasets; no release action was
-  performed during validation.
-- **Next queued task:** Prepare the v0.5.0 release candidate, synchronize package
-  and release documentation, and execute the release checklist only under its
-  separate authorization.
+- **Pending owner action:** Review the exact candidate commit, then separately
+  authorize the immutable v0.5.0 tag and published GitHub Release. Preserve all
+  three deployment datasets.
+- **Next queued task:** Tag the reviewed v0.5.0 candidate and publish its GitHub
+  Release under the release checklist in issue #15.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -31,15 +28,16 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.4.0, from `tikrec.__version__`/packaging metadata.
+- **Package version:** v0.5.0 release candidate, from `tikrec.__version__` and
+  packaging metadata.
 - **Tagged version:** annotated `v0.4.0`, which peels to
   `9f8e4104f8bc24f439a3e927ca72da29257c41fa`.
 - **GitHub Release:** published `TikREC v0.4.0` for `v0.4.0`.
 - **Current released version:** v0.4.0; its package version, tag, and GitHub
   Release are synchronized. Historical GitHub Releases for v0.3.0 and v0.3.1
   are also published from their existing tags.
-- **Development target:** v0.5.0 environment survival/resumability. It is
-  unfinished and must not be described as released or tagged.
+- **Release candidate:** v0.5.0 environment survival/resumability is prepared
+  but remains untagged and unpublished; it is not yet the current released version.
 
 ## Issue #13 rendition investigation
 
@@ -212,10 +210,10 @@ new work; calendar entries are reminders only.
   suite pass. The validation proxy was retired, user-level `HTTPS_PROXY` remains
   absent, and the Scheduled Task was restarted healthy/available in its normal
   environment.
-- **Release bookkeeping after validation:** synchronize the v0.5.0 package and
-  release documentation, rerun required checks, review the exact release commit,
-  then create the annotated tag and published GitHub Release in a separately
-  authorized release action. No version, tag, or release changed here.
+- **Release-candidate preparation:** Issue #15 is open. Package/documentation
+  synchronization and pre-tag checks have passed; creating the annotated tag and
+  published GitHub Release remains a separately authorized action. No v0.5.0 tag
+  or release exists yet.
 - **Optional non-blocking evidence:** issue #9's real raw-copy stall-boundary
   check, issue #8's replay with matching raw bytes, and issue #13's distinct
   rendition comparison remain open for opportunistic collection.

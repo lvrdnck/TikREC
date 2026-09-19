@@ -108,7 +108,7 @@ The example's connection count includes the final room-status resolution
 attempt recorded by live capture. `connections.jsonl` provides the detailed
 outcome and timing for each numbered attempt.
 
-## Service intent boundary (v0.5 implemented, release pending)
+## Service intent boundary (v0.5.0 release candidate)
 
 The new `job_state.py` storage module uses an independent job schema version 1
 for explicit service intent before media storage exists. It does not change
@@ -141,7 +141,7 @@ not_requested finalization; an explicit finalization path must match the prior
 declaration unless it was null. Completion/interruption then covers all old and
 new parts and elapsed wall time from the original start, including downtime.
 
-## Service startup recovery (v0.5 implemented, release pending)
+## Service startup recovery (v0.5.0 release candidate)
 
 New structured LIVE captures retain their first canonical room_id in schema 1.
 Startup checks compare it with the explicit durable job; both must agree before
@@ -193,8 +193,10 @@ is terminal `failed` with `outage_timeout`; it will not relaunch on restart.
 Stop during recovery instead uses existing interrupted/finalization semantics.
 Schema version remains 1; `writer_recoveries` is optional, validated evidence.
 Successfully completed jobs are never relaunched. Writer-partial and finalization
-reconciliation are implemented; repeat real process-restart/outage deployment
-validation remains outstanding, and version remains 0.4.0.
+reconciliation are implemented. Repeat real process-restart/outage deployment
+validation passed, as did final graceful-stop/finalization and deep-output
+validation. Package version is 0.5.0 for the release candidate; v0.4.0 remains
+the current tagged/published release until separate authorization.
 
 ## Validation
 

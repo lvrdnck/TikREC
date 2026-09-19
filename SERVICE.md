@@ -5,8 +5,8 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
-This document is the exact contract for the current v0.4 service plus unfinished
-v0.5 recovery work. Future creator automation, multiple recordings, library,
+This document is the exact contract for the v0.5.0 release candidate. Future
+creator automation, multiple recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,
 but no such endpoint or behavior exists until its own specification is implemented.
 
@@ -168,7 +168,8 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
-CLI/routes stay unchanged and version remains 0.4.0.
+CLI/routes stay unchanged. Package version is 0.5.0 for the release candidate;
+v0.4.0 remains the current tagged/published release until separate authorization.
 
 ## Service startup reconciliation (v0.5 implemented, release pending)
 
@@ -349,5 +350,6 @@ That restart exposed and fixed one status-only accounting defect: an inactive
 controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
-atomically replace it on Windows. Version remains 0.4.0; v0.5 is unreleased pending
-separately authorized release bookkeeping.
+atomically replace it on Windows. Package version is 0.5.0 for the release
+candidate; v0.4.0 remains current until the separately authorized tag and GitHub
+Release action.
