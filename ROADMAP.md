@@ -163,11 +163,17 @@ Generic completed-part
 discovery remains strict. The 728-test plus 19-subtest suite covers clean and torn
 tails, interrupted recovery, correct next allocation, and fail-closed conflicts.
 
-**Release-blocking validation:** Repeat abrupt process-death/Task Scheduler
-restart and prove same-session continuation into fresh numbered parts. Only after
-that passes, exercise a real temporary network outage, graceful stop/finalization,
-retained-session validation, and deep output validation. The original failed run
-stopped before those later phases and its artifact remains untouched.
+**Release-blocking validation:** The repeat abrupt process-death/Task Scheduler
+restart passed on 2026-09-19 against `lilymaye207`. Startup preserved the exact
+7,874,881-byte crash artifact (SHA-256
+`AC27A60670479A99A179AA53CEC838361A2EF85734752FF69EDF480FD0D44CB1`), admitted
+the equal complete prefix with zero discarded bytes, retained the same session and
+room, and resumed through connection 3 into fresh `part-0002.flv`. The recovered
+and first resumed parts passed decoder/DTS checks with independent near-zero media
+starts. A later short 640x1280 source-configuration part alone had H.264 decoder
+errors between clean 720x1280 parts; its evidence is preserved and no recovery-code
+change is justified from that source interval. The real network-outage phase and
+the final graceful-stop/retained-session/deep-output phase remain separately unrun.
 
 **Release bookkeeping after validation:** Synchronize the package version and
 release documentation for v0.5.0, rerun required checks, review the exact release
@@ -184,9 +190,10 @@ reconnect-gap measurement and reduction remain v0.6 work.
 Implemented sequence: durable job state, public room identity,
 retained-session resume, service startup reconciliation with controller
 integration, outage retry policy/recovery status, and interrupted-finalization
-reconciliation, and conservative active-writer-partial recovery. Issue #14 still
-requires deployed validation; release validation/bookkeeping remain after it. Successful reconnect-gap
-measurement/reduction remains v0.6.
+reconciliation, and conservative active-writer-partial recovery. Issue #14's
+deployed abrupt-restart requirement is complete; outage, final output validation,
+and release bookkeeping remain. Successful reconnect-gap measurement/reduction
+remains v0.6.
 
 ### v0.6.0 ? Reconnect-gap reduction
 

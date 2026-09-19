@@ -319,6 +319,11 @@ null-muxer warning distinguishing resynthesis notices from decoder failure.
 v0.4 deployment is validated. The first v0.5 abrupt Task Scheduler restart test
 on 2026-09-16 preserved durable intent/media but exposed the writer-partial gap.
 Issue #14 now implements that policy and passes 728 tests plus 19 subtests; the
-original artifact was not used as a fixture or modified. A repeat abrupt-restart
-deployment test remains required. Network-outage and graceful finalization/deep-
-output phases remain unrun until restart passes. Version is 0.4.0; v0.5 is unreleased.
+original artifact was not used as a fixture or modified. The 2026-09-19 repeat
+deployment test passed: the exact 7,874,881-byte crash source was preserved, the
+equal complete prefix was published, and the same session/room resumed through a
+fresh connection and `part-0002.flv`; both recovered and first resumed parts passed
+decoder/DTS checks. A later isolated source-configuration part had H.264 decoder
+errors and remains preserved without a recovery-code change. Network-outage and
+final graceful-stop/deep-output validation phases remain unrun. Version is 0.4.0;
+v0.5 is unreleased.

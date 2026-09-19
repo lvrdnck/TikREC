@@ -609,7 +609,9 @@ stays 1 with optional room_id; old manifests retain validation/manual-finalize
 compatibility. Automatic capture resume requires proven persisted identity.
 
 Interrupted-FFmpeg finalization and active-writer-partial reconciliation are
-implemented. Issue #14 remains open for repeat process-death deployment validation;
+implemented. Issue #14's repeat process-death deployment validation passed on
+2026-09-19 with exact crash-evidence preservation, validated-prefix publication,
+and same-session/same-room continuation into a fresh connection and part. The
 network-outage and final completed-media validation remain outstanding. No future-
 LIVE monitoring or Task Scheduler modification is implemented.
 

@@ -1,27 +1,27 @@
 # TikREC current state
 
-Last reviewed: 2026-09-16. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-19. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Active issue/task:** Issue #14 remains open for repeat deployed validation.
-  Its conservative writer-partial recovery implementation is complete offline.
-- **Status:** Startup now salvages only the exact writer-owned crash partial,
-  preserves its original bytes as session evidence, and resumes after admitting
-  a separately validated complete FLV prefix. The failed real artifact is untouched.
+- **Active issue/task:** Issue #14's repeat deployed abrupt-restart validation
+  passed on 2026-09-19 and its acceptance criteria are complete.
+- **Status:** Startup preserved the exact writer crash file, admitted its validated
+  complete FLV prefix, and resumed the same session/room into fresh numbered media.
+  The earlier failed-run evidence remained byte-unchanged during this validation.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
-- **Pending owner action:** None. Preserve the failed-validation artifacts and
-  durable job state; no release action is authorized.
-- **Next queued task:** Review issue #14, then separately repeat the abrupt
-  restart validation before attempting outage, graceful-stop, and deep validation.
+- **Pending owner action:** Separately authorize the next deployment-validation
+  phase. Preserve both abrupt-restart datasets; no release action is authorized.
+- **Next queued task:** Exercise the real temporary network-outage phase. The final
+  graceful-stop/retained-session/deep-output phase remains later and separate.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -158,10 +158,27 @@ new work; calendar entries are reminders only.
 - **Offline verification:** 728 tests plus 19 subtests pass, including byte-exact
   preservation, truncated-tail salvage, recovery-restart idempotence, count/timing
   honesty, correct next part/connection allocation, and the fail-closed matrix.
-- **Validation still required for #14:** repeat abrupt restart and prove
-  same-session continuation, then exercise a real temporary network outage,
-  graceful stop/finalization, retained-session validation, and deep output
-  validation. No outage or completed-output claim was attempted in the failed run.
+- **Repeat abrupt-restart validation passed:** On 2026-09-19 the deployed service
+  recorded `lilymaye207` as session `c3d05742-242e-4093-b8cb-69297f967e39`, room
+  `7687184860712225537`. `Stop-ScheduledTask` left a 7,874,881-byte writer partial
+  with SHA-256 `AC27A60670479A99A179AA53CEC838361A2EF85734752FF69EDF480FD0D44CB1`.
+  Restart exposed `recovering/writer_partial_recovery`, preserved the exact bytes
+  under the deterministic evidence name, published an equal 7,874,881-byte clean
+  prefix with zero discarded bytes, and resumed the same session/room with
+  `resume_count=1`, connection 3, and fresh `part-0002.flv`. The recovered part and
+  resumed part both passed FFprobe decoder/DTS checks and began near timestamp zero,
+  while status/media continued growing without ambiguous or failed recovery.
+- **Preserved validation anomaly:** The resumed source later changed 720x1280 to
+  640x1280 and back within connection 3. The short middle `part-0003.flv` has valid
+  FLV framing, a source-marked keyframe start, and clean DTS but FFprobe reports H.264
+  decoder errors; surrounding `part-0002.flv` and `part-0004.flv` decode cleanly.
+  TikREC copies source payloads unchanged, so this run does not justify a recovery
+  code change. A normal remote stop was used only to freeze evidence after the
+  finding; its completed output was not deep-validated or claimed as the deferred
+  graceful-finalization phase.
+- **Validation still required for v0.5:** exercise a real temporary network outage,
+  then separately perform the final graceful-stop/finalization, retained-session,
+  and deep-output validation. Neither phase was attempted or claimed here.
 - **Release bookkeeping after validation:** synchronize the v0.5.0 package and
   release documentation, rerun required checks, review the exact release commit,
   then create the annotated tag and published GitHub Release in a separately
