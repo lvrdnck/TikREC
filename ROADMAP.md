@@ -122,7 +122,7 @@ retained-session and deep output validation passed.
 
 **Release record:** package version v0.4.0, annotated `v0.4.0` tag at
 `9f8e4104f8bc24f439a3e927ca72da29257c41fa`, and the published GitHub Release
-`TikREC v0.4.0` are synchronized. This is the current released version.
+`TikREC v0.4.0` are synchronized. It is a historical released version; v0.5.0 is the current released version.
 
 ### v0.5.0 ? Environment survival / resumability
 
