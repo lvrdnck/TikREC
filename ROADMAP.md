@@ -184,10 +184,9 @@ completed finalization, and produced a 1,200.636-second H.264/AAC MP4 that passe
 deep validation without findings. All retained FLVs passed decoder/DTS checks,
 and their evidence leaves the measured outage absent from captured media.
 
-**Release candidate:** Package version v0.5.0 and release documentation are
-prepared under issue #15. The current released version remains v0.4.0 until the
-reviewed candidate receives its separately authorized immutable annotated tag and
-published GitHub Release; no v0.5.0 tag or Release exists yet.
+**Release source:** v0.5.0 package and documentation reflect the completed
+environment-survival/resumability work. The release checklist in issue #15 records
+the externally verified tag and GitHub Release state.
 
 Issues #9 and #8 remain open for rare real stall/replay evidence, and issue #13
 is intentionally paused pending an opportunistic distinct-rendition encounter.

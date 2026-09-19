@@ -5,7 +5,7 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
-This document is the exact contract for the v0.5.0 release candidate. Future
+This document is the exact contract for TikREC v0.5.0. Future
 creator automation, multiple recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,
 but no such endpoint or behavior exists until its own specification is implemented.
@@ -111,7 +111,7 @@ Remote commands print JSON; failed job/deferred/failed recovery or request error
 return 1, other accepted responses 0. If start loses its response, query status
 before retrying; it may already be running. Closing the client does not stop it.
 
-## Durable job intent - v0.5 implemented, release pending
+## Durable job intent - v0.5.0
 
 job_state.py is wired into serve/controller: commit acceptance before worker start,
 room_id before media opens, stop before signalling its Event, and lifecycle/results
@@ -168,10 +168,9 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
-CLI/routes stay unchanged. Package version is 0.5.0 for the release candidate;
-v0.4.0 remains the current tagged/published release until separate authorization.
+CLI/routes stay unchanged and package version is 0.5.0.
 
-## Service startup reconciliation (v0.5 implemented, release pending)
+## Service startup reconciliation (v0.5.0)
 
 `StartupReconciler` in `reconciliation.py` decides recovery independently of HTTP.
 Resolver, resume capture, finalizer, store, clock, and storage/media inspection are
@@ -350,6 +349,4 @@ That restart exposed and fixed one status-only accounting defect: an inactive
 controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
-atomically replace it on Windows. Package version is 0.5.0 for the release
-candidate; v0.4.0 remains current until the separately authorized tag and GitHub
-Release action.
+atomically replace it on Windows. Package version is 0.5.0.

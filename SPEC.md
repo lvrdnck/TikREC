@@ -14,9 +14,8 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
 
-The current checkout is the v0.5.0 release candidate with implemented service
-startup reconciliation. Package version is v0.5.0; current released/tagged GitHub
-Release remains v0.4.0 until the separately authorized tag and publication.
+TikREC v0.5.0 implements service startup reconciliation. Package version is
+v0.5.0; published release records are maintained in PROJECT_STATE.md.
 
 ### Not implemented yet
 
@@ -496,7 +495,7 @@ error. Successful stop is completed/interrupted; capture/finalizer errors are
 failed. Requested output and actual final output are distinct fields. Shutdown
 rejects new starts, requests stop, and joins the worker outside the lock.
 
-### tikrec/job_state.py - durable service intent (v0.5 implemented, release pending)
+### tikrec/job_state.py - durable service intent (v0.5.0)
 
 `JobState` and `JobStateStore` provide validated, atomic storage for the latest
 explicitly started service job. Intent exists independently of `session.json`
@@ -517,8 +516,7 @@ media opens, stop intent before signalling, and lifecycle/result changes. Defaul
 state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
 or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
 is added. Only the latest job is stored, with one owning service process/account.
-Package version is v0.5.0 for the release candidate; v0.4.0 remains the current
-released version until the separately authorized v0.5.0 tag and publication.
+Package version is v0.5.0.
 
 ### Patient outage policy and transport classification
 
@@ -633,8 +631,7 @@ output rather than represented as capture. After proxy retirement and an idle
 service restart, status also restores the completed manifest's reconnect count;
 active capture avoids reading the manifest while its atomic replacement may be
 in progress. All v0.5 real deployment-validation phases are complete. Package
-version is 0.5.0 for the release candidate; v0.4.0 remains current until the
-separate tag and GitHub Release action.
+version is 0.5.0.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -804,7 +801,7 @@ whether a lossless writer fix is possible before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The
-architecture describes the v0.5.0 release candidate.
+architecture describes TikREC v0.5.0.
 
 ## Design principles
 

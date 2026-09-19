@@ -108,9 +108,9 @@ Capture/finalizer failure preserves retained parts for `tikrec finalize`.
 
 See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
 Scheduler settings, startup recovery, and deployment verification. There is no
-Web UI or media-download endpoint in the current service. Package version v0.5.0
-is the release candidate being prepared; v0.4.0 remains the current tagged and
-published GitHub Release until the separately authorized v0.5.0 tag and release.
+Web UI or media-download endpoint in the current service. TikREC v0.5.0 provides
+the environment-survival and resumability behavior documented below. Current
+package, tag, and GitHub Release records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
 
 The service now persists its latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks that job against retained

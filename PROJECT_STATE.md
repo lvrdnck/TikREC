@@ -7,9 +7,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #15 tracks v0.5.0 release-candidate preparation.
-- **Status:** All real v0.5 deployment validation passed. The package source now
-  identifies the v0.5.0 candidate; no v0.5.0 tag or GitHub Release exists yet.
+- **Active issue/task:** Issue #15 tracks v0.5.0 release finalization.
+- **Status:** All real v0.5 deployment validation passed and package source is
+  v0.5.0. Tag and GitHub Release state are journaled after external verification.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
@@ -28,16 +28,15 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.5.0 release candidate, from `tikrec.__version__` and
-  packaging metadata.
+- **Package version:** v0.5.0, from `tikrec.__version__` and packaging metadata.
 - **Tagged version:** annotated `v0.4.0`, which peels to
   `9f8e4104f8bc24f439a3e927ca72da29257c41fa`.
 - **GitHub Release:** published `TikREC v0.4.0` for `v0.4.0`.
 - **Current released version:** v0.4.0; its package version, tag, and GitHub
   Release are synchronized. Historical GitHub Releases for v0.3.0 and v0.3.1
   are also published from their existing tags.
-- **Release candidate:** v0.5.0 environment survival/resumability is prepared
-  but remains untagged and unpublished; it is not yet the current released version.
+- **Release state:** v0.5.0 environment survival/resumability source is complete;
+  tag and GitHub Release synchronization is recorded after external verification.
 
 ## Issue #13 rendition investigation
 
@@ -210,10 +209,9 @@ new work; calendar entries are reminders only.
   suite pass. The validation proxy was retired, user-level `HTTPS_PROXY` remains
   absent, and the Scheduled Task was restarted healthy/available in its normal
   environment.
-- **Release-candidate preparation:** Issue #15 is open. Package/documentation
-  synchronization and pre-tag checks have passed; creating the annotated tag and
-  published GitHub Release remains a separately authorized action. No v0.5.0 tag
-  or release exists yet.
+- **Release finalization:** Issue #15 records package/documentation and pre-tag
+  verification. Annotated-tag and GitHub Release results are appended only after
+  their external verification.
 - **Optional non-blocking evidence:** issue #9's real raw-copy stall-boundary
   check, issue #8's replay with matching raw bytes, and issue #13's distinct
   rendition comparison remain open for opportunistic collection.
