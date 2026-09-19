@@ -197,7 +197,10 @@ def _classify(previous: dict[str, Any], events: tuple[str, ...], unrecorded: int
         return "service_restart"
     if any(event.startswith("capture_resume") for event in events):
         return "explicit_resume"
-    if any(event.startswith("network_recovery") for event in events):
+    # "recovered" closes the prior episode after its successful media connection;
+    # it does not make the following healthy-close reconnect part of that outage.
+    if any(event.startswith("network_recovery") and event != "network_recovery:recovered"
+           for event in events):
         return "network_recovery"
     if any(event.startswith("room_status") for event in events):
         return "room_end_confirmation"

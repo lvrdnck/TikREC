@@ -58,7 +58,7 @@ def test_dns_after_eof_survives_more_than_three_failures_and_proves_room_identit
         sources.append(url)
         return iter(stream(90000 if len(sources) == 1 else 10))
     result = run_capture(tmp_path, resolve, source, clock=clock, recovery_observer=status.append)
-    assert clock.delays[:5] == [1, 1, 2, 5, 10]
+    assert clock.delays[:5] == [0, 1, 2, 5, 10]
     assert sources == ([SIGNED, SIGNED + "2"] if finish == "same" else [SIGNED])
     assert len(result.parts) == (2 if finish == "same" else 1)
     assert read_part(result.parts[-1])[0].timestamp == 0
@@ -80,7 +80,7 @@ def test_sustained_dns_exhausts_without_finalization_or_confirmed_offline(tmp_pa
     with pytest.raises(OutageCaptureError) as failure:
         run_capture(tmp_path, resolve, lambda _: iter(stream()), clock=clock,
                     retry_policy=RetryPolicy(window_seconds=4))
-    assert clock.delays == [1, 1, 2, 1] and len(calls) == 4
+    assert clock.delays == [0, 1, 2, 1] and len(calls) == 4
     assert len(failure.value.parts) == 1 and not (tmp_path / "out.mp4").exists()
     facts = json.loads((tmp_path / "out.parts/session.json").read_text())
     assert facts["status"] == "failed" and facts["finalization"]["status"] == "not_started"
@@ -171,7 +171,7 @@ def test_malformed_resolution_after_media_is_not_retried(tmp_path):
         raise TikTokResolutionError("malformed room")
     with pytest.raises(CaptureError):
         run_capture(tmp_path, resolve, lambda _: iter(stream()), clock=clock)
-    assert len(calls) == 2 and clock.delays == [1]
+    assert len(calls) == 2 and clock.delays == [0]
 
 
 def test_local_ctrl_c_in_patient_wait_preserves_and_finalizes(tmp_path):

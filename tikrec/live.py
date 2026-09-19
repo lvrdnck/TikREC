@@ -288,8 +288,9 @@ def capture_live(
             raise capture_failure(
                 "live capture stopped after consecutive connection failures"
             )
-        # Re-resolving after every close gets a fresh signed CDN URL.
-        delay = (recovery.outage.status()["next_retry_in_seconds"] if recovery.outage.active
+        # Healthy media EOF can resolve immediately; every failure keeps its existing wait.
+        delay = (0.0 if reconnect_reason == "connection closed" and connection_parts else
+                 recovery.outage.status()["next_retry_in_seconds"] if recovery.outage.active
                  else backoff_seconds * (2 ** max(0, consecutive_failures - 1)))
         _report(
             progress,

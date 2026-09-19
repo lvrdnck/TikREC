@@ -91,6 +91,22 @@ def test_classifies_resume_outage_room_end_and_unrecorded_boundaries():
     )
 
 
+def test_recovered_event_belongs_to_prior_outage_not_following_healthy_close():
+    records = (
+        connection(2, started=0, ended=10, first=1, last=9, outcome="connection_error"),
+        {"event": "network_recovery", "phase": "entered"},
+        connection(3, started=11, ended=20, first=12, last=19),
+        {"event": "network_recovery", "phase": "recovered"},
+        connection(4, started=21, ended=30, first=22, last=29),
+    )
+
+    recovery, healthy = analyze_records(records)
+
+    assert recovery.classification == "network_recovery"
+    assert healthy.classification == "ordinary"
+    assert healthy.boundary_events == ("network_recovery:recovered",)
+
+
 def test_script_reads_log_without_writing_it_and_renders_unknowns():
     with TemporaryDirectory() as temporary:
         path = Path(temporary) / "connections.jsonl"

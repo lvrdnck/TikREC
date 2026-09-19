@@ -125,7 +125,7 @@ def test_stop_during_offline_confirmation_finalizes(tmp_path):
     assert len(attempts) == 2
 
 
-def test_reconnect_gap_still_includes_backoff(tmp_path):
+def test_healthy_reconnect_gap_omits_configured_failure_backoff(tmp_path):
     now = [100.0]
     attempts = []
 
@@ -143,5 +143,5 @@ def test_reconnect_gap_still_includes_backoff(tmp_path):
         tag_source=lambda _: iter(stream()), clock=lambda: now[0],
         sleeper=sleeper, backoff_seconds=2, offline_confirmation_checks=1,
     )
-    assert result.connections[1].gap_before == 2
-    assert result.connections[1].started_at == 102
+    assert result.connections[1].gap_before == 0
+    assert result.connections[1].started_at == 100

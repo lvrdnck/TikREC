@@ -10,9 +10,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 - **Active issue/task:** v0.6 reconnect-gap measurement and evidence-backed
   reduction.
 - **Status:** Phase 1 measurement tooling and the retained-evidence baseline are
-  complete. One usable ordinary reconnect shows a 10.883-second observed gap,
-  including 1.004 seconds of local/backoff time, but one sample does not justify
-  changing production reconnect behavior. v0.6 remains active.
+  complete. Three usable ordinary reconnects across two sessions consistently
+  show a 1.004--1.008-second healthy-close wait, so that path now re-resolves
+  immediately. Failure/outage waits and room-end confirmation are unchanged.
+  v0.6 remains active pending post-change real measurement.
 - **Completed release task:** Issue #15 is closed. The annotated v0.5.0 tag and
   published non-draft GitHub Release remain synchronized and unchanged.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
@@ -22,8 +23,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
 - **Pending owner action:** None. Preserve all deployment and reconnect evidence.
-- **Next queued task:** Collect multiple ordinary reconnects with the existing
-  analyzer, then reassess only the fixed healthy-close delay against that evidence.
+- **Next queued task:** Capture a post-change ordinary reconnect and verify that
+  local/backoff time collapses as expected; then reassess resolution/HTTP setup,
+  now the dominant observed components, without speculative retry changes.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

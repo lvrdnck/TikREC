@@ -59,7 +59,7 @@ class LiveCaptureTests(unittest.TestCase):
             "resolving room",
             "connection 1 opened",
             "part started: part-0001.flv",
-            "connection lost: connection closed; reconnecting in 1s",
+            "connection lost: connection closed; reconnecting in 0s",
             "resolving room",
             "room ended",
             "capture ended; finalizing 1 retained part(s)",
@@ -232,7 +232,7 @@ class LiveCaptureTests(unittest.TestCase):
 
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual(result.output_path, output)
-        self.assertEqual(sleeps, [(1.0, 1), (1.0, 2)])
+        self.assertEqual(sleeps, [(0.0, 1), (0.0, 2)])
         self.assertEqual([record["outcome"] for record in records], ["closed", "closed", "offline"])
         self.assertEqual(records[0]["part_start"], "part-0001.flv")
         self.assertEqual(records[1]["part_end"], "part-0002.flv")
@@ -276,7 +276,8 @@ class LiveCaptureTests(unittest.TestCase):
             )
 
         self.assertEqual(len(result.parts), 1)
-        self.assertEqual(delays, [1.0, 1.0])
+        # The transient attempt keeps its wait; only the later healthy close is immediate.
+        self.assertEqual(delays, [1.0, 0.0])
         self.assertEqual(result.connections[0].outcome, "resolver_error")
 
     def test_initial_offline_room_leaves_no_directory_and_same_path_can_retry(self) -> None:
@@ -390,7 +391,7 @@ class LiveCaptureTests(unittest.TestCase):
             ]
 
         statuses = [record for record in records if record.get("event") == "room_status"]
-        self.assertEqual(delays, [1.0, 5.0, 5.0])
+        self.assertEqual(delays, [0.0, 5.0, 5.0])
         self.assertEqual([record["timestamp"] for record in statuses], [123.0] * 3)
         self.assertEqual([record["status"] for record in statuses], [4, "4", 3])
         self.assertEqual(
@@ -432,7 +433,7 @@ class LiveCaptureTests(unittest.TestCase):
 
         statuses = [record for record in records if record.get("event") == "room_status"]
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
-        self.assertEqual(delays, [1.0, 2.5, 1.0, 2.5])
+        self.assertEqual(delays, [0.0, 2.5, 0.0, 2.5])
         self.assertEqual([record["status"] for record in statuses], [4, 2, 4, 4])
         self.assertEqual(
             [record["confirmation_reached"] for record in statuses],
@@ -541,6 +542,7 @@ class LiveCaptureTests(unittest.TestCase):
             TikTokOfflineError("offline"),
         ]
         finalizer_parts: list[tuple[Path, ...]] = []
+        delays: list[float] = []
 
         def incomplete_stream():
             yield from stream()
@@ -566,13 +568,14 @@ class LiveCaptureTests(unittest.TestCase):
                 resolver=resolver,
                 tag_source=lambda url: incomplete_stream() if url.endswith("one.flv") else iter(stream()),
                 finalizer=finalizer,
-                sleeper=lambda _: None,
+                sleeper=delays.append,
                 offline_confirmation_checks=1,
             )
 
         self.assertEqual([part.name for part in result.parts], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual([part.name for part in finalizer_parts[0]], ["part-0001.flv", "part-0002.flv"])
         self.assertEqual(result.connections[0].outcome, "connection_error")
+        self.assertEqual(delays, [1.0, 0.0])
 
     def test_retries_a_stalled_read_and_records_a_distinct_outcome(self) -> None:
         actions: list[object] = [

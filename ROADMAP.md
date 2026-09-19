@@ -230,6 +230,18 @@ reconnect behavior remains unchanged. The deliberate v0.5 outage remains separat
 at 103.366 seconds. v0.6 remains active: gather multiple ordinary reconnects and
 then reassess the healthy-close delay before considering broader policy changes.
 
+**Healthy-close optimization (2026-09-19):** The validated `vibecrewkrista`
+session added two suitable ordinary reconnects, bringing the baseline to three
+samples across two sessions. Total gap median/range is 3.997/2.515--10.883 seconds;
+healthy local/backoff is 1.005/1.004--1.008, resolution is
+1.288/1.087--7.107, HTTP setup is 1.410/0.247--2.691, initial media is
+0.107/0.080--0.118, and the write gate is 0.001/0.000--0.001. The repeated fixed
+wait is TikREC-controlled, so a healthy media-bearing close now proceeds directly
+to fresh resolution. Transient/failure backoff, patient recovery, room-end checks,
+stop behavior, and fresh writer/URL safety are unchanged. This should reduce each
+ordinary gap by about one second; resolution and HTTP setup remain dominant.
+v0.6 stays active until a real post-change reconnect verifies the expected gain.
+
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
 **Goal:** Eliminate reconnect gaps by maintaining more than one concurrent

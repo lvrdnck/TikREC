@@ -88,6 +88,30 @@ retained logs contain single connections, terminal room-end confirmation, or
 service/process-restart and explicit-resume boundaries without two comparable
 media-bearing connection records, so they do not contribute ordinary samples.
 
+### Healthy-close evidence and optimization
+
+The later `vibecrewkrista.parts` session passed retained-session validation for
+all four FLVs and contributed two ordinary reconnects. Connection 1 to 2 measured
+2.515 seconds total: 0.069 tail, 1.005 local/backoff, 1.087 resolution, 0.247 HTTP
+setup, 0.107 initial media, and 0.001 write gate. Connection 2 to 3 is excluded as
+transient network recovery: it measured 9.494 seconds total, including a 5.982-
+second dying tail after `IncompleteRead`. The `network_recovery:recovered` event
+after connection 3 closes the prior episode; it does not taint connection 3 to 4,
+which is ordinary and measured 3.997 seconds total: 0.172 tail, 1.008 local/
+backoff, 1.288 resolution, 1.410 HTTP setup, 0.118 initial media, and 0.001 gate.
+
+Combined with `recording.parts`, the ordinary baseline is three reconnects across
+two sessions. Median/range in seconds is: total 3.997/2.515--10.883, previous tail
+0.069/0.001--0.172, healthy local/backoff 1.005/1.004--1.008, resolution
+1.288/1.087--7.107, HTTP setup 1.410/0.247--2.691, initial media
+0.107/0.080--0.118, and keyframe/write gate 0.001/0.000--0.001. This repeated
+approximately one-second TikREC-controlled wait justified removing it only for a
+normal media-bearing close. A healthy close now begins fresh resolution without
+that sleep. Network/transient waits, failure backoff, patient recovery, room-end
+confirmation, stop checks, new writer/part state, and fresh URL resolution retain
+their prior behavior. The expected reduction is about one second per ordinary
+reconnect; a post-change real reconnect remains necessary to measure it directly.
+
 ## Raw copy and byte-arrival evidence
 
 When `--raw-copy DIR` successfully opens both diagnostics, each connection has

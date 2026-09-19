@@ -460,7 +460,8 @@ never discards bytes still arriving on an open FLV connection.
 - An anchored LIVE uses the shared 15-minute patient transient window below.
   Initial unresolved capture and legacy injected resolvers without room identity
   retain the three-failure limit. Three clean connections retaining no media still
-  fail. Healthy EOF reconnects retain a 1-second delay; non-live confirmation remains
+  fail. A healthy media-bearing EOF reconnects immediately through fresh resolution;
+  non-live confirmation remains
   three checks spaced five seconds apart. Policy, limits, clocks and waits are injectable.
 - Programming errors, invalid arguments, and malformed FLV data do not retry.
   The first Ctrl-C closes the writer and finalizes retained parts when an
@@ -723,6 +724,18 @@ path can resynthesize FLV integer-millisecond timestamps onto a coarser frame
 time base, producing non-monotonic-DTS warnings even when the stored DTS is
 strictly increasing. These warnings can occur on individual FLV parts as well
 as on concatenated output.
+
+The four-part `vibecrewkrista` recording validated this distinction on
+2026-09-19. Every retained FLV passed full decoding and per-stream stored-DTS
+checks, and the 604,991,710-byte stream-copy MP4 passed deep decoding plus a
+separate strict packet-DTS check. During muxing, FFmpeg corrected two video DTS
+values at the part-0002 to part-0003 concat boundary (`49321296` and `49359744`
+after previous `49369008/49369009`). Part 0003 itself starts at nonzero video/audio
+timestamps of 3.003/6.108 seconds. The completed MP4 stores the corrected boundary
+as strictly increasing DTS `49369008`, `49369009`, `49369010` on its 1/16000 video
+time base and decodes cleanly. The messages therefore describe valid concat/muxer
+timestamp correction around unusual retained source timing, not media corruption
+or a TikREC finalization defect.
 
 TikTok H.264 can also make FFmpeg repeatedly print `Late SEI is not implemented`
 during decoding or re-encoding. FFmpeg's H.264 decoder deliberately skips SEI
