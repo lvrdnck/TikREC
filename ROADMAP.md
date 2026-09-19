@@ -292,8 +292,13 @@ This release does not add TikTok credentials or account profiles.
 
 **Goal:** Catalog sessions and artifacts, browse history/health, and provide
 playback and eventual UI controls when actual use establishes the requirements.
-Build presentation on the existing service boundary; text/analytics artifacts
-are optional and are not dependencies for recording control or a library.
+A trusted remote device such as the Mac should be able to browse and play
+recordings that remain stored on main-pc over the tailnet without a manual SCP
+step, with explicit download/copy when a local file is wanted. A documented
+trusted-network file-share workflow may serve as an earlier bridge; the eventual
+TikREC library should make remote playback and downloads first-class product
+features. Build presentation on the existing service boundary; text/analytics
+artifacts are optional and are not dependencies for recording control or a library.
 
 ## Long-term capability backlog
 
@@ -313,7 +318,9 @@ Near-term v0.5/v0.6 reliability work remains first.
   same-LIVE capture described above when evidence justifies it.
 - **Library, history, playback, and downloads:** catalog sessions and artifacts,
   browse recording/recovery health, generate thumbnails/storyboards, play
-  retained outputs, and intentionally expose user-owned downloads.
+  retained outputs locally or from a trusted remote device over the tailnet,
+  and intentionally expose user-owned downloads without requiring manual file
+  copies for ordinary viewing.
 - **Web interface:** browser-based recording control, library workflows, playback,
   and administration built on explicit application/service boundaries; current
   v0.4 endpoints remain the complete API today.
@@ -328,7 +335,8 @@ Near-term v0.5/v0.6 reliability work remains first.
 - **Notifications and integrations:** recording/lifecycle notifications, webhooks,
   exports, and adapters driven by demonstrated workflows.
 - **Storage and operations:** retention controls, local/network/cloud publishing
-  or storage, soak testing, health checks, and forensic tooling.
+  or storage, a documented trusted-network recording-share workflow for remote
+  Mac/PC access where useful, soak testing, health checks, and forensic tooling.
 - **Configuration and administration:** durable creator/recording defaults,
   deployment settings, resource limits, and auditable operational controls.
 
