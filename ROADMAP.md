@@ -178,7 +178,11 @@ in patient recovery, staged retries remained remotely observable, and restoring
 the proxy automatically opened a fresh same-room connection and growing next part
 without a new start. Closed pre-outage media and actively growing post-reconnect
 media passed decoder/DTS checks. The final graceful-stop/retained-session/deep-
-output phase remains separately unrun.
+output phase then passed on the preserved session: graceful remote stop retained
+four coherent parts, closed the recovery episode as an explicit user-stop boundary,
+completed finalization, and produced a 1,200.636-second H.264/AAC MP4 that passed
+deep validation without findings. All retained FLVs passed decoder/DTS checks,
+and their evidence leaves the measured outage absent from captured media.
 
 **Release bookkeeping after validation:** Synchronize the package version and
 release documentation for v0.5.0, rerun required checks, review the exact release
@@ -197,8 +201,9 @@ retained-session resume, service startup reconciliation with controller
 integration, outage retry policy/recovery status, and interrupted-finalization
 reconciliation, and conservative active-writer-partial recovery. Issue #14's
 deployed abrupt-restart requirement and the temporary-network-outage validation
-are complete; final output validation and release bookkeeping remain. Successful
-reconnect-gap measurement/reduction remains v0.6.
+are complete; final output validation is also complete, leaving only separately
+authorized release bookkeeping. Successful reconnect-gap measurement/reduction
+remains v0.6.
 
 ### v0.6.0 ? Reconnect-gap reduction
 

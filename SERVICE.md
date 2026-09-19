@@ -338,4 +338,16 @@ start. Both the closed pre-outage part and the active post-reconnect media passe
 FFprobe decoder/DTS checks. The coalesced recovered boundary intentionally remains
 open until the successful connection closes and turns its writer partial into a
 completed retained part. Final graceful-stop/finalization, retained-session, and
-deep-output validation remain unrun. Version is 0.4.0; v0.5 is unreleased.
+deep-output validation subsequently passed on that preserved session. Remote stop
+closed connection 8 and retained parts 2--4, recorded the open recovery boundary
+as `user_stop`, finalized all four parts, and produced a 1,200.636-second H.264/AAC
+MP4. The retained session, every FLV's decoder/DTS checks, and deep MP4 validation
+all passed without findings. The proxy was retired and the Scheduled Task restarted
+healthy, available, and idle without proxy configuration.
+
+That restart exposed and fixed one status-only accounting defect: an inactive
+controller now takes the maximum durable reconnect count from `session.json`, so
+completed status retains its 7 reconnects across a service restart. Active status
+still uses in-memory allocations and does not open the manifest while capture may
+atomically replace it on Windows. Version remains 0.4.0; v0.5 is unreleased pending
+separately authorized release bookkeeping.

@@ -617,9 +617,21 @@ TikTok resolution and media were isolated behind a terminated loopback proxy, th
 service retained one session/room, fixed media counts, responsive control, and
 patient retry state; restoring the proxy automatically resumed the same room in a
 fresh growing part without a new start. Pre-outage and active post-reconnect media
-both passed decoder/DTS checks. The final completed-media validation remains
-outstanding. No future-LIVE monitoring or Task Scheduler modification is
-implemented.
+both passed decoder/DTS checks. At that point final completed-media validation
+remained outstanding. No future-LIVE monitoring or Task Scheduler modification
+is implemented.
+
+The preserved outage session then passed final deployment validation. A normal
+remote stop closed its successful post-outage connection as interrupted, closed
+the open recovery summary with phase `user_stop`, retained four coherent FLVs,
+and completed finalization. All retained parts passed decoder/DTS checks; the
+1,200.636-second H.264/AAC MP4 passed deep validation without findings. The
+103.366-second observed retained-media gap across the outage is absent from the
+output rather than represented as capture. After proxy retirement and an idle
+service restart, status also restores the completed manifest's reconnect count;
+active capture avoids reading the manifest while its atomic replacement may be
+in progress. All v0.5 real deployment-validation phases are complete, while the
+package remains v0.4.0 pending separate release authorization.
 
 ### tikrec/service.py — narrow HTTP adapter
 

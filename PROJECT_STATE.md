@@ -7,23 +7,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** The real deployed temporary-network-outage validation
-  passed on 2026-09-19. Issue #14's abrupt-restart requirement remains complete.
-- **Status:** A 93-second loopback-proxy outage isolated TikTok resolution/media
-  without interrupting Tailscale control. The same session and canonical room
-  automatically returned to recording through a fresh connection and growing
-  `part-0002`; no new start was issued and bytes stayed fixed during the outage.
+- **Active issue/task:** All real v0.5 deployment-validation phases passed on
+  2026-09-19. Issue #14's abrupt-restart requirement remains complete.
+- **Status:** The outage session stopped gracefully, retained coherent recovery
+  evidence, finalized four parts, and passed retained-session and deep-output
+  validation. The temporary proxy is retired and the service is normally idle.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
-- **Pending owner action:** Separately authorize the final deployment-validation
-  phase. Preserve both abrupt-restart datasets and the outage dataset; no release
-  action is authorized.
-- **Next queued task:** Perform the final graceful-stop/finalization,
-  retained-session, and deep-output validation as one separately bounded phase.
+- **Pending owner action:** Separately authorize v0.5.0 release-candidate/release
+  bookkeeping. Preserve all three deployment datasets; no release action was
+  performed during validation.
+- **Next queued task:** Prepare the v0.5.0 release candidate, synchronize package
+  and release documentation, and execute the release checklist only under its
+  separate authorization.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -192,17 +192,26 @@ new work; calendar entries are reminders only.
   starts. The proxy was unavailable for about 93 seconds; the next CDN tunnel
   opened about 102.6 seconds after part 1's last retained-media observation, so
   that interval is an observed capture gap, not recorded media.
-- **Expected open-boundary state:** Active-capture recovery closes its coalesced
-  `network_recovery` summary only when the reconnected source closes and its useful
-  media becomes a completed retained part. The service therefore honestly remains
-  `recording` with a growing writer partial while the entered boundary is open;
-  this run did not manufacture another disconnect or invoke graceful finalization
-  merely to close it. The current service process inherited the validation proxy;
-  user-level `HTTPS_PROXY` has been removed, but loopback proxy PID 48072 must stay
-  running until the active recording is stopped in the final validation phase.
-- **Validation still required for v0.5:** separately perform the final
-  graceful-stop/finalization, retained-session, and deep-output validation. It was
-  not attempted or claimed here.
+- **Final deployment validation passed:** The same session was remotely stopped
+  through TikREC after more than 1,150 seconds of useful post-outage capture.
+  Connection 8 closed as interrupted with completed `part-0002.flv` through
+  `part-0004.flv`; the coalesced recovery boundary closed honestly as `user_stop`
+  with retry attempt 7 rather than inventing source EOF. Its connection record
+  proves successful same-room media from `1789820978.7953813` through
+  `1789822129.9061882`. Manifest/job state retained the original session and room,
+  4 parts, 8 allocated connections, 7 reconnects, completed finalization, and
+  intentional interruption. All four FLVs passed decoder/DTS validation without
+  warnings. The 159,231,842-byte H.264/AAC MP4 (720x1280, 1,200.636 seconds,
+  SHA-256 `9B6C75049EFE5E7708938345B2642D0B1DDED8216D93EEFD8B4CF9204B701B3E`)
+  passed deep validation without findings. The 103.366-second interval between
+  pre- and post-outage retained media remains absent from the output timeline.
+- **Validation-discovered fix:** Restarting the idle service initially exposed
+  `reconnect_count=0` even though the completed manifest retained 7. Inactive
+  status now restores that durable count without reading the manifest while active
+  capture may atomically replace it on Windows. Focused tests and the full 729-test
+  suite pass. The validation proxy was retired, user-level `HTTPS_PROXY` remains
+  absent, and the Scheduled Task was restarted healthy/available in its normal
+  environment.
 - **Release bookkeeping after validation:** synchronize the v0.5.0 package and
   release documentation, rerun required checks, review the exact release commit,
   then create the annotated tag and published GitHub Release in a separately

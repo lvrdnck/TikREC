@@ -1,5 +1,6 @@
 """Map safe controller snapshots to durable intent without serializing media URLs."""
 
+import json
 import os
 from pathlib import Path
 
@@ -53,11 +54,25 @@ def progress_snapshot(job, *, parts, active, current_part, current_bytes, resolu
         pass
     extra = current_bytes if active and current_part not in sizes else 0
     end = snapshot["ended_at"] if snapshot["ended_at"] is not None else clock()
+    # Never hold the manifest open against its Windows atomic replacement.
+    # Once capture is inactive, it keeps allocation counts across restarts.
+    reconnects = max(0, resolutions - 1)
+    if not active:
+        reconnects = max(reconnects, _manifest_reconnect_count(parts))
     snapshot.update(active=active, part_count=len(sizes),
-                    reconnect_count=max(0, resolutions - 1),
+                    reconnect_count=reconnects,
                     bytes_written=sum(sizes.values()) + extra,
                     elapsed_seconds=max(0, end - snapshot["started_at"]))
     return snapshot
+
+
+def _manifest_reconnect_count(parts):
+    try:
+        document = json.loads((parts / "session.json").read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return 0
+    value = document.get("reconnect_count") if isinstance(document, dict) else None
+    return value if type(value) is int and value >= 0 else 0
 
 
 def update_network_status(job, status, *, clock):
