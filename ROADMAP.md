@@ -172,8 +172,13 @@ room, and resumed through connection 3 into fresh `part-0002.flv`. The recovered
 and first resumed parts passed decoder/DTS checks with independent near-zero media
 starts. A later short 640x1280 source-configuration part alone had H.264 decoder
 errors between clean 720x1280 parts; its evidence is preserved and no recovery-code
-change is justified from that source interval. The real network-outage phase and
-the final graceful-stop/retained-session/deep-output phase remain separately unrun.
+change is justified from that source interval. The real network-outage phase also
+passed on 2026-09-19: a loopback proxy interruption held session/room/bytes fixed
+in patient recovery, staged retries remained remotely observable, and restoring
+the proxy automatically opened a fresh same-room connection and growing next part
+without a new start. Closed pre-outage media and actively growing post-reconnect
+media passed decoder/DTS checks. The final graceful-stop/retained-session/deep-
+output phase remains separately unrun.
 
 **Release bookkeeping after validation:** Synchronize the package version and
 release documentation for v0.5.0, rerun required checks, review the exact release
@@ -191,9 +196,9 @@ Implemented sequence: durable job state, public room identity,
 retained-session resume, service startup reconciliation with controller
 integration, outage retry policy/recovery status, and interrupted-finalization
 reconciliation, and conservative active-writer-partial recovery. Issue #14's
-deployed abrupt-restart requirement is complete; outage, final output validation,
-and release bookkeeping remain. Successful reconnect-gap measurement/reduction
-remains v0.6.
+deployed abrupt-restart requirement and the temporary-network-outage validation
+are complete; final output validation and release bookkeeping remain. Successful
+reconnect-gap measurement/reduction remains v0.6.
 
 ### v0.6.0 ? Reconnect-gap reduction
 

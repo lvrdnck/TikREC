@@ -7,21 +7,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #14's repeat deployed abrupt-restart validation
-  passed on 2026-09-19 and its acceptance criteria are complete.
-- **Status:** Startup preserved the exact writer crash file, admitted its validated
-  complete FLV prefix, and resumed the same session/room into fresh numbered media.
-  The earlier failed-run evidence remained byte-unchanged during this validation.
+- **Active issue/task:** The real deployed temporary-network-outage validation
+  passed on 2026-09-19. Issue #14's abrupt-restart requirement remains complete.
+- **Status:** A 93-second loopback-proxy outage isolated TikTok resolution/media
+  without interrupting Tailscale control. The same session and canonical room
+  automatically returned to recording through a fresh connection and growing
+  `part-0002`; no new start was issued and bytes stayed fixed during the outage.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
-- **Pending owner action:** Separately authorize the next deployment-validation
-  phase. Preserve both abrupt-restart datasets; no release action is authorized.
-- **Next queued task:** Exercise the real temporary network-outage phase. The final
-  graceful-stop/retained-session/deep-output phase remains later and separate.
+- **Pending owner action:** Separately authorize the final deployment-validation
+  phase. Preserve both abrupt-restart datasets and the outage dataset; no release
+  action is authorized.
+- **Next queued task:** Perform the final graceful-stop/finalization,
+  retained-session, and deep-output validation as one separately bounded phase.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -176,9 +178,31 @@ new work; calendar entries are reminders only.
   code change. A normal remote stop was used only to freeze evidence after the
   finding; its completed output was not deep-validated or claimed as the deferred
   graceful-finalization phase.
-- **Validation still required for v0.5:** exercise a real temporary network outage,
-  then separately perform the final graceful-stop/finalization, retained-session,
-  and deep-output validation. Neither phase was attempted or claimed here.
+- **Temporary-network-outage validation passed:** On 2026-09-19 a new deployed
+  `lilymaye207` session `73675685-5c7c-4310-b94f-dd749e2bc5b8`, canonical room
+  `7687184860712225537`, was routed through a loopback HTTPS CONNECT proxy that
+  covered both TikTok resolution and the selected media CDN while remote control
+  stayed direct over Tailscale. Killing only that proxy closed a 6,293,414-byte
+  `part-0001.flv`, entered durable `recovering_network/network_outage`, and held
+  retained bytes and identity fixed through staged retries. Restoring the proxy
+  produced an automatic same-room reconnect without a new start; connection
+  allocation advanced to 8 (`reconnect_count=7`) and fresh `part-0002` grew from
+  650,080 to more than 43 MB. Part 1 and a read-only probe of the actively
+  growing part 2 both passed FFprobe decoder/DTS checks with near-zero rebased
+  starts. The proxy was unavailable for about 93 seconds; the next CDN tunnel
+  opened about 102.6 seconds after part 1's last retained-media observation, so
+  that interval is an observed capture gap, not recorded media.
+- **Expected open-boundary state:** Active-capture recovery closes its coalesced
+  `network_recovery` summary only when the reconnected source closes and its useful
+  media becomes a completed retained part. The service therefore honestly remains
+  `recording` with a growing writer partial while the entered boundary is open;
+  this run did not manufacture another disconnect or invoke graceful finalization
+  merely to close it. The current service process inherited the validation proxy;
+  user-level `HTTPS_PROXY` has been removed, but loopback proxy PID 48072 must stay
+  running until the active recording is stopped in the final validation phase.
+- **Validation still required for v0.5:** separately perform the final
+  graceful-stop/finalization, retained-session, and deep-output validation. It was
+  not attempted or claimed here.
 - **Release bookkeeping after validation:** synchronize the v0.5.0 package and
   release documentation, rerun required checks, review the exact release commit,
   then create the annotated tag and published GitHub Release in a separately

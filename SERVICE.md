@@ -325,5 +325,17 @@ equal complete prefix was published, and the same session/room resumed through a
 fresh connection and `part-0002.flv`; both recovered and first resumed parts passed
 decoder/DTS checks. A later isolated source-configuration part had H.264 decoder
 errors and remains preserved without a recovery-code change. Network-outage and
-final graceful-stop/deep-output validation phases remain unrun. Version is 0.4.0;
-v0.5 is unreleased.
+final graceful-stop/deep-output validation phases were kept separate.
+
+The temporary-network-outage phase passed later on 2026-09-19. A loopback HTTPS
+CONNECT proxy carried TikTok page/API resolution and the media CDN while the
+service control client bypassed proxies over Tailscale. Terminating only the proxy
+left the service responsive, closed a valid 6,293,414-byte first part, and exposed
+durable `recovering_network` state with fixed session, room, part, and byte counts
+through the staged waits. After about 93 seconds, restoring the proxy automatically
+matched the saved room and resumed into a fresh growing second part without a new
+start. Both the closed pre-outage part and the active post-reconnect media passed
+FFprobe decoder/DTS checks. The coalesced recovered boundary intentionally remains
+open until the successful connection closes and turns its writer partial into a
+completed retained part. Final graceful-stop/finalization, retained-session, and
+deep-output validation remain unrun. Version is 0.4.0; v0.5 is unreleased.

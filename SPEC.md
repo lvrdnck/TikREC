@@ -612,8 +612,14 @@ Interrupted-FFmpeg finalization and active-writer-partial reconciliation are
 implemented. Issue #14's repeat process-death deployment validation passed on
 2026-09-19 with exact crash-evidence preservation, validated-prefix publication,
 and same-session/same-room continuation into a fresh connection and part. The
-network-outage and final completed-media validation remain outstanding. No future-
-LIVE monitoring or Task Scheduler modification is implemented.
+temporary-network-outage deployment validation also passed on 2026-09-19: while
+TikTok resolution and media were isolated behind a terminated loopback proxy, the
+service retained one session/room, fixed media counts, responsive control, and
+patient retry state; restoring the proxy automatically resumed the same room in a
+fresh growing part without a new start. Pre-outage and active post-reconnect media
+both passed decoder/DTS checks. The final completed-media validation remains
+outstanding. No future-LIVE monitoring or Task Scheduler modification is
+implemented.
 
 ### tikrec/service.py — narrow HTTP adapter
 
