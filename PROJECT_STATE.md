@@ -7,20 +7,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #15 tracks v0.5.0 release finalization.
-- **Status:** All real v0.5 deployment validation passed and package source is
-  v0.5.0. Tag and GitHub Release state are journaled after external verification.
+- **Active issue/task:** Issue #15 release finalization is complete; close it after
+  this coordination record is pushed and externally rechecked.
+- **Status:** All real v0.5 deployment validation passed. The annotated v0.5.0
+  tag and non-draft GitHub Release have been externally verified.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
-- **Pending owner action:** Review the exact candidate commit, then separately
-  authorize the immutable v0.5.0 tag and published GitHub Release. Preserve all
-  three deployment datasets.
-- **Next queued task:** Tag the reviewed v0.5.0 candidate and publish its GitHub
-  Release under the release checklist in issue #15.
+- **Pending owner action:** None. Preserve all three deployment datasets.
+- **Next queued task:** Select the next post-v0.5 roadmap task separately; do not
+  begin v0.6 work as part of release finalization.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -29,14 +28,14 @@ new work; calendar entries are reminders only.
 ## Released version and development target
 
 - **Package version:** v0.5.0, from `tikrec.__version__` and packaging metadata.
-- **Tagged version:** annotated `v0.4.0`, which peels to
-  `9f8e4104f8bc24f439a3e927ca72da29257c41fa`.
-- **GitHub Release:** published `TikREC v0.4.0` for `v0.4.0`.
-- **Current released version:** v0.4.0; its package version, tag, and GitHub
-  Release are synchronized. Historical GitHub Releases for v0.3.0 and v0.3.1
-  are also published from their existing tags.
-- **Release state:** v0.5.0 environment survival/resumability source is complete;
-  tag and GitHub Release synchronization is recorded after external verification.
+- **Tagged version:** annotated `v0.5.0`, whose tag object is
+  `173d25f4736a2b900ffb381d98e218aaae31770c` and which peels to release commit
+  `7e65248bb4061cf74e84986314db0b6b16d5fc02`.
+- **GitHub Release:** published non-draft, non-prerelease `TikREC v0.5.0` for
+  `v0.5.0` on 2026-09-19.
+- **Current released version:** v0.5.0; its package version, immutable annotated
+  tag, and GitHub Release are synchronized. Historical v0.3.0, v0.3.1, and v0.4.0
+  releases remain published from their existing tags.
 
 ## Issue #13 rendition investigation
 
@@ -209,9 +208,9 @@ new work; calendar entries are reminders only.
   suite pass. The validation proxy was retired, user-level `HTTPS_PROXY` remains
   absent, and the Scheduled Task was restarted healthy/available in its normal
   environment.
-- **Release finalization:** Issue #15 records package/documentation and pre-tag
-  verification. Annotated-tag and GitHub Release results are appended only after
-  their external verification.
+- **Release finalization:** v0.5.0 tag `173d25f4736a2b900ffb381d98e218aaae31770c`
+  was pushed and peels to `7e65248bb4061cf74e84986314db0b6b16d5fc02`; the verified
+  non-draft GitHub Release is published. Issue #15 is ready to close.
 - **Optional non-blocking evidence:** issue #9's real raw-copy stall-boundary
   check, issue #8's replay with matching raw bytes, and issue #13's distinct
   rendition comparison remain open for opportunistic collection.

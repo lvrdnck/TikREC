@@ -184,9 +184,11 @@ completed finalization, and produced a 1,200.636-second H.264/AAC MP4 that passe
 deep validation without findings. All retained FLVs passed decoder/DTS checks,
 and their evidence leaves the measured outage absent from captured media.
 
-**Release source:** v0.5.0 package and documentation reflect the completed
-environment-survival/resumability work. The release checklist in issue #15 records
-the externally verified tag and GitHub Release state.
+**Release record:** v0.5.0 package and documentation reflect the completed
+environment-survival/resumability work. Annotated tag `v0.5.0` (tag object
+`173d25f4736a2b900ffb381d98e218aaae31770c`) peels to release commit
+`7e65248bb4061cf74e84986314db0b6b16d5fc02`; the non-draft, non-prerelease
+GitHub Release `TikREC v0.5.0` was published on 2026-09-19.
 
 Issues #9 and #8 remain open for rare real stall/replay evidence, and issue #13
 is intentionally paused pending an opportunistic distinct-rendition encounter.
@@ -199,9 +201,9 @@ retained-session resume, service startup reconciliation with controller
 integration, outage retry policy/recovery status, and interrupted-finalization
 reconciliation, and conservative active-writer-partial recovery. Issue #14's
 deployed abrupt-restart requirement and the temporary-network-outage validation
-are complete; final output validation is also complete, leaving only separately
-authorized release bookkeeping. Successful reconnect-gap measurement/reduction
-remains v0.6.
+are complete; final output validation and v0.5.0 release bookkeeping are also
+complete. Successful reconnect-gap measurement/reduction remains v0.6 and must
+be selected separately from this completed release.
 
 ### v0.6.0 ? Reconnect-gap reduction
 
