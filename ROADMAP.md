@@ -3,10 +3,13 @@
 ## Long-term direction
 
 TikREC starts as a reliability-first recorder for a single, manually selected
-TikTok LIVE. The longer-term product direction is a broader livestream recording
-platform: user-configured creator automation, concurrent recording, a library,
-playback, web interfaces, events, transcripts, search, analytics, integrations,
-and storage workflows built on trustworthy capture and recovery evidence.
+TikTok LIVE and initially targets a single-owner setup. The longer-term product
+direction is a broader livestream recording platform: user-configured creator
+automation, concurrent recording, a library, playback, web interfaces, events,
+transcripts, search, analytics, integrations, and storage workflows built on
+trustworthy capture and recovery evidence. A later public/distributed app is a
+possible product stage, not an assumption; it requires separate legal, privacy,
+platform-policy, security, and product review before that scope is adopted.
 
 That growth must not weaken the project's core boundaries. TikREC will not
 bypass authentication, CAPTCHA, entitlements, access controls, or private request
@@ -20,8 +23,10 @@ act on creators the user deliberately configured, not enable covert surveillance
   in README.md and SPEC.md.
 - **Planned / future product:** deliberately deferred while reliability work has
   priority, but expected to be reconsidered and rebuilt.
-- **Possible / later:** useful predecessor capabilities or ideas whose exact
-  requirements, architecture, and sequence are undecided.
+- **Versioned future:** intended product capabilities now have directional
+  release slots even when their exact requirements may change before work begins.
+- **Conditional candidate:** a version slot may be reserved for a useful idea
+  without committing to implementation until earlier evidence justifies it.
 - **Permanent boundary:** unsafe or unwanted methods and behavior that TikREC
   must not adopt, regardless of feature sequence.
 
@@ -288,64 +293,133 @@ throughout. Recovery cannot reconstruct media TikTok never delivered.
 validation, and logging with documented discovery and CLI override precedence.
 This release does not add TikTok credentials or account profiles.
 
-### v0.9+ ? Library, playback, and UI based on proven use
+### v0.9.0 — Recording library, creator pages, playback, and downloads
 
-**Goal:** Catalog sessions and artifacts, browse history/health, and provide
-playback and eventual UI controls when actual use establishes the requirements.
+**Goal:** Turn recordings into a browsable library instead of a folder of files.
+Catalog sessions and artifacts, show recording health/history, generate useful
+thumbnails or storyboards, and organize recordings by creator. Creator pages
+should show that creator's recordings and useful basic history without requiring
+creator automation to exist yet.
+
 A trusted remote device such as the Mac should be able to browse and play
 recordings that remain stored on main-pc over the tailnet without a manual SCP
-step, with explicit download/copy when a local file is wanted. A documented
-trusted-network file-share workflow may serve as an earlier bridge; the eventual
-TikREC library should make remote playback and downloads first-class product
-features. Build presentation on the existing service boundary; text/analytics
-artifacts are optional and are not dependencies for recording control or a library.
+step. Playback should not silently copy the whole recording locally. Provide an
+explicit one-click download/copy action when a local file is wanted. A documented
+trusted-network file-share workflow may remain an earlier bridge.
 
-## Long-term capability backlog
+### v0.10.0 — Web interface, home screen, and live remote viewing
 
-The areas below preserve useful predecessor capabilities without promising the
-predecessor's implementation, architecture, exact requirements, release number,
-or order.
-Near-term v0.5/v0.6 reliability work remains first.
+**Goal:** Make normal TikREC use possible from a browser instead of requiring the
+CLI for everyday control. Add a proper home screen showing service health, active
+recording state, recent recordings, storage status, and important warnings.
 
-### Planned / future product areas
+Add browser-based start/stop/status/library controls and **watch while recording**
+for an active recording stored on main-pc. Live viewing must remain separate from
+capture correctness: playback failure must never stop or damage the recording.
 
-- **Creator monitoring and automation:** persistent user-configured public
-  creator lists, detecting when those creators go LIVE, automatic recording,
-  completion, re-arming, and manual overrides. This is explicit opt-in automation,
-  not a change to the current one-shot `live` or startup-resume semantics.
-- **Multiple and concurrent recordings:** independent sessions for multiple
-  configured creators, bounded resource ownership, and the conditional redundant
-  same-LIVE capture described above when evidence justifies it.
-- **Library, history, playback, and downloads:** catalog sessions and artifacts,
-  browse recording/recovery health, generate thumbnails/storyboards, play
-  retained outputs locally or from a trusted remote device over the tailnet,
-  and intentionally expose user-owned downloads without requiring manual file
-  copies for ordinary viewing.
-- **Web interface:** browser-based recording control, library workflows, playback,
-  and administration built on explicit application/service boundaries; current
-  v0.4 endpoints remain the complete API today.
-- **Events, chat, and gifts:** opt-in timestamped public chat, gifts, joins, LIVE
-  events, replay aligned with recordings, and clear partial-data reporting.
-- **Transcription, captions, and search:** post-process recorded audio with engine
-  provenance, create timed transcripts/subtitles, and search available recording,
-  transcript, chat, and event metadata.
-- **Analytics and prediction:** explainable recording/reconnect/event statistics,
-  session comparison, and possible creator schedule prediction based on the
-  user's retained history.
-- **Notifications and integrations:** recording/lifecycle notifications, webhooks,
-  exports, and adapters driven by demonstrated workflows.
-- **Storage and operations:** retention controls, local/network/cloud publishing
-  or storage, a documented trusted-network recording-share workflow for remote
-  Mac/PC access where useful, soak testing, health checks, and forensic tooling.
-- **Configuration and administration:** durable creator/recording defaults,
-  deployment settings, resource limits, and auditable operational controls.
+### v0.11.0 — Creator monitoring and automatic recording
 
-### Possible / later concepts
+**Goal:** Let the owner explicitly configure public creators to monitor. Detect
+when those creators go LIVE, start recording automatically, finish safely, and
+re-arm for the creator's next LIVE, with manual overrides.
 
-- Legitimate authenticated or gated access using user-supplied authorization,
-  subject to a separate security/privacy design and platform rules.
-- Accounts, multi-user operation, mobile/PWA experiences, and public/editorial
-  publishing concepts after local single-owner workflows establish requirements.
+This is opt-in creator automation, not covert monitoring, and it does not change
+the current one-shot recording or same-room crash-resume semantics.
+
+### v0.12.0 — Multiple simultaneous creator recordings
+
+**Goal:** Record independent LIVEs for multiple configured creators at the same
+time with bounded CPU, disk, network, and service ownership. Each session keeps
+its own lifecycle, recovery evidence, status, output, and errors.
+
+This is separate from v0.6.5 redundant same-LIVE capture, whose purpose would be
+gap filling rather than recording different creators.
+
+### v0.13.0 — Smart storage, retention, and disk protection
+
+**Goal:** Make growing recording libraries safe to operate without manual disk
+housekeeping. Add retention rules, low-disk warnings/protection, cleanup of
+eligible temporary/recovery artifacts after safe validation, and local/network/
+cloud storage or publishing workflows where justified.
+
+Retention must support explicit per-creator protection so selected creators can
+be configured as **never automatically delete** even when general recordings use
+age/space-based cleanup. Destructive cleanup must remain auditable and must never
+silently remove protected recordings or retained evidence needed for recovery.
+
+### v0.14.0 — LIVE events, chat, and gifts
+
+**Goal:** Optionally retain timestamped public chat, gifts, joins, and other
+available LIVE events, then align them with recording playback. Missing or partial
+event data must be shown honestly rather than implied to be complete.
+
+### v0.15.0 — Transcription, captions, and search inside recordings
+
+**Goal:** Post-process recorded audio into timed transcripts/captions with clear
+engine provenance. Add search across transcripts and available recording/event
+metadata, with results linking directly to the relevant playback timestamp.
+
+This is the release where queries such as finding where a creator discussed a
+specific topic should become practical.
+
+### v0.16.0 — Recording calendar and creator analytics
+
+**Goal:** Add a creator-oriented timeline/calendar of observed LIVEs and recorded
+sessions, plus explainable recording, reconnect, event, and creator-history
+statistics. Creator pages can grow from simple v0.9 history into schedule/history
+views here.
+
+Possible schedule prediction may use only the owner's retained history and should
+be presented as an estimate, not a guarantee.
+
+### v0.17.0 — Notifications and integrations
+
+**Goal:** Deliver useful lifecycle notifications such as creator LIVE detected,
+recording started, completed, failed/needs attention, and low disk space. Add
+webhooks, exports, and external adapters only around demonstrated workflows so
+notifications remain useful rather than noisy.
+
+### v0.18.0 — Clips and highlights (conditional candidate)
+
+**Goal if adopted:** Create a new clip from a selected time range without changing
+the original recording, preserving source quality where practical. This version
+slot is intentionally conditional: build it only after library/playback workflows
+show that clipping is genuinely useful. Automatic highlight generation is not
+committed scope.
+
+### v0.19.0 — Authenticated or gated source support (conditional)
+
+**Goal if adopted:** Support legitimate access that requires user-supplied
+authorization/session material, but only after a separate security/privacy design
+and review of applicable platform rules. TikREC must not bypass authentication,
+CAPTCHA, entitlements, access controls, or private signing.
+
+### v0.20.0 — Accounts, multi-user operation, and administration
+
+**Goal if product direction requires it:** Move beyond the initial single-owner
+deployment with accounts, permissions, multi-user administration, resource
+limits, and auditable controls. This is not required for the personal/local
+product and should begin only when an actual multi-user use case exists.
+
+### v0.21.0 — Mobile/PWA and public-app readiness (conditional)
+
+**Goal if TikREC expands beyond personal use:** Provide a mobile/PWA experience
+and prepare the product for broader distribution or public/editorial workflows.
+This release is gated on explicit legal, privacy, security, platform-policy, and
+product decisions; the roadmap does not assume that public release is permitted
+or desirable.
+
+## Versioned future product sequence
+
+The releases above are directional slots rather than fixed promises or dates.
+Requirements may move when real use exposes dependencies, but future product
+capabilities should no longer sit in an unversioned "someday" bucket. Reliability
+and the active v0.6 work still take precedence over later product work.
+
+The sequence intentionally grows from trustworthy capture into: recovery and
+configuration, library/playback, a usable web experience, creator automation,
+multi-recording, storage safety, richer retained data, search/analytics,
+notifications, and only then optional multi-user/public-product capabilities.
 
 ### Permanent boundaries
 
@@ -364,5 +438,7 @@ Evolve separation only when a release needs it; do not scaffold future systems.
 - **Processing:** retained-part finalization and read-only validation.
 - **Application/service:** one recording job, cooperative lifecycle, safe status.
 - **Interfaces:** existing local CLI, narrow HTTP API, remote CLI; eventual UI.
-- **Later product layers:** creator automation, library, web/playback, events,
-  transcripts, search, analytics, integrations, storage, and administration.
+- **Versioned product layers:** library/remote playback, web/live viewing,
+  creator automation, concurrent recordings, smart storage, events, transcripts,
+  search, calendar/analytics, notifications/integrations, and conditional
+  multi-user/public-app capabilities.
