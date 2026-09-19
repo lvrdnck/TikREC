@@ -7,19 +7,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #15 release finalization is complete; close it after
-  this coordination record is pushed and externally rechecked.
-- **Status:** All real v0.5 deployment validation passed. The annotated v0.5.0
-  tag and non-draft GitHub Release have been externally verified.
+- **Active issue/task:** v0.6 reconnect-gap measurement and evidence-backed
+  reduction.
+- **Status:** Phase 1 measurement tooling and the retained-evidence baseline are
+  complete. One usable ordinary reconnect shows a 10.883-second observed gap,
+  including 1.004 seconds of local/backoff time, but one sample does not justify
+  changing production reconnect behavior. v0.6 remains active.
+- **Completed release task:** Issue #15 is closed. The annotated v0.5.0 tag and
+  published non-draft GitHub Release remain synchronized and unchanged.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks ordinary v0.5 readiness.
-- **Pending owner action:** None. Preserve all three deployment datasets.
-- **Next queued task:** Select the next post-v0.5 roadmap task separately; do not
-  begin v0.6 work as part of release finalization.
+- **Pending owner action:** None. Preserve all deployment and reconnect evidence.
+- **Next queued task:** Collect multiple ordinary reconnects with the existing
+  analyzer, then reassess only the fixed healthy-close delay against that evidence.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

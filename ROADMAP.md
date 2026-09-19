@@ -216,6 +216,20 @@ byte ranges and monotonic timing beside the byte-exact source. This supports
 source-versus-writer replay investigation and later gap measurement; it does not
 itself reduce reconnect gaps or enable simultaneous capture.
 
+**Phase 1 baseline (2026-09-19):** A read-only analyzer now derives the full
+retained-media gap and its existing milestone components from `connections.jsonl`,
+keeps missing values unknown, exposes intervening/coalesced failed attempts, and
+separates ordinary reconnects from outage, restart/resume, room-end, and other
+recovery boundaries. Six retained real logs yielded one usable ordinary reconnect:
+10.883 seconds total, comprising 0.001 seconds of dying tail, 1.004 seconds of
+local/backoff time, 7.107 seconds resolving, 2.691 seconds opening HTTP, 0.080
+seconds to first parsed media, and less than 0.001 seconds at the write gate.
+Resolution and HTTP open dominated this single observation; the fixed healthy-
+close wait is visible but is not supported by multiple samples, so production
+reconnect behavior remains unchanged. The deliberate v0.5 outage remains separate
+at 103.366 seconds. v0.6 remains active: gather multiple ordinary reconnects and
+then reassess the healthy-close delay before considering broader policy changes.
+
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
 **Goal:** Eliminate reconnect gaps by maintaining more than one concurrent

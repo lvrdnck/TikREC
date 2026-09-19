@@ -52,7 +52,8 @@ stall became visible to TikREC; buffering means they are not TCP/TLS packet
 boundaries or exact network/server arrival times. Raw-copy and arrival-log errors
 only emit warnings; recording continues. Raw copies roughly double the
 recording's disk use, with additional small arrival-log overhead. See
-[CONNECTION_LOG.md](CONNECTION_LOG.md) for the evidence contract.
+[CONNECTION_LOG.md](CONNECTION_LOG.md) for the evidence contract and the read-only
+`scripts/analyze_reconnect_gaps.py` diagnostic for retained reconnect baselines.
 
 An open media connection that delivers no bytes for 30 seconds is treated as a
 stall. Live capture records a `stalled` connection outcome and reconnects under

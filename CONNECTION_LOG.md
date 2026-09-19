@@ -33,6 +33,8 @@ For adjacent successful live-capture connections, the measurable breakdown is:
 - HTTP/local setup: current `http_opened_at - resolved_at`.
 - Initial media delivery/parsing: current `first_media_tag_at - http_opened_at`.
 - Initial keyframe gate/writing: current `first_retained_media_at - first_media_tag_at`.
+- Total observed retained-media gap: current `first_retained_media_at -` previous
+  `last_retained_media_at`.
 
 An intervening failed attempt contributes its own duration and backoff. These
 are processing timestamps, not exact socket-byte arrival times: HTTP buffering,
@@ -45,6 +47,46 @@ writers without the retained-media hook leave retained-media times unknown.
 Direct-FLV raw-copy records also contain observed media times, but have no room
 resolution or selected rendition. Their existing attempt interval includes
 optional finalization, unlike live-capture connection intervals.
+
+## Read-only reconnect-gap analyzer
+
+Run the checkout-local diagnostic against one or more retained logs:
+
+```console
+python scripts/analyze_reconnect_gaps.py PATH/TO/connections.jsonl [...]
+```
+
+Add `--json` for structured output. The analyzer never writes recording artifacts.
+It reports unknown milestones as `unknown`, lists recorded intervening attempts,
+flags connection-number allocations whose individual resolver attempts were
+coalesced, and classifies explicit outage, service-restart, capture-resume, and
+room-status boundaries separately from ordinary reconnects. A wall-clock retained-
+media gap is diagnostic elapsed time, not exact missing source-media duration.
+
+The 2026-09-19 Phase 1 audit inspected the six retained non-test datasets under
+`runs/`: `gracie-kf-2026-09-15.parts`, `gracie-kf-2026-09-15_1.parts`,
+`recording.parts`, `v05-deployment-allynwd04-20260916.parts`,
+`v05-issue14-abrupt-lilymaye207-20260919T0200.parts`, and
+`v05-network-outage-lilymaye207-20260919T1425.parts`. Only `recording.parts`
+contained a usable ordinary in-process reconnect. Its connection 1 to 2 breakdown
+was 0.001 seconds dying tail, 1.004 local/backoff, 7.107 resolution, 2.691
+HTTP/local setup, 0.080 initial media delivery/parsing, less than 0.001 keyframe/
+write gate, and 10.883 total.
+With `n=1`, the median and range are the same. Resolution plus HTTP open accounted
+for about 90% of the observed gap and is substantially source/network dependent.
+The approximately one-second configured healthy-close wait is TikREC-controlled;
+tail cleanup, parsing, and the write gate include TikREC-local work but contributed
+only about 0.081 seconds here. One ordinary sample is insufficient to change that
+production delay.
+
+The deliberate v0.5 network-outage validation is excluded from the ordinary
+baseline. Its connection 1 to 8 gap was 103.366 seconds: 0.150 dying tail, 100.280
+between attempts/outage waits, 2.125 resolution, 0.459 HTTP/local setup, 0.351
+initial media delivery/parsing, and 0.001 write gate. Its recovery event and six
+coalesced resolver-only allocations identify it as outage evidence. The other
+retained logs contain single connections, terminal room-end confirmation, or
+service/process-restart and explicit-resume boundaries without two comparable
+media-bearing connection records, so they do not contribute ordinary samples.
 
 ## Raw copy and byte-arrival evidence
 
