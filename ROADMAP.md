@@ -56,6 +56,47 @@ checklist.
 This roadmap is directional rather than a promise of exact scope or dates. It
 will evolve when implementation and real recordings reveal new dependencies.
 
+### Planning cadence and target dates
+
+These are planning targets, not release promises. They are based on TikREC's
+observed shipping cadence rather than a generic software-project estimate:
+v0.1.0, v0.2.0, and v0.3.0 were tagged on 2026-09-11; v0.4.0 followed on
+2026-09-15; and v0.5.0 followed on 2026-09-19. The two larger recent releases
+therefore took about four days each. For forward planning, an ordinary release
+uses roughly a 3--5 day working target and a larger/cross-cutting release roughly
+5--8 days, with immediate reforecasting when real use exposes a blocker or when
+work finishes materially early.
+
+The baseline schedule assumes conditional v0.6.5 redundant same-LIVE capture is
+not needed. If v0.6 evidence justifies v0.6.5, insert it before v0.7 and reforecast
+all later dates rather than pretending the original dates still apply.
+
+| Version | Planning target | Primary milestone |
+| --- | --- | --- |
+| v0.6.0 | 2026-09-22 | Reconnect-gap reduction |
+| v0.7.0 | 2026-09-25 | Guided interrupted-session recovery |
+| v0.8.0 | 2026-09-28 | Configuration and defaults |
+| v0.9.0 | 2026-10-03 | Creator monitoring and automatic recording |
+| v0.10.0 | 2026-10-08 | Multiple simultaneous creator recordings |
+| v0.11.0 | 2026-10-12 | Smart storage, retention, and disk protection |
+| v0.12.0 | 2026-10-15 | Notifications and integrations |
+| v0.13.0 | 2026-10-20 | Recording catalog and remote media access |
+| v0.14.0 | 2026-10-27 | Web UI, creator pages, playback, watch while recording |
+| v0.15.0 | 2026-11-03 | Transcription, captions, and search |
+| v0.16.0 | 2026-11-07 | Recording calendar and creator analytics |
+| v0.17.0 | 2026-11-12 | LIVE events, chat, and gifts |
+| v0.18.0 | 2026-11-16 | Clips/highlights, if adopted |
+| v0.19.0 | 2026-11-23 | Authenticated/gated source support, if adopted |
+| v0.20.0 | 2026-12-01 | Accounts and multi-user operation, if needed |
+| v0.21.0 | 2026-12-11 | Mobile/PWA and public-app readiness, if pursued |
+
+The dates are intentionally aggressive because the current workflow has already
+shipped substantial releases in days. They assume regular owner availability for
+real-LIVE validation when needed and continued one-task-at-a-time execution. A
+rare-evidence blocker, difficult media defect, legal/platform-policy decision, or
+conditional v0.6.5 work can move later targets; conversely, finishing a release
+early pulls the following work forward.
+
 ## Completed
 
 ### v0.1.0 — Reliable public LIVE recording
