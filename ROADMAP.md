@@ -293,51 +293,38 @@ throughout. Recovery cannot reconstruct media TikTok never delivered.
 validation, and logging with documented discovery and CLI override precedence.
 This release does not add TikTok credentials or account profiles.
 
-### v0.9.0 — Recording library, creator pages, playback, and downloads
-
-**Goal:** Turn recordings into a browsable library instead of a folder of files.
-Catalog sessions and artifacts, show recording health/history, generate useful
-thumbnails or storyboards, and organize recordings by creator. Creator pages
-should show that creator's recordings and useful basic history without requiring
-creator automation to exist yet.
-
-A trusted remote device such as the Mac should be able to browse and play
-recordings that remain stored on main-pc over the tailnet without a manual SCP
-step. Playback should not silently copy the whole recording locally. Provide an
-explicit one-click download/copy action when a local file is wanted. A documented
-trusted-network file-share workflow may remain an earlier bridge.
-
-### v0.10.0 — Web interface, home screen, and live remote viewing
-
-**Goal:** Make normal TikREC use possible from a browser instead of requiring the
-CLI for everyday control. Add a proper home screen showing service health, active
-recording state, recent recordings, storage status, and important warnings.
-
-Add browser-based start/stop/status/library controls and **watch while recording**
-for an active recording stored on main-pc. Live viewing must remain separate from
-capture correctness: playback failure must never stop or damage the recording.
-
-### v0.11.0 — Creator monitoring and automatic recording
+### v0.9.0 — Creator monitoring and automatic recording
 
 **Goal:** Let the owner explicitly configure public creators to monitor. Detect
 when those creators go LIVE, start recording automatically, finish safely, and
 re-arm for the creator's next LIVE, with manual overrides.
 
+This is the first release aimed directly at the "record it while I am asleep or
+away" use case. Initial automation may still be limited by the service's current
+single-active-recording model; overlapping monitored LIVEs must have explicit,
+honest behavior rather than silently pretending both were captured.
+
+Because unattended recording can consume disk without the owner present, this
+release must include a basic free-space safety floor and must fail safely when
+storage is insufficient. Full retention policy belongs to v0.11.
+
 This is opt-in creator automation, not covert monitoring, and it does not change
 the current one-shot recording or same-room crash-resume semantics.
 
-### v0.12.0 — Multiple simultaneous creator recordings
+### v0.10.0 — Multiple simultaneous creator recordings
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
 
-This is separate from v0.6.5 redundant same-LIVE capture, whose purpose would be
-gap filling rather than recording different creators.
+This follows creator automation quickly so overlapping monitored creators do not
+remain a long-term limitation. It is separate from v0.6.5 redundant same-LIVE
+capture, whose purpose would be gap filling rather than recording different
+creators.
 
-### v0.13.0 — Smart storage, retention, and disk protection
+### v0.11.0 — Smart storage, retention, and disk protection
 
-**Goal:** Make growing recording libraries safe to operate without manual disk
+**Goal:** Make unattended recording libraries safe to operate without manual disk
 housekeeping. Add retention rules, low-disk warnings/protection, cleanup of
 eligible temporary/recovery artifacts after safe validation, and local/network/
 cloud storage or publishing workflows where justified.
@@ -347,11 +334,35 @@ be configured as **never automatically delete** even when general recordings use
 age/space-based cleanup. Destructive cleanup must remain auditable and must never
 silently remove protected recordings or retained evidence needed for recovery.
 
-### v0.14.0 — LIVE events, chat, and gifts
+### v0.12.0 — Notifications and integrations
 
-**Goal:** Optionally retain timestamped public chat, gifts, joins, and other
-available LIVE events, then align them with recording playback. Missing or partial
-event data must be shown honestly rather than implied to be complete.
+**Goal:** Tell the owner when unattended behavior matters: creator LIVE detected,
+recording started, completed, skipped because of a limit, failed/needs attention,
+and low disk space. Add webhooks, exports, and external adapters only around
+demonstrated workflows so notifications remain useful rather than noisy.
+
+### v0.13.0 — Recording catalog, library foundation, and remote media access
+
+**Goal:** Turn recordings into a structured catalog instead of only a folder of
+files. Index sessions and artifacts, recording health/history, creator identity,
+basic thumbnails/storyboards, and the information later UI pages will need.
+
+This release is deliberately **not** the polished browser UI. The catalog can be
+used through service/API/CLI boundaries and can expose trusted tailnet playback
+or one-click download primitives. A Mac should be able to access a recording
+stored on main-pc without manual SCP, while explicit download/copy remains
+available when a local file is wanted.
+
+### v0.14.0 — Web interface, home screen, creator pages, and playback
+
+**Goal:** Put the v0.13 catalog and existing recording controls behind a proper
+browser experience. Add a home screen showing service health, active recordings,
+recent recordings, storage status, warnings, and monitored creators.
+
+Add creator pages using the catalog, normal playback and downloads, browser-based
+recording controls, and **watch while recording** for active recordings stored on
+main-pc. Live viewing must remain separate from capture correctness: playback
+failure must never stop or damage recording.
 
 ### v0.15.0 — Transcription, captions, and search inside recordings
 
@@ -366,18 +377,17 @@ specific topic should become practical.
 
 **Goal:** Add a creator-oriented timeline/calendar of observed LIVEs and recorded
 sessions, plus explainable recording, reconnect, event, and creator-history
-statistics. Creator pages can grow from simple v0.9 history into schedule/history
-views here.
+statistics. Creator pages can grow from the v0.14 presentation into richer
+schedule/history views here.
 
 Possible schedule prediction may use only the owner's retained history and should
 be presented as an estimate, not a guarantee.
 
-### v0.17.0 — Notifications and integrations
+### v0.17.0 — LIVE events, chat, and gifts
 
-**Goal:** Deliver useful lifecycle notifications such as creator LIVE detected,
-recording started, completed, failed/needs attention, and low disk space. Add
-webhooks, exports, and external adapters only around demonstrated workflows so
-notifications remain useful rather than noisy.
+**Goal:** Optionally retain timestamped public chat, gifts, joins, and other
+available LIVE events, then align them with recording playback. Missing or partial
+event data must be shown honestly rather than implied to be complete.
 
 ### v0.18.0 — Clips and highlights (conditional candidate)
 
@@ -417,9 +427,10 @@ capabilities should no longer sit in an unversioned "someday" bucket. Reliabilit
 and the active v0.6 work still take precedence over later product work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
-configuration, library/playback, a usable web experience, creator automation,
-multi-recording, storage safety, richer retained data, search/analytics,
-notifications, and only then optional multi-user/public-product capabilities.
+configuration, creator automation, simultaneous creator recording, storage
+safety, notifications, a structured recording catalog, a usable web/playback
+experience, search/analytics, richer LIVE data, and only then optional
+multi-user/public-product capabilities.
 
 ### Permanent boundaries
 
@@ -438,7 +449,7 @@ Evolve separation only when a release needs it; do not scaffold future systems.
 - **Processing:** retained-part finalization and read-only validation.
 - **Application/service:** one recording job, cooperative lifecycle, safe status.
 - **Interfaces:** existing local CLI, narrow HTTP API, remote CLI; eventual UI.
-- **Versioned product layers:** library/remote playback, web/live viewing,
-  creator automation, concurrent recordings, smart storage, events, transcripts,
-  search, calendar/analytics, notifications/integrations, and conditional
-  multi-user/public-app capabilities.
+- **Versioned product layers:** creator automation, concurrent recordings, smart
+  storage, notifications/integrations, recording catalog/remote media access,
+  web/live viewing, transcripts/search, calendar/analytics, events, and
+  conditional multi-user/public-app capabilities.
