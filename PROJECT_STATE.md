@@ -19,6 +19,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   block release: reconnect-boundary parts 7 and 8 passed and no replay was logged.
   Focused tests, the full 735-test plus 19-subtest suite, CLI version output, the
   retained analyzer, and v0.6.0 wheel metadata all pass release-candidate checks.
+  The final deployed-service smoke also passed on 2026-09-20: the idle Scheduled
+  Task was restarted from its older loaded process and reported v0.6.0, then
+  `aishaaa.ts` recorded 96.6 seconds through normal remote start/stop into one
+  10,741,290-byte retained FLV and a 10,749,041-byte MP4. Status showed normal
+  byte growth, graceful completed finalization, zero reconnects, and no error;
+  the retained session/part validation and deep MP4 validation passed without
+  findings. No natural reconnect occurred, so the smoke adds no gap sample.
 - **Completed release task:** Issue #15 is closed. The annotated v0.5.0 tag and
   published non-draft GitHub Release remain synchronized and unchanged.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
@@ -28,7 +35,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   and timestamp-replay completion criteria. Collect that rare evidence during
   suitable future recordings; neither issue blocks v0.6.0 release readiness.
 - **Pending owner action:** Review the exact v0.6.0 candidate commit, then
-  separately authorize its immutable annotated tag and published GitHub Release.
+  authorize its immutable annotated tag and published GitHub Release. Candidate
+  commit `1965721c8783d22bf12a76138292ce15828427e1` is ready for that decision.
 - **Next queued task:** After explicit owner authorization, tag the reviewed
   v0.6.0 candidate and publish its GitHub Release under issue #16. Do not start
   v0.6.5 or v0.7 during release preparation.
