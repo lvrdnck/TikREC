@@ -135,7 +135,8 @@ cap. Status reports `state=recovering_network`, `recovery_state=recovery_wait`,
 attempt/countdown/elapsed fields; health/status stay readable and starts return
 409. Stop or service shutdown wakes retry waits and finalizes retained media.
 Same-room recovery continues into fresh parts; offline/different-room evidence
-ends the prior LIVE. Healthy reconnect timing and offline confirmation stay unchanged.
+ends the prior LIVE. A healthy media-bearing EOF re-resolves immediately; patient
+failure waits and offline confirmation retain their existing timing.
 
 Exhaustion reports `failed`, `recovery_reason=outage_timeout`, retains all parts,
 and leaves output unfinalized because room end is unproven. The service permits a

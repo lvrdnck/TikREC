@@ -286,7 +286,23 @@ wait is TikREC-controlled, so a healthy media-bearing close now proceeds directl
 to fresh resolution. Transient/failure backoff, patient recovery, room-end checks,
 stop behavior, and fresh writer/URL safety are unchanged. This should reduce each
 ordinary gap by about one second; resolution and HTTP setup remain dominant.
-v0.6 stays active until a real post-change reconnect verifies the expected gain.
+At that point v0.6 remained active until a real post-change reconnect verified
+the expected gain.
+
+**Post-change verification (2026-09-20):** The retained `ari-dakotaa` session
+contains one suitable ordinary reconnect after `dfc5bf1`. Its total retained-media
+gap was 1.920 seconds: 0.114 seconds of previous tail, 0.010 local/backoff, 1.480
+resolution, 0.220 HTTP setup, 0.096 initial media, and 0.001 at the write gate.
+The former 1.004--1.008-second local/backoff component therefore collapsed as
+intended. Resolution accounted for about 77% of this sample and resolution plus
+HTTP setup for about 89%; those source/network-dependent components remain the
+dominant ordinary-gap contributors. The total is below the 2.515--10.883-second
+pre-change range, but a single post-change observation does not justify changing
+retry, resolver, or HTTP behavior. Full retained-part validation found decoder
+errors in earlier parts 1 and 5, while the reconnect-boundary parts 7 and 8 passed;
+there were no recorded timestamp replays. The timing evidence remains suitable,
+and no additional production change is justified. This completes the planned
+v0.6 measurement/reduction behavior; release bookkeeping remains separate.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

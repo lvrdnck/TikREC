@@ -1,6 +1,6 @@
 # TikREC current state
 
-Last reviewed: 2026-09-19. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-20. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
@@ -9,11 +9,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task:** v0.6 reconnect-gap measurement and evidence-backed
   reduction.
-- **Status:** Phase 1 measurement tooling and the retained-evidence baseline are
-  complete. Three usable ordinary reconnects across two sessions consistently
-  show a 1.004--1.008-second healthy-close wait, so that path now re-resolves
-  immediately. Failure/outage waits and room-end confirmation are unchanged.
-  v0.6 remains active pending post-change real measurement.
+- **Status:** The v0.6 measurement/reduction slice is complete. One suitable
+  post-change ordinary reconnect measured 1.920 seconds total, including 0.010
+  seconds local/backoff versus the 1.004--1.008-second pre-change range. This
+  verifies that the removed healthy-close wait collapsed as intended. Resolution
+  dominated the sample at 1.480 seconds; one observation does not justify a
+  retry, resolver, or HTTP policy change. Failure/outage waits and room-end
+  confirmation remain unchanged.
 - **Completed release task:** Issue #15 is closed. The annotated v0.5.0 tag and
   published non-draft GitHub Release remain synchronized and unchanged.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
@@ -21,11 +23,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
-  suitable future recordings; neither issue blocks ordinary v0.5 readiness.
+  suitable future recordings; neither issue blocks this completed v0.6 slice.
 - **Pending owner action:** None. Preserve all deployment and reconnect evidence.
-- **Next queued task:** Capture a post-change ordinary reconnect and verify that
-  local/backoff time collapses as expected; then reassess resolution/HTTP setup,
-  now the dominant observed components, without speculative retry changes.
+- **Next queued task:** Prepare and verify the v0.6.0 release record from the
+  completed reconnect-gap work. Do not change retry, resolver, or HTTP policy
+  without additional ordinary reconnect evidence.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

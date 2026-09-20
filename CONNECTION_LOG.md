@@ -110,7 +110,34 @@ normal media-bearing close. A healthy close now begins fresh resolution without
 that sleep. Network/transient waits, failure backoff, patient recovery, room-end
 confirmation, stop checks, new writer/part state, and fresh URL resolution retain
 their prior behavior. The expected reduction is about one second per ordinary
-reconnect; a post-change real reconnect remains necessary to measure it directly.
+reconnect; a post-change real reconnect was still necessary to measure it directly.
+
+### Post-change verification
+
+The retained `ari-dakotaa-postchange.parts` session supplied one suitable ordinary
+reconnect after `dfc5bf1`. Connection 1 closed normally after retained media, and
+connection 2 resumed without an intervening failed attempt or recovery boundary.
+The measured gap was 1.920 seconds total: 0.114 seconds of previous tail, 0.010
+local/backoff, 1.480 resolution, 0.220 HTTP setup, 0.096 initial media, and 0.001
+at the keyframe/write gate.
+
+Compared with the three-sample pre-change baseline, local/backoff fell from a
+1.005-second median and 1.004--1.008 range to 0.010 seconds. This verifies that
+the fixed healthy-close wait collapsed as intended. Resolution accounted for
+about 77% of the observed gap and resolution plus HTTP setup for about 89%.
+The 1.480-second resolution remained within the prior 1.087--7.107 range; the
+0.220-second HTTP setup was just below the prior 0.247--2.691 range; and initial
+media plus the write gate remained within their prior ranges. The total is below
+the prior 2.515--10.883-second range, but resolver and HTTP timings vary with the
+source and network; one post-change sample does not justify changing those
+policies.
+
+The session is complete and contains ten retained parts. Validation found H.264
+decoder errors in earlier parts 1 and 5; both the last pre-reconnect part 7 and
+first post-reconnect part 8 passed, and the log records no timestamp replay. The
+earlier media findings therefore do not disqualify the wall-clock reconnect sample
+or justify a production change from this evidence. The retained artifacts remain
+unchanged.
 
 ## Raw copy and byte-arrival evidence
 

@@ -231,9 +231,10 @@ the wait up to that cap. The default window is 900 monotonic seconds from the
 first transient failure. Waits are clamped to remaining time; no new retry starts
 at expiry. An in-flight HTTP operation still uses its existing bounded timeout.
 Policy/clocks/Event waiter are injectable; no CLI configuration is added. Healthy
-EOF keeps the 1-second path and three offline checks five seconds apart. Initial
-unresolved capture retains its three-failure limit. Patient capture requires an
-anchored room ID; useful retained media resets an episode, same-room resolution alone cannot.
+media-bearing EOF re-resolves immediately; patient failure waits retain this policy,
+and the three offline checks remain five seconds apart. Initial unresolved capture
+retains its three-failure limit. Patient capture requires an anchored room ID;
+useful retained media resets an episode, same-room resolution alone cannot.
 
 During recovery health/status work, available=false, and start returns 409.
 Timeout reports failed/recovery_state=exhausted/recovery_reason=outage_timeout,
