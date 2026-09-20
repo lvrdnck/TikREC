@@ -50,6 +50,9 @@ optional finalization, unlike live-capture connection intervals.
 
 ## Read-only reconnect-gap analyzer
 
+This analyzer and the evidence-backed healthy-close timing change documented
+below are the complete reconnect-specific scope of TikREC v0.6.0.
+
 Run the checkout-local diagnostic against one or more retained logs:
 
 ```console

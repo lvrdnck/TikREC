@@ -55,6 +55,14 @@ recording's disk use, with additional small arrival-log overhead. See
 [CONNECTION_LOG.md](CONNECTION_LOG.md) for the evidence contract and the read-only
 `scripts/analyze_reconnect_gaps.py` diagnostic for retained reconnect baselines.
 
+TikREC v0.6.0 adds that reconnect-gap analyzer and uses retained real evidence to
+remove only the fixed one-second wait after a healthy media-bearing close. Three
+pre-change ordinary reconnects measured 1.004--1.008 seconds of local/backoff;
+the retained post-change reconnect measured 1.920 seconds total with 0.010 seconds
+of local/backoff. Failure/outage backoff, patient recovery, room-end confirmation,
+and fresh resolution/writer safety are unchanged. One post-change sample does not
+justify broader retry, resolver, or HTTP policy changes.
+
 An open media connection that delivers no bytes for 30 seconds is treated as a
 stall. Live capture records a `stalled` connection outcome and reconnects under
 the same bounded transient-failure policy used for other connection errors.
@@ -110,8 +118,9 @@ Capture/finalizer failure preserves retained parts for `tikrec finalize`.
 See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
 Scheduler settings, startup recovery, and deployment verification. There is no
 Web UI or media-download endpoint in the current service. TikREC v0.5.0 provides
-the environment-survival and resumability behavior documented below. Current
-package, tag, and GitHub Release records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
+the environment-survival and resumability foundation documented below; package
+version v0.6.0 adds the bounded reconnect-gap work described above. Current tag
+and GitHub Release records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
 
 The service now persists its latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks that job against retained

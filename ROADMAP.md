@@ -238,9 +238,9 @@ GitHub Release `TikREC v0.5.0` was published on 2026-09-19.
 
 Issues #9 and #8 remain open for rare real stall/replay evidence, and issue #13
 is intentionally paused pending an opportunistic distinct-rendition encounter.
-Those evidence investigations do not block v0.5 readiness. Patient recovery uses
-a 15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; successful
-reconnect-gap measurement and reduction remain v0.6 work.
+Those evidence investigations did not block v0.5 readiness. Patient recovery uses
+a 15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; reconnect-gap
+measurement and reduction were deliberately deferred to v0.6.
 
 Implemented sequence: durable job state, public room identity,
 retained-session resume, service startup reconciliation with controller
@@ -248,8 +248,8 @@ integration, outage retry policy/recovery status, and interrupted-finalization
 reconciliation, and conservative active-writer-partial recovery. Issue #14's
 deployed abrupt-restart requirement and the temporary-network-outage validation
 are complete; final output validation and v0.5.0 release bookkeeping are also
-complete. Successful reconnect-gap measurement/reduction remains v0.6 and must
-be selected separately from this completed release.
+complete. Reconnect-gap measurement/reduction was selected and completed
+separately for the v0.6.0 release candidate described below.
 
 ### v0.6.0 ? Reconnect-gap reduction
 
@@ -303,6 +303,19 @@ errors in earlier parts 1 and 5, while the reconnect-boundary parts 7 and 8 pass
 there were no recorded timestamp replays. The timing evidence remains suitable,
 and no additional production change is justified. This completes the planned
 v0.6 measurement/reduction behavior; release bookkeeping remains separate.
+
+**Release candidate (2026-09-20):** Package source and release-facing
+documentation are prepared for v0.6.0 under issue #16. The release scope is the
+read-only reconnect-gap tooling and evidence, removal of the fixed healthy-close
+wait, and the verified 1.920-second post-change reconnect with 0.010 seconds of
+local/backoff versus the prior 1.004--1.008-second range. Failure/outage backoff,
+patient recovery, room-end confirmation, stop behavior, resolver/HTTP policy,
+and writer/part safety remain unchanged. Issues #8, #9, and #13 remain
+non-blocking evidence work. The candidate is untagged and unpublished; v0.5.0
+remains the current released version until a separately authorized annotated
+tag and GitHub Release are created and verified. Release-candidate checks pass:
+79 focused tests, the full 735-test plus 19-subtest suite, CLI version output,
+retained reconnect analysis, and wheel metadata all report v0.6.0 consistently.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
@@ -481,7 +494,7 @@ or desirable.
 The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability
-and the active v0.6 work still take precedence over later product work.
+and completion of the v0.6.0 release still take precedence over later product work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

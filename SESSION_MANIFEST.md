@@ -195,7 +195,7 @@ Schema version remains 1; `writer_recoveries` is optional, validated evidence.
 Successfully completed jobs are never relaunched. Writer-partial and finalization
 reconciliation are implemented. Repeat real process-restart/outage deployment
 validation passed, as did final graceful-stop/finalization and deep-output
-validation. Package version is 0.5.0.
+validation. Package version is 0.6.0; the manifest schema remains 1.
 
 ## Validation
 

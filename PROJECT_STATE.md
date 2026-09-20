@@ -7,15 +7,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** v0.6 reconnect-gap measurement and evidence-backed
-  reduction.
-- **Status:** The v0.6 measurement/reduction slice is complete. One suitable
-  post-change ordinary reconnect measured 1.920 seconds total, including 0.010
-  seconds local/backoff versus the 1.004--1.008-second pre-change range. This
-  verifies that the removed healthy-close wait collapsed as intended. Resolution
-  dominated the sample at 1.480 seconds; one observation does not justify a
-  retry, resolver, or HTTP policy change. Failure/outage waits and room-end
-  confirmation remain unchanged.
+- **Active issue/task:** Issue #16 prepares the v0.6.0 release candidate from the
+  completed reconnect-gap measurement and evidence-backed reduction work.
+- **Status:** Package source and release-facing documentation identify v0.6.0.
+  The candidate includes the read-only analyzer, removal of the fixed healthy-
+  close wait, and real post-change verification at 1.920 seconds total/0.010
+  local-backoff versus the 1.004--1.008-second pre-change range. Failure/outage
+  waits, patient recovery, room-end confirmation, and other safety behavior are
+  unchanged; the single post-change sample does not justify broader policy work.
+  Earlier decoder findings in retained parts 1 and 5 remain preserved and do not
+  block release: reconnect-boundary parts 7 and 8 passed and no replay was logged.
+  Focused tests, the full 735-test plus 19-subtest suite, CLI version output, the
+  retained analyzer, and v0.6.0 wheel metadata all pass release-candidate checks.
 - **Completed release task:** Issue #15 is closed. The annotated v0.5.0 tag and
   published non-draft GitHub Release remain synchronized and unchanged.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
@@ -23,11 +26,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
   and timestamp-replay completion criteria. Collect that rare evidence during
-  suitable future recordings; neither issue blocks this completed v0.6 slice.
-- **Pending owner action:** None. Preserve all deployment and reconnect evidence.
-- **Next queued task:** Prepare and verify the v0.6.0 release record from the
-  completed reconnect-gap work. Do not change retry, resolver, or HTTP policy
-  without additional ordinary reconnect evidence.
+  suitable future recordings; neither issue blocks v0.6.0 release readiness.
+- **Pending owner action:** Review the exact v0.6.0 candidate commit, then
+  separately authorize its immutable annotated tag and published GitHub Release.
+- **Next queued task:** After explicit owner authorization, tag the reviewed
+  v0.6.0 candidate and publish its GitHub Release under issue #16. Do not start
+  v0.6.5 or v0.7 during release preparation.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -35,15 +39,18 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.5.0, from `tikrec.__version__` and packaging metadata.
+- **Package version:** v0.6.0 release candidate, from `tikrec.__version__` and
+  packaging metadata.
 - **Tagged version:** annotated `v0.5.0`, whose tag object is
   `173d25f4736a2b900ffb381d98e218aaae31770c` and which peels to release commit
   `7e65248bb4061cf74e84986314db0b6b16d5fc02`.
 - **GitHub Release:** published non-draft, non-prerelease `TikREC v0.5.0` for
   `v0.5.0` on 2026-09-19.
-- **Current released version:** v0.5.0; its package version, immutable annotated
-  tag, and GitHub Release are synchronized. Historical v0.3.0, v0.3.1, and v0.4.0
-  releases remain published from their existing tags.
+- **Current released version:** v0.5.0; its release-commit package metadata,
+  immutable annotated tag, and GitHub Release remain synchronized. Historical
+  v0.3.0, v0.3.1, and v0.4.0 releases remain published from their existing tags.
+- **Release candidate:** v0.6.0 reconnect-gap measurement/reduction is prepared
+  but remains untagged and unpublished; it is not yet the current released version.
 
 ## Issue #13 rendition investigation
 

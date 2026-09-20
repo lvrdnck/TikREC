@@ -5,7 +5,7 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
-This document is the exact contract for TikREC v0.5.0. Future
+This document is the exact contract for TikREC v0.6.0. Future
 creator automation, multiple recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,
 but no such endpoint or behavior exists until its own specification is implemented.
@@ -168,7 +168,7 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
-CLI/routes stay unchanged and package version is 0.5.0.
+CLI/routes stay unchanged and package version is 0.6.0.
 
 ## Service startup reconciliation (v0.5.0)
 
@@ -246,7 +246,19 @@ Only meaningful transitions are committed. Job schema stays 1 with extended
 enums; a crash in recovering_network leaves non-terminal intent for same-identity
 reconciliation with a fresh window. No deadline/signed URL is persisted. Coalesced
 network_recovery events retain counters/boundaries. Task Scheduler remains the
-process/bind safety net. Successful reconnect-gap optimization belongs to v0.6.
+process/bind safety net.
+
+### v0.6 reconnect-gap scope
+
+The read-only reconnect-gap analyzer separates ordinary reconnects from outage,
+restart/resume, room-end, and other recovery boundaries. Three pre-change
+ordinary reconnects measured a fixed 1.004--1.008 seconds of local/backoff, so a
+healthy media-bearing close now proceeds directly to fresh resolution. Retained
+post-change evidence measured a 1.920-second total gap with 0.010 seconds of
+local/backoff, verifying that the fixed wait collapsed. Failure/outage backoff,
+the patient recovery policy above, room-end confirmation, stop behavior, fresh
+URL resolution, and writer/part safety are unchanged. The single post-change
+sample does not justify retry, resolver, or HTTP changes.
 
 Remote stop during recovery commits stop intent and prevents capture even if
 same-room resolution is finishing. Stop/shutdown wakes patient waits immediately
@@ -350,4 +362,4 @@ That restart exposed and fixed one status-only accounting defect: an inactive
 controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
-atomically replace it on Windows. Package version is 0.5.0.
+atomically replace it on Windows. Package version is 0.6.0.

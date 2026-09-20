@@ -14,8 +14,9 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
 
-TikREC v0.5.0 implements service startup reconciliation. Package version is
-v0.5.0; published release records are maintained in PROJECT_STATE.md.
+TikREC v0.5.0 established service startup reconciliation. Package version v0.6.0
+adds evidence-based reconnect-gap measurement and removes only the fixed healthy-
+close wait; published release records are maintained in PROJECT_STATE.md.
 
 ### Not implemented yet
 
@@ -364,8 +365,10 @@ all old and new parts in numeric order. Failures retain every part; first
 Ctrl-C/cooperative stop uses the same close/retain/finalize path as fresh capture,
 and a second finalization interrupt retains the existing finalizer semantics.
 Service startup now uses this session continuation through `live_resume.py`.
-There is no resume CLI/remote endpoint or reconnect-gap optimization. LIVE continuation
-uses the patient outage policy below; generic direct/tag resume remains one connection.
+There is no resume CLI/remote endpoint. LIVE continuation uses the patient outage
+policy below; generic direct/tag resume remains one connection. The v0.6 healthy-
+close optimization is limited to immediate fresh resolution after a normal media-
+bearing close and does not change this resume policy.
 Real-recording part decoder/DTS validation passed during the completed v0.5
 deployment validation.
 
@@ -517,7 +520,7 @@ media opens, stop intent before signalling, and lifecycle/result changes. Defaul
 state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
 or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
 is added. Only the latest job is stored, with one owning service process/account.
-Package version is v0.5.0.
+Package version is v0.6.0.
 
 ### Patient outage policy and transport classification
 
@@ -553,7 +556,9 @@ during non-terminal recovering_network preserves explicit identity/intent; resta
 reconciles the same room with a fresh window. No deadline is persisted. Only
 meaningful transitions are saved; safe API counters/countdowns are computed in
 memory. Job schema remains 1 with extended state/reason enums, media schema stays 1.
-This is v0.5 outage survival; successful reconnect-gap optimization remains v0.6.
+This remains the v0.5 outage-survival policy. The v0.6 optimization removes only
+the fixed healthy-close delay; failure/outage waits and safety behavior remain
+unchanged.
 
 ### tikrec/reconciliation.py - service startup decisions
 
@@ -632,7 +637,7 @@ output rather than represented as capture. After proxy retirement and an idle
 service restart, status also restores the completed manifest's reconnect count;
 active capture avoids reading the manifest while its atomic replacement may be
 in progress. All v0.5 real deployment-validation phases are complete. Package
-version is 0.5.0.
+version is 0.6.0.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -814,7 +819,7 @@ whether a lossless writer fix is possible before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The
-architecture describes TikREC v0.5.0.
+architecture describes TikREC v0.6.0.
 
 ## Design principles
 
