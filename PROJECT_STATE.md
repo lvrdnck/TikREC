@@ -7,19 +7,30 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #17 fixes the release-blocking established-session
-  HTTP-404 path found by the owner-started `gracie.kf` full-LIVE soak. Issue #16
-  remains open and blocked; v0.6.0 is still untagged and unpublished.
-- **Status:** Established capture and startup recovery now retain the canonical
-  room ID as an independent resolution anchor. A username LIVE-page 404 can use
-  direct public status for that room and the public account lookup: the same live
-  room reconnects, trustworthy offline status retains the three-observation end
-  policy, a different live room uses existing live-changed semantics, and
-  unverifiable state fails closed. Initial page 404 remains a permanent safe
-  failure. An established media-URL 404 requests fresh identity resolution after
-  the existing failure backoff; the 404 itself is never an offline claim.
-  Focused resolver/LIVE/service/recovery coverage passes 269 tests and the full
+- **Active issue/task:** Issue #16 is active and blocked pending one more
+  owner-started full-LIVE natural-end validation of the deployed #17 fix. Issue
+  #17 is completed and closed by `b6d1f6f`; v0.6.0 remains untagged and
+  unpublished.
+- **Completed blocker fix:** Established capture and startup recovery now retain
+  the canonical room ID as an independent resolution anchor. A username
+  LIVE-page 404 can use direct public status for that room and the public account
+  lookup: the same live room reconnects, trustworthy offline status retains the
+  three-observation end policy, a different live room uses existing live-changed
+  semantics, and unverifiable state fails closed. Initial page 404 remains a
+  permanent safe failure. An established media-URL 404 requests fresh identity
+  resolution after the existing failure backoff; the 404 itself is never an
+  offline claim.
+  Focused resolver/LIVE/service/recovery coverage passes 308 tests and the full
   offline suite passes 748 tests plus 19 subtests.
+- **Deployment readiness:** The service restart loaded current production code
+  from `main` at #17 commit `b6d1f6f77c7c501811c03f2219950a9133e9ca33`.
+  After confirming the service was idle and available, the existing
+  `TikREC Service` Scheduled Task was safely restarted on 2026-09-20. Fresh
+  remote health reports TikREC 0.6.0, `active=false`, `available=true`,
+  `shutting_down=false`, and null recovery state/reason. Remote status retains
+  the settled terminal Gracie `failed` job as historical evidence, but no
+  recovery is pending and the service slot is available for the owner's next
+  explicit start.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -40,11 +51,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 - **Open evidence issues:** Issue #8 retains the raw-copy requirement needed to
   locate timestamp-replay corruption; the Gracie run adds decoder/replay evidence
   but no raw bytes. Issue #9 and paused issue #13 remain unchanged.
-- **Pending owner action:** After the #17 fix is deployed, start another real LIVE
-  and let it end naturally. Do not authorize v0.6.0 unless that path finalizes
-  successfully and the Gracie retained-part anomaly is explicitly accounted for.
-- **Next queued task:** Owner-started natural-end validation of the deployed #17
-  fix under issue #16. Do not create v0.6.0 or start v0.6.5/v0.7.
+- **Pending owner action:** Start another real LIVE through the normal remote CLI
+  and let the creator end it naturally, without remote stop or manufactured
+  disconnects. Do not authorize v0.6.0 unless that path finalizes successfully
+  and the Gracie retained-part anomaly remains explicitly assigned to issue #8.
+- **Next queued task:** Analyze that session's natural reconnects, validate its
+  retained session/parts, and deep-validate its MP4 under issue #16. Do not create
+  v0.6.0 or start v0.6.5/v0.7.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
