@@ -26,6 +26,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   byte growth, graceful completed finalization, zero reconnects, and no error;
   the retained session/part validation and deep MP4 validation passed without
   findings. No natural reconnect occurred, so the smoke adds no gap sample.
+  The subsequent owner-requested full-LIVE soak also passed: session
+  `3d0016f5-bf1b-4df1-80c2-d4e7de87149d` recorded for 872.873 seconds until
+  natural room end, retained 92,267,458 bytes across three parts, and finalized
+  a 75,853,434-byte MP4 without manual stop or error. Three connection attempts
+  comprised two media-bearing connections and the terminal offline room-end
+  confirmation; the single natural media reconnect was correctly classified as
+  network recovery after `IncompleteRead`, not as an ordinary healthy close. Its
+  8.494-second gap comprised 5.960 tail, 1.016 failure backoff, 1.165 resolution,
+  0.265 HTTP setup, 0.086 initial media, and 0.002 write gate. All three parts,
+  including both sides of the reconnect and an in-connection 720-to-640-width
+  source change, passed decoder/DTS validation without findings or timestamp
+  replay; normal and deep validation of the 831.810-second MP4 also passed. This
+  verifies natural recovery, room-end confirmation, and finalization without
+  adding a second ordinary post-change sample or exposing a release blocker.
 - **Completed release task:** Issue #15 is closed. The annotated v0.5.0 tag and
   published non-draft GitHub Release remain synchronized and unchanged.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE

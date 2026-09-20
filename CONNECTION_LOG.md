@@ -142,6 +142,42 @@ earlier media findings therefore do not disqualify the wall-clock reconnect samp
 or justify a production change from this evidence. The retained artifacts remain
 unchanged.
 
+### Full-LIVE release soak
+
+The retained `aishaaa-ts-v060-full-live.parts` session recorded through the
+deployed v0.6.0 service from remote start until natural room end, without a manual
+stop or manufactured failure. Session `3d0016f5-bf1b-4df1-80c2-d4e7de87149d`
+ran for 872.873 seconds, retained 92,267,458 bytes in three parts, and finalized a
+75,853,434-byte H.264/AAC MP4 with 831.810 seconds of media. It completed without
+an error, interruption, or recovery of persistent state.
+
+The log has three allocated connection attempts: two media-bearing connections
+and a final media-free offline attempt that completed the normal three-observation
+room-end confirmation. There was one natural media reconnect, from connection 1
+to 2. Connection 1 ended with `IncompleteRead(0 bytes read)`, so the analyzer
+correctly classifies the boundary as `network_recovery`, not as an ordinary
+healthy-close sample. Its 8.494-second retained-media gap comprises 5.960 seconds
+of previous tail, 1.016 local/failure backoff, 1.165 resolution, 0.265 HTTP setup,
+0.086 initial media, and 0.002 at the keyframe/write gate. There were no
+intervening or unrecorded attempts.
+
+The approximately one-second local component is expected for the unchanged
+transient-failure path and is not evidence that the removed healthy-close wait
+returned. This boundary is therefore not comparable as an ordinary sample with
+the pre-change 1.004--1.008-second healthy-close baseline. The existing ordinary
+post-change verification remains 1.920 seconds total with 0.010 local/backoff.
+For this recovery gap the dying tail dominated, followed by resolution and the
+preserved failure backoff; one observation does not justify retry, resolver, or
+HTTP changes.
+
+Connection 2 later changed source width from 720 to 640 pixels and opened part 3
+without another reconnect. All three FLVs passed decoder and packet-DTS validation
+without warnings, including part 1 to 2 across the reconnect and part 2 to 3
+across that configuration change. No connection recorded timestamp replay or a
+stall. Normal and deep validation of the finalized MP4 also passed without
+findings. The soak therefore adds natural recovery, room-end confirmation, source-
+change, and finalization evidence without exposing a v0.6.0 release blocker.
+
 ## Raw copy and byte-arrival evidence
 
 When `--raw-copy DIR` successfully opens both diagnostics, each connection has

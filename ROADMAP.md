@@ -317,6 +317,21 @@ tag and GitHub Release are created and verified. Release-candidate checks pass:
 79 focused tests, the full 735-test plus 19-subtest suite, CLI version output,
 retained reconnect analysis, and wheel metadata all report v0.6.0 consistently.
 
+**Full-LIVE release soak (2026-09-20):** The deployed v0.6.0 service recorded
+`aishaaa.ts` for 872.873 seconds through natural room end with no manual stop.
+Three allocated attempts comprised two media-bearing connections and the final
+offline room-end confirmation. The one natural media reconnect followed an
+`IncompleteRead` and was therefore correctly classified as network recovery,
+not an ordinary healthy close: 8.494 seconds total, including 5.960 previous
+tail, 1.016 unchanged failure backoff, 1.165 resolution, 0.265 HTTP setup, 0.086
+initial media, and 0.002 write gate. All three retained parts passed decoder/DTS
+validation without warnings, including both sides of the reconnect and the
+later in-connection source configuration change; no timestamp replay was logged.
+The finalized 831.810-second MP4 passed normal and deep validation. This adds
+natural recovery, room-end, and long-session evidence without adding another
+ordinary post-change sample or justifying retry/resolver/HTTP policy changes.
+No release blocker was found; the candidate remains untagged and unpublished.
+
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
 **Goal:** Eliminate reconnect gaps by maintaining more than one concurrent
