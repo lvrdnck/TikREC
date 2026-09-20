@@ -20,6 +20,7 @@ from .retry_policy import RecoveryExhausted
 from .startup_network import resolve_startup_patiently
 from .tiktok import (LiveResolution, TikTokOfflineError, TikTokResolutionTransientError,
                      _is_http_flv_url, resolve_live, same_live)
+from .tiktok_bound import resolve_live_bound
 from .writer_recovery import recover_writer_partial
 from .writer_recovery_evidence import recovery_record
 
@@ -51,6 +52,7 @@ class StartupReconciler:
     """Conservative startup decisions with optional bounded patient identity recovery."""
 
     def __init__(self, store: JobStateStore, *, resolver: Callable = resolve_live,
+                 bound_resolver: Callable | None = None,
                  finalizer: Callable = finalize_parts, resume_capture: Callable | None = None,
                  clock: Callable = time.time, media_inspector: Callable = inspect_media,
                  inspector: Callable = inspect_recovery_session,
@@ -58,6 +60,9 @@ class StartupReconciler:
                  should_stop: Callable = lambda: False,
                  writer_validator: Callable[[Path], None] | None = None):
         self.store, self.resolver, self.finalizer = store, resolver, finalizer
+        self.bound_resolver = (resolve_live_bound
+                               if bound_resolver is None and resolver is resolve_live
+                               else bound_resolver)
         self.clock, self.media_inspector = clock, media_inspector
         self.inspector, self.resume_preflight = inspector, resume_preflight
         self.writer_validator = writer_validator
@@ -139,8 +144,10 @@ class StartupReconciler:
                 return self._finalize(replace(job, stop_requested=True), session, "user_stop", observe)
             try:
                 failure_message = "public LIVE identity could not be established; preserve artifacts"
+                identity_resolver = (lambda page: self.bound_resolver(page, job.room_id)
+                                     if self.bound_resolver is not None else self.resolver(page))
                 if retry_policy is None:
-                    resolution = self.resolver(job.source_url)
+                    resolution = identity_resolver(job.source_url)
                 else:
                     def network_observed(phase, recovery):
                         nonlocal job
@@ -153,7 +160,7 @@ class StartupReconciler:
                             append_network_record(Path(job.parts_directory) / "connections.jsonl",
                                 timestamp=self.clock(), session_id=job.session_id, phase=phase, recovery=recovery)
                         recovery_observer({**recovery.status(), "phase": phase})
-                    resolution = resolve_startup_patiently(self.resolver, job.source_url,
+                    resolution = resolve_startup_patiently(identity_resolver, job.source_url,
                         policy=retry_policy, control=control or CaptureControl(None, time.sleep),
                         clock=recovery_clock, wall_clock=self.clock, notify=network_observed)
             except (CaptureStopped, KeyboardInterrupt):
@@ -209,6 +216,7 @@ class StartupReconciler:
         for name, value in {"resolver": self.resolver, "finalizer": self.finalizer,
                             "manifest_clock": self.clock, "media_inspector": self.media_inspector}.items():
             options.setdefault(name, value)
+        options.setdefault("bound_resolver", self.bound_resolver)
         return self.resume_capture(
             result.job.source_url, parts_directory=Path(result.job.parts_directory),
             output_path=Path(result.job.output_path), session_id=result.job.session_id,

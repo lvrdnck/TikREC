@@ -8,7 +8,6 @@ from pathlib import Path
 from threading import Event
 
 from .capture_control import CaptureControl, CaptureStopped
-
 from .capture import (
     CaptureError, CaptureResult, ConnectionRecord, _prepare_session,
     append_connection_record, append_room_status_record,
@@ -19,19 +18,15 @@ from .flv import FlvTag
 from .manifest import SessionManifest
 from .media import MediaInfo, inspect_media
 from .source import RawCopy, SourceStallError, iter_url_tags
-from .tiktok import (
-    TikTokOfflineError,
-    TikTokResolutionError,
-    TikTokResolutionTransientError,
-    resolve_live_url,
-    resolve_live_url_confirmed,
-)
+from .tiktok import (TikTokOfflineError, TikTokResolutionError,
+                     TikTokResolutionTransientError, resolve_live_url,
+                     resolve_live_url_confirmed)
+from .tiktok_bound import resolve_live_url_bound
 from .writer import PartTiming, TimestampReplay, write_parts
-
-
 from .live_source import connection_source
 from .live_session import finish_live, fail_live, close_live_connection
-from .live_recovery import LiveRecovery, OutageCaptureError, SourceNetworkError, resolve_bound_live
+from .live_recovery import (LiveRecovery, OutageCaptureError, SourceNetworkError,
+                            SourceRefreshError, resolve_bound_live)
 from .retry_policy import RetryPolicy, RecoveryExhausted
 from .live_support import (_report, _warn, _safe_reason, _timestamp_replay_message,
                            _next_failure_counts, _validate_limits, LiveChangedError)
@@ -42,7 +37,7 @@ def capture_live(
     *,
     parts_directory: Path,
     output_path: Path | None = None,
-    resolver: Callable[[str], str] = resolve_live_url,
+    resolver: Callable[[str], str] = resolve_live_url, bound_resolver=None,
     tag_source: Callable[[str], Iterable[FlvTag]] = iter_url_tags,
     writer: Callable[..., tuple[Path, ...]] = write_parts,
     finalizer: Callable[[Iterable[Path], Path], Path] = finalize_parts,
@@ -80,6 +75,8 @@ def capture_live(
                                clock=manifest_clock, media_inspector=media_inspector,
                                session_id=session_id)
     control = CaptureControl(stop_event, sleeper, waiter=recovery_waiter)
+    if bound_resolver is None and resolver is resolve_live_url:
+        bound_resolver = resolve_live_url_bound
 
     records: list[ConnectionRecord] = []
     all_parts: list[Path] = []
@@ -169,7 +166,8 @@ def capture_live(
             direct_url = resolve_live_url_confirmed(
                 url,
                 resolver=lambda page: control.resolve(
-                    lambda target: resolve_bound_live(resolver, target, saved_room_id, wall_clock=manifest_clock), page),
+                    lambda target: resolve_bound_live(resolver, target, saved_room_id,
+                        bound_resolver=bound_resolver, wall_clock=manifest_clock), page),
                 capture_started=bool(all_parts),
                 checks=offline_confirmation_checks,
                 interval=offline_confirmation_interval,
@@ -252,11 +250,14 @@ def capture_live(
             consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
             reconnect_reason = _safe_reason(error)
             error_for_retry = error
-        except SourceNetworkError as error:
+        except (SourceNetworkError, SourceRefreshError) as error:
             close_record("stalled" if isinstance(error.original, SourceStallError) else "connection_error", error)
+            if isinstance(error, SourceRefreshError) and (not all_parts or saved_room_id is None):
+                recovery.end("failed")
+                raise capture_failure("media source was unavailable before capture identity was established") from error
             consecutive_failures, consecutive_empty = _next_failure_counts(bool(connection_parts), consecutive_failures, consecutive_empty)
             reconnect_reason = _safe_reason(error)
-            error_for_retry = error
+            error_for_retry = None if isinstance(error, SourceRefreshError) else error
         except TikTokResolutionError as error:
             close_record("resolution_error", error)
             recovery.end("failed")
@@ -279,7 +280,8 @@ def capture_live(
                     "live capture stopped after consecutive connections with no media"
                 )
 
-        if retry_policy is not None and saved_room_id is not None and reconnect_reason != "connection closed":
+        if (retry_policy is not None and saved_room_id is not None
+                and reconnect_reason != "connection closed" and error_for_retry is not None):
             if connection_parts:
                 recovery.end("recovered")
             # A source error after useful media starts a new outage, rather than exhausting the old one.
@@ -292,8 +294,5 @@ def capture_live(
         delay = (0.0 if reconnect_reason == "connection closed" and connection_parts else
                  recovery.outage.status()["next_retry_in_seconds"] if recovery.outage.active
                  else backoff_seconds * (2 ** max(0, consecutive_failures - 1)))
-        _report(
-            progress,
-            f"connection lost: {reconnect_reason}; reconnecting in {delay:g}s",
-        )
+        _report(progress, f"connection lost: {reconnect_reason}; reconnecting in {delay:g}s")
         _report(state, "recovering_network" if recovery.outage.active else "reconnecting")

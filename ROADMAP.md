@@ -317,7 +317,7 @@ tag and GitHub Release are created and verified. Release-candidate checks pass:
 79 focused tests, the full 735-test plus 19-subtest suite, CLI version output,
 retained reconnect analysis, and wheel metadata all report v0.6.0 consistently.
 
-**Full-LIVE release soak (2026-09-20):** The deployed v0.6.0 service recorded
+**First full-LIVE release soak (2026-09-20):** The deployed v0.6.0 service recorded
 `aishaaa.ts` for 872.873 seconds through natural room end with no manual stop.
 Three allocated attempts comprised two media-bearing connections and the final
 offline room-end confirmation. The one natural media reconnect followed an
@@ -330,7 +330,30 @@ later in-connection source configuration change; no timestamp replay was logged.
 The finalized 831.810-second MP4 passed normal and deep validation. This adds
 natural recovery, room-end, and long-session evidence without adding another
 ordinary post-change sample or justifying retry/resolver/HTTP policy changes.
-No release blocker was found; the candidate remains untagged and unpublished.
+No release blocker was found in that run; the candidate remained untagged and
+unpublished.
+
+**Release blocker #17 and preserved recovery (2026-09-20):** A later owner-started
+`gracie.kf` soak ran independently on the PC for 10,031.395 seconds, retained
+1,300,258,942 bytes across six parts, then failed instead of finalizing when its
+fourth allocated attempt received HTTP 404 after transport resolution. The fix
+keeps initial page-404 behavior fail-closed, but established capture/recovery may
+use the retained canonical room ID and direct public room status when the username
+LIVE page is 404. Same-room live reconnects, three trustworthy offline observations
+end normally, a different live room uses existing identity-change semantics, and
+unverifiable status still fails with media retained. An established media-URL 404
+only triggers fresh identity resolution after the existing failure backoff; it is
+not treated as offline and reconnect timing policy otherwise remains unchanged.
+
+The preserved session was finalized through `tikrec finalize` without changing
+any FLV hash. Its 1,560,230,782-byte, 10,008.064-second H.264/AAC MP4 passes deep
+validation without findings. Retained-part validation separately exposes issue
+#8 evidence: part 2 has H.264 decoder errors and parts 2/4/5/6 have stored-DTS
+reversals corresponding to 16 logged replay records; no matching raw copy exists,
+so source-versus-writer origin remains unproven. The full offline suite passes 748
+tests plus 19 subtests. Issue #16 remains blocked: do not tag/publish v0.6.0 until
+another owner-started real LIVE exercises the deployed fix through natural end,
+and do not start v0.6.5 or v0.7.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

@@ -7,53 +7,44 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #16 prepares the v0.6.0 release candidate from the
-  completed reconnect-gap measurement and evidence-backed reduction work.
-- **Status:** Package source and release-facing documentation identify v0.6.0.
-  The candidate includes the read-only analyzer, removal of the fixed healthy-
-  close wait, and real post-change verification at 1.920 seconds total/0.010
-  local-backoff versus the 1.004--1.008-second pre-change range. Failure/outage
-  waits, patient recovery, room-end confirmation, and other safety behavior are
-  unchanged; the single post-change sample does not justify broader policy work.
-  Earlier decoder findings in retained parts 1 and 5 remain preserved and do not
-  block release: reconnect-boundary parts 7 and 8 passed and no replay was logged.
-  Focused tests, the full 735-test plus 19-subtest suite, CLI version output, the
-  retained analyzer, and v0.6.0 wheel metadata all pass release-candidate checks.
-  The final deployed-service smoke also passed on 2026-09-20: the idle Scheduled
-  Task was restarted from its older loaded process and reported v0.6.0, then
-  `aishaaa.ts` recorded 96.6 seconds through normal remote start/stop into one
-  10,741,290-byte retained FLV and a 10,749,041-byte MP4. Status showed normal
-  byte growth, graceful completed finalization, zero reconnects, and no error;
-  the retained session/part validation and deep MP4 validation passed without
-  findings. No natural reconnect occurred, so the smoke adds no gap sample.
-  The subsequent owner-requested full-LIVE soak also passed: session
-  `3d0016f5-bf1b-4df1-80c2-d4e7de87149d` recorded for 872.873 seconds until
-  natural room end, retained 92,267,458 bytes across three parts, and finalized
-  a 75,853,434-byte MP4 without manual stop or error. Three connection attempts
-  comprised two media-bearing connections and the terminal offline room-end
-  confirmation; the single natural media reconnect was correctly classified as
-  network recovery after `IncompleteRead`, not as an ordinary healthy close. Its
-  8.494-second gap comprised 5.960 tail, 1.016 failure backoff, 1.165 resolution,
-  0.265 HTTP setup, 0.086 initial media, and 0.002 write gate. All three parts,
-  including both sides of the reconnect and an in-connection 720-to-640-width
-  source change, passed decoder/DTS validation without findings or timestamp
-  replay; normal and deep validation of the 831.810-second MP4 also passed. This
-  verifies natural recovery, room-end confirmation, and finalization without
-  adding a second ordinary post-change sample or exposing a release blocker.
+- **Active issue/task:** Issue #17 fixes the release-blocking established-session
+  HTTP-404 path found by the owner-started `gracie.kf` full-LIVE soak. Issue #16
+  remains open and blocked; v0.6.0 is still untagged and unpublished.
+- **Status:** Established capture and startup recovery now retain the canonical
+  room ID as an independent resolution anchor. A username LIVE-page 404 can use
+  direct public status for that room and the public account lookup: the same live
+  room reconnects, trustworthy offline status retains the three-observation end
+  policy, a different live room uses existing live-changed semantics, and
+  unverifiable state fails closed. Initial page 404 remains a permanent safe
+  failure. An established media-URL 404 requests fresh identity resolution after
+  the existing failure backoff; the 404 itself is never an offline claim.
+  Focused resolver/LIVE/service/recovery coverage passes 269 tests and the full
+  offline suite passes 748 tests plus 19 subtests.
+- **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
+  room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
+  across 10,031.395 wall seconds. Four allocated attempts produced three reported
+  reconnects, but only two were successful media reconnects: 1.121 and 2.987
+  seconds. Attempt 4 resolved a transport, then received HTTP 404 while opening
+  the signed media URL and retained nothing. Supported manual finalization produced a
+  1,560,230,782-byte, 10,008.064-second H.264/AAC 720x1280 MP4 with SHA-256
+  `066BC0AF501F4055901AB56A2FEDC4FF5D16A2B2B31722F90E192F30EA8944B5`;
+  deep output validation passes without findings. Retained validation remains
+  honestly failed: part 2 has H.264 decoder errors and parts 2/4/5/6 contain
+  stored-DTS reversals already represented by 16 replay records. This is
+  additional issue #8 evidence without a matching raw copy, not caused by #17.
 - **Completed release task:** Issue #15 is closed. The annotated v0.5.0 tag and
   published non-draft GitHub Release remain synchronized and unchanged.
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
-- **Open evidence issues:** Issues #9 and #8 retain their real stall-boundary
-  and timestamp-replay completion criteria. Collect that rare evidence during
-  suitable future recordings; neither issue blocks v0.6.0 release readiness.
-- **Pending owner action:** Review the exact v0.6.0 candidate commit, then
-  authorize its immutable annotated tag and published GitHub Release. Candidate
-  commit `1965721c8783d22bf12a76138292ce15828427e1` is ready for that decision.
-- **Next queued task:** After explicit owner authorization, tag the reviewed
-  v0.6.0 candidate and publish its GitHub Release under issue #16. Do not start
-  v0.6.5 or v0.7 during release preparation.
+- **Open evidence issues:** Issue #8 retains the raw-copy requirement needed to
+  locate timestamp-replay corruption; the Gracie run adds decoder/replay evidence
+  but no raw bytes. Issue #9 and paused issue #13 remain unchanged.
+- **Pending owner action:** After the #17 fix is deployed, start another real LIVE
+  and let it end naturally. Do not authorize v0.6.0 unless that path finalizes
+  successfully and the Gracie retained-part anomaly is explicitly accounted for.
+- **Next queued task:** Owner-started natural-end validation of the deployed #17
+  fix under issue #16. Do not create v0.6.0 or start v0.6.5/v0.7.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

@@ -161,6 +161,14 @@ non-terminal stopped/finalizing jobs need finalization assessment.
 
 Public resolve_live returns canonical room ID plus transient signed transport;
 same_live compares IDs only. Persist only room_id, never generic resolution data.
+An initial LIVE-page HTTP 404 remains a terminal resolution failure and creates no
+recording. Once capture owns retained media and a canonical room ID, bound
+resolution may use that ID's public room status without requiring the username
+LIVE page to remain HTTP 200. A same-room live status resumes, a proven offline
+status enters the existing three-observation room-end confirmation, a different
+current room keeps existing live-changed behavior, and unprovable state fails
+closed with retained media. A media-source HTTP 404 after established capture
+requests this identity refresh; the status code alone never proves room end.
 
 Explicit capture_tags_resume/capture_url_resume require supported manifest,
 contiguous parts, no partial/output ambiguity, and one owner. Old files stay
@@ -199,7 +207,10 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    is absent and no finalizer partial exists, retry finalization of retained parts.
 7. Capture-phase jobs with saved identity and explicit-resume-compatible storage
    resolve public identity with the bounded patient policy below, in the worker.
-   Storage preflight is performed once before that loop. Decide using the table.
+   Resolution is bound to the saved canonical room ID, so a username LIVE-page
+   404 can be checked against direct room status and current-account identity
+   without inventing an offline result. Storage preflight is performed once
+   before that loop. Decide using the table.
 8. Persist `resuming`, process_restart reason, and incremented resume_count before
    media continuation. Preserve session/job ID, paths, saved room ID and start time.
    Finalization also commits its phase before starting the encoder.

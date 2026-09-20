@@ -19,6 +19,10 @@ replaces the other.
 - `tikrec finalize` updates a v0.2 manifest when one is present and marks that a
   manual recovery was attempted. Older parts directories without a manifest
   continue to finalize normally.
+- Manual finalization records its own completed recovery and output media facts;
+  it does not rewrite a historically failed or interrupted capture into a
+  successful capture. Validators therefore continue to expose both the recovered
+  output and the original lifecycle/media evidence.
 - Explicit internal resume preserves the session UUID, source type, original
   started_at and stored facts, reopens recording lifecycle, updates counts, and
   sets recovery_performed. Its capture_resume event preserves the prior result

@@ -422,6 +422,15 @@ only after three consecutive non-live room-info responses, with five seconds
 between responses. Thus the default confirmation window spans about ten
 seconds from its first response to its third.
 
+Initial resolution still requires the public username LIVE page or its normal
+page-200 lookup fallback; HTTP 404 cannot invent a room or a successful session.
+Once a canonical room ID is durably established, the bound resolver may recover
+from a username-page HTTP 404 by querying public room-info for that exact ID and,
+when needed, the public account room lookup. A live bound room supplies fresh
+transport, trustworthy non-live status enters the existing confirmation window,
+a proven different current live room ends the prior session under the existing
+identity rule, and conflicting/malformed/unavailable evidence fails closed.
+
 Confirmation begins only after the preceding FLV response has ended or failed;
 no media connection remains open during the checks. If a later check returns
 live, capture resumes but may have missed up to about ten seconds of media that
@@ -443,6 +452,10 @@ never discards bytes still arriving on an open FLV connection.
   `SourceStallError`. Live capture records the connection outcome as `stalled`,
   preserves any completed part, and retries it as a transient failure under the
   shared bounded patient policy once a canonical LIVE identity is anchored.
+- HTTP 404 while opening an established room's freshly resolved media transport
+  requests another identity/status resolution after the existing failure backoff.
+  It is not classified as offline; before retained media and canonical identity
+  exist, the same source response remains a terminal failure.
 - Room offline at the first resolve is an error. Room offline after retained
   media and successful confirmation is a normal end and triggers optional
   finalization.
@@ -574,8 +587,9 @@ strict `prepare_resume` checks and requires manifest room_id equal to durable
 room_id. Only an interrupted capture-phase explicitly-started job with no user
 stop and a missing final output can proceed to public identity resolution.
 
-Patient `resolve_live` attempts prove the same room ID before resume. Different LIVE
-or explicit offline means the prior LIVE ended during downtime and safely
+Patient bound-resolution attempts prove the same saved room ID before resume and
+can use direct room-info if the username LIVE page is HTTP 404. Different LIVE or
+explicit offline means the prior LIVE ended during downtime and safely
 finalizes retained parts. It never monitors a username for the next LIVE. Stop
 intent outranks identity; stopped/finalizing jobs skip TikTok and only assess
 finalization. Existing output needs committed manifest completion and bounded

@@ -12,7 +12,6 @@ from urllib.error import URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 from .network_errors import classify_failure
-
 from .tiktok_identity import (LiveResolution, find_room_id as _find_room_id,
                               room_id_from_page, same_live, verify_room_identity,
                               _unique_object)
@@ -59,12 +58,8 @@ class _ResolvedLiveUrl(str):
         return value
 
 
-def resolve_live_url(
-    url: str,
-    *,
-    opener: Callable[..., Any] = urlopen,
-    timeout: float = 15,
-) -> str:
+def resolve_live_url(url: str, *, opener: Callable[..., Any] = urlopen,
+                     timeout: float = 15) -> str:
     """Resolve one public TikTok LIVE page URL to its current HTTPS FLV URL."""
     result = resolve_live(url, opener=opener, timeout=timeout)
     # Preserve the string URL and its existing observation attributes for legacy callers.
@@ -72,12 +67,8 @@ def resolve_live_url(
                             result.rendition_source, result.room_id)
 
 
-def resolve_live(
-    url: str,
-    *,
-    opener: Callable[..., Any] = urlopen,
-    timeout: float = 15,
-) -> LiveResolution:
+def resolve_live(url: str, *, opener: Callable[..., Any] = urlopen,
+                 timeout: float = 15) -> LiveResolution:
     """Resolve current public LIVE identity and transport; never wait for a future LIVE."""
     username = _validate_live_page_url(url)
     if timeout <= 0:
@@ -85,6 +76,12 @@ def resolve_live(
     room_id = _room_id_from_page(_read_public_url(url, opener=opener, timeout=timeout))
     if room_id is None:
         room_id = _room_id_from_public_lookup(username, opener=opener, timeout=timeout)
+    return _resolve_room(room_id, opener=opener, timeout=timeout)
+
+
+def _resolve_room(room_id: str, *, opener: Callable[..., Any],
+                  timeout: float) -> LiveResolution:
+    """Resolve one already-established public room identity and transport."""
     room_info_url = f"{_ROOM_INFO_URL}?{urlencode({'aid': 1988, 'room_id': room_id})}"
     room_info = _json_response(
         _read_public_url(room_info_url, opener=opener, timeout=timeout),

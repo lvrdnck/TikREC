@@ -23,10 +23,19 @@ class SourceNetworkError(RuntimeError):
         self.original = error
 
 
-def resolve_bound_live(resolver, url, room_id, *, wall_clock=time.time):
+class SourceRefreshError(RuntimeError):
+    """A stale media URL requires identity re-resolution, not an offline claim."""
+
+    def __init__(self, error):
+        super().__init__("media source returned HTTP 404 before opening")
+        self.original = error
+
+
+def resolve_bound_live(resolver, url, room_id, *, bound_resolver=None, wall_clock=time.time):
     """Resolve once and refuse missing/different identity after a real room was chosen."""
     try:
-        result = resolver(url)
+        result = (bound_resolver(url, room_id)
+                  if room_id is not None and bound_resolver is not None else resolver(url))
     except Exception as error:
         failure = classify_failure(error, transport=True, now=wall_clock())
         if failure.category == "transient" and not isinstance(error, TikTokResolutionTransientError):

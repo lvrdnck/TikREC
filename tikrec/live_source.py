@@ -1,10 +1,11 @@
 """Open one LIVE connection with the existing optional raw-copy behavior."""
 
 import time
+from urllib.error import HTTPError
 
 from .capture import raw_copy_path
 from .source import RawCopy, iter_url_tags
-from .live_recovery import SourceNetworkError
+from .live_recovery import SourceNetworkError, SourceRefreshError
 from .network_errors import classify_failure
 
 
@@ -16,6 +17,8 @@ def connection_source(direct_url, *, number, raw_copy_dir, raw_tag_source,
             raw_tag_source=raw_tag_source, tag_source=tag_source, observation=observation,
             control=control, warning=warning)
     except Exception as error:
+        if isinstance(error, HTTPError) and error.code == 404:
+            raise SourceRefreshError(error) from error
         if classify_failure(error, transport=True).category == "transient":
             raise SourceNetworkError(error) from error
         raise
@@ -26,6 +29,8 @@ def _guard_tags(tags):
     try:
         yield from tags
     except Exception as error:
+        if isinstance(error, HTTPError) and error.code == 404:
+            raise SourceRefreshError(error) from error
         if classify_failure(error, transport=True).category == "transient":
             raise SourceNetworkError(error) from error
         raise

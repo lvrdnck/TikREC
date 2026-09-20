@@ -93,6 +93,19 @@ def test_same_room_commits_resume_before_capture_and_preserves_identity(tmp_path
     assert records[-1]["reason"] == "process_restart" and records[-1]["resume_count"] == 1
 
 
+def test_startup_recovery_uses_bound_room_resolver_for_saved_identity(tmp_path):
+    store, _, _ = saved_session(tmp_path)
+    calls = []
+    def bound(page, room_id):
+        calls.append((page, room_id))
+        return LiveResolution(room_id, SIGNED)
+    result = reconciler(
+        store, resolver=no_call, bound_resolver=bound, resume_capture=no_call,
+    ).reconcile()
+    assert result.outcome == "resume" and result.resolution.room_id == "123"
+    assert calls == [(PAGE, "123")]
+
+
 @pytest.mark.parametrize("kind", ["offline", "different", "stopped", "finalizing"])
 def test_end_stop_and_finalizing_safely_finalize_prior_parts(tmp_path, kind):
     changes = {"stop_requested": True} if kind == "stopped" else {}

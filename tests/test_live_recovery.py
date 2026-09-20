@@ -29,13 +29,14 @@ class FakeClock:
 
 def run_capture(tmp_path, resolver, source, *, clock=None, **options):
     clock = clock or FakeClock()
+    options.setdefault("offline_confirmation_checks", 1)
     def finalizer(parts, output):
         output.write_bytes(b"final")
         return output
     return capture_live(PAGE, parts_directory=tmp_path / "out.parts", output_path=tmp_path / "out.mp4",
         resolver=resolver, tag_source=source, finalizer=finalizer, clock=clock,
         manifest_clock=clock, observation_clock=clock, recovery_clock=clock,
-        sleeper=clock.sleep, media_inspector=lambda _: None, offline_confirmation_checks=1, **options)
+        sleeper=clock.sleep, media_inspector=lambda _: None, **options)
 
 
 def events(tmp_path):
@@ -136,6 +137,16 @@ def test_nonretryable_source_error_fails_once_without_wait(tmp_path, error):
     assert calls == [SIGNED] and clock.delays == []
 
 
+def test_initial_page_404_fails_without_creating_a_successful_session(tmp_path):
+    def resolve(_):
+        error = HTTPError(PAGE, 404, "missing", {}, None)
+        raise TikTokResolutionError("TikTok network request failed") from error
+    with pytest.raises(CaptureError):
+        run_capture(tmp_path, resolve, lambda _: pytest.fail("source must not open"))
+    assert not (tmp_path / "out.parts").exists()
+    assert not (tmp_path / "out.mp4").exists()
+
+
 def test_writer_permission_failure_is_not_mistaken_for_transport(tmp_path):
     clock, calls = FakeClock(), []
     def writer(tags, directory, **options):
@@ -172,6 +183,83 @@ def test_malformed_resolution_after_media_is_not_retried(tmp_path):
     with pytest.raises(CaptureError):
         run_capture(tmp_path, resolve, lambda _: iter(stream()), clock=clock)
     assert len(calls) == 2 and clock.delays == [0]
+
+
+def test_established_bound_room_offline_keeps_three_observation_finalization(tmp_path):
+    calls = []
+    def bound(page, room_id):
+        calls.append((page, room_id))
+        raise TikTokOfflineError("offline", status=4, room_id=room_id)
+    result = run_capture(
+        tmp_path, lambda _: LiveResolution("123", SIGNED), lambda _: iter(stream()),
+        bound_resolver=bound, offline_confirmation_checks=3,
+    )
+    assert len(result.parts) == 1 and (tmp_path / "out.mp4").exists()
+    assert calls == [(PAGE, "123")] * 3
+    status = [e for e in events(tmp_path) if e.get("event") == "room_status"]
+    assert [entry["confirmation_reached"] for entry in status] == [False, False, True]
+
+
+def test_established_bound_same_room_reconnects_before_later_offline(tmp_path):
+    bound_calls, source_calls = [], []
+    def bound(page, room_id):
+        bound_calls.append((page, room_id))
+        if len(bound_calls) == 1:
+            return LiveResolution(room_id, SIGNED + "2")
+        raise TikTokOfflineError("offline", status=4, room_id=room_id)
+    def source(url):
+        source_calls.append(url)
+        return iter(stream())
+    result = run_capture(
+        tmp_path, lambda _: LiveResolution("123", SIGNED), source,
+        bound_resolver=bound, offline_confirmation_checks=3,
+    )
+    assert source_calls == [SIGNED, SIGNED + "2"] and len(result.parts) == 2
+    assert len(bound_calls) == 4 and (tmp_path / "out.mp4").exists()
+
+
+def test_established_bound_different_room_uses_live_changed_finalization(tmp_path):
+    result = run_capture(
+        tmp_path, lambda _: LiveResolution("123", SIGNED), lambda _: iter(stream()),
+        bound_resolver=lambda page, room_id: LiveResolution("456", SIGNED + "2"),
+    )
+    assert len(result.parts) == 1 and (tmp_path / "out.mp4").exists()
+    assert events(tmp_path)[-1]["outcome"] == "live_changed"
+
+
+def test_established_bound_unverifiable_state_fails_closed_with_parts(tmp_path):
+    with pytest.raises(CaptureError) as failure:
+        run_capture(
+            tmp_path, lambda _: LiveResolution("123", SIGNED), lambda _: iter(stream()),
+            bound_resolver=lambda page, room_id: (_ for _ in ()).throw(
+                TikTokResolutionError("unverifiable room state")
+            ),
+        )
+    assert len(failure.value.parts) == 1 and not (tmp_path / "out.mp4").exists()
+    facts = json.loads((tmp_path / "out.parts/session.json").read_text())
+    assert facts["status"] == "failed" and facts["finalization"]["status"] == "not_started"
+
+
+def test_established_media_404_re_resolves_then_confirms_room_end(tmp_path):
+    source_calls, bound_calls = [], []
+    def source(url):
+        source_calls.append(url)
+        if len(source_calls) == 2:
+            raise HTTPError(url, 404, "missing", {}, None)
+        return iter(stream())
+    def bound(page, room_id):
+        bound_calls.append((page, room_id))
+        if len(bound_calls) == 1:
+            return LiveResolution(room_id, SIGNED + "2")
+        raise TikTokOfflineError("offline", status=4, room_id=room_id)
+    result = run_capture(
+        tmp_path, lambda _: LiveResolution("123", SIGNED), source,
+        bound_resolver=bound, offline_confirmation_checks=3,
+    )
+    assert len(result.parts) == 1 and (tmp_path / "out.mp4").exists()
+    assert source_calls == [SIGNED, SIGNED + "2"] and len(bound_calls) == 4
+    outcomes = [entry["outcome"] for entry in events(tmp_path) if "outcome" in entry]
+    assert outcomes == ["closed", "connection_error", "offline"]
 
 
 def test_local_ctrl_c_in_patient_wait_preserves_and_finalizes(tmp_path):

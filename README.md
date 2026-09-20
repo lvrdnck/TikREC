@@ -34,6 +34,13 @@ otherwise stopped recording. It preserves those parts and refuses to overwrite
 an existing output file. `validate` inspects an output file, parts directory,
 or session without changing it.
 
+Initial LIVE-page HTTP 404 remains a resolution failure. After TikREC has retained
+media and a canonical room ID, a page 404 no longer discards that identity: public
+status for the bound room determines whether to reconnect, confirm natural end,
+apply different-room semantics, or fail closed with parts preserved. A media-URL
+404 likewise triggers bound identity re-resolution only for an established
+session; no 404 response by itself means offline.
+
 For `live`, the first Ctrl-C stops capture, clearly announces that finalization
 has begun, finalizes retained parts, and exits 130 to show that recording ended
 early. Matching parts are stream-copied; differing video configurations require

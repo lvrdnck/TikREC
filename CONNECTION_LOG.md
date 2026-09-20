@@ -142,7 +142,7 @@ earlier media findings therefore do not disqualify the wall-clock reconnect samp
 or justify a production change from this evidence. The retained artifacts remain
 unchanged.
 
-### Full-LIVE release soak
+### First full-LIVE release soak
 
 The retained `aishaaa-ts-v060-full-live.parts` session recorded through the
 deployed v0.6.0 service from remote start until natural room end, without a manual
@@ -176,7 +176,45 @@ without warnings, including part 1 to 2 across the reconnect and part 2 to 3
 across that configuration change. No connection recorded timestamp replay or a
 stall. Normal and deep validation of the finalized MP4 also passed without
 findings. The soak therefore adds natural recovery, room-end confirmation, source-
-change, and finalization evidence without exposing a v0.6.0 release blocker.
+change, and finalization evidence without exposing a v0.6.0 release blocker in
+that run.
+
+### Full-LIVE post-capture 404 evidence
+
+The later preserved `gracie-kf-v060-full-live.parts` session exposed issue #17.
+Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`, bound to room
+`7687483539771624223`, ran for 10,031.395 wall-clock seconds and retained
+1,300,258,942 bytes in six parts while the independent PC service continued with
+the owner laptop closed. Its reported `reconnect_count=3` means four allocated
+attempts: two successful media reconnects and a final media-free attempt. That
+last attempt resolved transport but received HTTP 404 when opening the signed
+media URL, after which the historical job failed instead of confirming natural
+room end.
+
+The two successful gaps were 1.121 and 2.987 seconds. Their respective components
+were 0.007/0.014 local work, 0.939/0.958 resolution, 0.122/1.977 HTTP setup,
+0.051/0.035 initial media, 0.001/0.002 write gate, and 0.001/0.001 previous tail.
+No retry-timing change is justified. Connection 1 retained parts 1--4,
+connection 2 retained part 5, connection 3 retained part 6, and connection 4
+retained no media. The fourth allocation explains why the session reports three
+reconnects although only two resumed media.
+
+Read-only validation before recovery proved all six FLVs structurally probeable
+as H.264/AAC. Part 2 retained four H.264 corrupt-frame reports; parts 2, 4, 5,
+and 6 retained packet-DTS warnings that correspond to 16 logged timestamp-replay
+records. Parts 1, 3, 4, 5, and 6 decoded cleanly. With no raw-copy evidence, the
+part-2 damage cannot be attributed to TikTok transport or TikREC writing and is
+preserved as issue #8 evidence rather than hidden by #17 recovery.
+
+Supported manual finalization preserved every retained input and produced
+`gracie-kf-v060-full-live.mp4`: 1,560,230,782 bytes, 10,008.064 seconds,
+H.264/AAC at 720x1280, SHA-256
+`066BC0AF501F4055901AB56A2FEDC4FF5D16A2B2B31722F90E192F30EA8944B5`.
+Deep output validation passed with no findings. Retained-session validation
+continues to report the historical failed lifecycle and part-2 anomaly honestly;
+manual finalization records recovery and completion without rewriting that capture
+result. Release authorization still requires another owner-started real LIVE to
+pass naturally through the corrected end path.
 
 ## Raw copy and byte-arrival evidence
 
