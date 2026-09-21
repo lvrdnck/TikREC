@@ -351,9 +351,28 @@ validation without findings. Retained-part validation separately exposes issue
 #8 evidence: part 2 has H.264 decoder errors and parts 2/4/5/6 have stored-DTS
 reversals corresponding to 16 logged replay records; no matching raw copy exists,
 so source-versus-writer origin remains unproven. The full offline suite passes 748
-tests plus 19 subtests. Issue #16 remains blocked: do not tag/publish v0.6.0 until
-another owner-started real LIVE exercises the deployed fix through natural end,
-and do not start v0.6.5 or v0.7.
+tests plus 19 subtests.
+
+**Post-#17 natural-end release gate (2026-09-21):** Two owner-started LIVEs on
+the deployed fix completed through the normal three-observation room-end path,
+finalized successfully, and passed retained-session plus normal/deep MP4
+validation. Aishaaa supplied two ordinary media reconnects at 1.526 and 1.531
+seconds, with local/backoff components of 0.008 and 0.024 seconds; Gracie had no
+successful media reconnect before its terminal offline attempt. Neither session
+recorded a media-open failure, transient outage, stall, resolver/rendition
+change, persistent-state recovery, or unexpected termination. The production
+evidence confirms retained room identity across established capture and the
+three-check natural-end policy; focused tests continue to cover username-page
+404, signed-media 404, different-room, and unverifiable-identity branches.
+
+All 19 retained FLVs decode. Aishaaa parts 16 and 17 contain four packet-DTS
+warnings exactly matching four logged timestamp-replay records; the replays
+occurred within the third established media connection, not at either reconnect,
+and the finalized MP4 deep-validates. With no raw copy this remains issue #8
+evidence, not a #17 regression or release blocker. The required post-#17 gate has
+passed. Issue #16 remains open only for separately authorized v0.6.0 tag and
+GitHub Release bookkeeping; v0.6.0 remains untagged and unpublished, and this
+gate does not start v0.6.5 or v0.7.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

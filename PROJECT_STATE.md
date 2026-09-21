@@ -1,16 +1,17 @@
 # TikREC current state
 
-Last reviewed: 2026-09-20. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-21. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Active issue/task:** Issue #16 is active and blocked pending one more
-  owner-started full-LIVE natural-end validation of the deployed #17 fix. Issue
-  #17 is completed and closed by `b6d1f6f`; v0.6.0 remains untagged and
-  unpublished.
+- **Active issue/task:** Issue #16 is active. Its post-#17 natural-end release
+  gate passed with two owner-started full-LIVE sessions on the deployed fix.
+  Issue #17 remains completed and closed by `b6d1f6f`; v0.6.0 remains untagged
+  and unpublished pending separate owner authorization for the immutable tag
+  and GitHub Release.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -22,15 +23,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   offline claim.
   Focused resolver/LIVE/service/recovery coverage passes 308 tests and the full
   offline suite passes 748 tests plus 19 subtests.
-- **Deployment readiness:** The service restart loaded current production code
-  from `main` at #17 commit `b6d1f6f77c7c501811c03f2219950a9133e9ca33`.
-  After confirming the service was idle and available, the existing
-  `TikREC Service` Scheduled Task was safely restarted on 2026-09-20. Fresh
-  remote health reports TikREC 0.6.0, `active=false`, `available=true`,
-  `shutting_down=false`, and null recovery state/reason. Remote status retains
-  the settled terminal Gracie `failed` job as historical evidence, but no
-  recovery is pending and the service slot is available for the owner's next
-  explicit start.
+- **Post-#17 release validation:** Sessions
+  `ba3f26eb-c90b-4559-a60f-7c4cdf48c979` (`aishaaa.ts`, room
+  `7687819052166040350`) and `ed63dc43-eae5-4b46-a779-97c12d36dade`
+  (`gracie.kf`, room `7687851874133003038`) both ran through the normal remote
+  service path and ended through three trustworthy offline observations. Both
+  manifests are completed, uninterrupted, error-free, and finalized; the
+  current Gracie job additionally records `stop_requested=false` and
+  `recovery_reason=room_ended`. Aishaaa had two ordinary media reconnects at
+  1.526 and 1.531 seconds, with only 0.008 and 0.024 seconds of local/backoff;
+  Gracie had no media reconnect. Terminal offline attempts retained no media
+  and are not counted as successful reconnects. Both MP4s pass normal and deep
+  validation, and all 19 FLVs decode successfully.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -49,15 +53,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
 - **Open evidence issues:** Issue #8 retains the raw-copy requirement needed to
-  locate timestamp-replay corruption; the Gracie run adds decoder/replay evidence
-  but no raw bytes. Issue #9 and paused issue #13 remain unchanged.
-- **Pending owner action:** Start another real LIVE through the normal remote CLI
-  and let the creator end it naturally, without remote stop or manufactured
-  disconnects. Do not authorize v0.6.0 unless that path finalizes successfully
-  and the Gracie retained-part anomaly remains explicitly assigned to issue #8.
-- **Next queued task:** Analyze that session's natural reconnects, validate its
-  retained session/parts, and deep-validate its MP4 under issue #16. Do not create
-  v0.6.0 or start v0.6.5/v0.7.
+  locate timestamp-replay corruption. The historical pre-#17 Gracie run still
+  contributes its decoder/replay evidence without raw bytes. The new Aishaaa
+  session separately recorded two recovered replays in part 16 and two
+  unrecovered tail replays in part 17; their four packet-DTS warnings exactly
+  match the recorded magnitudes, all parts decode, and the finalized MP4 deep-
+  validates. With no raw copy, this is additional issue #8 evidence and is not
+  attributed to #17. Issue #9 and paused issue #13 remain unchanged.
+- **Pending owner action:** Separately authorize the immutable v0.6.0 annotated
+  tag and published GitHub Release if release publication should proceed. This
+  validation task does not authorize either action.
+- **Next queued task:** Complete v0.6.0 release bookkeeping only after that
+  explicit authorization. Do not start v0.6.5 or v0.7 from this task.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

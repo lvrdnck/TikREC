@@ -213,8 +213,86 @@ H.264/AAC at 720x1280, SHA-256
 Deep output validation passed with no findings. Retained-session validation
 continues to report the historical failed lifecycle and part-2 anomaly honestly;
 manual finalization records recovery and completion without rewriting that capture
-result. Release authorization still requires another owner-started real LIVE to
-pass naturally through the corrected end path.
+result. At that point release authorization still required another owner-started
+real LIVE to pass naturally through the corrected end path.
+
+### Post-#17 natural-end release gate
+
+Two later owner-started sessions ran through the normal deployed remote service
+after #17 commit `b6d1f6f` was loaded. Neither used remote stop, a service
+restart, or a manufactured outage. Both completed finalization and retained the
+evidence below unchanged.
+
+Session `ba3f26eb-c90b-4559-a60f-7c4cdf48c979` recorded `aishaaa.ts` in room
+`7687819052166040350` for 1,771.461 wall-clock seconds. Its manifest is
+`completed`, `interrupted=false`, `error=null`, `recovery_performed=false`, and
+finalization `completed`; 198,182,914 bytes were retained in 17 FLVs. The later
+Gracie job replaced this session in the service's single latest-job store, so
+Aishaaa's exact historical `stop_requested` and `recovery_reason` job fields are
+no longer available. Its connection log independently proves the terminal path:
+three room-status 4 observations record confirmation states false, false, true,
+followed by a media-free `offline` attempt. The resulting 195,853,511-byte,
+1,697.712-second H.264 High/AAC LC MP4 is 720x1280 and passes normal and deep
+validation. MP4 SHA-256 is
+`DE6F1A82963E836612A26B785D92834ED633B3E8505B1CA9B865CCB5B3A0F878`;
+the connection-log SHA-256 is
+`D0DC7C9EAC9941DB5ED6460BF36F8254205662DB982BC40924AB3312BBEF3BED`.
+
+Aishaaa allocated four attempts and reports three reconnects, but only attempts
+1--3 retained media. Connections 1 -> 2 and 2 -> 3 are ordinary healthy-close
+reconnects with no intervening attempt or recovery boundary. Their respective
+component timings in seconds are: previous tail 0.001/0.001, local/backoff
+0.008/0.024, resolution 1.287/1.371, HTTP setup 0.187/0.102, initial media
+0.037/0.034, write gate 0.006/0.000, and total gap 1.526/1.531. The small local
+components agree with removal of the old fixed healthy-close delay. Attempt 4 is
+the terminal offline confirmation and is not a successful media reconnect.
+There was no transient recovery, media-open failure, stall, source-selection
+change, or retained-media attempt failure; every media connection used `hd1`
+from `flv_pull_url`.
+
+The Aishaaa source changed width repeatedly between 640 and 720 at constant
+1280 height and changed advertised cadence from 25 to 15 fps. Those changes
+created part boundaries without extra connections. All 17 FLVs decode. Parts 16
+and 17 have four packet-DTS warnings matching four logged replay magnitudes:
+part 16 has recovered 1,133-video and 1,110-audio reversals, while part 17 has
+unrecovered tail reversals of 1,315 video and 1,280 audio timestamp units. They
+occurred within connection 3, not at either reconnect. No raw copy exists, so
+source-versus-writer origin remains unproven; this is issue #8 evidence rather
+than evidence of a #17 resolver or end-state regression. The deep-valid MP4 and
+clean decoder checks keep it non-blocking for this release gate.
+
+Session `ed63dc43-eae5-4b46-a779-97c12d36dade` recorded `gracie.kf` in room
+`7687851874133003038` for 1,722.302 wall-clock seconds. Its manifest is
+`completed`, `interrupted=false`, `error=null`, `recovery_performed=false`, and
+finalization `completed`. The durable service job additionally records state
+`completed`, `stop_requested=false`, `recovery_reason=room_ended`, no resume,
+and the same session and room identity. Current service health is idle and
+available with no active recovery. The session retained 228,298,721 bytes in two
+FLVs and finalized a 182,148,512-byte, 1,665.622-second H.264 High/AAC LC
+720x1280 MP4. Normal and deep validation pass. MP4 SHA-256 is
+`549D082EEC59EB9BC034C615B2FB4CC039BFC85858DA2D229642D4630D17CD2B`;
+the connection-log SHA-256 is
+`3F423AB3FF346FCC9A19E87E7D5D066C8C2784C1C91A923315BBC870EFE56439`.
+
+Gracie allocated two attempts and reports one reconnect, but connection 1 is the
+only media-bearing attempt. It closed normally, after which three room-status 4
+observations reached false, false, true confirmation and connection 2 ended
+`offline` without resolving or retaining media. The analyzer therefore reports
+zero media reconnects. Both FLVs decode and pass packet-DTS checks without a
+warning. The source changed from 720 to 640 pixels within connection 1 while
+remaining `hd1` from `flv_pull_url`; there was no timestamp replay, stall,
+transient recovery, media-open failure, or unexpected source selection.
+
+These real sessions demonstrate that canonical room identity remains usable
+across established capture, that same-room reconnect and trustworthy three-
+observation offline completion work on the deployed #17 code, and that the
+terminal checks are not miscounted as media reconnects. Neither log claims that
+a username-page or signed-media 404 occurred in these particular runs. The
+focused offline coverage still directly verifies both 404 branches, unchanged
+different-room behavior, and fail-closed unverifiable identity; all 67 affected
+tests and the full 748-test plus 19-subtest suite pass. No retry, resolver, HTTP,
+writer, or finalization regression is evident. The required post-#17 release
+gate therefore passed without changing production policy.
 
 ## Raw copy and byte-arrival evidence
 
