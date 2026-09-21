@@ -7,7 +7,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. Issues #20, #21, and
+- **Active issue/task:** No implementation task is active. Issue #23 is complete
+  after the first narrow v0.8.0 configuration/defaults slice. Issues #20, #21, and
   #22 are complete and closed after the three v0.7.0 guided-recovery slices:
   bounded read-only discovery/classification through `tikrec recover`, optional
   read-only validation through `recover --validate`, and explicit single-session
@@ -22,6 +23,15 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   #16 is closed because routine release bookkeeping no longer requires a
   dedicated issue. v0.7.0 is published and synchronized across package metadata,
   its immutable annotated tag, and its GitHub Release.
+- **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
+  now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
+  location, with an explicit global `--config FILE` override and atomic writes.
+  `config show/path/set/unset` manages the first setting, `output_directory`.
+  Relative local `live`/`record` outputs use it; absolute outputs bypass config,
+  missing config keeps CWD-relative behavior, and traversal outside the configured
+  base fails closed. Remote, finalize, recover, service state, and retained-session
+  paths are unchanged. Automatic naming plus retry, validation, and logging
+  defaults remain queued v0.8 work; v0.7.0 remains the current released version.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers

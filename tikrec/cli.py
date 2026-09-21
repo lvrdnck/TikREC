@@ -12,6 +12,8 @@ from typing import TextIO
 
 from . import __version__
 from .capture import CaptureError, CaptureResult, capture_url
+from .config_cli import add_config_command, run_config_command
+from .configuration import ConfigurationStore, default_config_path, resolve_recording_output
 from .control_cli import add_control_commands, run_control_command
 from .finalize import finalize_parts
 from .live import capture_live
@@ -55,6 +57,8 @@ def main(
         if arguments.command in {"serve", "remote"}:
             return run_control_command(arguments, stdout, service_runner=service_runner,
                                        remote_opener=remote_opener)
+        if arguments.command == "config":
+            return run_config_command(arguments, stdout)
         if arguments.command == "resolve":
             direct_url = resolver(arguments.url)
             print(direct_url, file=stdout)
@@ -84,6 +88,14 @@ def main(
                 live_progress.event,
             )
             return 0
+
+        if not output_path.is_absolute():
+            config_path = (
+                Path(arguments.config_path) if arguments.config_path else default_config_path()
+            )
+            output_path = resolve_recording_output(
+                output_path, ConfigurationStore(config_path).load()
+            )
 
         parts_directory = output_path.with_name(f"{output_path.stem}.parts")
         raw_copy_dir = Path(arguments.raw_copy) if arguments.raw_copy is not None else None
@@ -234,8 +246,11 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--debug", action="store_true", help="print unexpected-error tracebacks")
+    parser.add_argument("--config", dest="config_path", metavar="FILE",
+                        help="use an explicit per-user configuration file")
     subcommands = parser.add_subparsers(dest="command", required=True)
     add_control_commands(subcommands)
+    config = add_config_command(subcommands)
     record = subcommands.add_parser(
         "record",
         help="advanced: record a direct FLV/media URL, not a TikTok page",
@@ -274,7 +289,7 @@ def _parser() -> argparse.ArgumentParser:
     validate.add_argument("--deep", action="store_true", help="fully decode completed output")
     validate.add_argument("--json", action="store_true", help="print structured results")
     recover = add_recovery_command(subcommands)
-    for command in (record, finalize, resolve, live, validate, recover):
+    for command in (record, finalize, resolve, live, validate, recover, config):
         # Accept the global diagnostic flag after a subcommand as well.
         command.add_argument("--debug", action="store_true", default=argparse.SUPPRESS)
     return parser

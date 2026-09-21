@@ -670,6 +670,18 @@ the issue #22 isolated real-media recovery evidence remains applicable. Issues
 validation, and logging with documented discovery and CLI override precedence.
 This release does not add TikTok credentials or account profiles.
 
+**First slice completed (2026-09-21, issue #23):** TikREC now has strict,
+schema-versioned, stdlib-only per-user JSON configuration with deterministic
+Windows `%APPDATA%` and POSIX XDG discovery, an explicit `--config FILE`
+override, atomic writes, and owner-facing `config show/path/set/unset` commands.
+The first persisted setting, `output_directory`, relocates only relative local
+`live` and advanced `record` outputs. Absolute local outputs remain authoritative;
+missing configuration preserves CWD-relative behavior; and remote, finalize,
+recovery, service-state, and retained-session paths remain unchanged. Automatic
+output naming plus retry, validation, and logging defaults remain future v0.8
+slices. No credentials or account profiles are supported, and v0.8.0 is not yet
+a release candidate.
+
 ### v0.9.0 — Creator monitoring and automatic recording
 
 **Goal:** Let the owner explicitly configure public creators to monitor. Detect

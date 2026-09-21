@@ -66,6 +66,10 @@ when invoked, that is an error, not a wait state.
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec recover ROOT [--validate] [--finalize] [--json]
     tikrec validate TARGET [--deep] [--json]
+    tikrec config show [--json]
+    tikrec config path
+    tikrec config set output-directory DIRECTORY
+    tikrec config unset output-directory
     tikrec serve [--host IP] [--port PORT] [--token-file FILE]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -703,15 +707,39 @@ files and arrival sidecars inside the deterministic `<stem>.parts` directory,
 persists the opt-in in durable job intent, and passes that same location to a
 safe resumed capture. Normal remote starts omit the field and remain unchanged.
 
-## Recording storage
+## Configuration and recording storage
 
-TikREC has no implicit recording root. `--output` is the authoritative path,
-and a relative local CLI path is relative to the process working directory.
-Remote start requires an absolute .mp4 path on the service machine. Recordings
-should normally use a dedicated directory outside a source checkout. During
-development in this repository, `runs/` is the conventional local destination;
-the repository ignores `runs/`, `*.parts/`, common recorded-media extensions,
-and partial outputs. The `*.parts/` rule covers `session.json` and
+Schema-1 per-user configuration is strict JSON stored outside the checkout at
+`%APPDATA%\TikREC\config.json` on Windows or
+`${XDG_CONFIG_HOME:-~/.config}/TikREC/config.json` elsewhere. `--config FILE`,
+when placed before the subcommand, selects one deterministic explicit file.
+TikREC never scans for alternatives. The schema currently permits only integer
+`schema_version: 1` and an optional absolute string `output_directory`; duplicate,
+missing-version, unknown, incorrectly typed, malformed, or unsupported data is an
+error. Writes use a flushed same-directory temporary and atomic replacement,
+with a parent-directory sync on POSIX. Unsetting the only setting retains a valid
+versioned document. This store must never contain TikTok cookies, credentials,
+bearer tokens, or signed media URLs.
+
+`config path` does not need to parse the file. `config show [--json]` reports the
+path, existence, configured value, and effective value/source. `config set
+output-directory DIRECTORY` resolves a relative CLI value to an absolute path
+without creating the recording directory, while `config unset output-directory`
+removes only that supported setting. Invalid existing configuration is never
+silently overwritten by either mutation.
+
+`--output` remains required. For local `live` and advanced local `record`, an
+absolute path is authoritative and configuration is not loaded. A relative path
+is resolved beneath configured `output_directory`, with lexical or resolved
+escapes rejected; without the setting it remains relative to the process working
+directory. Remote start still requires and preserves an absolute .mp4 path on
+the service machine. Manual `finalize --output`, guided recovery stored paths,
+service state, and existing retained sessions do not consult this configuration.
+
+Recordings should normally use a dedicated directory outside a source checkout.
+During development in this repository, `runs/` is the conventional local
+destination; the repository ignores `runs/`, `*.parts/`, common recorded-media
+extensions, and partial outputs. The `*.parts/` rule covers `session.json` and
 `connections.jsonl` inside deterministic session directories.
 
 TikREC does not warn merely because an output is inside a Git working tree. A

@@ -20,6 +20,10 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec recover ROOT [--validate] [--finalize] [--json]
     tikrec validate TARGET [--deep] [--json]
+    tikrec config show [--json]
+    tikrec config path
+    tikrec config set output-directory DIRECTORY
+    tikrec config unset output-directory
     tikrec serve [--host IP] [--port PORT] [--token-file FILE]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -129,10 +133,40 @@ the same bounded transient-failure policy used for other connection errors.
 
 Install with `pip install -e .`
 
-TikREC writes to the path supplied with `--output`; relative paths start from
-the current directory. Prefer a dedicated recording directory outside a source
-checkout. While developing TikREC, `runs/` is the repository's ignored local
-recording directory:
+## Configuration and local output paths
+
+TikREC stores optional per-user configuration at
+`%APPDATA%\TikREC\config.json` on Windows and
+`${XDG_CONFIG_HOME:-~/.config}/TikREC/config.json` on POSIX. Use `tikrec config
+path` to print the exact location, `tikrec config show [--json]` to inspect it,
+and `tikrec config set output-directory DIRECTORY` or `tikrec config unset
+output-directory` to change the current recording-directory default. Relative
+directories passed to `config set` are converted to absolute paths, and the
+recording directory itself is created only when a recording first uses it.
+
+The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
+wrong types, duplicate fields, and unknown top-level settings fail clearly
+instead of silently changing behavior. It is not a secrets store: do not place
+TikTok cookies, credentials, bearer tokens, or signed URLs in it. Operators and
+tests can select one explicit file by placing `--config FILE` before the
+subcommand.
+
+`--output` remains required. Local `live` and advanced local `record` use this
+precedence:
+
+1. An absolute `--output` is authoritative and does not read or use the
+   configured output directory.
+2. A relative `--output` is placed beneath configured `output_directory`.
+3. Without that setting, a relative `--output` keeps the original
+   current-working-directory behavior.
+
+Paths that escape a configured directory with `..` are rejected. Configuration
+does not reinterpret remote PC paths, manual `finalize --output`, guided recovery
+paths, service state, or retained sessions. Automatic output naming, retry,
+validation, and logging defaults remain later v0.8 work.
+
+Prefer a dedicated recording directory outside a source checkout. While
+developing TikREC, `runs/` is the repository's ignored local recording directory:
 
     mkdir -p runs
     tikrec live <tiktok-live-page-url> --output runs/recording.mp4
