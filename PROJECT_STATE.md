@@ -7,15 +7,17 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #8 is the single active release-blocking
-  investigation. It must capture a natural timestamp replay with matching raw
-  source bytes and determine whether malformed/replayed media originates at the
-  TikTok/CDN source or in TikREC's parser/writer path. Issue #19 is intentionally
-  paused after implementation and deployed natural-end validation; its natural
-  ordinary-reconnect gate remains outstanding. Issue #13 remains open,
-  paused/non-blocking, and opportunistic. Issue #16 is closed because routine
-  release bookkeeping no longer requires a dedicated issue; v0.6.0 remains
-  untagged and unpublished, and no release action is authorized.
+- **Active issue/task:** No implementation task is active. Issue #8 remains open
+  as a non-blocking, opportunistic evidence target after the rare-evidence
+  reassessment: no current TikREC parser/writer corruption is demonstrated, but
+  a future natural timestamp replay with matching raw bytes would still resolve
+  the historical replay-specific attribution question. Issue #19 remains open
+  and intentionally paused after implementation and deployed natural-end
+  validation; its natural ordinary-reconnect gate is the only outstanding v0.6.0
+  release-validation item. Issue #13 remains open, paused/non-blocking, and
+  opportunistic. Issue #16 is closed because routine release bookkeeping no
+  longer requires a dedicated issue; v0.6.0 remains untagged and unpublished,
+  and no release action is authorized.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -99,8 +101,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
-- **Issue #8 evidence:** The investigation retains the raw-copy requirement needed to
-  locate timestamp-replay corruption. The historical pre-#17 Gracie run still
+- **Issue #8 evidence and reassessment:** The historical pre-#17 Gracie run still
   contributes its decoder/replay evidence without raw bytes. The new Aishaaa
   session separately recorded two recovered replays in part 16 and two
   unrecovered tail replays in part 17; their four packet-DTS warnings exactly
@@ -116,8 +117,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   payload hashes in the raw source; all 158,062 retained media-and-later tags match
   raw payload/type/order exactly after one timestamp rebase. This establishes
   upstream provenance for separate non-replay malformed media, not a TikREC
-  writer divergence. Issue #9's incremental raw/arrival implementation is now
-  real-validated and closed. Issue #13 remains paused/non-blocking.
+  writer divergence. The completed Luhpol session adds 303,564 complete raw tags
+  across three media connections, two natural network recoveries, 22 retained
+  parts, and zero raw or retained timestamp replays. Full session validation
+  found one H.264 decoder error in part 22; the untouched connection-3 raw copy
+  produces the same error, and all 924 retained tags from that part's first
+  keyframe match raw payload/type/order exactly with only the expected timestamp
+  rebase. The final MP4 deep-validates. Together Promi and Luhpol cover 461,629
+  complete raw tags without a replay and twice establish source-origin malformed
+  H.264 without a TikREC divergence. They cannot prove where the older replay-
+  associated damage originated, but the remaining ideal sample is too rare to
+  block releases absent a current retained-only divergence or reproducible
+  parser/writer defect. Issue #8 therefore stays open, non-blocking, and
+  opportunistic. Issue #9's incremental raw/arrival implementation is now real-
+  validated and closed. Issue #13 remains paused/non-blocking.
 - **Issue #8 diagnostic readiness:** Normal remote capture now has an explicit
   `remote start --raw-copy` opt-in. The service co-locates raw connections and
   arrival sidecars in the matching `.parts` directory, persists the opt-in for
@@ -125,7 +138,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   (`0dcdbce`) was installed into the existing environment on 2026-09-21 and the
   existing `TikREC Service` Scheduled Task alone was restarted. The service is
   healthy, loads the current checkout, and exposes `remote start --raw-copy`.
-  Real replay/source comparison is still pending.
+  Replay-specific source comparison remains available opportunistically.
   Focused coverage passes 197 tests plus 2 subtests; the full offline suite
   passes 785 tests plus 19 subtests, and unittest discovery passes 204 tests.
 - **Completed issue #8 validation opportunity:** Owner-authorized `promi.streams` session
@@ -143,9 +156,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   79,810 contiguous byte records covering all 435,600,600 raw bytes, including a
   3,799-byte final read followed seven seconds later by `read_end=eof`; this
   completes issue #9's real boundary requirement. No fault was manufactured.
-- **Active issue #8 validation opportunity:** Owner-authorized `luhpollisecret`
+- **Completed issue #8 validation opportunity:** Owner-authorized `luhpollisecret`
   session `c5c070f3-93a3-4c13-be63-f7109fc6e974`, canonical room
-  `7687950152400816913`, is recording through the normal deployed service at
+  `7687950152400816913`, recorded through the normal deployed service at
   `C:\Users\Leandro\Videos\luhpollisecret-v060-issue8-raw-replay-validation-20260921.mp4`
   with `raw_copy_enabled=true`. Connection 1 ended naturally after an
   `IncompleteRead(0 bytes read)` and retained ten parts plus 161,769,336 raw
@@ -174,14 +187,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   observations then confirmed room end and connection 4 ended offline without
   media. The session completed naturally with 22 parts, `interrupted=false`,
   `error=null`, and completed finalization. Its 1,781,146,349-byte, 6,326.199-
-  second H.264/AAC MP4 passes standard validation. Issue #8 remains active under
-  the owner decision and awaits separate replay-evidence reassessment.
+  second H.264/AAC MP4 passes standard and deep validation. Full retained-session
+  validation found one H.264 decoder error in part 22. The untouched connection-3
+  raw copy emits the identical decoder messages, while all 924 retained tags from
+  part 22's first keyframe match the raw payloads, types, and order exactly and
+  differ in timestamp only by the expected 9,364,937-unit rebase. This is another
+  source-origin non-replay defect, not TikREC-generated corruption. Across all
+  three connections, 303,564 complete raw tags and all durable part timings
+  contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None. Keep v0.6.0 publication paused; do not create its
   tag or GitHub Release.
-- **Next queued task:** Reassess issue #8's remaining replay-specific requirement
-  against the completed `luhpollisecret` evidence and the rare-evidence rule.
-  Do not manufacture corruption/faults or resume #19 without a qualifying ordinary
-  reconnect.
+- **Next queued task:** Issue #19 remains the outstanding v0.6.0 release-validation
+  item. Resume its read-only validation only when normal use supplies a qualifying
+  ordinary reconnect; do not manufacture one. Issue #8 can collect matching raw
+  replay evidence opportunistically without blocking that work.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

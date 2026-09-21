@@ -845,11 +845,26 @@ additional raw-only tail errors and is correctly absent from the retained FLV.
 This proves that upstream corruption can occur without a replay, but it does not
 answer the replay-specific source-attribution question, which remains open.
 
-The writer's independently-decodable-part guarantee does not currently hold
-across a timestamp replay. Retaining replayed tags is containment that
-preserves evidence for finalization and investigation; the failure is
-unresolved, not accepted as valid part output. Raw-copy comparison must decide
-whether a lossless writer fix is possible before replay handling changes.
+The completed Luhpol raw-copy validation added 303,564 complete source tags
+across three media connections, two natural network recoveries, and 22 retained
+parts without a source or retained timestamp replay. Full retained validation
+found one H.264 decoder error in part 22, but the untouched connection-3 raw file
+emits the same error. All 924 retained tags from that part's first keyframe match
+the raw payloads, types, and order exactly; timestamps differ only by the expected
+9,364,937-unit part rebase. The finalized MP4 deep-validates. Together Promi and
+Luhpol cover 461,629 complete raw tags and independently establish upstream
+malformed H.264 without a TikREC writer divergence.
+
+No replay-with-raw-copy sample has occurred, so the historical replay-specific
+source-attribution question remains unresolved. Under the rare-evidence rule it
+is now non-blocking and opportunistic: current evidence demonstrates no active
+TikREC replay-corruption defect, and requiring a random replay as a release gate
+would not be proportionate to the residual uncertainty. The writer's
+independently-decodable-part guarantee remains qualified across a future replay;
+retaining replayed tags preserves evidence rather than claiming repair. A
+retained-only replay, any raw-versus-retained payload/order divergence, or a
+reproducible decoder failure absent from matching raw media must restore the
+investigation as a correctness blocker before replay handling changes.
 
 ## Roadmap
 

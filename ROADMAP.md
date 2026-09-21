@@ -443,12 +443,12 @@ ordinary reconnects. Issue #19 therefore stays open for its specifically require
 ordinary reconnect.
 
 **Media-integrity sequencing decision (2026-09-21):** Issue #19's natural
-ordinary-reconnect validation is intentionally paused; its implemented and
-deployed identity-safe fast path remains current code. Issue #8 is now the single
-active release-blocking investigation, while issue #13 stays open,
-paused/non-blocking, and opportunistic. Issue #9's incremental raw-byte preservation,
-linked arrival sidecars, and non-fatal diagnostic failure behavior support #8;
-the Promi evidence below later completed its real-world validation.
+ordinary-reconnect validation was intentionally paused while issue #8 received
+two raw-copy opportunities; its implemented and deployed identity-safe fast path
+remains current code. Issue #9's incremental raw-byte preservation, linked
+arrival sidecars, and non-fatal diagnostic failure behavior support #8, and the
+Promi evidence below completed #9's real-world validation. Issue #13 stays open,
+paused/non-blocking, and opportunistic.
 
 The normal remote service previously had no way to request those diagnostics.
 It now accepts only a boolean `remote start --raw-copy` opt-in, co-locates raw
@@ -507,8 +507,33 @@ parts 21--22 and its 35,539,119-byte raw copy likewise contains no replay across
 12,077 complete tags. Three trustworthy status-4 observations then confirmed room
 end; connection 4 retained no media, and finalization completed without error or
 interruption. The 1,781,146,349-byte, 6,326.199-second H.264/AAC MP4 passes
-standard validation. Issue #8 remains open for separate reassessment under the
-rare-evidence rule; no fault was manufactured.
+standard validation. A later full retained-session check found one H.264 decoder
+error in part 22. The untouched connection-3 raw file emits the same error, and
+all 924 retained tags from the part's first keyframe preserve raw payloads, types,
+and order exactly with only the expected 9,364,937-unit timestamp rebase. The
+final MP4 also passes deep validation. No fault was manufactured.
+
+**Issue #8 rare-evidence reassessment (2026-09-21):** Outcome B applies. The issue
+remains open for opportunistic replay provenance, but it no longer blocks v0.6.0
+or other roadmap work. Historical Gracie replay-associated decoder damage still
+lacks raw bytes, and Aishaaa/Zoraida replays likewise cannot establish origin;
+no later parser/writer change is assumed to have repaired those cases. Against
+that uncertainty, current writer behavior preserves source tag payloads and
+ordering, Promi proves exact raw/retained equivalence across 158,062 retained
+media-and-later tags, and Luhpol contributes 303,564 complete raw tags across
+three media connections and two natural recoveries with zero raw or retained
+replays. Both raw-copy sessions independently prove that malformed H.264 can be
+present upstream without TikREC divergence. There is no demonstrated current
+TikREC-generated corruption, so requiring an increasingly rare natural replay
+as a release prerequisite is disproportionate to the remaining risk.
+
+No replay-with-raw-copy sample was captured. A future retained replay absent from
+matching raw timestamps/tags, any raw-versus-retained payload/order divergence,
+or a reproducible TikREC-only decoder failure would make this a correctness
+blocker again. Issue #19 remains separate and open: Luhpol's two classified
+network recoveries do not satisfy its outstanding ordinary-reconnect gate, which
+is the remaining v0.6.0 release-validation item. v0.6.0 remains untagged and
+unpublished.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
@@ -521,11 +546,11 @@ the remaining gap is large enough to justify doubled bandwidth, doubled
 disk, and substantially more complex media assembly. If v0.6 reduces the
 per-reconnect loss to a second or two, this release should be dropped.
 
-**Hard dependency on issue #8.** Joining two connections means deliberately
-splicing two encoder outputs together. That is exactly the operation that
-currently produces malformed H.264 at CDN replay boundaries. Building
-redundant capture before understanding why a splice fails would make the
-core operation of this release the project's one known unsolved defect.
+**Diagnostic dependency on issue #8.** Joining two connections would deliberately
+splice encoder outputs and therefore needs explicit media-integrity design and
+validation. Current evidence does not demonstrate a TikREC parser/writer defect,
+but a future raw-proven retained divergence or a replay-specific finding could
+change that assessment before this conditional release is started.
 
 **Likely scope:**
 - Two or more concurrent connections per session, independently resolved.
