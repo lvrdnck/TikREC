@@ -8,11 +8,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 ## Coordination
 
 - **Active issue/task:** Issue #19 is owner-authorized and remains active for
-  real ordinary-reconnect validation. Its identity-safe known-room fast path is
-  implemented and passes offline plus read-only live resolver validation, but
-  no media capture or manufactured disconnect was used to claim the required
-  reconnect result. Issue #16 remains open and owner-paused/blocked. v0.6.0
-  remains untagged and unpublished, and no release action is authorized.
+  real ordinary-reconnect validation. Commit `60d55cb` is normally deployed in
+  the existing Scheduled Task service. Validation session
+  `a19f366d-1484-47b2-8eb7-64d26e0a47eb` is actively recording Zoraida room
+  `7687797603433483038` to the issue-#19 validation paths under `Videos`. After
+  946.727 seconds it reported steady writer progress on connection 1 with
+  124,755,426 bytes, zero reconnects, no recovery/error/stop state, no closed
+  part, and no final output. The recording was left running normally; no
+  disconnect or stop was manufactured. Issue #16 remains open and owner-paused/
+  blocked. v0.6.0 remains untagged and unpublished, and no release action is
+  authorized.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -85,13 +90,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   match the recorded magnitudes, all parts decode, and the finalized MP4 deep-
   validates. With no raw copy, this is additional issue #8 evidence and is not
   attributed to #17. Issue #9 and paused issue #13 remain unchanged.
-- **Pending owner action:** When ready, authorize normal deployment and provide
-  a normal public LIVE validation opportunity for a natural reconnect. Keep
-  v0.6.0 publication paused; do not create its tag or GitHub Release.
-- **Next queued task:** Deploy issue #19 only through the normal authorized
-  workflow, then preserve and analyze a natural ordinary reconnect; do not
-  manufacture a disconnect merely to pass the gate. Keep issue #16 blocked and
-  do not start v0.6.5 or v0.7.
+- **Pending owner action:** None while the authorized validation recording runs
+  normally. Keep v0.6.0 publication paused; do not create its tag or GitHub
+  Release.
+- **Next queued task:** Reinspect the same active session before any action. If
+  it has a natural ordinary reconnect, preserve and validate that boundary; if
+  it reaches natural end, validate retained media and the final output. Do not
+  stop or disrupt it merely to pass the gate. Keep issue #16 blocked and do not
+  start v0.6.5 or v0.7.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

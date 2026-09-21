@@ -409,6 +409,15 @@ ordinary-reconnect validation remains required and issue #19 stays open. Issue
 #16 stays paused/blocked and v0.6.0 remains untagged/unpublished with no release
 action authorized.
 
+Commit `60d55cb` is now deployed through the existing Windows Scheduled Task.
+The authorized Zoraida validation session
+`a19f366d-1484-47b2-8eb7-64d26e0a47eb` remained healthy on its first media
+connection through the initial 946.727-second observation: 124,755,426 bytes of
+writer progress, zero reconnects, and no recovery, error, stop, closed part, or
+final output. It was left recording normally. This proves deployment/startup
+health but not the ordinary-reconnect acceptance gate; no disconnect was
+manufactured.
+
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
 **Goal:** Eliminate reconnect gaps by maintaining more than one concurrent

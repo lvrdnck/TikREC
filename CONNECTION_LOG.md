@@ -465,6 +465,17 @@ benchmark opens no media and proves resolver behavior only; no natural ordinary
 media reconnect occurred, so that required production validation remains
 outstanding and issue #19 stays open.
 
+Normal deployment validation began from `60d55cb` through the existing Scheduled
+Task service, without changing service architecture. Zoraida session
+`a19f366d-1484-47b2-8eb7-64d26e0a47eb`, room `7687797603433483038`, uses
+`C:\Users\Leandro\Videos\zoraidajazmine-v060-issue19-natural-reconnect-validation-20260921.*`.
+After 946.727 seconds, remote status reported connection count 1, reconnect count
+0, 124,755,426 bytes of writer progress, and no recovery, error, stop, closed
+part, or final output. The absent closed connection record means there is no
+reconnect boundary to analyze or validate yet. The service and recording were
+left running normally; no remote stop, service restart, network change, or other
+manufactured failure was used.
+
 ## Raw copy and byte-arrival evidence
 
 When `--raw-copy DIR` successfully opens both diagnostics, each connection has
