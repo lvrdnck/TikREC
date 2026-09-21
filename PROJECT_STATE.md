@@ -115,13 +115,15 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   `e4aa8dc4-532c-42ce-96fa-76596df0a2a9`, canonical room
   `7687931142670682901`, is recording through the deployed normal service at
   `C:\Users\Leandro\Videos\promi-streams-v060-issue8-raw-replay-validation-20260921.mp4`
-  with `raw_copy_enabled=true`. At the 128.935-second checkpoint it remained on
-  healthy connection 1 with 12,849,214 writer bytes, zero reconnects, no
+  with `raw_copy_enabled=true`. At the 626.089-second checkpoint it remained on
+  healthy connection 1 with 79,585,054 writer bytes, zero reconnects, no
   recovery/error/stop state, and no final output. The raw file and linked arrival
-  sidecar exist; 2,689 arrival records covered 14,152,964 received bytes through
-  136.969 seconds. The active connection has not closed, so no
-  `connections.jsonl` replay record exists yet. The session was left running
-  without manufactured faults or interruption.
+  sidecar exist; 14,505 arrival records covered 78,162,444 received bytes through
+  614.375 seconds. A read-only scan of the 78,157,158-byte persisted writer
+  prefix reached a clean tag boundary after 28,899 tags and found zero timestamp
+  replays. The active connection has not closed, so no `connections.jsonl`
+  replay record exists yet. The session was left running without manufactured
+  faults or interruption.
 - **Pending owner action:** None during healthy capture. Keep v0.6.0 publication
   paused; do not create its tag or GitHub Release.
 - **Next queued task:** Reinspect this same active raw-copy session. Preserve and

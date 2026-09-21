@@ -456,9 +456,12 @@ The owner-authorized `promi.streams` raw-copy validation started normally on
 `7687931142670682901`. Its first checkpoint remained on healthy connection 1
 with zero reconnects, advancing writer and raw-arrival evidence, no recovery or
 error state, and no finalized output. No closed connection/replay record exists
-yet. The session remains running undisturbed; the next #8 action is to reinspect
-this same session and compare byte-level evidence only if a natural replay is
-retained.
+yet. A later 626.089-second checkpoint reached 79,585,054 writer bytes; 14,505
+arrival records covered 78,162,444 raw bytes, and a read-only scan found zero
+timestamp replays across 28,899 complete tags in the 78,157,158-byte persisted
+writer prefix. The session remains running undisturbed; the next #8 action is to
+reinspect this same session and compare byte-level evidence only if a natural
+replay is retained.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
