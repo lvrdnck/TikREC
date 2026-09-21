@@ -7,9 +7,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. Issue #20 is complete
-  and closed after the first v0.7.0 slice: bounded, read-only discovery and
-  classification through `tikrec recover`. No demonstrated release blocker
+- **Active issue/task:** No implementation task is active. Issues #20 and #21
+  are complete and closed after the first two v0.7.0 slices: bounded read-only
+  discovery/classification through `tikrec recover`, then optional guided
+  validation through `recover --validate`. No demonstrated release blocker
   exists. Issue #19 is complete and closed after its rare-evidence reassessment.
   Issue #8 remains open as a non-blocking,
   opportunistic evidence target: no current TikREC parser/writer corruption is
@@ -206,8 +207,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** After issue #20, scope the next narrow v0.7.0 guided
-  validation/repeat-finalization slice. The conditional v0.6.5 redundant-capture
+- **Next queued task:** Scope the next narrow v0.7.0 safe repeat-finalization and
+  recovery-outcome-recording slice. The conditional v0.6.5 redundant-capture
   release is not selected; issues #8 and #13 continue to collect evidence
   opportunistically.
 
@@ -227,9 +228,9 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.7.0 guided interrupted-session recovery has
-  completed its first read-only discovery/classification slice through issue
-  #20, but remains unreleased. Conditional v0.6.5 redundant capture is not
-  selected.
+  completed read-only discovery/classification and guided validation through
+  issues #20/#21, but remains unreleased. Guided repeat finalization and outcome
+  recording remain. Conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 

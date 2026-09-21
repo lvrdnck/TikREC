@@ -8,6 +8,7 @@ from pathlib import Path
 from tikrec.cli import main
 from tikrec.recovery_cli import render_recovery_report
 from tikrec.recovery_discovery import RecoveryCandidate
+from tikrec.validation_report import ValidationFinding, ValidationResult
 
 
 BASE = RecoveryCandidate(
@@ -59,6 +60,82 @@ def test_recover_json_is_machine_readable() -> None:
     assert document["scope"] == "recordings"
     assert document["candidate_count"] == 1
     assert document["candidates"][0]["classification"] == "recoverable"
+    assert "validation_requested" not in document
+    assert "validation" not in document["candidates"][0]
+
+
+def test_recover_validate_prints_guided_result() -> None:
+    stdout = StringIO()
+    validation = ValidationResult(
+        BASE.parts_directory, "session", False, True, "passed", "interrupted",
+        "missing", 3, (ValidationFinding("warning", "output_missing", "missing", None),),
+    )
+
+    code = main(
+        ["recover", "recordings", "--validate"],
+        recovery_discoverer=lambda _: (BASE,), validator=lambda *_args, **_kwargs: validation,
+        stdout=stdout,
+    )
+
+    report = stdout.getvalue()
+    assert code == 0
+    assert "Validation requested: yes" in report
+    assert "Validation ran: yes" in report
+    assert "Validation result: passed" in report
+    assert "retained recording parts appear usable" in report
+    assert "Manual tikrec finalize is available" in report
+
+
+def test_recover_validate_json_includes_structured_validation() -> None:
+    stdout = StringIO()
+    validation = ValidationResult(
+        BASE.parts_directory, "session", False, False, "failed", "interrupted",
+        "missing", 3, (ValidationFinding("error", "part_decode", "damaged", None),),
+    )
+
+    code = main(
+        ["recover", "recordings", "--validate", "--json"],
+        recovery_discoverer=lambda _: (BASE,), validator=lambda *_args, **_kwargs: validation,
+        stdout=stdout,
+    )
+
+    document = json.loads(stdout.getvalue())
+    guided = document["candidates"][0]["validation"]
+    assert code == 1
+    assert document["validation_requested"] is True
+    assert guided["status"] == "failed"
+    assert guided["ran"] is True
+    assert guided["findings"][0]["code"] == "part_decode"
+
+
+def test_recover_without_validate_never_calls_validator() -> None:
+    def validator(*_args, **_kwargs):
+        raise AssertionError("validation was not requested")
+
+    code = main(
+        ["recover", "recordings"], recovery_discoverer=lambda _: (BASE,),
+        validator=validator, stdout=StringIO(),
+    )
+    assert code == 0
+
+
+def test_recover_validate_skips_active_candidate_and_exits_nonzero() -> None:
+    active = replace(
+        BASE, lifecycle_state="recording", classification="active_or_uncertain",
+        safe_next_action=False,
+    )
+
+    def validator(*_args, **_kwargs):
+        raise AssertionError("active candidate must be skipped")
+
+    stdout = StringIO()
+    code = main(
+        ["recover", "recordings", "--validate"],
+        recovery_discoverer=lambda _: (active,), validator=validator, stdout=stdout,
+    )
+    assert code == 1
+    assert "Validation ran: no" in stdout.getvalue()
+    assert "This session may still be active — validation was skipped." in stdout.getvalue()
 
 
 def test_recover_reports_empty_scope_plainly() -> None:
@@ -68,6 +145,16 @@ def test_recover_reports_empty_scope_plainly() -> None:
     )
     assert code == 0
     assert stdout.getvalue() == "No TikREC recovery candidates found in empty.\n"
+
+
+def test_recover_validate_reports_empty_scope_without_failure() -> None:
+    stdout = StringIO()
+    code = main(
+        ["recover", "empty", "--validate"],
+        recovery_discoverer=lambda _: (), stdout=stdout,
+    )
+    assert code == 0
+    assert "Validation was requested; nothing was validated." in stdout.getvalue()
 
 
 def test_recover_errors_use_existing_cli_error_contract() -> None:

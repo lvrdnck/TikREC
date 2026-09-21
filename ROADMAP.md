@@ -617,6 +617,16 @@ or conflicting evidence fails closed and remains untouched. This slice does not
 run full media validation, finalize, repair, resume, or record a recovery action;
 those remain later v0.7 work. v0.7.0 is not released.
 
+**Second slice completed (2026-09-21, issue #21):** Optional
+`tikrec recover ROOT --validate` now runs the existing standard session/parts
+validator only for consistent `recoverable` or `complete` candidates. Plain and
+JSON reports distinguish requested, ran, passed, failed, and skipped validation,
+include concise error-first findings, and replace discovery guidance with the
+safest validation-aware next action. Active/uncertain and conflicting candidates
+are skipped before FFprobe; validator exceptions fail closed. Discovery and
+validation remain read-only. Guided repeat finalization and durable recovery-
+outcome recording remain future slices; v0.7.0 is not released.
+
 ### v0.8.0 ? Configuration and defaults
 
 **Goal:** Persist proven choices for output locations/naming, retry policy,

@@ -15,7 +15,7 @@ workflows are product direction, but they are not commands or service features t
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
-    tikrec recover ROOT [--json]
+    tikrec recover ROOT [--validate] [--json]
     tikrec validate TARGET [--deep] [--json]
     tikrec serve [--host IP] [--port PORT] [--token-file FILE]
     tikrec remote health --server URL [--token-file FILE]
@@ -45,6 +45,16 @@ artifacts. Active, changing, partial, malformed, or conflicting evidence is
 left untouched. `--json` provides the same facts for tools. Creator usernames
 are not stored in the session manifest, so TikREC reports the source type and
 canonical room ID when available instead of guessing from filenames.
+
+Add `--validate` to run TikREC's existing standard session/parts validator only
+for completed or recoverable candidates whose stored evidence is consistent.
+Active/uncertain or conflicting candidates are skipped before validation. The
+report says whether validation ran, passed, failed, or was skipped, summarizes
+up to five useful findings, and gives the safest next action. A failed or skipped
+candidate makes the command exit nonzero for automation; an empty scope remains
+a successful scan. Passing recovery parts may be finalized later with the manual
+`tikrec finalize` command, but `recover --validate` never runs it or changes any
+manifest, log, media, output, or recovery artifact.
 
 Initial LIVE-page HTTP 404 remains a resolution failure. After TikREC has retained
 media and a canonical room ID, reconnect resolution overlaps a direct public

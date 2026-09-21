@@ -215,8 +215,13 @@ Discovery does not update this manifest or any media/recovery artifact. A
 malformed, duplicate, changing, partial, symlinked, or conflicting evidence also
 fails closed. Legacy parts without `session.json` remain manually finalizable,
 but discovery cannot infer their session identity or intended output safely.
-This first v0.7 slice does not automatically validate with FFprobe, finalize,
-repair, resume, or overwrite anything; manual `tikrec finalize` remains available.
+Plain discovery does not start FFprobe. `tikrec recover ROOT --validate` runs the
+existing standard `tikrec validate` session/parts path only for terminal
+recoverable or completed candidates whose discovery evidence is consistent.
+Validation results are not persisted. Active/uncertain and conflicting candidates
+are skipped, and validator failures fail closed. Neither recovery mode finalizes,
+repairs, resumes, overwrites, or updates anything; manual `tikrec finalize`
+remains available after a passing validation.
 
 ## Validation
 

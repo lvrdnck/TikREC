@@ -739,6 +739,18 @@ manifest, resume capture, repair media, or perform finalization. Structured JSON
 contains the same facts as the plain-language report. Later v0.7 slices may build
 validated recovery actions on this conservative discovery boundary.
 
+The second v0.7 slice adds optional `--validate` without changing that discovery
+boundary. Only `recoverable` and `complete` candidates with consistent evidence
+are passed as their parts-directory/session target to the existing standard
+`validate_target` implementation. Active/uncertain and needs-attention candidates
+are skipped before FFprobe. Results distinguish requested, ran, passed, failed,
+and skipped; retain the validator's media/session/output summaries; and include
+at most five error-first findings plus an omitted count. Failed or skipped
+candidates make validation mode exit nonzero, while no candidates is a successful
+bounded scan. Validation exceptions become redacted fail-closed findings. Plain
+discovery retains its prior output/JSON shape and performs no validation. Neither
+mode persists validation history or invokes finalization.
+
 ## Testing
 
 Unit tests run offline with no network and no live stream. Network
