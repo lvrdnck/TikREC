@@ -77,6 +77,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   HTTP setup, 0.151 initial media, and zero keyframe gate. Established resolution
   necessarily attempted the identity-safe known-room path, but persisted evidence
   does not record whether the fast result was accepted or the full fallback ran.
+  Connection 2-to-3 was a second `network_recovery`, not an ordinary reconnect;
+  its 7.522-second gap included 5.992 tail, 1.034 failure backoff, 0.397 resolution,
+  0.070 HTTP setup, 0.030 initial media, and zero keyframe gate. The completed
+  analyzer therefore reports two recovery reconnects and zero ordinary reconnects,
+  so issue #19 stays open.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -164,13 +169,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   after retaining parts 11--20. Its complete 666,852,312-byte raw copy contains
   235,300 complete tags and zero source-aware timestamp replays across ten codec
   configuration epochs; its durable part timings also report zero replays.
-  Connection 3 is now active and remains undisturbed.
-- **Pending owner action:** None while the current validation session remains
-  active. Keep v0.6.0 publication paused; do not create its tag or GitHub Release.
-- **Next queued task:** Reinspect the existing `luhpollisecret` session without
-  disturbing it. Preserve and compare matching raw/retained evidence if a natural
-  timestamp replay occurs; otherwise allow normal capture and room-end behavior.
-  Do not manufacture corruption/faults or resume #19.
+  Connection 3 retained parts 21--22; its 35,539,119-byte raw copy contains 12,077
+  complete tags and zero replay across two codec epochs. Three numeric status-4
+  observations then confirmed room end and connection 4 ended offline without
+  media. The session completed naturally with 22 parts, `interrupted=false`,
+  `error=null`, and completed finalization. Its 1,781,146,349-byte, 6,326.199-
+  second H.264/AAC MP4 passes standard validation. Issue #8 remains active under
+  the owner decision and awaits separate replay-evidence reassessment.
+- **Pending owner action:** None. Keep v0.6.0 publication paused; do not create its
+  tag or GitHub Release.
+- **Next queued task:** Reassess issue #8's remaining replay-specific requirement
+  against the completed `luhpollisecret` evidence and the rare-evidence rule.
+  Do not manufacture corruption/faults or resume #19 without a qualifying ordinary
+  reconnect.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

@@ -435,7 +435,12 @@ failure backoff, 0.419-second established resolution, 0.175-second HTTP setup,
 0.151-second initial media delivery, and no keyframe gate. The deployed bound
 resolver necessarily attempted the identity-safe known-room path, but the
 persisted schema cannot prove fast-result acceptance versus full fallback.
-Issue #19 therefore stays open for its specifically required ordinary reconnect.
+Connection 2-to-3 was also classified `network_recovery`: its 7.522-second gap
+contained 5.992 seconds of tail, 1.034 seconds of failure backoff, 0.397 seconds
+of resolution, 0.070 seconds of HTTP setup, 0.030 seconds of initial media, and
+no keyframe gate. The completed analyzer reports two recovery reconnects and zero
+ordinary reconnects. Issue #19 therefore stays open for its specifically required
+ordinary reconnect.
 
 **Media-integrity sequencing decision (2026-09-21):** Issue #19's natural
 ordinary-reconnect validation is intentionally paused; its implemented and
@@ -497,8 +502,13 @@ was left undisturbed for a natural replay or room-end boundary; no fault was
 manufactured. Connection 1 later failed naturally and recovered into a productive
 connection 2, which subsequently ended after retaining parts 11--20. Its complete
 666,852,312-byte raw copy contains 235,300 complete tags and no source-aware
-timestamp replay across ten codec configuration epochs. Connection 3 is active;
-issue #8 remains open and the recording remains undisturbed.
+timestamp replay across ten codec configuration epochs. Connection 3 retained
+parts 21--22 and its 35,539,119-byte raw copy likewise contains no replay across
+12,077 complete tags. Three trustworthy status-4 observations then confirmed room
+end; connection 4 retained no media, and finalization completed without error or
+interruption. The 1,781,146,349-byte, 6,326.199-second H.264/AAC MP4 passes
+standard validation. Issue #8 remains open for separate reassessment under the
+rare-evidence rule; no fault was manufactured.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
