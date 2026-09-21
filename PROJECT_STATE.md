@@ -142,7 +142,15 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   (about 221 MB and 33,287 records). An independent read-only timestamp scan of
   completed parts 1--15 found no replay. The session was left running normally;
   no fault, replay, stop, or restart was manufactured, so issue #8's replay-specific
-  raw-versus-retained acceptance criterion remains outstanding.
+  raw-versus-retained acceptance criterion remains outstanding. A later read-only
+  checkpoint found the recovery sustained for more than 4,100 seconds on connection
+  2, with 19 completed parts and 724,162,228 bytes of total retained progress. A
+  source-aware scan found no replay in connection 1's 56,187 complete raw tags or
+  connection 2's first 192,506 complete raw tags; an active-tail truncation was
+  expected while connection 2 continued growing. All 164,759 tags in completed
+  parts 1--19 are replay-free, and connection-2 parts 11--19 pass decoder and
+  packet-DTS validation without findings. This strengthens the no-divergence
+  evidence but still does not supply the rare replay required for attribution.
 - **Pending owner action:** None while the current validation session remains
   active. Keep v0.6.0 publication paused; do not create its tag or GitHub Release.
 - **Next queued task:** Reinspect the existing `luhpollisecret` session without
