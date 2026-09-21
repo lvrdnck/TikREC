@@ -9,9 +9,13 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile
 
+from .retry_policy import DEFAULT_RECOVERY_WINDOW_SECONDS
+
 
 CONFIG_SCHEMA_VERSION = 1
-_FIELDS = {"schema_version", "output_directory"}
+MIN_RECOVERY_WINDOW_SECONDS = 60
+MAX_RECOVERY_WINDOW_SECONDS = 3600
+_FIELDS = {"schema_version", "output_directory", "recovery_window_seconds"}
 
 
 class ConfigurationError(ValueError):
@@ -23,6 +27,7 @@ class Configuration:
     """Supported per-user defaults; secrets are intentionally out of scope."""
 
     output_directory: Path | None = None
+    recovery_window_seconds: int | None = None
     schema_version: int = CONFIG_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -33,6 +38,15 @@ class Configuration:
             )
         if self.output_directory is not None:
             _validate_output_directory(self.output_directory)
+        if self.recovery_window_seconds is not None:
+            validate_recovery_window_seconds(self.recovery_window_seconds)
+
+    @property
+    def effective_recovery_window_seconds(self) -> int:
+        """Return the configured recovery window or the built-in default."""
+        if self.recovery_window_seconds is None:
+            return DEFAULT_RECOVERY_WINDOW_SECONDS
+        return self.recovery_window_seconds
 
 
 def default_config_path(
@@ -84,6 +98,7 @@ class ConfigurationStore:
             configuration = Configuration(
                 schema_version=document["schema_version"],
                 output_directory=Path(raw_directory) if raw_directory is not None else None,
+                recovery_window_seconds=document.get("recovery_window_seconds"),
             )
             configuration.validate()
             return configuration
@@ -97,6 +112,8 @@ class ConfigurationStore:
         document: dict[str, object] = {"schema_version": configuration.schema_version}
         if configuration.output_directory is not None:
             document["output_directory"] = str(configuration.output_directory)
+        if configuration.recovery_window_seconds is not None:
+            document["recovery_window_seconds"] = configuration.recovery_window_seconds
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary: Path | None = None
         try:
@@ -136,6 +153,26 @@ def configured_output_directory(value: str) -> Path:
         raise ConfigurationError("output directory is not a valid local path") from None
     _validate_output_directory(directory)
     return directory
+
+
+def validate_recovery_window_seconds(value: object) -> int:
+    """Return a strictly bounded integer recovery-window configuration value."""
+    if (type(value) is not int
+            or not MIN_RECOVERY_WINDOW_SECONDS <= value <= MAX_RECOVERY_WINDOW_SECONDS):
+        raise ConfigurationError(
+            "recovery_window_seconds must be an integer from "
+            f"{MIN_RECOVERY_WINDOW_SECONDS} to {MAX_RECOVERY_WINDOW_SECONDS}"
+        )
+    return value
+
+
+def configured_recovery_window_seconds(value: str) -> int:
+    """Parse one CLI setting value while preserving strict integer semantics."""
+    try:
+        parsed: object = int(value)
+    except ValueError:
+        parsed = value
+    return validate_recovery_window_seconds(parsed)
 
 
 def resolve_recording_output(output: str | Path, configuration: Configuration) -> Path:

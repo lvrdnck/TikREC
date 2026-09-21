@@ -18,6 +18,13 @@ IPv6 address (`localhost` means `127.0.0.1`). Every non-loopback bind, including
 an explicit wildcard, requires a token; prefer the PC's Tailscale IP. `--port`
 accepts 1–65535. The client accepts a hostname such as `main-pc` or an IP.
 
+`--recovery-window-seconds SECONDS` overrides the configured LIVE recovery
+window for this service process. Otherwise `serve` uses the optional strict
+per-user `recovery_window_seconds`, then the built-in 900 seconds. Accepted
+values are integers from 60 through 3600. Configuration is read once at startup;
+restart the service after changing it. This setting is not part of remote start
+or the HTTP API.
+
 Use `--token-file FILE` or `TIKREC_TOKEN`. Files override the environment and may
 end with a newline. Tokens must be 16–512 printable ASCII characters without
 spaces; use a randomly generated secret with at least 32 characters. Empty or
@@ -253,7 +260,10 @@ permission and programming errors fail. Writer errors cannot enter network recov
 the wait up to that cap. The default window is 900 monotonic seconds from the
 first transient failure. Waits are clamped to remaining time; no new retry starts
 at expiry. An in-flight HTTP operation still uses its existing bounded timeout.
-Policy/clocks/Event waiter are injectable; no CLI configuration is added. Healthy
+Policy/clocks/Event waiter are injectable. Local `live` and `serve` accept the
+same bounded CLI override and otherwise use configuration then 900 seconds. The
+service applies its startup-selected policy to both active capture and startup
+reconciliation; it does not hot-reload configuration. Healthy
 media-bearing EOF re-resolves immediately; patient failure waits retain this policy,
 and the three offline checks remain five seconds apart. Initial unresolved capture
 retains its three-failure limit. Patient capture requires an anchored room ID;

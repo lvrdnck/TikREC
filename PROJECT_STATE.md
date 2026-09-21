@@ -7,8 +7,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. Issues #23 and #24 are
-  complete after the first two narrow v0.8.0 configuration/defaults slices.
+- **Active issue/task:** No implementation task is active. Issues #23, #24, and
+  #25 are complete after the first three narrow v0.8.0 configuration/defaults slices.
   Issues #20, #21, and
   #22 are complete and closed after the three v0.7.0 guided-recovery slices:
   bounded read-only discovery/classification through `tikrec recover`, optional
@@ -41,6 +41,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   slice precedence and are never renamed; `record`, remote, finalize, recover,
   service, and retained sessions are unchanged. Filename templates and retry,
   validation, and logging defaults remain queued; v0.7.0 remains released.
+- **Completed third v0.8 recovery-default slice:** Strict schema-1 configuration
+  optionally persists an integer `recovery_window_seconds` from 60 through 3600.
+  Local `live` and `serve` use CLI override, configuration, then the unchanged
+  900-second built-in default. The service snapshots the selected policy at
+  startup and applies it to both active and startup recovery; outage status
+  reports the selected window. Retry delays/cap, retry classification, room-end
+  confirmation, output handling, direct `record`, remote/API behavior, and prior
+  configuration compatibility remain unchanged. Restart is required after a
+  service configuration change. Validation and logging defaults remain queued;
+  v0.7.0 remains released.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -248,8 +258,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** v0.8.0 configuration and defaults is the next planned
-  implementation target. Do not start it without a separate task. The conditional
+- **Next queued task:** Continue v0.8.0 with one separately approved narrow
+  validation-default slice; logging defaults remain later work. The conditional
   v0.6.5 redundant-capture release is not selected; issues #8 and #13 continue
   to collect evidence opportunistically.
 
@@ -268,8 +278,8 @@ new work; calendar entries are reminders only.
 - **Current released version:** v0.7.0; its release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
-- **Development target:** v0.8.0 configuration and defaults is the next planned
-  roadmap target. No v0.8.0 implementation has started. Conditional v0.6.5
+- **Development target:** v0.8.0 configuration and defaults is in development
+  after completed issues #23-#25; it is not a release candidate. Conditional v0.6.5
   redundant capture is not selected.
 
 ## Issue #13 rendition investigation

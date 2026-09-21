@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .remote import RemoteClient
+from .recovery_options import effective_retry_policy, recovery_window_argument
 from .service import DEFAULT_HOST, DEFAULT_PORT, serve, validate_bind
 
 
@@ -19,6 +20,8 @@ def add_control_commands(subcommands) -> None:
     server.add_argument("--host", default=DEFAULT_HOST, help="explicit loopback/LAN/Tailscale IP")
     server.add_argument("--port", type=int, default=DEFAULT_PORT)
     server.add_argument("--token-file", metavar="FILE", help="bearer secret; overrides TIKREC_TOKEN")
+    server.add_argument("--recovery-window-seconds", type=recovery_window_argument,
+                        metavar="SECONDS", help="override the 60-3600 second recovery window")
     remote = subcommands.add_parser("remote", help="control a trusted TikREC service")
     actions = remote.add_subparsers(dest="action", required=True)
     for name in ("health", "status", "start", "stop"):
@@ -56,8 +59,11 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         host = validate_bind(arguments.host, token)
         if not 1 <= arguments.port <= 65535:
             raise ValueError("port must be between 1 and 65535")
+        retry_policy = effective_retry_policy(
+            arguments.recovery_window_seconds, arguments.config_path
+        )
         print(f"Starting TikREC service on {host}:{arguments.port}", file=stdout, flush=True)
-        service_runner(host=host, port=arguments.port, token=token)
+        service_runner(host=host, port=arguments.port, token=token, retry_policy=retry_policy)
         return 0
     client = RemoteClient(arguments.server, token=token, opener=remote_opener,
                           timeout=arguments.timeout)

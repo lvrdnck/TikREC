@@ -12,9 +12,11 @@ from tikrec.configuration import (
     Configuration,
     ConfigurationError,
     ConfigurationStore,
+    configured_recovery_window_seconds,
     configured_output_directory,
     default_config_path,
     resolve_recording_output,
+    validate_recovery_window_seconds,
 )
 
 
@@ -51,9 +53,12 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
     path.write_text(json.dumps({
         "schema_version": CONFIG_SCHEMA_VERSION,
         "output_directory": str(output_directory),
+        "recovery_window_seconds": 600,
     }), encoding="utf-8")
     configuration = ConfigurationStore(path).load()
     assert configuration.output_directory == output_directory
+    assert configuration.recovery_window_seconds == 600
+    assert configuration.effective_recovery_window_seconds == 600
     assert resolve_recording_output("creator/live.mp4", configuration) == (
         output_directory / "creator/live.mp4"
     )
@@ -63,6 +68,11 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
     ("{", "invalid configuration"),
     ('{"schema_version": 2}', "unsupported configuration schema version"),
     ('{"schema_version": 1, "output_directory": 7}', "absolute path string"),
+    ('{"schema_version": 1, "recovery_window_seconds": true}', "integer from 60 to 3600"),
+    ('{"schema_version": 1, "recovery_window_seconds": 60.0}', "integer from 60 to 3600"),
+    ('{"schema_version": 1, "recovery_window_seconds": "60"}', "integer from 60 to 3600"),
+    ('{"schema_version": 1, "recovery_window_seconds": 59}', "integer from 60 to 3600"),
+    ('{"schema_version": 1, "recovery_window_seconds": 3601}', "integer from 60 to 3600"),
     ('{"schema_version": 1, "typo": true}', "unknown or invalid"),
     ('{"schema_version": 1, "schema_version": 1}', "duplicate field"),
     ('{"output_directory": "/recordings"}', "missing schema_version"),
@@ -83,6 +93,16 @@ def test_configured_directory_must_be_absolute_and_not_a_file(tmp_path: Path) ->
     file_path.write_text("occupied", encoding="utf-8")
     with pytest.raises(ConfigurationError, match="not a directory"):
         configured_output_directory(str(file_path))
+
+
+def test_recovery_window_bounds_and_default_are_strict() -> None:
+    assert Configuration().effective_recovery_window_seconds == 900
+    assert validate_recovery_window_seconds(60) == 60
+    assert validate_recovery_window_seconds(3600) == 3600
+    for invalid in (True, 59, 3601, 60.0, "60", 0, -1):
+        with pytest.raises(ConfigurationError, match="integer from 60 to 3600"):
+            validate_recovery_window_seconds(invalid)
+    assert configured_recovery_window_seconds("600") == 600
 
 
 def test_relative_cli_value_is_stored_as_absolute_without_creating_it(
@@ -110,11 +130,14 @@ def test_atomic_save_replaces_complete_document_and_leaves_no_partial(tmp_path: 
     path = tmp_path / "config" / "config.json"
     store = ConfigurationStore(path)
     directory = tmp_path / "recordings"
-    store.save(Configuration(output_directory=directory))
-    assert store.load().output_directory == directory
+    store.save(Configuration(output_directory=directory, recovery_window_seconds=1200))
+    assert store.load() == Configuration(
+        output_directory=directory, recovery_window_seconds=1200
+    )
     assert list(path.parent.glob("*.partial")) == []
     assert json.loads(path.read_text(encoding="utf-8")) == {
-        "output_directory": str(directory), "schema_version": 1,
+        "output_directory": str(directory), "recovery_window_seconds": 1200,
+        "schema_version": 1,
     }
 
 

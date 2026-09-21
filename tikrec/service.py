@@ -9,6 +9,7 @@ import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .recording import RecordingBusy, RecordingController
+from .retry_policy import RetryPolicy
 from .job_state import JobStateStore
 from .service_job import default_job_state_path
 
@@ -38,7 +39,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
 
     def __init__(self, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *,
                  controller: RecordingController | None = None,
-                 token: str | None = None, bind_and_activate: bool = True) -> None:
+                 token: str | None = None, retry_policy: RetryPolicy = RetryPolicy(),
+                 bind_and_activate: bool = True) -> None:
         host = validate_bind(host, token)
         if not 0 <= port <= 65535:
             raise ValueError("port must be between 0 and 65535")
@@ -49,7 +51,7 @@ class RecordingHTTPServer(ThreadingHTTPServer):
         try:
             # Reserve the listening address before recovery can open a second media writer.
             self.controller = controller if controller is not None else RecordingController(
-                store=JobStateStore(default_job_state_path()))
+                store=JobStateStore(default_job_state_path()), retry_policy=retry_policy)
         except BaseException:
             self.server_close()
             raise
@@ -174,9 +176,11 @@ class RecordingHandler(BaseHTTPRequestHandler):
 
 
 def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
-          token: str | None = None, controller: RecordingController | None = None) -> None:
+          token: str | None = None, controller: RecordingController | None = None,
+          retry_policy: RetryPolicy = RetryPolicy()) -> None:
     """Run until local interruption, then cooperatively finish the current job."""
-    with RecordingHTTPServer(host, port, token=token, controller=controller) as server:
+    with RecordingHTTPServer(host, port, token=token, controller=controller,
+                             retry_policy=retry_policy) as server:
         try:
             server.serve_forever()
         except KeyboardInterrupt:

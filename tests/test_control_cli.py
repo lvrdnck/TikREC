@@ -8,16 +8,20 @@ import pytest
 
 from tikrec.cli import _parser, main
 from tikrec.control_cli import read_token
+from tikrec.retry_policy import RetryPolicy
 
 
 TOKEN = "test-secret-0123456789"
 
 
-def test_serve_defaults_and_existing_commands(monkeypatch):
+def test_serve_defaults_and_existing_commands(monkeypatch, tmp_path):
     monkeypatch.delenv("TIKREC_TOKEN", raising=False)
     calls = []
-    assert main(["serve"], service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
-    assert calls == [{"host": "127.0.0.1", "port": 8765, "token": None}]
+    config = tmp_path / "missing.json"
+    assert main(["--config", str(config), "serve"],
+                service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
+    assert calls == [{"host": "127.0.0.1", "port": 8765, "token": None,
+                      "retry_policy": RetryPolicy()}]
     parser = _parser()
     for command, args in [("live", ["page", "--output", "out.mp4"]),
                           ("record", ["flv", "--output", "out.mp4"]),
@@ -40,6 +44,9 @@ def test_help_guides_normal_live_recording_and_advanced_sources(capsys):
     assert "public TikTok LIVE page URL" in live_help
     assert "tikrec live https://www.tiktok.com/@creator/live --output creator.mp4" in live_help
     assert "creator-YYYYMMDD-HHMMSS.mp4" in live_help
+
+    assert main(["serve", "--help"]) == 0
+    assert "--recovery-window-seconds" in capsys.readouterr().out
 
     assert main(["record", "--help"]) == 0
     record_help = capsys.readouterr().out
@@ -130,3 +137,37 @@ def test_invalid_port_rejected_before_service_start(monkeypatch):
     monkeypatch.delenv("TIKREC_TOKEN", raising=False)
     assert main(["serve", "--port", "0"], stderr=StringIO(),
                 service_runner=lambda **kw: pytest.fail("must not run")) == 1
+
+
+def test_serve_recovery_window_precedence_and_lazy_configuration(tmp_path, monkeypatch):
+    monkeypatch.delenv("TIKREC_TOKEN", raising=False)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({
+        "schema_version": 1, "recovery_window_seconds": 600,
+    }), encoding="utf-8")
+    calls = []
+    assert main(["--config", str(config), "serve"],
+                service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
+    assert calls[-1]["retry_policy"].window_seconds == 600
+    assert main([
+        "--config", str(config), "serve", "--recovery-window-seconds", "1200",
+    ], service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
+    assert calls[-1]["retry_policy"].window_seconds == 1200
+
+    config.write_text("{", encoding="utf-8")
+    assert main(["--config", str(config), "serve"], stderr=StringIO(),
+                service_runner=lambda **kw: pytest.fail("must not run")) == 1
+    assert main([
+        "--config", str(config), "serve", "--recovery-window-seconds", "60",
+    ], service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
+    assert calls[-1]["retry_policy"].window_seconds == 60
+
+
+def test_remote_shape_has_no_recovery_window_option() -> None:
+    parser = _parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args([
+            "remote", "start", "--server", "http://main-pc",
+            "https://www.tiktok.com/@creator/live", "--output", r"C:\Videos\out.mp4",
+            "--recovery-window-seconds", "600",
+        ])

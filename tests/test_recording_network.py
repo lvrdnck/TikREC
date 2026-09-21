@@ -31,6 +31,7 @@ def test_startup_network_wait_keeps_health_status_and_stop_responsive(tmp_path):
     recovery = StartupReconciler(store, resolver=resolve, finalizer=keep_finalizer,
                                 clock=clock, media_inspector=lambda _: None)
     controller = RecordingController(store=store, reconciler=recovery, clock=clock,
+                                      retry_policy=RetryPolicy(window_seconds=600),
                                       recovery_clock=clock, recovery_waiter=waiter)
     try:
         assert waiting.wait(2)
@@ -40,6 +41,7 @@ def test_startup_network_wait_keeps_health_status_and_stop_responsive(tmp_path):
         assert health["active"] and not health["available"]
         status = request(controller, "GET", "/recording")[1]
         assert status["retry_attempt"] == 1 and status["next_retry_in_seconds"] == 1
+        assert status["recovery_window_seconds"] == 600
         assert status["network_failure_kind"] == "dns"
         clock.now += 0.5
         assert controller.status()["next_retry_in_seconds"] == 0.5
@@ -122,6 +124,7 @@ def test_active_outage_exhaustion_releases_service_and_survives_restart(tmp_path
     status = controller.status()
     assert status["state"] == "failed" and status["recovery_reason"] == "outage_timeout"
     assert status["recovery_state"] == "exhausted" and controller.health()["available"]
+    assert status["recovery_window_seconds"] == 4
     assert ("recovering_network", "network_outage") in transitions
     assert transitions[-1] == ("failed", "outage_timeout")
     assert len(transitions) < len(calls) + 6

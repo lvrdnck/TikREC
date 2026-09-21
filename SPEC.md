@@ -62,7 +62,7 @@ when invoked, that is an error, not a wait state.
 
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
-    tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR]
+    tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR] [--recovery-window-seconds SECONDS]
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec recover ROOT [--validate] [--finalize] [--json]
     tikrec validate TARGET [--deep] [--json]
@@ -70,7 +70,9 @@ when invoked, that is an error, not a wait state.
     tikrec config path
     tikrec config set output-directory DIRECTORY
     tikrec config unset output-directory
-    tikrec serve [--host IP] [--port PORT] [--token-file FILE]
+    tikrec config set recovery-window-seconds SECONDS
+    tikrec config unset recovery-window-seconds
+    tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
@@ -713,23 +715,25 @@ Schema-1 per-user configuration is strict JSON stored outside the checkout at
 `%APPDATA%\TikREC\config.json` on Windows or
 `${XDG_CONFIG_HOME:-~/.config}/TikREC/config.json` elsewhere. `--config FILE`,
 when placed before the subcommand, selects one deterministic explicit file.
-TikREC never scans for alternatives. The schema currently permits only integer
-`schema_version: 1` and an optional absolute string `output_directory`; duplicate,
+TikREC never scans for alternatives. The schema permits integer
+`schema_version: 1`, optional absolute string `output_directory`, and optional
+integer `recovery_window_seconds` from 60 through 3600 inclusive; duplicate,
 missing-version, unknown, incorrectly typed, malformed, or unsupported data is an
 error. Writes use a flushed same-directory temporary and atomic replacement,
-with a parent-directory sync on POSIX. Unsetting the only setting retains a valid
+with a parent-directory sync on POSIX. Unsetting all optional settings retains a valid
 versioned document. This store must never contain TikTok cookies, credentials,
 bearer tokens, or signed media URLs.
 
 `config path` does not need to parse the file. `config show [--json]` reports the
-path, existence, configured value, and effective value/source. `config set
+path, existence, configured values, and effective values/sources. `config set
 output-directory DIRECTORY` resolves a relative CLI value to an absolute path
 without creating the recording directory, while `config unset output-directory`
-removes only that supported setting. Invalid existing configuration is never
-silently overwritten by either mutation.
+removes only that setting. `config set recovery-window-seconds SECONDS` persists
+the bounded integer and its matching `unset` restores the built-in default.
+Invalid existing configuration is never silently overwritten by a mutation.
 
 `--output` is optional only for local `live`. When supplied, an absolute path is
-authoritative and configuration is not loaded. A relative explicit path is
+authoritative and does not consult the configured output directory. A relative explicit path is
 resolved beneath configured `output_directory`, with lexical or resolved escapes
 rejected; without the setting it remains relative to the process working
 directory. Advanced local `record` still requires explicit output and never
@@ -757,6 +761,15 @@ machine. Manual `finalize --output`, guided recovery stored paths, service state
 and existing retained sessions do not consult automatic naming. No customizable
 filename template exists yet, and manual naming does not imply creator monitoring
 or automatic recording.
+
+Local `live` and `serve` resolve the recovery window as CLI override, then
+configuration, then the built-in 900 seconds. An explicit override avoids reading
+configuration solely for retry policy; output-path resolution may still require
+it independently. `serve` snapshots the effective policy at process startup and
+must be restarted after configuration changes. The same selected `RetryPolicy`
+governs active media recovery and startup reconciliation. Direct `record`, remote
+start, and the HTTP start body do not expose this option. Schema 1 remains
+compatible because the new field is optional and old documents retain 900.
 
 Recordings should normally use a dedicated directory outside a source checkout.
 During development in this repository, `runs/` is the conventional local

@@ -693,6 +693,18 @@ query/signed URL material. Explicit output precedence is unchanged; direct
 unchanged. Filename templates plus retry, validation, and logging defaults remain
 future v0.8 slices, and v0.8.0 is not yet a release candidate.
 
+**Third slice completed (2026-09-21, issue #25):** Strict schema-1 configuration
+now optionally persists `recovery_window_seconds`, bounded to integer values from
+60 through 3600. Local `live` and `serve` resolve CLI override, configuration,
+then the unchanged 900-second default; explicit overrides avoid configuration I/O
+when no other feature needs it. A service snapshots one policy at startup and
+uses it for both active LIVE and startup recovery, while status reports that
+effective window. Retry classification/math, staged waits, the 30-second cap,
+room-end confirmation, direct `record`, remote start/API shape, and existing
+output behavior are unchanged. Service restart is required after configuration
+changes. Validation and logging defaults remain future v0.8 slices, and v0.8.0
+is not yet a release candidate.
+
 ### v0.9.0 — Creator monitoring and automatic recording
 
 **Goal:** Let the owner explicitly configure public creators to monitor. Detect

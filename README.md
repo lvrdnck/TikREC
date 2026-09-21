@@ -14,7 +14,7 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
 ## Usage
 
-    tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR]
+    tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR] [--recovery-window-seconds SECONDS]
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
@@ -24,7 +24,9 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec config path
     tikrec config set output-directory DIRECTORY
     tikrec config unset output-directory
-    tikrec serve [--host IP] [--port PORT] [--token-file FILE]
+    tikrec config set recovery-window-seconds SECONDS
+    tikrec config unset recovery-window-seconds
+    tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
@@ -139,8 +141,10 @@ TikREC stores optional per-user configuration at
 `%APPDATA%\TikREC\config.json` on Windows and
 `${XDG_CONFIG_HOME:-~/.config}/TikREC/config.json` on POSIX. Use `tikrec config
 path` to print the exact location, `tikrec config show [--json]` to inspect it,
-and `tikrec config set output-directory DIRECTORY` or `tikrec config unset
-output-directory` to change the current recording-directory default. Relative
+and `tikrec config set/unset output-directory` to change the current recording-
+directory default. `tikrec config set recovery-window-seconds SECONDS` persists
+the LIVE network-recovery window; `unset` restores the built-in 900-second
+default. Values must be integers from 60 through 3600 seconds. Relative
 directories passed to `config set` are converted to absolute paths, and the
 recording directory itself is created only when a recording first uses it.
 
@@ -156,7 +160,8 @@ start, and manual finalize still require it. Local explicit outputs retain this
 precedence:
 
 1. An absolute `--output` is authoritative and does not read or use the
-   configured output directory.
+   configured output directory. Local `live` may independently read the recovery
+   setting unless its CLI override is supplied.
 2. A relative `--output` is placed beneath configured `output_directory`.
 3. Without that setting, a relative `--output` keeps the original
    current-working-directory behavior.
@@ -176,8 +181,18 @@ Explicit `--output` always wins and is never automatically renamed. Paths that
 escape a configured directory with `..` are rejected. Configuration does not
 reinterpret remote PC paths, manual `finalize --output`, guided recovery paths,
 service state, or retained sessions. There is no filename-template setting yet;
-retry, validation, and logging defaults remain later v0.8 work. This convenience
+validation and logging defaults remain later v0.8 work. This convenience
 names only manually started LIVEs and does not provide creator automation.
+
+Local `live` and `serve` use the recovery window in this order: an explicit
+`--recovery-window-seconds`, the configured value, then the built-in 900 seconds.
+The command-line override does not read configuration merely to resolve this
+setting, though relative/automatic output naming can independently require the
+same file. A running service reads the value only at startup, so restart it after
+changing configuration. The selected policy applies to active LIVE reconnects
+and startup recovery. Its staged 1, 2, 5, 10, 10, then 30-second waits and
+30-second cap are unchanged. `record` and remote start have no recovery-window
+option; the remote HTTP request schema is unchanged.
 
 Prefer a dedicated recording directory outside a source checkout. While
 developing TikREC, `runs/` is the repository's ignored local recording directory:

@@ -21,6 +21,7 @@ from .output_naming import local_recording_paths
 from .progress import LiveProgress
 from .recovery_cli import add_recovery_command, run_recovery_command
 from .recovery_discovery import discover_recovery_candidates
+from .recovery_options import effective_retry_policy, recovery_window_argument
 from .remote import RemoteError
 from .service import serve
 from .tiktok import TikTokResolutionError, resolve_live_url
@@ -63,7 +64,6 @@ def main(
             direct_url = resolver(arguments.url)
             print(direct_url, file=stdout)
             return 0
-
         if arguments.command == "validate":
             result = validator(Path(arguments.target), deep=arguments.deep)
             if arguments.json:
@@ -71,13 +71,11 @@ def main(
             else:
                 print(render_validation(result), file=stdout)
             return 0 if result.passed else 1
-
         if arguments.command == "recover":
             return run_recovery_command(
                 arguments, stdout, discoverer=recovery_discoverer, validator=validator,
                 finalizer=finalizer,
             )
-
         if arguments.command == "finalize":
             output_path = Path(arguments.output)
             live_progress = LiveProgress(stdout)
@@ -88,7 +86,6 @@ def main(
                 live_progress.event,
             )
             return 0
-
         output_path, parts_directory = local_recording_paths(
             arguments.command, arguments.url, arguments.output,
             config_path=arguments.config_path, clock=naming_clock,
@@ -98,6 +95,9 @@ def main(
         capture_function = live_capture if arguments.command == "live" else capture
         if arguments.command == "live":
             live_progress = LiveProgress(stdout)
+            retry_policy = effective_retry_policy(
+                arguments.recovery_window_seconds, arguments.config_path
+            )
             result = capture_function(
                 arguments.url,
                 parts_directory=parts_directory,
@@ -106,6 +106,7 @@ def main(
                 heartbeat=live_progress.heartbeat,
                 raw_copy_dir=raw_copy_dir,
                 warning=warning,
+                retry_policy=retry_policy,
             )
         else:
             result = capture_function(
@@ -150,13 +151,11 @@ def main(
 def _one_line_error(error: Exception) -> str:
     return " ".join(str(error).split())
 
-
 def _print_final(progress: LiveProgress | None, message: str, stream: TextIO) -> None:
     """Clear an active heartbeat before writing a final CLI result."""
     if progress is not None:
         progress.clear()
     print(message, file=stream)
-
 
 def _finalize_directory(
     parts_directory: Path,
@@ -197,7 +196,6 @@ def _finalize_directory(
     if manifest is not None:
         _finish_recovery(manifest, parts, "completed", progress, output_path=output)
     return output
-
 
 def _load_manifest(
     path: Path,
@@ -284,6 +282,8 @@ def _parser() -> argparse.ArgumentParser:
     live.add_argument("--output", metavar="FILE",
                       help="output MP4 file; omit for configured automatic naming")
     live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
+    live.add_argument("--recovery-window-seconds", type=recovery_window_argument,
+                      metavar="SECONDS", help="override the 60-3600 second recovery window")
     validate = subcommands.add_parser("validate", help="check recording health")
     validate.add_argument("target", metavar="TARGET")
     validate.add_argument("--deep", action="store_true", help="fully decode completed output")

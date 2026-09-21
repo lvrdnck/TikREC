@@ -11,6 +11,7 @@ import pytest
 from tikrec.capture import CaptureResult
 from tikrec.recording import RecordingController
 from tikrec.service import DEFAULT_HOST, RecordingHandler, RecordingHTTPServer, serve, validate_bind
+from tikrec.retry_policy import RetryPolicy
 
 
 TOKEN = "test-secret-0123456789"
@@ -197,6 +198,14 @@ def test_server_constructs_loopback_by_default_without_opening_socket(tmp_path):
             server = RecordingHTTPServer()
     assert constructor.call_args.args[0] == ("127.0.0.1", 8765)
     assert server.controller.status()["state"] == "idle"
+
+
+def test_server_supplies_selected_policy_to_default_controller(tmp_path):
+    policy = RetryPolicy(window_seconds=600)
+    with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
+        with patch("tikrec.service.default_job_state_path", return_value=tmp_path / "job.json"):
+            server = RecordingHTTPServer(retry_policy=policy)
+    assert server.controller._retry_policy is policy
 
 
 def test_service_interrupt_shuts_down_controller_without_killing_worker():

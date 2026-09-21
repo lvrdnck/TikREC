@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from .network_errors import classify_failure
 
 
+DEFAULT_RECOVERY_WINDOW_SECONDS = 900
+
+
 class RecoveryExhausted(RuntimeError):
     """The outage window expired without usable capture continuation or room end."""
 
@@ -15,7 +18,7 @@ class RecoveryExhausted(RuntimeError):
 class RetryPolicy:
     """Internal configuration: 15 minutes, staged positive waits capped at 30 seconds."""
 
-    window_seconds: float = 900.0
+    window_seconds: float = DEFAULT_RECOVERY_WINDOW_SECONDS
     delays: tuple[float, ...] = (1.0, 2.0, 5.0, 10.0, 10.0, 30.0)
     max_delay_seconds: float = 30.0
 

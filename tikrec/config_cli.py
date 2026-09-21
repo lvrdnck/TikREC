@@ -10,6 +10,7 @@ from typing import TextIO
 
 from .configuration import (
     ConfigurationStore,
+    configured_recovery_window_seconds,
     configured_output_directory,
     default_config_path,
 )
@@ -23,10 +24,11 @@ def add_config_command(subcommands) -> argparse.ArgumentParser:
     show.add_argument("--json", action="store_true", help="print structured results")
     actions.add_parser("path", help="print the configuration file path")
     set_command = actions.add_parser("set", help="set one persisted default")
-    set_command.add_argument("setting", choices=["output-directory"])
-    set_command.add_argument("value", metavar="DIRECTORY")
+    settings = ["output-directory", "recovery-window-seconds"]
+    set_command.add_argument("setting", choices=settings)
+    set_command.add_argument("value", metavar="VALUE")
     unset = actions.add_parser("unset", help="remove one persisted default")
-    unset.add_argument("setting", choices=["output-directory"])
+    unset.add_argument("setting", choices=settings)
     return config
 
 
@@ -50,6 +52,15 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
             ),
             "effective_output_directory": str(effective),
             "output_directory_source": source,
+            "recovery_window_seconds": configuration.recovery_window_seconds,
+            "effective_recovery_window_seconds": (
+                configuration.effective_recovery_window_seconds
+            ),
+            "recovery_window_source": (
+                "configuration"
+                if configuration.recovery_window_seconds is not None
+                else "built_in_default"
+            ),
         }
         if arguments.json:
             print(json.dumps(result, indent=2, sort_keys=True), file=stdout)
@@ -59,12 +70,31 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
             print(f"Configured output directory: {result['output_directory'] or '(not set)'}", file=stdout)
             print(f"Effective output directory: {result['effective_output_directory']}", file=stdout)
             print(f"Source: {source}", file=stdout)
+            print(
+                "Configured recovery window: "
+                f"{result['recovery_window_seconds'] or '(not set)'}",
+                file=stdout,
+            )
+            print(
+                f"Effective recovery window: {result['effective_recovery_window_seconds']} seconds",
+                file=stdout,
+            )
+            print(f"Recovery window source: {result['recovery_window_source']}", file=stdout)
         return 0
     if arguments.config_action == "set":
-        directory = configured_output_directory(arguments.value)
-        store.save(replace(configuration, output_directory=directory))
-        print(f"Set output directory: {directory}", file=stdout)
+        if arguments.setting == "output-directory":
+            value = configured_output_directory(arguments.value)
+            store.save(replace(configuration, output_directory=value))
+            print(f"Set output directory: {value}", file=stdout)
+        else:
+            value = configured_recovery_window_seconds(arguments.value)
+            store.save(replace(configuration, recovery_window_seconds=value))
+            print(f"Set recovery window: {value} seconds", file=stdout)
         return 0
-    store.save(replace(configuration, output_directory=None))
-    print("Unset output directory", file=stdout)
+    if arguments.setting == "output-directory":
+        store.save(replace(configuration, output_directory=None))
+        print("Unset output directory", file=stdout)
+    else:
+        store.save(replace(configuration, recovery_window_seconds=None))
+        print("Unset recovery window", file=stdout)
     return 0
