@@ -7,11 +7,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #16 is active. Its post-#17 natural-end release
-  gate passed with two owner-started full-LIVE sessions on the deployed fix.
+- **Active issue/task:** Issue #18 is the single active task: a read-only
+  experiment comparing current established bound resolution with direct known-
+  room transport refresh. Issue #16 remains open but is owner-paused/blocked
+  pending this evidence because reconnect performance is not yet satisfactory.
   Issue #17 remains completed and closed by `b6d1f6f`; v0.6.0 remains untagged
-  and unpublished pending separate owner authorization for the immutable tag
-  and GitHub Release.
+  and unpublished, and no release action is authorized.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -35,6 +36,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   Gracie had no media reconnect. Terminal offline attempts retained no media
   and are not counted as successful reconnects. Both MP4s pass normal and deep
   validation, and all 19 FLVs decode successfully.
+- **Issue #18 diagnostic state:** A read-only benchmark now separates username
+  LIVE-page, optional public-account lookup, room/info, and total timings while
+  comparing room/rendition/source/transport only through safe facts. It cannot
+  open media or mutate capture/session state. Both owner-provided rooms were
+  offline during the bounded 2026-09-21 check: direct saved-room room/info was
+  0.779 seconds faster for Aishaaa and 0.842 seconds faster for Gracie, but the
+  bound paths invoked account lookup and no live transport equivalence was
+  available. These are directional observations, not production evidence.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -60,11 +69,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   match the recorded magnitudes, all parts decode, and the finalized MP4 deep-
   validates. With no raw copy, this is additional issue #8 evidence and is not
   attributed to #17. Issue #9 and paused issue #13 remain unchanged.
-- **Pending owner action:** Separately authorize the immutable v0.6.0 annotated
-  tag and published GitHub Release if release publication should proceed. This
-  validation task does not authorize either action.
-- **Next queued task:** Complete v0.6.0 release bookkeeping only after that
-  explicit authorization. Do not start v0.6.5 or v0.7 from this task.
+- **Pending owner action:** None immediately. v0.6.0 publication is paused; do
+  not create its tag or GitHub Release. A future already-known public LIVE is
+  needed for issue #18's paired live comparison.
+- **Next queued task:** Run issue #18's safe paired benchmark when a suitable
+  owner-known room is live, then decide whether a separately reviewed
+  production fast path is justified. Keep issue #16 blocked and do not start
+  v0.6.5 or v0.7.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

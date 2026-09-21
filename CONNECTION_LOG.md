@@ -294,6 +294,74 @@ tests and the full 748-test plus 19-subtest suite pass. No retry, resolver, HTTP
 writer, or finalization regression is evident. The required post-#17 release
 gate therefore passed without changing production policy.
 
+## Established-room resolver benchmark
+
+Issue #18 adds a read-only diagnostic for the dominant resolution component of
+an ordinary reconnect. It does not change capture, retry, resolver, HTTP, or
+room-end behavior. Run it only with an already-established public page and its
+canonical room ID:
+
+```console
+python scripts/benchmark_bound_resolution.py TIKTOK_LIVE_URL SAVED_ROOM_ID --samples 3
+```
+
+`--samples` is bounded to 1--20 and alternates bound/direct order to reduce
+first-request and connection-warmup bias. `--json` emits the same safe facts in
+structured form. Exit status is zero only when at least one pair returned live
+results for the same saved room through both paths. The tool never opens media,
+starts capture, accepts an output/session path, writes evidence, or prints or
+persists a signed CDN URL. Rendition label, source, and exact transport are
+compared only in memory and emitted as equality booleans.
+
+The current request sequences are:
+
+1. Initial resolution validates the username LIVE URL, fetches that page, uses
+   the public account lookup only when the page has no room identity, then
+   fetches room/info for the discovered room and selects an HTTP(S) FLV.
+2. Established ordinary reconnect passes the saved canonical room ID through
+   the bound resolver, but that resolver still tries the complete normal path
+   first. The outer capture binding rejects a returned different room before
+   media opens.
+3. Established page-404 fallback queries room/info for the saved room. If that
+   proves the room live, it returns fresh transport. If it proves offline or
+   fails resolution, the public account lookup checks current identity; a
+   different current room preserves `live_changed`, trustworthy saved-room
+   offline evidence remains typed offline, and unverifiable evidence fails.
+4. Direct known-room refresh calls room/info only for the canonical saved ID.
+   It rejects an explicit conflicting room ID, malformed/non-numeric status,
+   malformed data, and missing supported transport. A numeric non-live status
+   remains typed offline evidence. It does not query the username/account, so a
+   direct success alone cannot prove that current different-room semantics are
+   equivalent; the benchmark refuses comparison when the bound path reports a
+   different room.
+
+Each request timer starts immediately before the injected HTTP opener and ends
+after the response body read succeeds or fails. It therefore includes opener,
+network, server, and body-read latency but excludes JSON parsing and rendition
+selection. Total resolver time surrounds the entire call and includes those
+local operations. Media HTTP setup is outside both resolver measurements and
+remains separately visible in reconnect-gap evidence.
+
+On 2026-09-21 neither of the two owner-provided creators was live, so no valid
+live paired sample was available and the deployed service was not touched.
+Read-only one-pair checks returned trustworthy status 4 for each saved room.
+For Aishaaa, current bound resolution took 1.258 seconds: 0.307 page, 0.332
+public lookup, and 0.616 room/info; direct saved-room room/info took 0.479
+seconds. For Gracie, bound took 1.221 seconds: 0.337 page, 0.535 lookup, and
+0.346 room/info; direct took 0.378 seconds. The respective 0.779- and
+0.842-second differences show that skipped identity-discovery requests can be
+material, but these offline/account-lookup paths neither select live transport
+nor establish ordinary-reconnect equivalence.
+
+The earlier live Aishaaa reconnects spent 1.287 and 1.371 seconds in fresh
+resolution, while HTTP media setup took only 0.187 and 0.102 seconds. Direct
+refresh cannot remove the room/info request, and the old logs cannot
+retroactively divide their resolver totals by request. A live paired benchmark
+is therefore still required before recommending a production fast path. Any
+future change must explicitly preserve current different-room handling and
+fail-closed identity behavior rather than treating the faster direct result as
+automatically interchangeable.
+
 ## Raw copy and byte-arrival evidence
 
 When `--raw-copy DIR` successfully opens both diagnostics, each connection has

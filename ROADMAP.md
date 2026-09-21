@@ -370,9 +370,25 @@ warnings exactly matching four logged timestamp-replay records; the replays
 occurred within the third established media connection, not at either reconnect,
 and the finalized MP4 deep-validates. With no raw copy this remains issue #8
 evidence, not a #17 regression or release blocker. The required post-#17 gate has
-passed. Issue #16 remains open only for separately authorized v0.6.0 tag and
-GitHub Release bookkeeping; v0.6.0 remains untagged and unpublished, and this
-gate does not start v0.6.5 or v0.7.
+passed. At that point issue #16 remained open only for separately authorized
+v0.6.0 tag and GitHub Release bookkeeping; v0.6.0 remained untagged and
+unpublished, and the gate did not start v0.6.5 or v0.7.
+
+**Established-room resolution experiment (2026-09-21):** The owner paused
+v0.6.0 publication because the 1.526/1.531-second ordinary reconnects still
+spend 1.287/1.371 seconds in resolution. Issue #18 now owns a read-only
+bound-versus-direct known-room benchmark; production resolution remains
+unchanged. Offline safety coverage proves conflicting identity rejection,
+typed offline evidence, malformed-response failure, preservation of different-
+room semantics, safe diagnostics, and capture/session non-mutation.
+
+Both owner-provided rooms were offline during the first bounded check. Their
+direct room/info calls were 0.779 and 0.842 seconds faster than current bound
+resolution, but the bound paths included public account lookups and neither
+pair selected live transport. This is directional evidence only. A paired live
+same-room comparison remains necessary before deciding whether to propose a
+separate production fast path. Issue #16 stays open but paused/blocked; v0.6.0
+remains untagged and unpublished, with no tag or GitHub Release authorized.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
