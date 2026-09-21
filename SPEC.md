@@ -14,9 +14,10 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
 
-TikREC v0.5.0 established service startup reconciliation. Package version v0.6.0
-adds evidence-based reconnect-gap measurement and removes only the fixed healthy-
-close wait; published release records are maintained in PROJECT_STATE.md.
+TikREC v0.5.0 established service startup reconciliation, and v0.6.0 added
+evidence-based reconnect-gap measurement while removing only the fixed healthy-
+close wait. Package version v0.7.0 adds guided interrupted-session recovery;
+published release records are maintained in PROJECT_STATE.md.
 
 ### Not implemented yet
 
@@ -538,7 +539,7 @@ media opens, stop intent before signalling, and lifecycle/result changes. Defaul
 state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
 or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
 is added. Only the latest job is stored, with one owning service process/account.
-Package version is v0.6.0.
+Package version is v0.7.0.
 
 ### Patient outage policy and transport classification
 
@@ -656,7 +657,7 @@ output rather than represented as capture. After proxy retirement and an idle
 service restart, status also restores the completed manifest's reconnect count;
 active capture avoids reading the manifest while its atomic replacement may be
 in progress. All v0.5 real deployment-validation phases are complete. Package
-version is 0.6.0.
+version is 0.7.0.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -737,8 +738,8 @@ manifests, path/count/log conflicts, symlinks, output-state contradictions, and
 evidence that changes during inspection remain untouched and receive no recovery
 action. The command does not run FFmpeg, decode every retained part, modify a
 manifest, resume capture, repair media, or perform finalization. Structured JSON
-contains the same facts as the plain-language report. Later v0.7 slices may build
-validated recovery actions on this conservative discovery boundary.
+contains the same facts as the plain-language report. The validation and explicit
+single-session finalization slices build on this conservative discovery boundary.
 
 The second v0.7 slice adds optional `--validate` without changing that discovery
 boundary. Only `recoverable` and `complete` candidates with consistent evidence
@@ -925,7 +926,7 @@ investigation as a correctness blocker before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The
-architecture describes TikREC v0.6.0.
+architecture describes the v0.7.0 release candidate.
 
 ## Design principles
 

@@ -31,8 +31,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   undeclared outputs fail closed. Completed, failed, and interrupted attempts
   preserve retained FLVs and return plain or JSON outcomes; discovery and
   `--validate` remain read-only, and manual `tikrec finalize` is unchanged.
-  Focused coverage passes 117 tests; the full offline suite passes 832 tests plus
-  19 subtests. An isolated copy of the retained v0.4 service session exercised
+  Release-candidate verification passes 181 focused tests, 832 full-suite tests
+  plus 19 subtests, and 204 unittest-discovery tests. Compilation, all CLI help
+  paths, the installed CLI version, and an isolated wheel smoke test pass. The
+  built `tikrec-0.7.0-py3-none-any.whl` reports the expected package metadata and
+  entry point (SHA-256
+  `D39D345C81EE5F71BBF5E155C30D82BD094C5A30680358ACD6069C32D811DDD7`).
+  An isolated copy of the retained v0.4 service session exercised
   the real command: its 30,370,944-byte FLV passed pre-validation, stream-copy
   recovery, post-session validation, and deep output validation while the
   manifest retained its historical interrupted lifecycle and recorded completed
@@ -224,8 +229,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Prepare the separately authorized v0.7.0 release
-  validation and publication work; no tag or GitHub Release exists yet. The
+- **Next queued task:** Publish the prepared v0.7.0 release candidate only after
+  separate authorization; no v0.7.0 tag or GitHub Release exists yet. The
   conditional v0.6.5 redundant-capture release is not selected; issues #8 and
   #13 continue to collect evidence opportunistically.
 
@@ -235,7 +240,8 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.6.0, from `tikrec.__version__` and packaging metadata.
+- **Package version:** v0.7.0 release candidate, from `tikrec.__version__` and
+  packaging metadata.
 - **Tagged version:** annotated `v0.6.0`, whose tag object is
   `8ee5c90a57d9d6b5da7e00fe9dd3019a7b1d82c4` and which peels to release commit
   `341de6ea154ec1a767fd89a7994381a1a74d7d78`.
@@ -247,8 +253,9 @@ new work; calendar entries are reminders only.
 - **Development target:** v0.7.0 guided interrupted-session recovery is
   implemented through issues #20/#21/#22: discovery and validation remain
   read-only, while explicit single-session guided finalization records durable
-  outcomes. It remains unreleased and has no v0.7.0 tag or GitHub Release.
-  Conditional v0.6.5 redundant capture is not selected.
+  outcomes. Release-candidate verification is complete with no demonstrated
+  blocker. It remains untagged and unpublished; v0.6.0 is still the current
+  released version. Conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 

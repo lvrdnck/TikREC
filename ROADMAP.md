@@ -640,6 +640,19 @@ Discovery and `--validate` remain read-only, and manual `tikrec finalize` remain
 supported. The planned v0.7 functionality is implemented but v0.7.0 is not
 released.
 
+**Release candidate prepared (2026-09-21):** Package metadata now reports
+v0.7.0. Release review found the three completed slices coherent and compatible
+with the existing service, `tikrec finalize`, session schema, and validation
+paths. Verification passed 181 focused tests, 832 full-suite tests plus 19
+subtests, 204 unittest-discovery tests, compilation, CLI parsing/help checks, and
+an installed-wheel smoke test. The wheel metadata and `tikrec` entry point are
+correct. The issue #22 isolated real-media recovery check remains the applicable
+finalization evidence: pre-validation, guided stream-copy finalization, updated-
+session validation, and deep output validation all passed without modifying the
+source evidence. No release blocker is demonstrated; issues #8 and #13 remain
+non-blocking/opportunistic. v0.7.0 is ready for separately authorized publication
+but remains untagged and unpublished, so v0.6.0 remains the current release.
+
 ### v0.8.0 ? Configuration and defaults
 
 **Goal:** Persist proven choices for output locations/naming, retry policy,
@@ -777,8 +790,10 @@ or desirable.
 The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability
-through v0.6.0 is released; v0.7.0 guided interrupted-session recovery is the
-next roadmap candidate when implementation work resumes.
+through v0.6.0 is released; v0.7.0 guided interrupted-session recovery is a
+verified release candidate awaiting separate publication authorization. After
+that release is synchronized, v0.8.0 configuration/defaults is the next planned
+implementation target.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

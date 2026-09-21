@@ -199,9 +199,9 @@ Schema version remains 1; `writer_recoveries` is optional, validated evidence.
 Successfully completed jobs are never relaunched. Writer-partial and finalization
 reconciliation are implemented. Repeat real process-restart/outage deployment
 validation passed, as did final graceful-stop/finalization and deep-output
-validation. Package version is 0.6.0; the manifest schema remains 1.
+validation. Package version is 0.7.0; the manifest schema remains 1.
 
-## Guided recovery (v0.7.0 development)
+## Guided recovery (v0.7.0)
 
 `tikrec recover ROOT` inspects either one explicit parts directory or only the
 immediate `*.parts` children of an explicit recording root. It never recursively
