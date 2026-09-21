@@ -310,8 +310,9 @@ read-only reconnect-gap tooling and evidence, removal of the fixed healthy-close
 wait, and the verified 1.920-second post-change reconnect with 0.010 seconds of
 local/backoff versus the prior 1.004--1.008-second range. Failure/outage backoff,
 patient recovery, room-end confirmation, stop behavior, resolver/HTTP policy,
-and writer/part safety remain unchanged. Issues #8, #9, and #13 remain
-non-blocking evidence work. The candidate is untagged and unpublished; v0.5.0
+and writer/part safety remain unchanged. At candidate preparation, issues #8,
+#9, and #13 were non-blocking evidence work; the later owner decision below makes
+#8 release-blocking before v0.6.0 publication. The candidate is untagged and unpublished; v0.5.0
 remains the current released version until a separately authorized annotated
 tag and GitHub Release are created and verified. Release-candidate checks pass:
 79 focused tests, the full 735-test plus 19-subtest suite, CLI version output,
@@ -421,6 +422,25 @@ warnings but no decoder failure and remain separate issue #8 evidence. Because
 the run contained zero ordinary media reconnects, it proves deployed capture and
 room-end health but not the issue #19 acceptance gate. Issue #19 stays open and
 no disconnect was manufactured.
+
+**Media-integrity sequencing decision (2026-09-21):** Issue #19's natural
+ordinary-reconnect validation is intentionally paused; its implemented and
+deployed identity-safe fast path remains current code. Issue #8 is now the single
+active release-blocking investigation, while issue #16 stays paused and issue
+#13 stays paused/non-blocking. Issue #9's incremental raw-byte preservation,
+linked arrival sidecars, and non-fatal diagnostic failure behavior are already
+implemented and support #8 rather than constituting a separate active defect.
+
+The normal remote service previously had no way to request those diagnostics.
+It now accepts only a boolean `remote start --raw-copy` opt-in, co-locates raw
+connections and arrival sidecars with the retained FLVs and session evidence,
+and durably continues that opt-in through safe service recovery. Default remote
+capture remains unchanged and avoids doubled diagnostic storage. No suitable
+owner-provided public LIVE was available in this task, so the next #8 step is a
+normal raw-copy session allowed to run until a natural replay occurs; faults and
+replays must not be manufactured. Focused coverage passes 197 tests plus 2
+subtests, and the full offline suite passes 785 tests plus 19 subtests. v0.6.0
+remains untagged and unpublished.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

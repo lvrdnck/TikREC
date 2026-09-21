@@ -7,16 +7,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #19 is owner-authorized and remains active for
-  real ordinary-reconnect validation. Commit `60d55cb` is normally deployed in
-  the existing Scheduled Task service. Zoraida validation session
-  `a19f366d-1484-47b2-8eb7-64d26e0a47eb`, room `7687797603433483038`, completed
-  naturally after 2,210.858 seconds with one media-bearing connection and one
-  terminal offline attempt. Three status-4 observations confirmed room end;
-  `stop_requested=false`, `interrupted=false`, `error=null`, and finalization
-  completed. No ordinary media reconnect occurred, so the #19 production gate
-  remains outstanding. Issue #16 remains open and owner-paused/blocked. v0.6.0
-  remains untagged and unpublished, and no release action is authorized.
+- **Active issue/task:** Issue #8 is the single active release-blocking
+  investigation. It must capture a natural timestamp replay with matching raw
+  source bytes and determine whether malformed/replayed media originates at the
+  TikTok/CDN source or in TikREC's parser/writer path. Issue #19 is intentionally
+  paused after implementation and deployed natural-end validation; its natural
+  ordinary-reconnect gate remains outstanding. Issue #16 remains open and
+  owner-paused/blocked. v0.6.0 remains untagged and unpublished, and no release
+  action is authorized.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -51,7 +49,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   seconds and 0.587 seconds saved (0.458--1.085 range). All bound paths invoked
   page + account lookup + room/info. Slayyyboo22 ended before paired sampling.
   The result is material and supports issue #19, not release publication.
-- **Issue #19 implementation:** Established bound resolution now overlaps a
+- **Paused issue #19 implementation:** Established bound resolution now overlaps a
   saved-room room/info refresh with the public account lookup. It accepts the
   fresh transport only when both independently identify the saved live room;
   every offline, malformed, conflicting, failed, or otherwise insufficient
@@ -67,7 +65,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   2,191.564-second H.264/AAC 432x864 MP4; session, standard output, and deep
   output validation pass. Its only reconnect allocation was the media-free
   terminal room-end check, so real ordinary-reconnect validation remains
-  outstanding.
+  outstanding. Do not revert or disable the deployed implementation; only its
+  remaining validation is paused.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -85,7 +84,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 - **Paused, non-blocking issue:** Issue #13 remains open, but active random-LIVE
   screening has stopped. Resume it opportunistically only when normal use
   exposes genuinely distinct simultaneous public source media.
-- **Open evidence issues:** Issue #8 retains the raw-copy requirement needed to
+- **Issue #8 evidence:** The investigation retains the raw-copy requirement needed to
   locate timestamp-replay corruption. The historical pre-#17 Gracie run still
   contributes its decoder/replay evidence without raw bytes. The new Aishaaa
   session separately recorded two recovered replays in part 16 and two
@@ -96,12 +95,25 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   replays (video 1,480 and audio 1,399 timestamp units) whose two packet-DTS
   warnings match the connection evidence; its FLV decodes and finalized MP4
   deep-validates. No raw copy exists, so origin remains unproven and this is not
-  attributed to #19. Issue #9 and paused issue #13 remain unchanged.
-- **Pending owner action:** None. Keep v0.6.0 publication paused; do not create
-  its tag or GitHub Release.
-- **Next queued task:** Obtain another normal deployed validation opportunity
-  for a natural ordinary reconnect without manufacturing a disconnect. Keep
-  issue #16 blocked and do not start v0.6.5 or v0.7.
+  attributed to #19. Issue #9's implementation already preserves incremental
+  raw reads and linked arrival sidecars, with diagnostic failures non-fatal; it
+  is supporting evidence work rather than a separate active implementation
+  defect. Issue #13 remains paused/non-blocking.
+- **Issue #8 diagnostic readiness:** Normal remote capture now has an explicit
+  `remote start --raw-copy` opt-in. The service co-locates raw connections and
+  arrival sidecars in the matching `.parts` directory, persists the opt-in for
+  safe service recovery, and leaves ordinary starts unchanged. No owner-provided
+  public LIVE was supplied for this task, so real replay/source comparison is
+  still pending and this change is not yet deployed to the Scheduled Task.
+  Focused coverage passes 197 tests plus 2 subtests; the full offline suite
+  passes 785 tests plus 19 subtests, and unittest discovery passes 204 tests.
+- **Pending owner action:** Provide a suitable normal public LIVE validation
+  opportunity when ready. Keep v0.6.0 publication paused; do not create its tag
+  or GitHub Release.
+- **Next queued task:** Deploy the opt-in diagnostic path only while the service
+  is idle, start the owner-authorized LIVE with `remote start --raw-copy`, and
+  preserve the natural session until a timestamp replay supplies matching raw
+  evidence. Do not manufacture corruption/faults or resume #19.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
