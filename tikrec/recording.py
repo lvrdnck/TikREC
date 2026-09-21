@@ -47,8 +47,7 @@ class RecordingController:
 
     def __init__(self, *, capture: Callable[..., CaptureResult] = capture_live,
                  clock: Callable[[], float] = time.time, store=None, reconciler=None,
-                 retry_policy=RetryPolicy(), recovery_clock=time.monotonic,
-                 recovery_waiter=None) -> None:
+                 retry_policy=RetryPolicy(), recovery_clock=time.monotonic, recovery_waiter=None) -> None:
         self._capture = capture
         self._clock = clock
         self._lock = Lock()
