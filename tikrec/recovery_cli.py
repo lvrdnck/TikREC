@@ -1,4 +1,4 @@
-"""CLI wiring and output for read-only recovery discovery and validation."""
+"""CLI wiring and output for guided recovery discovery, validation, and finalization."""
 
 from __future__ import annotations
 
@@ -10,25 +10,32 @@ from typing import TextIO
 
 from .recovery_discovery import (RecoveryCandidate, discover_recovery_candidates,
                                  safe_source_description)
+from .recovery_finalization import (RecoveryFinalization, guided_finalize)
 from .recovery_validation import RecoveryValidation, validate_recovery_candidates
+from .finalize import finalize_parts
 from .validation import validate_target
 from .validation_report import ValidationResult
 
 
 def add_recovery_command(subcommands) -> argparse.ArgumentParser:
-    """Add bounded read-only recovery discovery and validation."""
+    """Add bounded recovery discovery, validation, and explicit finalization."""
     recover = subcommands.add_parser(
         "recover",
-        help="inspect interrupted recordings without changing them",
+        help="inspect or explicitly finalize an interrupted recording",
         description=(
             "Inspect one TikREC parts directory, or the immediate *.parts directories "
-            "inside ROOT. Discovery and optional validation are read-only."
+            "inside ROOT. Discovery and optional validation are read-only; --finalize "
+            "requires one explicit session directory and may update it."
         ),
     )
     recover.add_argument("scope", metavar="ROOT")
     recover.add_argument("--json", action="store_true", help="print structured results")
     recover.add_argument(
         "--validate", action="store_true", help="validate safe recovery candidates read-only"
+    )
+    recover.add_argument(
+        "--finalize", action="store_true",
+        help="validate and finalize one explicitly named recoverable session",
     )
     return recover
 
@@ -39,28 +46,45 @@ def run_recovery_command(
     *,
     discoverer: Callable[[Path], tuple[RecoveryCandidate, ...]] = discover_recovery_candidates,
     validator: Callable[..., ValidationResult] = validate_target,
+    finalizer: Callable[..., Path] = finalize_parts,
 ) -> int:
-    """Discover and report recovery candidates without altering their artifacts."""
+    """Discover and optionally validate or explicitly finalize recovery evidence."""
     scope = Path(arguments.scope)
     candidates = discoverer(scope)
-    validations = (
-        validate_recovery_candidates(candidates, validator=validator)
-        if arguments.validate else None
-    )
+    finalization: RecoveryFinalization | None = None
+    if arguments.finalize:
+        progress = None if arguments.json else lambda message: print(
+            f"Recovery: {message}", file=stdout
+        )
+        validations, finalization = guided_finalize(
+            scope, candidates, discoverer=discoverer, validator=validator,
+            finalizer=finalizer, progress=progress,
+        )
+    else:
+        validations = (
+            validate_recovery_candidates(candidates, validator=validator)
+            if arguments.validate else None
+        )
     if arguments.json:
         document = {
             "scope": str(scope),
             "candidate_count": len(candidates),
             "candidates": [candidate.as_dict() for candidate in candidates],
         }
-        if validations is not None:
+        if validations is not None or arguments.finalize:
             document["validation_requested"] = True
+        if validations is not None:
             for candidate, validation in zip(document["candidates"], validations):
                 candidate["validation"] = validation.as_dict()
+        if finalization is not None:
+            document["guided_finalization"] = finalization.as_dict()
         print(json.dumps(document, indent=2, sort_keys=True), file=stdout)
-        return _validation_exit_code(validations)
-    print(render_recovery_report(scope, candidates, validations), file=stdout)
-    return _validation_exit_code(validations)
+        return _exit_code(validations, finalization)
+    report = render_recovery_report(scope, candidates, validations)
+    if finalization is not None:
+        report = f"{report}\n\n{render_finalization(finalization)}"
+    print(report, file=stdout)
+    return _exit_code(validations, finalization)
 
 
 def render_recovery_report(
@@ -115,7 +139,27 @@ def _render_validation(lines: list[str], validation: RecoveryValidation) -> None
     lines.append(f"   Safest next action: {validation.next_action}")
 
 
-def _validation_exit_code(validations: tuple[RecoveryValidation, ...] | None) -> int:
+def render_finalization(finalization: RecoveryFinalization) -> str:
+    """Render one guided-finalization result in plain language."""
+    lines = [
+        "Guided finalization:",
+        f"   Attempted: {'yes' if finalization.attempted else 'no'}",
+        f"   Result: {finalization.status}",
+        f"   {finalization.summary}",
+    ]
+    if finalization.reason is not None:
+        lines.append(f"   Reason: {finalization.reason}")
+    return "\n".join(lines)
+
+
+def _exit_code(
+    validations: tuple[RecoveryValidation, ...] | None,
+    finalization: RecoveryFinalization | None,
+) -> int:
+    if finalization is not None:
+        if finalization.status == "interrupted":
+            return 130
+        return 0 if finalization.succeeded else 1
     if validations is None or all(validation.status == "passed" for validation in validations):
         return 0
     return 1

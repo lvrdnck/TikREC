@@ -63,6 +63,7 @@ when invoked, that is an error, not a wait state.
     tikrec resolve <tiktok-live-page-url>
     tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
     tikrec finalize PARTS_DIRECTORY --output FILE
+    tikrec recover ROOT [--validate] [--finalize] [--json]
     tikrec validate TARGET [--deep] [--json]
     tikrec serve [--host IP] [--port PORT] [--token-file FILE]
     tikrec remote health --server URL [--token-file FILE]
@@ -750,6 +751,27 @@ candidates make validation mode exit nonzero, while no candidates is a successfu
 bounded scan. Validation exceptions become redacted fail-closed findings. Plain
 discovery retains its prior output/JSON shape and performs no validation. Neither
 mode persists validation history or invokes finalization.
+
+The third v0.7 slice adds explicit `tikrec recover PARTS_DIRECTORY --finalize`.
+`--finalize` implies standard validation and is accepted only when the named
+scope itself is exactly one consistently classified `recoverable` session. A
+parent root is refused even when it currently contains only one candidate, so
+the command cannot become accidental batch recovery. Active/uncertain sessions,
+conflicting evidence, missing declared output, an existing output, an encoder
+partial, a missing output parent, or symlinked session/output paths are refused
+without mutation.
+
+Guided finalization snapshots the manifest and immediate artifact metadata before
+validation, then rediscovers and compares the session immediately before its
+first write. It uses the declared output path, existing `finalize_parts`
+implementation, overwrite/temporary-output protections, and schema-1
+`mark_recovery`/`finish_recovery` transitions rather than a second finalizer or
+manifest schema. Running, completed, failed, and interrupted attempts retain the
+existing recovery fields and safe errors. Success requires a regular non-empty
+output plus a passing standard validation of the updated session. Failures and
+interruptions retain all FLV parts; no writer repair, capture resume, deletion,
+or recursive scanning is performed. Plain and JSON output report the guided
+outcome. Manual `tikrec finalize PARTS_DIRECTORY --output FILE` remains unchanged.
 
 ## Testing
 

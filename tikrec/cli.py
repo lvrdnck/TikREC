@@ -70,7 +70,8 @@ def main(
 
         if arguments.command == "recover":
             return run_recovery_command(
-                arguments, stdout, discoverer=recovery_discoverer, validator=validator
+                arguments, stdout, discoverer=recovery_discoverer, validator=validator,
+                finalizer=finalizer,
             )
 
         output_path = Path(arguments.output)

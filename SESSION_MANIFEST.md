@@ -201,7 +201,7 @@ reconciliation are implemented. Repeat real process-restart/outage deployment
 validation passed, as did final graceful-stop/finalization and deep-output
 validation. Package version is 0.6.0; the manifest schema remains 1.
 
-## Read-only recovery discovery (v0.7.0 development)
+## Guided recovery (v0.7.0 development)
 
 `tikrec recover ROOT` inspects either one explicit parts directory or only the
 immediate `*.parts` children of an explicit recording root. It never recursively
@@ -219,9 +219,26 @@ Plain discovery does not start FFprobe. `tikrec recover ROOT --validate` runs th
 existing standard `tikrec validate` session/parts path only for terminal
 recoverable or completed candidates whose discovery evidence is consistent.
 Validation results are not persisted. Active/uncertain and conflicting candidates
-are skipped, and validator failures fail closed. Neither recovery mode finalizes,
-repairs, resumes, overwrites, or updates anything; manual `tikrec finalize`
-remains available after a passing validation.
+are skipped, and validator failures fail closed. Discovery and `--validate` do
+not finalize, repair, resume, overwrite, or update anything.
+
+`tikrec recover PARTS_DIRECTORY --finalize` is the explicit write-capable guided
+action. It implies standard validation, accepts exactly one session directory,
+requires a safe stored output declaration, and compares a pre-validation evidence
+snapshot with freshly discovered state before writing. It then uses the existing
+schema-1 recovery fields: `mark_recovery` sets `recovery_performed=true`, updates
+the retained part count and declared output, and records finalization `running`;
+`finish_recovery` records `completed`, `failed`, or `interrupted`, a safe failure
+reason where supported, output media facts when available, and the retained part
+count. The historical capture lifecycle/timestamps remain unchanged.
+
+A successful attempt must produce a regular non-empty output and pass standard
+session validation after the completed manifest update. Failed or interrupted
+attempts keep all retained parts. Ambiguous evidence, active work, output/partial
+conflicts, symlinks, a missing output declaration, or evidence that changes during
+validation is refused before mutation. Manual `tikrec finalize PARTS_DIRECTORY
+--output FILE` remains available and continues to support legacy or explicitly
+chosen output paths.
 
 ## Validation
 

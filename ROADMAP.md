@@ -627,6 +627,19 @@ are skipped before FFprobe; validator exceptions fail closed. Discovery and
 validation remain read-only. Guided repeat finalization and durable recovery-
 outcome recording remain future slices; v0.7.0 is not released.
 
+**Third slice completed (2026-09-21, issue #22):** Explicit
+`tikrec recover PARTS_DIRECTORY --finalize` now validates and safely repeats
+finalization for exactly one named `recoverable` session using its declared
+output. Parent roots cannot batch-finalize; active, ambiguous, changed, symlinked,
+output-conflicting, partial, or undeclared-output evidence fails closed before
+mutation. The action reuses `finalize_parts`, overwrite protections, standard
+validation, and existing manifest recovery fields. It records running/completed/
+failed/interrupted outcomes, preserves retained FLVs, verifies a regular non-empty
+output plus the updated session, and reports plain or structured JSON results.
+Discovery and `--validate` remain read-only, and manual `tikrec finalize` remains
+supported. The planned v0.7 functionality is implemented but v0.7.0 is not
+released.
+
 ### v0.8.0 ? Configuration and defaults
 
 **Goal:** Persist proven choices for output locations/naming, retry policy,

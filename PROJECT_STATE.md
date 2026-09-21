@@ -7,10 +7,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. Issues #20 and #21
-  are complete and closed after the first two v0.7.0 slices: bounded read-only
-  discovery/classification through `tikrec recover`, then optional guided
-  validation through `recover --validate`. No demonstrated release blocker
+- **Active issue/task:** No implementation task is active. Issues #20, #21, and
+  #22 are complete and closed after the three v0.7.0 guided-recovery slices:
+  bounded read-only discovery/classification through `tikrec recover`, optional
+  read-only validation through `recover --validate`, and explicit single-session
+  repeat finalization through `recover PARTS_DIRECTORY --finalize`. No
+  demonstrated release blocker
   exists. Issue #19 is complete and closed after its rare-evidence reassessment.
   Issue #8 remains open as a non-blocking,
   opportunistic evidence target: no current TikREC parser/writer corruption is
@@ -20,6 +22,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   #16 is closed because routine release bookkeeping no longer requires a
   dedicated issue. v0.6.0 is published and synchronized across package metadata,
   its immutable annotated tag, and its GitHub Release.
+- **Completed v0.7 guided recovery implementation:** `recover --finalize`
+  implies standard validation and accepts only one explicitly named, consistently
+  `recoverable` session with a safe stored output. It snapshots and rediscovers
+  evidence before mutation, then reuses `finalize_parts`, overwrite protections,
+  standard validation, and schema-1 recovery fields. Parent-root batch attempts,
+  active/ambiguous/changed/symlinked evidence, output/partial conflicts, and
+  undeclared outputs fail closed. Completed, failed, and interrupted attempts
+  preserve retained FLVs and return plain or JSON outcomes; discovery and
+  `--validate` remain read-only, and manual `tikrec finalize` is unchanged.
+  Focused coverage passes 117 tests; the full offline suite passes 832 tests plus
+  19 subtests. An isolated copy of the retained v0.4 service session exercised
+  the real command: its 30,370,944-byte FLV passed pre-validation, stream-copy
+  recovery, post-session validation, and deep output validation while the
+  manifest retained its historical interrupted lifecycle and recorded completed
+  recovery. Original evidence was untouched and temporary copies were removed.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -207,10 +224,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Scope the next narrow v0.7.0 safe repeat-finalization and
-  recovery-outcome-recording slice. The conditional v0.6.5 redundant-capture
-  release is not selected; issues #8 and #13 continue to collect evidence
-  opportunistically.
+- **Next queued task:** Prepare the separately authorized v0.7.0 release
+  validation and publication work; no tag or GitHub Release exists yet. The
+  conditional v0.6.5 redundant-capture release is not selected; issues #8 and
+  #13 continue to collect evidence opportunistically.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -227,10 +244,11 @@ new work; calendar entries are reminders only.
 - **Current released version:** v0.6.0; its release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
-- **Development target:** v0.7.0 guided interrupted-session recovery has
-  completed read-only discovery/classification and guided validation through
-  issues #20/#21, but remains unreleased. Guided repeat finalization and outcome
-  recording remain. Conditional v0.6.5 redundant capture is not selected.
+- **Development target:** v0.7.0 guided interrupted-session recovery is
+  implemented through issues #20/#21/#22: discovery and validation remain
+  read-only, while explicit single-session guided finalization records durable
+  outcomes. It remains unreleased and has no v0.7.0 tag or GitHub Release.
+  Conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 
