@@ -35,11 +35,14 @@ an existing output file. `validate` inspects an output file, parts directory,
 or session without changing it.
 
 Initial LIVE-page HTTP 404 remains a resolution failure. After TikREC has retained
-media and a canonical room ID, a page 404 no longer discards that identity: public
-status for the bound room determines whether to reconnect, confirm natural end,
-apply different-room semantics, or fail closed with parts preserved. A media-URL
-404 likewise triggers bound identity re-resolution only for an established
-session; no 404 response by itself means offline.
+media and a canonical room ID, reconnect resolution overlaps a direct public
+status/transport refresh for that room with the public account identity lookup.
+Fresh transport is accepted only when both identify the same saved live room;
+insufficient or conflicting evidence uses the conservative full resolver. A page
+404 therefore no longer discards established identity, while different-room,
+three-check natural-end, and fail-closed behavior remain intact. A media-URL 404
+likewise triggers bound identity re-resolution only for an established session;
+no 404 response by itself means offline.
 
 For `live`, the first Ctrl-C stops capture, clearly announces that finalization
 has begun, finalizes retained parts, and exits 130 to show that recording ended
@@ -67,8 +70,11 @@ remove only the fixed one-second wait after a healthy media-bearing close. Three
 pre-change ordinary reconnects measured 1.004--1.008 seconds of local/backoff;
 the retained post-change reconnect measured 1.920 seconds total with 0.010 seconds
 of local/backoff. Failure/outage backoff, patient recovery, room-end confirmation,
-and fresh resolution/writer safety are unchanged. One post-change sample does not
-justify broader retry, resolver, or HTTP policy changes.
+and fresh resolution/writer safety are unchanged. Later paired live evidence
+showed the serial page/account discovery dominated resolution, so established
+reconnects now overlap saved-room refresh with account verification while initial
+resolution and all retry/media policies stay unchanged. A natural ordinary
+reconnect on this implementation remains required before release reconsideration.
 
 An open media connection that delivers no bytes for 30 seconds is treated as a
 stall. Live capture records a `stalled` connection outcome and reconnects under

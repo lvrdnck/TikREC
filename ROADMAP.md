@@ -391,13 +391,23 @@ known-room resolution was 0.351 (0.275--0.399), and median savings were 0.587
 (0.458--1.085). Every bound sample used page + account lookup + room/info. A
 second supplied creator ended before sampling and contributed no live result.
 
-This material live saving justifies separate implementation/review under issue
-#19, but direct room/info alone cannot preserve current account-movement and
-`live_changed` semantics. The future design must retain a current account check
-and fall back to the full bound resolver for offline, conflicting, malformed,
-unverifiable, or failed evidence. Issue #18's evidence task is complete;
-production behavior remains unchanged. Issue #16 stays paused/blocked and
-v0.6.0 remains untagged/unpublished with no release action authorized.
+This material live saving justified issue #19. Its owner-authorized
+implementation now overlaps saved-room room/info with current public-account
+identity lookup and accepts the fast transport only when both prove the saved
+live room. Offline, conflicting, malformed, unverifiable, failed, or otherwise
+insufficient evidence uses the prior full bound resolver. Different live rooms,
+saved-room-only offline confirmation, fail-closed behavior, initial resolution,
+retry/backoff, media, writer, finalization, and rendition policy remain intact.
+
+A 12-pair read-only Zoraida recheck supplied nine strict matches. The identity-
+safe bound median was 0.366 seconds (0.297--0.408), direct room/info was 0.324
+(0.275--0.379), and median account-verification overhead was 0.044 seconds
+(-0.076--0.104). This is 0.576 seconds below issue #18's comparable 0.942-
+second pre-implementation bound median. Offline tests pass 774 tests plus 19
+subtests. No media was opened and no disconnect was manufactured, so a natural
+ordinary-reconnect validation remains required and issue #19 stays open. Issue
+#16 stays paused/blocked and v0.6.0 remains untagged/unpublished with no release
+action authorized.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

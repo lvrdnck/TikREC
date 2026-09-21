@@ -7,12 +7,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** Issue #18's read-only resolver experiment is complete.
-  Issue #19 is queued for separate owner-authorized implementation/review of an
-  identity-safe known-room fast path; no production implementation is active.
-  Issue #16 remains open but owner-paused/blocked because reconnect performance
-  is not yet satisfactory. Issue #17 remains completed and closed by `b6d1f6f`;
-  v0.6.0 remains untagged and unpublished, and no release action is authorized.
+- **Active issue/task:** Issue #19 is owner-authorized and remains active for
+  real ordinary-reconnect validation. Its identity-safe known-room fast path is
+  implemented and passes offline plus read-only live resolver validation, but
+  no media capture or manufactured disconnect was used to claim the required
+  reconnect result. Issue #16 remains open and owner-paused/blocked. v0.6.0
+  remains untagged and unpublished, and no release action is authorized.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -47,6 +47,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   seconds and 0.587 seconds saved (0.458--1.085 range). All bound paths invoked
   page + account lookup + room/info. Slayyyboo22 ended before paired sampling.
   The result is material and supports issue #19, not release publication.
+- **Issue #19 implementation:** Established bound resolution now overlaps a
+  saved-room room/info refresh with the public account lookup. It accepts the
+  fresh transport only when both independently identify the saved live room;
+  every offline, malformed, conflicting, failed, or otherwise insufficient
+  fast result falls back to the prior full bound path. Different live rooms
+  retain `live_changed`, and only numeric non-live status for the saved room can
+  enter three-observation end confirmation. Initial resolution, retries,
+  backoff, media open, writer, finalization, and ranking are unchanged. A
+  12-pair Zoraida recheck supplied nine strict pairs: safe bound/direct medians
+  were 0.366/0.324 seconds, with only 0.044 seconds median identity-check
+  overhead. The previous bound median was 0.942 seconds. Full offline coverage
+  passes 774 tests plus 19 subtests; real ordinary-reconnect validation remains
+  outstanding.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -72,12 +85,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   match the recorded magnitudes, all parts decode, and the finalized MP4 deep-
   validates. With no raw copy, this is additional issue #8 evidence and is not
   attributed to #17. Issue #9 and paused issue #13 remain unchanged.
-- **Pending owner action:** Decide separately whether to authorize issue #19.
-  v0.6.0 publication remains paused; do not create its tag or GitHub Release.
-- **Next queued task:** If authorized, design and implement issue #19 with a
-  current account check and conservative full-bound fallback, then obtain real
-  ordinary-reconnect validation. Keep issue #16 blocked and do not start v0.6.5
-  or v0.7.
+- **Pending owner action:** When ready, authorize normal deployment and provide
+  a normal public LIVE validation opportunity for a natural reconnect. Keep
+  v0.6.0 publication paused; do not create its tag or GitHub Release.
+- **Next queued task:** Deploy issue #19 only through the normal authorized
+  workflow, then preserve and analyze a natural ordinary reconnect; do not
+  manufacture a disconnect merely to pass the gate. Keep issue #16 blocked and
+  do not start v0.6.5 or v0.7.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

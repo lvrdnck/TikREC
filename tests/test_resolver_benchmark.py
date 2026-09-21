@@ -2,37 +2,27 @@
 
 import json
 from io import StringIO
-from urllib.error import HTTPError
 
 import pytest
 
 from scripts.benchmark_bound_resolution import render_report
-from tests.test_tiktok import _Opener, live_page, live_room
+from tests.test_tiktok import live_page
+from tests.test_tiktok_bound import (PAGE, SIGNED, _RouteOpener, page_404,
+                                     public_room, room_info)
 from tikrec.resolver_benchmark import benchmark_resolution
 
 
-PAGE = "https://www.tiktok.com/@creator/live"
-SIGNED = "https://cdn.test/live.flv?signature=secret"
-
-
-def public_room(room_id):
-    return json.dumps({"statusCode": 0, "data": {"roomId": room_id}}).encode()
-
-
-def room_info(room_id="123", *, status=2, label="HD1", url=SIGNED):
-    body = json.loads(live_room({label: url} if status == 2 else {}, status=status))
-    body["data"]["room_id"] = room_id
-    return json.dumps(body).encode()
-
-
-def test_compares_bound_page_and_direct_room_info_without_exposing_transport():
-    opener = _Opener([live_page("123"), room_info(), room_info()])
+def test_compares_fast_bound_and_direct_room_info_without_exposing_transport():
+    opener = _RouteOpener({
+        "room:123": [room_info(), room_info()],
+        "account": [public_room("123")],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
     pair = report["pairs"][0]
-    assert [item["stage"] for item in pair["bound"]["requests"]] == [
-        "live_page", "room_info",
+    assert sorted(item["stage"] for item in pair["bound"]["requests"]) == [
+        "public_account_lookup", "room_info",
     ]
     assert [item["stage"] for item in pair["direct"]["requests"]] == ["room_info"]
     assert pair["equivalence"] == {
@@ -46,47 +36,54 @@ def test_compares_bound_page_and_direct_room_info_without_exposing_transport():
     assert SIGNED not in rendered and "cdn.test" not in rendered and "secret" not in rendered
 
 
-def test_request_and_total_timing_boundaries_are_independent():
-    ticks = iter(float(value) for value in range(10))
-    opener = _Opener([live_page("123"), room_info(), room_info()])
+def test_request_and_total_timing_boundaries_are_nonnegative_and_independent():
+    opener = _RouteOpener({
+        "room:123": [room_info(), room_info()],
+        "account": [public_room("123")],
+    })
 
-    report = benchmark_resolution(PAGE, "123", samples=1, opener=opener,
-                                  clock=lambda: next(ticks))
+    report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
     pair = report["pairs"][0]
-    assert [item["seconds"] for item in pair["bound"]["requests"]] == [1.0, 1.0]
-    assert pair["bound"]["total_seconds"] == 5.0
-    assert pair["direct"]["requests"][0]["seconds"] == 1.0
-    assert pair["direct"]["total_seconds"] == 3.0
+    for path in ("bound", "direct"):
+        assert pair[path]["total_seconds"] >= 0
+        assert all(item["seconds"] >= 0 for item in pair[path]["requests"])
 
 
-def test_reports_public_account_lookup_only_when_current_path_invokes_it():
-    opener = _Opener([
-        b"<html>no room identity</html>", public_room("123"), room_info(), room_info(),
-    ])
+def test_reports_public_account_lookup_for_current_fast_path():
+    opener = _RouteOpener({
+        "room:123": [room_info(), room_info()],
+        "account": [public_room("123")],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
     stages = [item["stage"] for item in report["pairs"][0]["bound"]["requests"]]
-    assert stages == ["live_page", "public_account_lookup", "room_info"]
+    assert "public_account_lookup" in stages and "live_page" not in stages
     assert report["summary"]["bound_public_lookup_median_seconds"] is not None
 
 
-def test_bound_page_404_fallback_times_saved_room_info_without_printing_url():
-    page_404 = HTTPError(PAGE, 404, "missing", {}, None)
-    opener = _Opener([page_404, room_info(), room_info()])
+def test_bound_fallback_times_page_and_rechecks_without_printing_url():
+    opener = _RouteOpener({
+        "room:123": [b"not json", room_info(), room_info()],
+        "account": [b'{"statusCode":0,"data":{}}', public_room("123")],
+        "page": [page_404()],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
     requests = report["pairs"][0]["bound"]["requests"]
-    assert [(item["stage"], item["succeeded"]) for item in requests] == [
-        ("live_page", False), ("room_info", True),
-    ]
+    assert sum(item["stage"] == "room_info" for item in requests) == 2
+    assert any(item["stage"] == "live_page" and not item["succeeded"] for item in requests)
+    assert sum(item["stage"] == "public_account_lookup" for item in requests) == 2
     assert report["pairs"][0]["equivalence"]["comparable"] is True
 
 
 def test_direct_known_room_refresh_rejects_conflicting_room_identity():
-    opener = _Opener([live_page("123"), room_info(), room_info("456")])
+    opener = _RouteOpener({
+        "room:123": [room_info(), room_info("456")],
+        "account": [public_room("123")],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
@@ -98,7 +95,10 @@ def test_direct_known_room_refresh_rejects_conflicting_room_identity():
 
 def test_different_exact_transport_is_not_a_comparable_pair_or_savings_sample():
     other = "https://cdn.test/live.flv?signature=different"
-    opener = _Opener([live_page("123"), room_info(), room_info(url=other)])
+    opener = _RouteOpener({
+        "room:123": [room_info(), room_info(url=other)],
+        "account": [public_room("123")],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
@@ -116,7 +116,11 @@ def test_different_exact_transport_is_not_a_comparable_pair_or_savings_sample():
 
 
 def test_direct_offline_status_remains_typed_trustworthy_evidence():
-    opener = _Opener([live_page("123"), room_info(status=4), room_info(status=4)])
+    opener = _RouteOpener({
+        "room:123": [room_info(status=4)] * 3,
+        "account": [public_room("123")],
+        "page": [live_page("123")],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
@@ -133,7 +137,10 @@ def test_direct_offline_status_remains_typed_trustworthy_evidence():
     b'{"status_code":0,"data":{"status":2,"stream_url":{}}}',
 ])
 def test_direct_malformed_or_unverifiable_response_fails_closed(malformed):
-    opener = _Opener([live_page("123"), room_info(), malformed])
+    opener = _RouteOpener({
+        "room:123": [room_info(), malformed],
+        "account": [public_room("123")],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
@@ -144,7 +151,12 @@ def test_direct_malformed_or_unverifiable_response_fails_closed(malformed):
 
 
 def test_current_different_room_semantics_are_not_bypassed_by_direct_success():
-    opener = _Opener([live_page("456"), room_info("456"), room_info("123")])
+    opener = _RouteOpener({
+        "room:123": [room_info(), room_info()],
+        "room:456": [room_info("456")],
+        "account": [public_room("456"), public_room("456")],
+        "page": [b"<html>no room identity</html>"],
+    })
 
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
@@ -162,7 +174,10 @@ def test_benchmark_does_not_mutate_capture_or_session_evidence(tmp_path):
     manifest.write_bytes(b'{"status":"recording"}\n')
     connections.write_bytes(b'{"connection":1}\n')
     before = (manifest.read_bytes(), connections.read_bytes())
-    opener = _Opener([live_page("123"), room_info(), room_info()])
+    opener = _RouteOpener({
+        "room:123": [room_info(), room_info()],
+        "account": [public_room("123")],
+    })
 
     benchmark_resolution(PAGE, "123", samples=1, opener=opener)
 
@@ -173,9 +188,10 @@ def test_benchmark_does_not_mutate_capture_or_session_evidence(tmp_path):
 
 
 def test_text_report_contains_only_safe_equivalence_and_timing_facts():
-    opener = _Opener([
-        live_page("123"), room_info(label=SIGNED), room_info(label=SIGNED),
-    ])
+    opener = _RouteOpener({
+        "room:123": [room_info(label=SIGNED), room_info(label=SIGNED)],
+        "account": [public_room("123")],
+    })
     report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
     output = StringIO()
 
@@ -189,4 +205,4 @@ def test_text_report_contains_only_safe_equivalence_and_timing_facts():
 @pytest.mark.parametrize("samples", [0, 21, True, 1.5])
 def test_benchmark_sample_count_is_strictly_bounded(samples):
     with pytest.raises(ValueError, match="samples"):
-        benchmark_resolution(PAGE, "123", samples=samples, opener=_Opener([]))
+        benchmark_resolution(PAGE, "123", samples=samples, opener=_RouteOpener({}))

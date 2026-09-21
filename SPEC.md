@@ -424,12 +424,16 @@ seconds from its first response to its third.
 
 Initial resolution still requires the public username LIVE page or its normal
 page-200 lookup fallback; HTTP 404 cannot invent a room or a successful session.
-Once a canonical room ID is durably established, the bound resolver may recover
-from a username-page HTTP 404 by querying public room-info for that exact ID and,
-when needed, the public account room lookup. A live bound room supplies fresh
-transport, trustworthy non-live status enters the existing confirmation window,
-a proven different current live room ends the prior session under the existing
-identity rule, and conflicting/malformed/unavailable evidence fails closed.
+Once a canonical room ID is durably established, bound resolution concurrently
+refreshes public room-info for that exact ID and queries the public account's
+current room identity. It accepts the refreshed transport only when the saved
+room is live and the account lookup identifies that same room. Offline,
+malformed, conflicting, unavailable, or failed fast-path evidence falls back to
+the prior full page/account/room resolver. A proven different current live room
+ends the prior session under the existing identity rule; a saved-room numeric
+non-live status enters the existing confirmation window. A different room's
+non-live status and all unprovable identity fail closed rather than becoming
+saved-room offline evidence. Initial resolution is unchanged.
 
 Confirmation begins only after the preceding FLV response has ended or failed;
 no media connection remains open during the checks. If a later check returns

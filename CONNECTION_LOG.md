@@ -320,15 +320,18 @@ The current request sequences are:
 1. Initial resolution validates the username LIVE URL, fetches that page, uses
    the public account lookup only when the page has no room identity, then
    fetches room/info for the discovered room and selects an HTTP(S) FLV.
-2. Established ordinary reconnect passes the saved canonical room ID through
-   the bound resolver, but that resolver still tries the complete normal path
-   first. The outer capture binding rejects a returned different room before
-   media opens.
-3. Established page-404 fallback queries room/info for the saved room. If that
-   proves the room live, it returns fresh transport. If it proves offline or
-   fails resolution, the public account lookup checks current identity; a
-   different current room preserves `live_changed`, trustworthy saved-room
-   offline evidence remains typed offline, and unverifiable evidence fails.
+2. Established ordinary reconnect concurrently queries room/info for the saved
+   canonical room and the public account lookup. Fresh transport is accepted
+   only when room/info proves the saved room live and the account lookup maps to
+   that same room. The outer capture binding remains an independent same-room
+   check before media opens.
+3. Any offline, malformed, conflicting, unavailable, transient, or otherwise
+   insufficient fast-path evidence invokes the prior full bound resolver. Its
+   page-404 branch rechecks saved-room status and current account identity; a
+   live saved room is not accepted when account identity stays unverifiable. A
+   different live room preserves `live_changed`, only numeric non-live status
+   for the saved room can enter end confirmation, and all uncertainty fails
+   closed.
 4. Direct known-room refresh calls room/info only for the canonical saved ID.
    It rejects an explicit conflicting room ID, malformed/non-numeric status,
    malformed data, and missing supported transport. A numeric non-live status
@@ -347,7 +350,7 @@ remains separately visible in reconnect-gap evidence.
 On 2026-09-21 neither of the two owner-provided creators was live, so no valid
 live paired sample was available and the deployed service was not touched.
 Read-only one-pair checks returned trustworthy status 4 for each saved room.
-For Aishaaa, current bound resolution took 1.258 seconds: 0.307 page, 0.332
+For Aishaaa, the pre-#19 bound resolution took 1.258 seconds: 0.307 page, 0.332
 public lookup, and 0.616 room/info; direct saved-room room/info took 0.479
 seconds. For Gracie, bound took 1.221 seconds: 0.337 page, 0.535 lookup, and
 0.346 room/info; direct took 0.378 seconds. The respective 0.779- and
@@ -416,7 +419,7 @@ other component and network condition stayed fixed. That cross-session
 calculation is not a promised production result; the paired Zoraida savings are
 the controlling evidence.
 
-The measurements justify separate implementation/review, tracked in issue #19,
+The measurements justified separate implementation/review, tracked in issue #19,
 but not a direct-only substitution. Direct room/info proves that the saved room
 is live and rejects an explicit conflicting identity, yet it does not prove that
 the username/account still maps to that room. A production design must retain a
@@ -424,8 +427,43 @@ current account identity check, potentially overlapped with saved-room
 room/info; a different account room must still produce existing `live_changed`
 behavior. Saved-room offline, malformed/unverifiable evidence, conflicting
 identity, account-check failure, or transport failure must fall back to the
-current full bound resolver and preserve three-observation offline confirmation
-and fail-closed recovery. The deployed resolver remains unchanged.
+full bound resolver and preserve three-observation offline confirmation and
+fail-closed recovery. Issue #18 itself made no production change.
+
+### Issue #19 implementation evidence
+
+Issue #19 implements that design only for an established canonical room.
+Saved-room room/info and current public-account lookup run concurrently, and a
+fast result is accepted only when both prove the saved live room. Any
+insufficient result invokes the prior full bound resolver. Initial resolution,
+failure/outage retry timing, healthy-close policy, media open, writer/part,
+finalization, three-observation room-end confirmation, and rendition ranking
+are unchanged. Offline tests additionally ensure a different room's non-live
+status cannot become saved-room offline evidence, and no signed transport enters
+diagnostics or errors.
+
+The still-live owner-supplied Zoraida room then supplied 12 alternating read-
+only pairs against the same canonical room. All 12 matched room, rendition label,
+and source; nine also matched exact in-memory transport and formed the strict
+dataset. The three rotating transports were excluded without exposure. Strict
+median and range in seconds were:
+
+| Component | Median | Range |
+| --- | ---: | ---: |
+| Identity-safe bound total | 0.366 | 0.297--0.408 |
+| Concurrent public account lookup | 0.281 | 0.203--0.367 |
+| Concurrent bound room/info | 0.365 | 0.296--0.406 |
+| Direct known-room total | 0.324 | 0.275--0.379 |
+| Direct room/info | 0.324 | 0.274--0.379 |
+| Identity-check overhead versus direct | 0.044 | -0.076--0.104 |
+
+The concurrent bound total tracks the slower of its two requests rather than
+their sum. Its 0.366-second median is 0.576 seconds below issue #18's comparable
+pre-implementation 0.942-second median, while retaining current account
+verification. Slayyyboo22 remained offline and was not sampled further. The
+benchmark opens no media and proves resolver behavior only; no natural ordinary
+media reconnect occurred, so that required production validation remains
+outstanding and issue #19 stays open.
 
 ## Raw copy and byte-arrival evidence
 

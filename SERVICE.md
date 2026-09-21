@@ -163,12 +163,15 @@ Public resolve_live returns canonical room ID plus transient signed transport;
 same_live compares IDs only. Persist only room_id, never generic resolution data.
 An initial LIVE-page HTTP 404 remains a terminal resolution failure and creates no
 recording. Once capture owns retained media and a canonical room ID, bound
-resolution may use that ID's public room status without requiring the username
-LIVE page to remain HTTP 200. A same-room live status resumes, a proven offline
-status enters the existing three-observation room-end confirmation, a different
-current room keeps existing live-changed behavior, and unprovable state fails
-closed with retained media. A media-source HTTP 404 after established capture
-requests this identity refresh; the status code alone never proves room end.
+resolution overlaps that ID's public room status/transport refresh with current
+public account identity verification, without requiring the username LIVE page
+to remain HTTP 200. The fast transport is accepted only when both identify the
+saved live room; all insufficient evidence uses the conservative full resolver.
+A proven saved-room offline status enters the existing three-observation room-end
+confirmation, a different current live room keeps existing live-changed behavior,
+and unprovable state fails closed with retained media. A media-source HTTP 404
+after established capture requests this identity refresh; the status code alone
+never proves room end.
 
 Explicit capture_tags_resume/capture_url_resume require supported manifest,
 contiguous parts, no partial/output ambiguity, and one owner. Old files stay
@@ -270,6 +273,15 @@ local/backoff, verifying that the fixed wait collapsed. Failure/outage backoff,
 the patient recovery policy above, room-end confirmation, stop behavior, fresh
 URL resolution, and writer/part safety are unchanged. The single post-change
 sample does not justify retry, resolver, or HTTP changes.
+
+Issue #18 later supplied strict paired live evidence that serial page/account
+discovery materially dominated established resolution. Issue #19 therefore
+changes only the established bound resolver: saved-room room/info and public
+account lookup run concurrently, and the transport is accepted only when both
+prove the saved live room. Initial resolution and retry, backoff, media-open,
+writer, finalization, room-end, and rendition policies remain unchanged. Read-
+only live measurement reduced the bound median from 0.942 to 0.366 seconds; a
+natural ordinary media reconnect is still required before release reconsideration.
 
 Remote stop during recovery commits stop intent and prevents capture even if
 same-room resolution is finishing. Stop/shutdown wakes patient waits immediately
