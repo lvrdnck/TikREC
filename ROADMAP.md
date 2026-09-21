@@ -474,6 +474,15 @@ the real-world evidence issue #9 required, so #9 is complete. Issue #8 remains
 open because the session supplied no replay to attribute; another natural
 raw-copy replay opportunity is still required.
 
+The next owner-authorized opportunity started normally on 2026-09-21 for
+`luhpollisecret` as session `c5c070f3-93a3-4c13-be63-f7109fc6e974`, canonical
+room `7687950152400816913`. It uses the deployed remote-service `--raw-copy`
+path and a new collision-free output/parts pair. The first connection is healthy,
+writer/raw/arrival evidence is progressing, and the initial checkpoint has zero
+reconnects with no recovery, stop, interruption, or error state. The recording
+was left undisturbed for a natural replay or room-end boundary; no fault was
+manufactured.
+
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
 **Goal:** Eliminate reconnect gaps by maintaining more than one concurrent

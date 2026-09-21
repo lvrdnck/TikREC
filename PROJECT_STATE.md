@@ -109,10 +109,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   safe service recovery, and leaves ordinary starts unchanged. Current `main`
   (`0dcdbce`) was installed into the existing environment on 2026-09-21 and the
   existing `TikREC Service` Scheduled Task alone was restarted. The service is
-  healthy, available, idle, has no stale recovery, loads the current checkout,
-  reports the legacy completed job with `raw_copy_enabled=false`, and exposes
-  `remote start --raw-copy`. No recording was started during deployment, so real
-  replay/source comparison is still pending.
+  healthy, loads the current checkout, and exposes `remote start --raw-copy`.
+  Real replay/source comparison is still pending.
   Focused coverage passes 197 tests plus 2 subtests; the full offline suite
   passes 785 tests plus 19 subtests, and unittest discovery passes 204 tests.
 - **Completed issue #8 validation opportunity:** Owner-authorized `promi.streams` session
@@ -130,11 +128,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   79,810 contiguous byte records covering all 435,600,600 raw bytes, including a
   3,799-byte final read followed seven seconds later by `read_end=eof`; this
   completes issue #9's real boundary requirement. No fault was manufactured.
-- **Pending owner action:** Provide another suitable normal public LIVE opportunity
-  when ready. Keep v0.6.0 publication paused; do not create its tag or GitHub
-  Release.
-- **Next queued task:** Start only a separately owner-authorized raw-copy session
-  and preserve it until a natural timestamp replay supplies matching raw evidence.
+- **Active issue #8 validation opportunity:** Owner-authorized `luhpollisecret`
+  session `c5c070f3-93a3-4c13-be63-f7109fc6e974`, canonical room
+  `7687950152400816913`, is recording through the normal deployed service at
+  `C:\Users\Leandro\Videos\luhpollisecret-v060-issue8-raw-replay-validation-20260921.mp4`
+  with `raw_copy_enabled=true`. Its first connection is healthy, writer/raw/arrival
+  evidence is progressing, and the initial checkpoint has zero reconnects with no
+  recovery, stop, interruption, or error state. It was left running normally; no
+  fault or replay was manufactured.
+- **Pending owner action:** None while the current validation session remains
+  active. Keep v0.6.0 publication paused; do not create its tag or GitHub Release.
+- **Next queued task:** Reinspect the existing `luhpollisecret` session without
+  disturbing it. Preserve and compare matching raw/retained evidence if a natural
+  timestamp replay occurs; otherwise allow normal capture and room-end behavior.
   Do not manufacture corruption/faults or resume #19.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
