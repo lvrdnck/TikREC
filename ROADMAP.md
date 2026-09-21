@@ -442,6 +442,15 @@ replays must not be manufactured. Focused coverage passes 197 tests plus 2
 subtests, and the full offline suite passes 785 tests plus 19 subtests. v0.6.0
 remains untagged and unpublished.
 
+Current `main` (`0dcdbce`) was deployed through the existing editable
+environment on 2026-09-21, and only the existing `TikREC Service` Scheduled Task
+was restarted. The task retained its executable, arguments, working directory,
+and security architecture. The restarted service is healthy, available, idle,
+and free of stale recovery; it loads the current checkout, exposes
+`remote start --raw-copy`, and reports `raw_copy_enabled=false` for the prior
+completed non-diagnostic job. No recording was started. Issue #8 now waits for
+an owner-provided public LIVE to exercise this deployed opt-in naturally.
+
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
 **Goal:** Eliminate reconnect gaps by maintaining more than one concurrent

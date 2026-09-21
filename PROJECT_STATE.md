@@ -102,18 +102,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 - **Issue #8 diagnostic readiness:** Normal remote capture now has an explicit
   `remote start --raw-copy` opt-in. The service co-locates raw connections and
   arrival sidecars in the matching `.parts` directory, persists the opt-in for
-  safe service recovery, and leaves ordinary starts unchanged. No owner-provided
-  public LIVE was supplied for this task, so real replay/source comparison is
-  still pending and this change is not yet deployed to the Scheduled Task.
+  safe service recovery, and leaves ordinary starts unchanged. Current `main`
+  (`0dcdbce`) was installed into the existing environment on 2026-09-21 and the
+  existing `TikREC Service` Scheduled Task alone was restarted. The service is
+  healthy, available, idle, has no stale recovery, loads the current checkout,
+  reports the legacy completed job with `raw_copy_enabled=false`, and exposes
+  `remote start --raw-copy`. No recording was started during deployment, so real
+  replay/source comparison is still pending.
   Focused coverage passes 197 tests plus 2 subtests; the full offline suite
   passes 785 tests plus 19 subtests, and unittest discovery passes 204 tests.
 - **Pending owner action:** Provide a suitable normal public LIVE validation
   opportunity when ready. Keep v0.6.0 publication paused; do not create its tag
   or GitHub Release.
-- **Next queued task:** Deploy the opt-in diagnostic path only while the service
-  is idle, start the owner-authorized LIVE with `remote start --raw-copy`, and
-  preserve the natural session until a timestamp replay supplies matching raw
-  evidence. Do not manufacture corruption/faults or resume #19.
+- **Next queued task:** When the owner supplies a suitable public LIVE, start it
+  through the deployed normal service with `remote start --raw-copy` and preserve
+  the natural session until a timestamp replay supplies matching raw evidence.
+  Do not manufacture corruption/faults or resume #19.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
