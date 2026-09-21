@@ -16,6 +16,45 @@ roadmap scope, backward compatibility, persistent data, public interfaces,
 security, credentials, privacy, destructive operations, or user data. State the
 issue, available choices, and recommended option.
 
+## Cross-device and disposable-Codex workflow
+
+GitHub is the durable cross-device source of truth for TikREC code and project
+state. Important context must never exist only in a Codex conversation: chats are
+disposable working context and are not assumed to synchronize between computers.
+
+ChatGPT is the project manager and senior developer. It inspects repository and
+GitHub state, selects the single next task, resolves high-level product and
+architecture decisions, and reviews completed Codex work. Codex is the
+implementation developer; every task must be self-contained and reconstructible
+from repository and GitHub state without phrases such as "continue what we
+discussed in the previous chat" or hidden prior-thread context.
+
+A fresh Codex task pulls GitHub first, then inspects AGENTS.md, PROJECT_STATE.md,
+ROADMAP.md, relevant GitHub issues, Git history, and the relevant implementation
+and documentation before acting. Before ending, persist all durable resume
+information in the appropriate repository documentation and/or GitHub issue. If
+work is partial or interrupted, record completed work, remaining work, important
+evidence and decisions, Git state, and a safe resume action in the relevant issue
+and PROJECT_STATE.md where appropriate. Completed work must be committed and
+pushed so another machine or session can reconstruct it from GitHub.
+
+The CODEX HANDOFF is only a concise convenience summary; it is not authoritative
+project state and must never be the only place important information is recorded.
+After Codex finishes, the owner may simply say `Codex finished`; ChatGPT then
+reviews the actual GitHub commit, diff, issues, and documentation to decide what
+happens next. Normally one implementation task is active across both computers.
+
+MacBook and Windows clones synchronize source only through GitHub. Do not use
+SMB, Tailscale file sharing, OneDrive, iCloud, Google Drive, or manual folder
+copying to synchronize the repository. Pull and reconcile GitHub before manual
+development on either clone. Windows `main-pc` is the primary runtime and
+real-LIVE validation environment; the MacBook may use its own clone for
+Mac-specific/offline work or VS Code Remote-SSH over Tailscale for access to the
+Windows checkout. Remote access does not change GitHub authority. Recordings and
+other media may be shared separately over SMB/Tailscale, but media sharing stays
+separate from source-code synchronization. Calendar reminders remain
+non-authoritative.
+
 ## Mandatory two-phase workflow
 
 Every coding task has the following two phases.
@@ -32,15 +71,41 @@ Before changing any file:
    PROJECT_STATE.md, ROADMAP.md, relevant open GitHub issues, and the actual
    repository state. Continue the active task when one exists; otherwise select
    the next unfinished logical roadmap slice.
-4. Classify the task and select the lowest suitable model:
+4. Classify the task by complexity, then select model and reasoning effort as
+   separate dimensions. The task-class examples below are descriptive, not a
+   rigid model mapping; use the practical model ladder that follows.
 
-   | Task class | Default model |
+   | Task class | Complexity example (not a model requirement) |
    | --- | --- |
-   | Mechanical — repetitive work, tiny documentation edits, renames | GPT-5.6 Luna — Medium |
-   | Routine — small bug fix, simple tests, localized code change | GPT-5.6 Terra — Medium |
-   | Normal Feature — ordinary TikREC roadmap implementation | GPT-5.6 Sol — Medium |
-   | Complex — cross-cutting work, difficult debugging, concurrency, architecture-sensitive work, important independent review | GPT-5.6 Sol — High |
-   | Exceptionally Difficult — prior attempts failed or the architecture/debugging problem is extremely difficult | GPT-6 Astra — High |
+   | Mechanical — repetitive work, tiny documentation edits, renames | Small, bounded scope |
+   | Routine — small bug fix, simple tests, localized code change | Limited subsystem interaction |
+   | Normal Feature — ordinary TikREC roadmap implementation | Meaningful multi-file work |
+   | Complex — cross-cutting work, difficult debugging, concurrency, architecture-sensitive work, important independent review | Broad or high-risk reasoning |
+   | Exceptionally Difficult — prior attempts failed or the architecture/debugging problem is extremely difficult | Severe uncertainty or correctness risk |
+
+Choose the lowest model and effort combination that is comfortably sufficient.
+Do not minimize usage if that materially increases retry or implementation risk,
+and do not default upward because a stronger model is available. Stronger models
+at lower effort can be the better trade-off, and higher effort does not
+automatically produce a better result. If selecting a stronger model or higher
+effort than the obvious baseline, state the specific complexity or risk that
+justifies it.
+
+Practical model-and-effort ladder:
+
+   | Model and effort | Suitable work |
+   | --- | --- |
+   | GPT-5.6 Luna - Low | Tiny edits, formatting, repetitive transformations, trivial documentation cleanup |
+   | GPT-5.6 Luna - Medium | Straightforward documentation updates, repetitive repository maintenance, simple structured edits |
+   | GPT-5.6 Terra - Low | Small localized code changes where the implementation is obvious and low-risk |
+   | GPT-5.6 Terra - Medium | Routine bug fixes, tests, localized features, ordinary limited-scope refactors |
+   | GPT-5.6 Terra - High | Trickier localized engineering where deeper reasoning helps without broad architecture reasoning |
+   | GPT-5.6 Sol - Low | Moderate engineering with some ambiguity or multi-file reasoning but limited architectural risk |
+   | GPT-5.6 Sol - Medium | Normal TikREC feature development, meaningful multi-file work, subsystem changes, ordinary investigations |
+   | GPT-5.6 Sol - High | Complex cross-cutting work, difficult debugging, concurrency, recovery/state-machine changes, architecture-sensitive work, important independent review |
+   | GPT-6 Astra - Low | Very difficult work where higher capability helps but maximum reasoning effort is unnecessary; may replace Sol High |
+   | GPT-6 Astra - Medium | Exceptionally difficult debugging, unfamiliar/complex architecture, repeated subtle failures, or high-risk design work |
+   | GPT-6 Astra - High | Reserve for failed strong-model attempts, contradictory evidence, very high architecture risk, or unusually severe correctness consequences |
 
 Do not select a stronger model merely because it is available. If the current
 model and reasoning setting are reliably visible, compare them with the
