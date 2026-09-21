@@ -12,6 +12,7 @@ from .configuration import (
     ConfigurationStore,
     configured_recovery_window_seconds,
     configured_output_directory,
+    configured_validation_mode,
     default_config_path,
 )
 
@@ -24,7 +25,7 @@ def add_config_command(subcommands) -> argparse.ArgumentParser:
     show.add_argument("--json", action="store_true", help="print structured results")
     actions.add_parser("path", help="print the configuration file path")
     set_command = actions.add_parser("set", help="set one persisted default")
-    settings = ["output-directory", "recovery-window-seconds"]
+    settings = ["output-directory", "recovery-window-seconds", "validation-mode"]
     set_command.add_argument("setting", choices=settings)
     set_command.add_argument("value", metavar="VALUE")
     unset = actions.add_parser("unset", help="remove one persisted default")
@@ -61,6 +62,13 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 if configuration.recovery_window_seconds is not None
                 else "built_in_default"
             ),
+            "validation_mode": configuration.validation_mode,
+            "effective_validation_mode": configuration.effective_validation_mode,
+            "validation_mode_source": (
+                "configuration"
+                if configuration.validation_mode is not None
+                else "built_in_default"
+            ),
         }
         if arguments.json:
             print(json.dumps(result, indent=2, sort_keys=True), file=stdout)
@@ -80,21 +88,37 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 file=stdout,
             )
             print(f"Recovery window source: {result['recovery_window_source']}", file=stdout)
+            print(
+                f"Configured validation mode: {result['validation_mode'] or '(not set)'}",
+                file=stdout,
+            )
+            print(
+                f"Effective validation mode: {result['effective_validation_mode']}",
+                file=stdout,
+            )
+            print(f"Validation mode source: {result['validation_mode_source']}", file=stdout)
         return 0
     if arguments.config_action == "set":
         if arguments.setting == "output-directory":
             value = configured_output_directory(arguments.value)
             store.save(replace(configuration, output_directory=value))
             print(f"Set output directory: {value}", file=stdout)
-        else:
+        elif arguments.setting == "recovery-window-seconds":
             value = configured_recovery_window_seconds(arguments.value)
             store.save(replace(configuration, recovery_window_seconds=value))
             print(f"Set recovery window: {value} seconds", file=stdout)
+        else:
+            value = configured_validation_mode(arguments.value)
+            store.save(replace(configuration, validation_mode=value))
+            print(f"Set validation mode: {value}", file=stdout)
         return 0
     if arguments.setting == "output-directory":
         store.save(replace(configuration, output_directory=None))
         print("Unset output directory", file=stdout)
-    else:
+    elif arguments.setting == "recovery-window-seconds":
         store.save(replace(configuration, recovery_window_seconds=None))
         print("Unset recovery window", file=stdout)
+    else:
+        store.save(replace(configuration, validation_mode=None))
+        print("Unset validation mode", file=stdout)
     return 0

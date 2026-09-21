@@ -26,6 +26,7 @@ from .remote import RemoteError
 from .service import serve
 from .tiktok import TikTokResolutionError, resolve_live_url
 from .validation import validate_target
+from .validation_cli import add_validation_command, effective_validation_mode
 from .validation_report import ValidationResult, render_validation
 
 
@@ -65,7 +66,8 @@ def main(
             print(direct_url, file=stdout)
             return 0
         if arguments.command == "validate":
-            result = validator(Path(arguments.target), deep=arguments.deep)
+            deep = effective_validation_mode(arguments.validation_mode, arguments.config_path) == "deep"
+            result = validator(Path(arguments.target), deep=deep)
             if arguments.json:
                 print(json.dumps(result.as_dict(), indent=2, sort_keys=True), file=stdout)
             else:
@@ -284,10 +286,7 @@ def _parser() -> argparse.ArgumentParser:
     live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     live.add_argument("--recovery-window-seconds", type=recovery_window_argument,
                       metavar="SECONDS", help="override the 60-3600 second recovery window")
-    validate = subcommands.add_parser("validate", help="check recording health")
-    validate.add_argument("target", metavar="TARGET")
-    validate.add_argument("--deep", action="store_true", help="fully decode completed output")
-    validate.add_argument("--json", action="store_true", help="print structured results")
+    validate = add_validation_command(subcommands)
     recover = add_recovery_command(subcommands)
     for command in (record, finalize, resolve, live, validate, recover, config):
         # Accept the global diagnostic flag after a subcommand as well.

@@ -19,13 +19,15 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec recover ROOT [--validate] [--finalize] [--json]
-    tikrec validate TARGET [--deep] [--json]
+    tikrec validate TARGET [--deep | --standard] [--json]
     tikrec config show [--json]
     tikrec config path
     tikrec config set output-directory DIRECTORY
     tikrec config unset output-directory
     tikrec config set recovery-window-seconds SECONDS
     tikrec config unset recovery-window-seconds
+    tikrec config set validation-mode standard|deep
+    tikrec config unset validation-mode
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -144,9 +146,12 @@ path` to print the exact location, `tikrec config show [--json]` to inspect it,
 and `tikrec config set/unset output-directory` to change the current recording-
 directory default. `tikrec config set recovery-window-seconds SECONDS` persists
 the LIVE network-recovery window; `unset` restores the built-in 900-second
-default. Values must be integers from 60 through 3600 seconds. Relative
-directories passed to `config set` are converted to absolute paths, and the
-recording directory itself is created only when a recording first uses it.
+default. Values must be integers from 60 through 3600 seconds. `tikrec config
+set validation-mode standard|deep` persists the default for the explicit
+`tikrec validate` command; `unset` restores built-in standard mode. Persisting
+`standard` explicitly remains visible in `config show`. Relative directories
+passed to `config set` are converted to absolute paths, and the recording
+directory itself is created only when a recording first uses it.
 
 The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
 wrong types, duplicate fields, and unknown top-level settings fail clearly
@@ -181,7 +186,7 @@ Explicit `--output` always wins and is never automatically renamed. Paths that
 escape a configured directory with `..` are rejected. Configuration does not
 reinterpret remote PC paths, manual `finalize --output`, guided recovery paths,
 service state, or retained sessions. There is no filename-template setting yet;
-validation and logging defaults remain later v0.8 work. This convenience
+logging defaults remain later v0.8 work. This convenience
 names only manually started LIVEs and does not provide creator automation.
 
 Local `live` and `serve` use the recovery window in this order: an explicit
@@ -335,6 +340,7 @@ schema and lifecycle.
 
     tikrec validate path/to/recording.mp4
     tikrec validate path/to/recording.mp4 --deep
+    tikrec validate path/to/recording.mp4 --standard
     tikrec validate path/to/recording.parts
     tikrec validate path/to/recording.parts/session.json --json
 
@@ -352,6 +358,14 @@ the full decode check, with or without `--deep`. When `session.json` is present
 validation also checks the actual part count, declared output, finalization
 state, and available codec/resolution metadata. Older parts directories without
 a manifest remain supported.
+
+The standalone command selects its mode in this order: explicit `--deep` or
+`--standard`, configured `validation_mode`, then the built-in `standard`.
+Supplying either flag avoids reading configuration merely to choose the mode;
+without a flag, malformed configuration fails clearly. `recover --validate`
+and the pre/post checks used by `recover --finalize` intentionally remain fixed
+to standard mode because they are recovery safety checks, not a convenience
+preference. TikREC does not automatically validate after recording.
 
 An interrupted, failed, or still-recording session is not corrupt merely
 because it is incomplete or has no final MP4. The report presents media

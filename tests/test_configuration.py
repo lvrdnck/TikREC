@@ -14,9 +14,11 @@ from tikrec.configuration import (
     ConfigurationStore,
     configured_recovery_window_seconds,
     configured_output_directory,
+    configured_validation_mode,
     default_config_path,
     resolve_recording_output,
     validate_recovery_window_seconds,
+    validate_validation_mode,
 )
 
 
@@ -54,11 +56,14 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
         "schema_version": CONFIG_SCHEMA_VERSION,
         "output_directory": str(output_directory),
         "recovery_window_seconds": 600,
+        "validation_mode": "deep",
     }), encoding="utf-8")
     configuration = ConfigurationStore(path).load()
     assert configuration.output_directory == output_directory
     assert configuration.recovery_window_seconds == 600
     assert configuration.effective_recovery_window_seconds == 600
+    assert configuration.validation_mode == "deep"
+    assert configuration.effective_validation_mode == "deep"
     assert resolve_recording_output("creator/live.mp4", configuration) == (
         output_directory / "creator/live.mp4"
     )
@@ -73,6 +78,10 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
     ('{"schema_version": 1, "recovery_window_seconds": "60"}', "integer from 60 to 3600"),
     ('{"schema_version": 1, "recovery_window_seconds": 59}', "integer from 60 to 3600"),
     ('{"schema_version": 1, "recovery_window_seconds": 3601}', "integer from 60 to 3600"),
+    ('{"schema_version": 1, "validation_mode": "fast"}', "one of: standard, deep"),
+    ('{"schema_version": 1, "validation_mode": true}', "one of: standard, deep"),
+    ('{"schema_version": 1, "validation_mode": 1}', "one of: standard, deep"),
+    ('{"schema_version": 1, "validation_mode": null}', "one of: standard, deep"),
     ('{"schema_version": 1, "typo": true}', "unknown or invalid"),
     ('{"schema_version": 1, "schema_version": 1}', "duplicate field"),
     ('{"output_directory": "/recordings"}', "missing schema_version"),
@@ -105,6 +114,15 @@ def test_recovery_window_bounds_and_default_are_strict() -> None:
     assert configured_recovery_window_seconds("600") == 600
 
 
+def test_validation_mode_values_and_default_are_strict() -> None:
+    assert Configuration().effective_validation_mode == "standard"
+    assert validate_validation_mode("standard") == "standard"
+    assert configured_validation_mode("deep") == "deep"
+    for invalid in ("fast", True, 1, None, 1.0):
+        with pytest.raises(ConfigurationError, match="one of: standard, deep"):
+            validate_validation_mode(invalid)
+
+
 def test_relative_cli_value_is_stored_as_absolute_without_creating_it(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -130,14 +148,16 @@ def test_atomic_save_replaces_complete_document_and_leaves_no_partial(tmp_path: 
     path = tmp_path / "config" / "config.json"
     store = ConfigurationStore(path)
     directory = tmp_path / "recordings"
-    store.save(Configuration(output_directory=directory, recovery_window_seconds=1200))
+    store.save(Configuration(
+        output_directory=directory, recovery_window_seconds=1200, validation_mode="standard",
+    ))
     assert store.load() == Configuration(
-        output_directory=directory, recovery_window_seconds=1200
+        output_directory=directory, recovery_window_seconds=1200, validation_mode="standard",
     )
     assert list(path.parent.glob("*.partial")) == []
     assert json.loads(path.read_text(encoding="utf-8")) == {
         "output_directory": str(directory), "recovery_window_seconds": 1200,
-        "schema_version": 1,
+        "schema_version": 1, "validation_mode": "standard",
     }
 
 

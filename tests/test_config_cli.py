@@ -44,6 +44,9 @@ def test_config_show_reports_missing_file_and_effective_cwd(
         "effective_recovery_window_seconds": 900,
         "recovery_window_seconds": None,
         "recovery_window_source": "built_in_default",
+        "effective_validation_mode": "standard",
+        "validation_mode": None,
+        "validation_mode_source": "built_in_default",
     }
 
 
@@ -70,13 +73,42 @@ def test_config_set_show_and_unset_preserve_valid_document(tmp_path: Path) -> No
     assert result["effective_recovery_window_seconds"] == 600
     assert result["recovery_window_source"] == "configuration"
     assert main([
+        "--config", str(path), "config", "set", "validation-mode", "standard"
+    ], stdout=StringIO()) == 0
+    stdout = StringIO()
+    assert main(["--config", str(path), "config", "show", "--json"], stdout=stdout) == 0
+    result = json.loads(stdout.getvalue())
+    assert result["validation_mode"] == "standard"
+    assert result["effective_validation_mode"] == "standard"
+    assert result["validation_mode_source"] == "configuration"
+    assert main([
         "--config", str(path), "config", "unset", "output-directory"
     ], stdout=StringIO()) == 0
     assert json.loads(path.read_text(encoding="utf-8")) == {
         "recovery_window_seconds": 600, "schema_version": 1,
+        "validation_mode": "standard",
     }
     assert main([
         "--config", str(path), "config", "unset", "recovery-window-seconds"
+    ], stdout=StringIO()) == 0
+    assert main([
+        "--config", str(path), "config", "unset", "validation-mode"
+    ], stdout=StringIO()) == 0
+    assert json.loads(path.read_text(encoding="utf-8")) == {"schema_version": 1}
+
+
+def test_config_validation_mode_deep_show_and_unset(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    assert main([
+        "--config", str(path), "config", "set", "validation-mode", "deep"
+    ], stdout=StringIO()) == 0
+    stdout = StringIO()
+    assert main(["--config", str(path), "config", "show"], stdout=stdout) == 0
+    assert "Configured validation mode: deep" in stdout.getvalue()
+    assert "Effective validation mode: deep" in stdout.getvalue()
+    assert "Validation mode source: configuration" in stdout.getvalue()
+    assert main([
+        "--config", str(path), "config", "unset", "validation-mode"
     ], stdout=StringIO()) == 0
     assert json.loads(path.read_text(encoding="utf-8")) == {"schema_version": 1}
 

@@ -86,6 +86,26 @@ def test_recover_validate_prints_guided_result() -> None:
     assert "Manual tikrec finalize is available" in report
 
 
+def test_recovery_validation_ignores_configured_deep_mode(tmp_path: Path) -> None:
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({
+        "schema_version": 1, "validation_mode": "deep",
+    }), encoding="utf-8")
+    modes = []
+
+    def validator(target, *, deep):
+        modes.append(deep)
+        return ValidationResult(
+            str(target), "session", deep, True, "passed", "interrupted", "missing", 3, (),
+        )
+
+    assert main([
+        "--config", str(config), "recover", "recordings", "--validate",
+    ], recovery_discoverer=lambda _: (BASE,), validator=validator,
+       stdout=StringIO()) == 0
+    assert modes == [False]
+
+
 def test_recover_validate_json_includes_structured_validation() -> None:
     stdout = StringIO()
     validation = ValidationResult(

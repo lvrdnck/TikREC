@@ -7,8 +7,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. Issues #23, #24, and
-  #25 are complete after the first three narrow v0.8.0 configuration/defaults slices.
+- **Active issue/task:** No implementation task is active. Issues #23, #24, #25,
+  and #26 are complete after the first four narrow v0.8.0 configuration/defaults
+  slices.
   Issues #20, #21, and
   #22 are complete and closed after the three v0.7.0 guided-recovery slices:
   bounded read-only discovery/classification through `tikrec recover`, optional
@@ -51,6 +52,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   configuration compatibility remain unchanged. Restart is required after a
   service configuration change. Validation and logging defaults remain queued;
   v0.7.0 remains released.
+- **Completed fourth v0.8 validation-default slice:** Strict schema-1
+  configuration optionally persists `validation_mode` as `standard` or `deep`
+  for the explicit `tikrec validate` command. Mutually exclusive `--deep` and
+  `--standard` overrides take precedence without reading configuration;
+  otherwise configuration precedes the built-in standard default. Validation
+  semantics and reports are unchanged, retained FLVs still receive their full
+  decoder/DTS checks in either mode, and deep completed-output validation still
+  decodes the full artifact. Guided recovery validation and both finalization
+  safety checks remain explicitly standard and do not inherit the preference.
+  Focused coverage passes 93 tests, the full offline suite passes 908 tests plus
+  19 subtests, and unittest discovery passes 210 tests. Logging defaults remain
+  queued; v0.7.0 remains released.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -259,7 +272,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
 - **Next queued task:** Continue v0.8.0 with one separately approved narrow
-  validation-default slice; logging defaults remain later work. The conditional
+  logging-default slice. The conditional
   v0.6.5 redundant-capture release is not selected; issues #8 and #13 continue
   to collect evidence opportunistically.
 

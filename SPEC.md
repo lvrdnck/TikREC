@@ -65,13 +65,15 @@ when invoked, that is an error, not a wait state.
     tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR] [--recovery-window-seconds SECONDS]
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec recover ROOT [--validate] [--finalize] [--json]
-    tikrec validate TARGET [--deep] [--json]
+    tikrec validate TARGET [--deep | --standard] [--json]
     tikrec config show [--json]
     tikrec config path
     tikrec config set output-directory DIRECTORY
     tikrec config unset output-directory
     tikrec config set recovery-window-seconds SECONDS
     tikrec config unset recovery-window-seconds
+    tikrec config set validation-mode standard|deep
+    tikrec config unset validation-mode
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -91,6 +93,10 @@ repair, or recover recordings. Standard validation fully decodes retained
 parts but uses bounded stream/container/duration inspection for a completed
 output. `--deep` also decodes the complete output; its cost grows with recording
 length and session validation then decodes both the parts and final artifact.
+The explicit `--deep` and `--standard` flags are mutually exclusive. Without
+one, the command uses configured `validation_mode`, then built-in `standard`.
+An explicit flag bypasses configuration loading for this preference; an
+implicit mode fails if configuration is malformed.
 
 Exit codes: 0 success, 1 capture/finalization/validation failure, 2 invalid CLI
 usage, 130 interrupted capture.
@@ -717,9 +723,11 @@ Schema-1 per-user configuration is strict JSON stored outside the checkout at
 when placed before the subcommand, selects one deterministic explicit file.
 TikREC never scans for alternatives. The schema permits integer
 `schema_version: 1`, optional absolute string `output_directory`, and optional
-integer `recovery_window_seconds` from 60 through 3600 inclusive; duplicate,
+integer `recovery_window_seconds` from 60 through 3600 inclusive, and optional
+string `validation_mode` equal to `standard` or `deep`; duplicate,
 missing-version, unknown, incorrectly typed, malformed, or unsupported data is an
-error. Writes use a flushed same-directory temporary and atomic replacement,
+error, and explicitly supplying null for `validation_mode` is invalid. Writes use
+a flushed same-directory temporary and atomic replacement,
 with a parent-directory sync on POSIX. Unsetting all optional settings retains a valid
 versioned document. This store must never contain TikTok cookies, credentials,
 bearer tokens, or signed media URLs.
@@ -730,6 +738,9 @@ output-directory DIRECTORY` resolves a relative CLI value to an absolute path
 without creating the recording directory, while `config unset output-directory`
 removes only that setting. `config set recovery-window-seconds SECONDS` persists
 the bounded integer and its matching `unset` restores the built-in default.
+`config set validation-mode standard|deep` persists the standalone validation
+default and its matching `unset` restores built-in standard. An explicitly
+persisted `standard` remains distinguishable from an absent setting in `show`.
 Invalid existing configuration is never silently overwritten by a mutation.
 
 `--output` is optional only for local `live`. When supplied, an absolute path is
@@ -815,6 +826,8 @@ candidates make validation mode exit nonzero, while no candidates is a successfu
 bounded scan. Validation exceptions become redacted fail-closed findings. Plain
 discovery retains its prior output/JSON shape and performs no validation. Neither
 mode persists validation history or invokes finalization.
+Recovery validation always passes `deep=False` and does not consult the standalone
+`validation_mode` preference, even when that preference is `deep`.
 
 The third v0.7 slice adds explicit `tikrec recover PARTS_DIRECTORY --finalize`.
 `--finalize` implies standard validation and is accepted only when the named
@@ -836,6 +849,8 @@ output plus a passing standard validation of the updated session. Failures and
 interruptions retain all FLV parts; no writer repair, capture resume, deletion,
 or recursive scanning is performed. Plain and JSON output report the guided
 outcome. Manual `tikrec finalize PARTS_DIRECTORY --output FILE` remains unchanged.
+Both guided pre-finalization and post-finalization checks remain standard and do
+not inherit the standalone validation preference.
 
 ## Testing
 

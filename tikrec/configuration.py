@@ -15,7 +15,11 @@ from .retry_policy import DEFAULT_RECOVERY_WINDOW_SECONDS
 CONFIG_SCHEMA_VERSION = 1
 MIN_RECOVERY_WINDOW_SECONDS = 60
 MAX_RECOVERY_WINDOW_SECONDS = 3600
-_FIELDS = {"schema_version", "output_directory", "recovery_window_seconds"}
+DEFAULT_VALIDATION_MODE = "standard"
+VALIDATION_MODES = frozenset({"standard", "deep"})
+_FIELDS = {
+    "schema_version", "output_directory", "recovery_window_seconds", "validation_mode",
+}
 
 
 class ConfigurationError(ValueError):
@@ -28,10 +32,11 @@ class Configuration:
 
     output_directory: Path | None = None
     recovery_window_seconds: int | None = None
+    validation_mode: str | None = None
     schema_version: int = CONFIG_SCHEMA_VERSION
 
     def validate(self) -> None:
-        """Reject unsupported versions and ambiguous output-directory values."""
+        """Reject unsupported versions and invalid optional setting values."""
         if type(self.schema_version) is not int or self.schema_version != CONFIG_SCHEMA_VERSION:
             raise ConfigurationError(
                 f"unsupported configuration schema version; expected {CONFIG_SCHEMA_VERSION}"
@@ -40,6 +45,8 @@ class Configuration:
             _validate_output_directory(self.output_directory)
         if self.recovery_window_seconds is not None:
             validate_recovery_window_seconds(self.recovery_window_seconds)
+        if self.validation_mode is not None:
+            validate_validation_mode(self.validation_mode)
 
     @property
     def effective_recovery_window_seconds(self) -> int:
@@ -47,6 +54,11 @@ class Configuration:
         if self.recovery_window_seconds is None:
             return DEFAULT_RECOVERY_WINDOW_SECONDS
         return self.recovery_window_seconds
+
+    @property
+    def effective_validation_mode(self) -> str:
+        """Return the configured validation mode or the built-in default."""
+        return self.validation_mode or DEFAULT_VALIDATION_MODE
 
 
 def default_config_path(
@@ -92,6 +104,10 @@ class ConfigurationStore:
                 raise ConfigurationError("unknown or invalid top-level fields")
             if "schema_version" not in document:
                 raise ConfigurationError("missing schema_version")
+            if "validation_mode" in document and document["validation_mode"] is None:
+                raise ConfigurationError(
+                    "validation_mode must be one of: standard, deep"
+                )
             raw_directory = document.get("output_directory")
             if raw_directory is not None and not isinstance(raw_directory, str):
                 raise ConfigurationError("output_directory must be an absolute path string")
@@ -99,6 +115,7 @@ class ConfigurationStore:
                 schema_version=document["schema_version"],
                 output_directory=Path(raw_directory) if raw_directory is not None else None,
                 recovery_window_seconds=document.get("recovery_window_seconds"),
+                validation_mode=document.get("validation_mode"),
             )
             configuration.validate()
             return configuration
@@ -114,6 +131,8 @@ class ConfigurationStore:
             document["output_directory"] = str(configuration.output_directory)
         if configuration.recovery_window_seconds is not None:
             document["recovery_window_seconds"] = configuration.recovery_window_seconds
+        if configuration.validation_mode is not None:
+            document["validation_mode"] = configuration.validation_mode
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary: Path | None = None
         try:
@@ -173,6 +192,18 @@ def configured_recovery_window_seconds(value: str) -> int:
     except ValueError:
         parsed = value
     return validate_recovery_window_seconds(parsed)
+
+
+def validate_validation_mode(value: object) -> str:
+    """Return a supported validation-mode value with strict type semantics."""
+    if type(value) is not str or value not in VALIDATION_MODES:
+        raise ConfigurationError("validation_mode must be one of: standard, deep")
+    return value
+
+
+def configured_validation_mode(value: str) -> str:
+    """Validate one CLI validation-mode setting value."""
+    return validate_validation_mode(value)
 
 
 def resolve_recording_output(output: str | Path, configuration: Configuration) -> Path:

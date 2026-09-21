@@ -287,6 +287,10 @@ def test_parent_root_never_batch_finalizes_even_with_one_candidate(tmp_path: Pat
 
 def test_finalize_implies_validation_and_json_reports_outcome(tmp_path: Path) -> None:
     directory, output = make_session(tmp_path)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({
+        "schema_version": 1, "validation_mode": "deep",
+    }), encoding="utf-8")
     validator = Validator(directory)
     stdout = StringIO()
 
@@ -295,7 +299,7 @@ def test_finalize_implies_validation_and_json_reports_outcome(tmp_path: Path) ->
         return destination
 
     code = main(
-        ["recover", str(directory), "--finalize", "--json"],
+        ["--config", str(config), "recover", str(directory), "--finalize", "--json"],
         recovery_discoverer=discover, validator=validator, finalizer=finalizer,
         stdout=stdout,
     )

@@ -705,6 +705,17 @@ output behavior are unchanged. Service restart is required after configuration
 changes. Validation and logging defaults remain future v0.8 slices, and v0.8.0
 is not yet a release candidate.
 
+**Fourth slice completed (2026-09-21, issue #26):** Strict schema-1 configuration
+now optionally persists `validation_mode` as `standard` or `deep` for the
+explicit `tikrec validate` command. Mutually exclusive `--deep` and `--standard`
+flags override configuration without reading it; otherwise configuration
+precedes the built-in standard default. Standard/deep validation semantics and
+result reporting are unchanged. Guided `recover --validate` and the pre/post
+checks used by `recover --finalize` remain fixed to their standard safety path
+and never inherit this preference. Automatic post-recording validation was not
+added. Logging defaults remain the next v0.8 configuration slice, and v0.8.0 is
+not yet a release candidate.
+
 ### v0.9.0 — Creator monitoring and automatic recording
 
 **Goal:** Let the owner explicitly configure public creators to monitor. Detect
