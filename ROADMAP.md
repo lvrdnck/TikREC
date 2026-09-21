@@ -406,9 +406,9 @@ safe bound median was 0.366 seconds (0.297--0.408), direct room/info was 0.324
 (0.275--0.379), and median account-verification overhead was 0.044 seconds
 (-0.076--0.104). This is 0.576 seconds below issue #18's comparable 0.942-
 second pre-implementation bound median. Offline tests pass 774 tests plus 19
-subtests. No media was opened and no disconnect was manufactured, so a natural
-ordinary-reconnect validation remains required and issue #19 stays open. v0.6.0
-remains untagged/unpublished with no release action authorized.
+subtests. No media was opened and no disconnect was manufactured, so at that
+checkpoint a natural ordinary-reconnect validation remained outstanding. v0.6.0
+remained untagged/unpublished with no release action authorized.
 
 Commit `60d55cb` is now deployed through the existing Windows Scheduled Task.
 The authorized Zoraida validation session
@@ -420,8 +420,8 @@ FLV and 2,191.564-second H.264/AAC MP4 validate, including a passing deep output
 decode. Two recovered in-connection timestamp replays produce matching DTS
 warnings but no decoder failure and remain separate issue #8 evidence. Because
 the run contained zero ordinary media reconnects, it proves deployed capture and
-room-end health but not the issue #19 acceptance gate. Issue #19 stays open and
-no disconnect was manufactured.
+room-end health but did not supply the original issue #19 ordinary-reconnect
+sample. No disconnect was manufactured.
 
 The active issue #8 `luhpollisecret` session later supplied a successful
 media-bearing connection 1-to-2 recovery on the same deployed code, but it also
@@ -439,8 +439,7 @@ Connection 2-to-3 was also classified `network_recovery`: its 7.522-second gap
 contained 5.992 seconds of tail, 1.034 seconds of failure backoff, 0.397 seconds
 of resolution, 0.070 seconds of HTTP setup, 0.030 seconds of initial media, and
 no keyframe gate. The completed analyzer reports two recovery reconnects and zero
-ordinary reconnects. Issue #19 therefore stays open for its specifically required
-ordinary reconnect.
+ordinary reconnects. They therefore did not meet the original gate wording.
 
 **Media-integrity sequencing decision (2026-09-21):** Issue #19's natural
 ordinary-reconnect validation was intentionally paused while issue #8 received
@@ -530,10 +529,31 @@ as a release prerequisite is disproportionate to the remaining risk.
 No replay-with-raw-copy sample was captured. A future retained replay absent from
 matching raw timestamps/tags, any raw-versus-retained payload/order divergence,
 or a reproducible TikREC-only decoder failure would make this a correctness
-blocker again. Issue #19 remains separate and open: Luhpol's two classified
-network recoveries do not satisfy its outstanding ordinary-reconnect gate, which
-is the remaining v0.6.0 release-validation item. v0.6.0 remains untagged and
-unpublished.
+blocker again. v0.6.0 remains untagged and unpublished.
+
+**Issue #19 rare-evidence reassessment (2026-09-21):** Outcome C applies and the
+issue is complete. No qualifying post-change ordinary reconnect was captured,
+and Luhpol's persisted evidence cannot prove fast-result acceptance rather than
+fallback. That missing proof is useful for exact end-to-end timing but no longer
+represents a meaningful safety or correctness risk. The production resolver
+benchmark directly exercised fast acceptance, preserved account verification,
+and reduced same-room bound resolution from 0.942 to 0.366 seconds. Comprehensive
+offline tests cover same-room success, different-room/live-changed handling,
+saved-room-only offline evidence, malformed/conflicting/request-failure fallback,
+three-observation confirmation, and fail-closed identity behavior. Zoraida then
+proved deployed natural-end/finalization behavior. Luhpol's two natural deployed
+network recoveries invoked the same established resolver, successfully reopened
+same-room media, measured 0.419/0.397-second resolution consistent with the
+optimized path, and produced validated retained/final output without a reconnect
+regression. The distinction between those recovery boundaries and `ordinary`
+lies in their preceding tail/backoff classification, not a different resolver.
+
+Future evidence should create a new blocker only if it demonstrates an accepted
+identity conflict, wrong offline/live-changed decision, unsafe fallback, media-
+open/reconnect regression, or recurring material resolver slowdown. With #8
+non-blocking and #19 complete, no demonstrated v0.6.0 release-validation blocker
+remains. Publication still requires separate owner authorization and the normal
+immutable tag/GitHub Release checklist; this reassessment creates neither.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

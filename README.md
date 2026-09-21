@@ -73,8 +73,12 @@ of local/backoff. Failure/outage backoff, patient recovery, room-end confirmatio
 and fresh resolution/writer safety are unchanged. Later paired live evidence
 showed the serial page/account discovery dominated resolution, so established
 reconnects now overlap saved-room refresh with account verification while initial
-resolution and all retry/media policies stay unchanged. A natural ordinary
-reconnect on this implementation remains required before release reconsideration.
+resolution and all retry/media policies stay unchanged. Read-only live benchmarks
+prove the optimized same-room branch, and two natural deployed network recoveries
+subsequently reopened media through the same established resolver without an
+identity, room-end, media-open, or output regression. No post-change `ordinary`
+sample was captured; that narrower timing sample is useful but not a correctness
+prerequisite.
 
 An open media connection that delivers no bytes for 30 seconds is treated as a
 stall. Live capture records a `stalled` connection outcome and reconnects under

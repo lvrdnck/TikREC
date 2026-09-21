@@ -288,8 +288,12 @@ changes only the established bound resolver: saved-room room/info and public
 account lookup run concurrently, and the transport is accepted only when both
 prove the saved live room. Initial resolution and retry, backoff, media-open,
 writer, finalization, room-end, and rendition policies remain unchanged. Read-
-only live measurement reduced the bound median from 0.942 to 0.366 seconds; a
-natural ordinary media reconnect is still required before release reconsideration.
+only live measurement reduced the bound median from 0.942 to 0.366 seconds.
+Zoraida then proved deployed natural-end behavior, and Luhpol supplied two natural
+media-bearing network recoveries through the same established resolver at 0.419
+and 0.397 seconds. No qualifying `ordinary` reconnect occurred, but the rare-
+evidence reassessment found no remaining safety or correctness risk that justifies
+making that exact timing classification a release prerequisite.
 
 Remote stop during recovery commits stop intent and prevents capture even if
 same-room resolution is finishing. Stop/shutdown wakes patient waits immediately

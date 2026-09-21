@@ -462,8 +462,7 @@ their sum. Its 0.366-second median is 0.576 seconds below issue #18's comparable
 pre-implementation 0.942-second median, while retaining current account
 verification. Slayyyboo22 remained offline and was not sampled further. The
 benchmark opens no media and proves resolver behavior only; no natural ordinary
-media reconnect occurred, so that required production validation remains
-outstanding and issue #19 stays open.
+media reconnect occurred in that benchmark.
 
 Normal deployment validation ran from `60d55cb` through the existing Scheduled
 Task service, without changing service architecture. Zoraida session
@@ -488,8 +487,30 @@ HE, 432x864, 25 fps, and 48 kHz stereo. SHA-256 is
 `FEED2FCBD452C240C82053A5A9622E1D9247F33F5F28405562EE56E234037A47` for the FLV,
 and `C19A800CA40F283E56123FB897991BA4A74F5F39D88DD7FDA21C04FED776AE2F` for
 `connections.jsonl`. No remote stop, service restart, network change, or other
-manufactured failure was used. The natural ordinary-reconnect gate remains
-outstanding, so issue #19 stays open.
+manufactured failure was used.
+
+Luhpol session `c5c070f3-93a3-4c13-be63-f7109fc6e974` later supplied two natural
+media-bearing reconnects on the same deployed code. Both are correctly classified
+`network_recovery`, not `ordinary`, because the prior connections ended with
+`IncompleteRead(0 bytes read)` and entered explicit recovery. They nevertheless
+invoke the same established bound resolver used after a healthy close. Both
+retained media before and after the boundary with the same canonical room and
+`hd1`/`flv_pull_url` source; the first resolution took 0.419 seconds and the
+second 0.397 seconds, consistent with the 0.366-second optimized live benchmark.
+Adjacent media and final output validation found no reconnect regression.
+
+The connection schema cannot prove whether either recovery accepted the fast
+candidate or conservatively used the full fallback, and no qualifying ordinary
+reconnect was captured. The 2026-09-21 rare-evidence reassessment closed issue
+#19 because that missing branch marker and exact healthy-close timing sample no
+longer represent a material correctness or safety risk. The production benchmark
+directly proves fast-path acceptance and its request sequence; offline tests prove
+same-room acceptance, different-room handling, saved-room-only offline evidence,
+malformed/conflicting/failure fallback, and fail-closed behavior; Zoraida proves
+deployed three-observation room end; and Luhpol proves deployed media reopening.
+A future identity mismatch accepted as same-room, incorrect offline/live-changed
+decision, unsafe fallback, media-open regression, or recurring material resolver
+slowdown should be filed as a new correctness issue.
 
 ## Raw copy and byte-arrival evidence
 

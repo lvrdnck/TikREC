@@ -7,17 +7,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. Issue #8 remains open
-  as a non-blocking, opportunistic evidence target after the rare-evidence
-  reassessment: no current TikREC parser/writer corruption is demonstrated, but
-  a future natural timestamp replay with matching raw bytes would still resolve
-  the historical replay-specific attribution question. Issue #19 remains open
-  and intentionally paused after implementation and deployed natural-end
-  validation; its natural ordinary-reconnect gate is the only outstanding v0.6.0
-  release-validation item. Issue #13 remains open, paused/non-blocking, and
-  opportunistic. Issue #16 is closed because routine release bookkeeping no
-  longer requires a dedicated issue; v0.6.0 remains untagged and unpublished,
-  and no release action is authorized.
+- **Active issue/task:** No implementation task is active, and no demonstrated
+  v0.6.0 release-validation blocker remains. Issue #19 is complete and closed
+  after its rare-evidence reassessment. Issue #8 remains open as a non-blocking,
+  opportunistic evidence target: no current TikREC parser/writer corruption is
+  demonstrated, but a future natural timestamp replay with matching raw bytes
+  would still resolve the historical replay-specific attribution question.
+  Issue #13 likewise remains open, paused/non-blocking, and opportunistic. Issue
+  #16 is closed because routine release bookkeeping no longer requires a
+  dedicated issue. v0.6.0 remains untagged and unpublished, and no release action
+  is authorized by this reassessment.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -52,7 +51,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   seconds and 0.587 seconds saved (0.458--1.085 range). All bound paths invoked
   page + account lookup + room/info. Slayyyboo22 ended before paired sampling.
   The result is material and supports issue #19, not release publication.
-- **Paused issue #19 implementation:** Established bound resolution now overlaps a
+- **Completed issue #19 implementation and validation:** Established bound resolution now overlaps a
   saved-room room/info refresh with the public account lookup. It accepts the
   fresh transport only when both independently identify the saved live room;
   every offline, malformed, conflicting, failed, or otherwise insufficient
@@ -67,10 +66,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   retained 288,436,284 bytes in one FLV and produced a 288,187,757-byte,
   2,191.564-second H.264/AAC 432x864 MP4; session, standard output, and deep
   output validation pass. Its only reconnect allocation was the media-free
-  terminal room-end check, so real ordinary-reconnect validation remains
-  outstanding. Do not revert or disable the deployed implementation; only its
-  remaining validation is paused. The later `luhpollisecret` media-bearing
-  connection 1-to-2 recovery does not complete that gate: the analyzer classifies
+  terminal room-end check. The later `luhpollisecret` media-bearing connection
+  1-to-2 recovery is not an `ordinary` sample: the analyzer classifies
   it as `network_recovery` after `IncompleteRead(0 bytes read)` and an explicit
   recovery boundary, not an ordinary healthy-close reconnect. It retained media
   on both sides with the same room, `hd1`/`flv_pull_url`, codec configuration,
@@ -82,8 +79,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   Connection 2-to-3 was a second `network_recovery`, not an ordinary reconnect;
   its 7.522-second gap included 5.992 tail, 1.034 failure backoff, 0.397 resolution,
   0.070 HTTP setup, 0.030 initial media, and zero keyframe gate. The completed
-  analyzer therefore reports two recovery reconnects and zero ordinary reconnects,
-  so issue #19 stays open.
+  analyzer therefore reports two recovery reconnects and zero ordinary reconnects.
+  Both nevertheless ran the deployed established resolver, retained same-room
+  media successfully, and measured 0.419/0.397-second resolution, consistent
+  with the optimized 0.366-second benchmark. Persisted connection evidence does
+  not prove fast-result acceptance versus fallback, and no qualifying ordinary
+  reconnect was captured. Under the rare-evidence rule this missing branch marker
+  and exact healthy-close timing sample do not represent a meaningful remaining
+  safety risk: the production resolver benchmark directly proves fast-path
+  acceptance, comprehensive offline tests prove fallback and identity semantics,
+  Zoraida proves deployed natural-end behavior, and Luhpol proves two deployed
+  media-bearing reconnects. No regression is evident. Issue #19 is closed; a
+  future identity, fallback, room-end, media-open, or reconnect regression should
+  be filed as a new correctness issue.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -195,12 +203,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None. Keep v0.6.0 publication paused; do not create its
-  tag or GitHub Release.
-- **Next queued task:** Issue #19 remains the outstanding v0.6.0 release-validation
-  item. Resume its read-only validation only when normal use supplies a qualifying
-  ordinary reconnect; do not manufacture one. Issue #8 can collect matching raw
-  replay evidence opportunistically without blocking that work.
+- **Pending owner action:** Separately authorize release bookkeeping before any
+  immutable v0.6.0 tag or GitHub Release is created. This task does not authorize
+  publication.
+- **Next queued task:** No implementation task is queued. If separately authorized,
+  perform the v0.6.0 release checklist from the current candidate; otherwise let
+  issues #8 and #13 collect evidence opportunistically. Do not start v0.6.5 or
+  v0.7 from this reassessment.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -219,7 +228,8 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release remain synchronized. Historical
   v0.3.0, v0.3.1, and v0.4.0 releases remain published from their existing tags.
 - **Release candidate:** v0.6.0 reconnect-gap measurement/reduction is prepared
-  but remains untagged and unpublished; it is not yet the current released version.
+  and has no remaining demonstrated release-validation blocker, but remains
+  untagged and unpublished; it is not yet the current released version.
 
 ## Issue #13 rendition investigation
 
