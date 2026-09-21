@@ -448,8 +448,17 @@ was restarted. The task retained its executable, arguments, working directory,
 and security architecture. The restarted service is healthy, available, idle,
 and free of stale recovery; it loads the current checkout, exposes
 `remote start --raw-copy`, and reports `raw_copy_enabled=false` for the prior
-completed non-diagnostic job. No recording was started. Issue #8 now waits for
-an owner-provided public LIVE to exercise this deployed opt-in naturally.
+completed non-diagnostic job. No recording was started during deployment; the
+deployed opt-in was then ready for an owner-provided public LIVE.
+
+The owner-authorized `promi.streams` raw-copy validation started normally on
+2026-09-21 as session `e4aa8dc4-532c-42ce-96fa-76596df0a2a9`, room
+`7687931142670682901`. Its first checkpoint remained on healthy connection 1
+with zero reconnects, advancing writer and raw-arrival evidence, no recovery or
+error state, and no finalized output. No closed connection/replay record exists
+yet. The session remains running undisturbed; the next #8 action is to reinspect
+this same session and compare byte-level evidence only if a natural replay is
+retained.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
