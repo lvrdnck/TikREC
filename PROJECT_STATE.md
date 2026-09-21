@@ -95,10 +95,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   replays (video 1,480 and audio 1,399 timestamp units) whose two packet-DTS
   warnings match the connection evidence; its FLV decodes and finalized MP4
   deep-validates. No raw copy exists, so origin remains unproven and this is not
-  attributed to #19. Issue #9's implementation already preserves incremental
-  raw reads and linked arrival sidecars, with diagnostic failures non-fatal; it
-  is supporting evidence work rather than a separate active implementation
-  defect. Issue #13 remains paused/non-blocking.
+  attributed to #19. The completed Promi raw-copy session recorded zero timestamp
+  replays, so it does not answer the replay-specific attribution question. It did
+  expose four H.264 decoder failures already present at matching timestamps and
+  payload hashes in the raw source; all 158,062 retained media-and-later tags match
+  raw payload/type/order exactly after one timestamp rebase. This establishes
+  upstream provenance for separate non-replay malformed media, not a TikREC
+  writer divergence. Issue #9's incremental raw/arrival implementation is now
+  real-validated and closed. Issue #13 remains paused/non-blocking.
 - **Issue #8 diagnostic readiness:** Normal remote capture now has an explicit
   `remote start --raw-copy` opt-in. The service co-locates raw connections and
   arrival sidecars in the matching `.parts` directory, persists the opt-in for
@@ -111,25 +115,27 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   replay/source comparison is still pending.
   Focused coverage passes 197 tests plus 2 subtests; the full offline suite
   passes 785 tests plus 19 subtests, and unittest discovery passes 204 tests.
-- **Active issue #8 validation:** Owner-authorized `promi.streams` session
+- **Completed issue #8 validation opportunity:** Owner-authorized `promi.streams` session
   `e4aa8dc4-532c-42ce-96fa-76596df0a2a9`, canonical room
-  `7687931142670682901`, is recording through the deployed normal service at
+  `7687931142670682901`, ran through the deployed normal service at
   `C:\Users\Leandro\Videos\promi-streams-v060-issue8-raw-replay-validation-20260921.mp4`
-  with `raw_copy_enabled=true`. At the 626.089-second checkpoint it remained on
-  healthy connection 1 with 79,585,054 writer bytes, zero reconnects, no
-  recovery/error/stop state, and no final output. The raw file and linked arrival
-  sidecar exist; 14,505 arrival records covered 78,162,444 received bytes through
-  614.375 seconds. A read-only scan of the 78,157,158-byte persisted writer
-  prefix reached a clean tag boundary after 28,899 tags and found zero timestamp
-  replays. The active connection has not closed, so no `connections.jsonl`
-  replay record exists yet. The session was left running without manufactured
-  faults or interruption.
-- **Pending owner action:** None during healthy capture. Keep v0.6.0 publication
-  paused; do not create its tag or GitHub Release.
-- **Next queued task:** Reinspect this same active raw-copy session. Preserve and
-  compare raw/retained evidence if a natural timestamp replay is recorded; if it
-  remains healthy without a replay, leave it running. Do not substitute another
-  creator, manufacture corruption/faults, or resume #19.
+  with `raw_copy_enabled=true` and ended naturally. Connection 1 retained one
+  435,598,545-byte FLV after source EOF left an 861-byte incomplete raw-tag tail;
+  three status-4 observations then confirmed room end and connection 2 retained
+  no media. Session/finalization state is completed, uninterrupted, error-free,
+  and `recovery_reason=room_ended`. The 435,356,044-byte, 3,283.875-second
+  H.264/AAC 720x1280 MP4 passes normal validation but, like the retained FLV and
+  untouched raw source, fails deep H.264 decoding at four source-identical frames.
+  Stored FLV and MP4 DTS are strictly increasing. Arrival evidence contains
+  79,810 contiguous byte records covering all 435,600,600 raw bytes, including a
+  3,799-byte final read followed seven seconds later by `read_end=eof`; this
+  completes issue #9's real boundary requirement. No fault was manufactured.
+- **Pending owner action:** Provide another suitable normal public LIVE opportunity
+  when ready. Keep v0.6.0 publication paused; do not create its tag or GitHub
+  Release.
+- **Next queued task:** Start only a separately owner-authorized raw-copy session
+  and preserve it until a natural timestamp replay supplies matching raw evidence.
+  Do not manufacture corruption/faults or resume #19.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

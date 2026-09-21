@@ -543,6 +543,18 @@ directory. Without the flag, remote capture performs no raw copy. This is the
 issue-#8 workflow and roughly doubles media storage; it does not alter retry,
 parser, writer, finalization, or default capture behavior.
 
+Real validation on 2026-09-21 used owner-authorized Promi session
+`e4aa8dc4-532c-42ce-96fa-76596df0a2a9`. Its arrival sidecar has 79,810
+contiguous byte records whose ranges cover all 435,600,600 raw bytes exactly;
+read sizes include 1-byte fragments and a final 3,799-byte read. A
+`read_end=eof` record follows that last arrival by seven monotonic seconds. The
+raw stream ends 861 bytes into an incomplete FLV tag with 192 bytes still
+missing, while TikREC's retained FLV ends at the preceding complete tag. This
+proves incremental final-read retention and distinguishes the observed EOF from
+an application waiting to fill the former 64 KiB buffer; issue #9's real-world
+evidence requirement is complete. It does not prove TCP packet timing or media
+that might have existed beyond the source EOF.
+
 ## Rendition and part facts
 
 Each live connection records `rendition_label` (the selection's normalized,

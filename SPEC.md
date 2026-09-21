@@ -832,6 +832,19 @@ sufficient explanation. Without a simultaneous raw copy, the evidence cannot
 distinguish malformed CDN bytes from corruption introduced while parsing or
 writing them.
 
+The 2026-09-21 Promi raw-copy validation supplied a complete comparison but no
+timestamp replay. Its raw source and retained FLV both contain zero replay
+events. From the first retained media tag onward, all 158,062 payloads, tag
+types, and ordering are identical; timestamps differ only by the writer's
+2,572,297-unit base subtraction, and the raw AVC/AAC configuration payloads are
+the retained configurations. Four H.264 decoder failures reproduce in the raw
+source at the exact corresponding payload hashes and at timestamps 2,572.297
+seconds above the retained timeline. TikREC therefore did not introduce this
+separate non-replay malformed media. The source's final incomplete tag produces
+additional raw-only tail errors and is correctly absent from the retained FLV.
+This proves that upstream corruption can occur without a replay, but it does not
+answer the replay-specific source-attribution question, which remains open.
+
 The writer's independently-decodable-part guarantee does not currently hold
 across a timestamp replay. Retaining replayed tags is containment that
 preserves evidence for finalization and investigation; the failure is

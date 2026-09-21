@@ -236,9 +236,10 @@ environment-survival/resumability work. Annotated tag `v0.5.0` (tag object
 `7e65248bb4061cf74e84986314db0b6b16d5fc02`; the non-draft, non-prerelease
 GitHub Release `TikREC v0.5.0` was published on 2026-09-19.
 
-Issues #9 and #8 remain open for rare real stall/replay evidence, and issue #13
-is intentionally paused pending an opportunistic distinct-rendition encounter.
-Those evidence investigations did not block v0.5 readiness. Patient recovery uses
+Issue #8 remains open for rare real replay evidence, while issue #9's later
+natural final-read/EOF validation completed its incremental raw-arrival work.
+Issue #13 is intentionally paused pending an opportunistic distinct-rendition
+encounter. Those evidence investigations did not block v0.5 readiness. Patient recovery uses
 a 15-minute window and waits of 1, 2, 5, 10, 10, then 30 seconds; reconnect-gap
 measurement and reduction were deliberately deferred to v0.6.
 
@@ -428,8 +429,8 @@ ordinary-reconnect validation is intentionally paused; its implemented and
 deployed identity-safe fast path remains current code. Issue #8 is now the single
 active release-blocking investigation, while issue #16 stays paused and issue
 #13 stays paused/non-blocking. Issue #9's incremental raw-byte preservation,
-linked arrival sidecars, and non-fatal diagnostic failure behavior are already
-implemented and support #8 rather than constituting a separate active defect.
+linked arrival sidecars, and non-fatal diagnostic failure behavior support #8;
+the Promi evidence below later completed its real-world validation.
 
 The normal remote service previously had no way to request those diagnostics.
 It now accepts only a boolean `remote start --raw-copy` opt-in, co-locates raw
@@ -453,15 +454,25 @@ deployed opt-in was then ready for an owner-provided public LIVE.
 
 The owner-authorized `promi.streams` raw-copy validation started normally on
 2026-09-21 as session `e4aa8dc4-532c-42ce-96fa-76596df0a2a9`, room
-`7687931142670682901`. Its first checkpoint remained on healthy connection 1
-with zero reconnects, advancing writer and raw-arrival evidence, no recovery or
-error state, and no finalized output. No closed connection/replay record exists
-yet. A later 626.089-second checkpoint reached 79,585,054 writer bytes; 14,505
-arrival records covered 78,162,444 raw bytes, and a read-only scan found zero
-timestamp replays across 28,899 complete tags in the 78,157,158-byte persisted
-writer prefix. The session remains running undisturbed; the next #8 action is to
-reinspect this same session and compare byte-level evidence only if a natural
-replay is retained.
+`7687931142670682901`, and later ended naturally. A source EOF left an incomplete
+raw FLV tag, then three status-4 checks confirmed room end and finalization
+completed without interruption or service error. The one retained FLV and raw
+source contain zero timestamp replays. From the first retained media tag onward,
+all 158,062 tag payloads, types, and ordering match the raw source exactly and
+timestamps differ only by the expected 2,572,297-unit rebase. Four H.264 decoder
+failures occur at matching raw/retained frames and payload hashes, establishing
+upstream provenance for this separate non-replay malformed media. The standard
+MP4 check passes, while retained-session and deep MP4 validation honestly fail on
+those same decoder errors; FLV and MP4 stored DTS remain strictly increasing.
+
+The arrival sidecar contains 79,810 contiguous byte records covering all
+435,600,600 raw bytes. It preserved reads from 1 to 16,384 bytes, including the
+final 3,799-byte read, then recorded `read_end=eof` seven seconds later. The raw
+parser proves an 861-byte incomplete final tag with 192 bytes missing, while
+TikREC retained the complete 435,598,545-byte prefix. This natural boundary is
+the real-world evidence issue #9 required, so #9 is complete. Issue #8 remains
+open because the session supplied no replay to attribute; another natural
+raw-copy replay opportunity is still required.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
