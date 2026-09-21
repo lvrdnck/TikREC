@@ -132,10 +132,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   session `c5c070f3-93a3-4c13-be63-f7109fc6e974`, canonical room
   `7687950152400816913`, is recording through the normal deployed service at
   `C:\Users\Leandro\Videos\luhpollisecret-v060-issue8-raw-replay-validation-20260921.mp4`
-  with `raw_copy_enabled=true`. Its first connection is healthy, writer/raw/arrival
-  evidence is progressing, and the initial checkpoint has zero reconnects with no
-  recovery, stop, interruption, or error state. It was left running normally; no
-  fault or replay was manufactured.
+  with `raw_copy_enabled=true`. Connection 1 ended naturally after an
+  `IncompleteRead(0 bytes read)` and retained ten parts plus 161,769,336 raw
+  bytes; all ten part records report zero timestamp replays. The service recovered
+  normally into connection 2 without operator action. At the latest read-only
+  checkpoint it remains active and error-free with one reconnect, 15 completed
+  parts, 382,779,526 retained bytes, and growing connection-2 raw/arrival evidence
+  (about 221 MB and 33,287 records). An independent read-only timestamp scan of
+  completed parts 1--15 found no replay. The session was left running normally;
+  no fault, replay, stop, or restart was manufactured, so issue #8's replay-specific
+  raw-versus-retained acceptance criterion remains outstanding.
 - **Pending owner action:** None while the current validation session remains
   active. Keep v0.6.0 publication paused; do not create its tag or GitHub Release.
 - **Next queued task:** Reinspect the existing `luhpollisecret` session without
