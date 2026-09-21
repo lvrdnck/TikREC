@@ -810,6 +810,28 @@ safety, notifications, a structured recording catalog, a usable web/playback
 experience, search/analytics, richer LIVE data, and only then optional
 multi-user/public-product capabilities.
 
+## Future commercial/public product direction
+
+This is a deliberately separate product-direction note, not current TikREC
+scope, a versioned release commitment, or an active issue. If the product ever
+passes the legal and platform-policy gate for broader distribution, a hosted
+commercial/public service would likely need:
+
+- hosted accounts, authentication, billing, subscriptions, permissions, and
+  tenant administration;
+- cloud recording workers that can run jobs independently of an owner's PC;
+- durable object storage and a CDN for retained media, playback, and delivery;
+- explicit quotas, retention policies, lifecycle controls, and cost protection;
+- production operations, observability, incident response, abuse prevention,
+  privacy controls, security reviews, and data-governance processes; and
+- a documented legal, privacy, copyright, terms-of-service, and platform-policy
+  review before public launch or paid service operation.
+
+Current TikREC should only avoid needless future blockers in its boundaries,
+data model, and evidence handling. It should not build hosted infrastructure,
+commercial account systems, cloud workers, or public-service operations now;
+those belong to a separately authorized future product stage.
+
 ### Permanent boundaries
 
 - No authentication, CAPTCHA, entitlement, access-control, or private-signing
