@@ -201,6 +201,23 @@ reconciliation are implemented. Repeat real process-restart/outage deployment
 validation passed, as did final graceful-stop/finalization and deep-output
 validation. Package version is 0.6.0; the manifest schema remains 1.
 
+## Read-only recovery discovery (v0.7.0 development)
+
+`tikrec recover ROOT` inspects either one explicit parts directory or only the
+immediate `*.parts` children of an explicit recording root. It never recursively
+searches a drive. Discovery reuses the supported manifest schema, strict retained-
+part framing/numbering, connection evidence, output declaration, and completed-
+output media facts. It reports plain-language lifecycle/finalization state and
+whether a later recovery action can be suggested safely.
+
+Discovery does not update this manifest or any media/recovery artifact. A
+`recording` or `running` state may still be active and is left untouched. Missing,
+malformed, duplicate, changing, partial, symlinked, or conflicting evidence also
+fails closed. Legacy parts without `session.json` remain manually finalizable,
+but discovery cannot infer their session identity or intended output safely.
+This first v0.7 slice does not automatically validate with FFprobe, finalize,
+repair, resume, or overwrite anything; manual `tikrec finalize` remains available.
+
 ## Validation
 
 `tikrec validate` accepts either `session.json` or its containing directory. It

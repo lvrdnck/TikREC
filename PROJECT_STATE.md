@@ -7,9 +7,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active, and no demonstrated
-  release blocker remains. Issue #19 is complete and closed
-  after its rare-evidence reassessment. Issue #8 remains open as a non-blocking,
+- **Active issue/task:** No implementation task is active. Issue #20 is complete
+  and closed after the first v0.7.0 slice: bounded, read-only discovery and
+  classification through `tikrec recover`. No demonstrated release blocker
+  exists. Issue #19 is complete and closed after its rare-evidence reassessment.
+  Issue #8 remains open as a non-blocking,
   opportunistic evidence target: no current TikREC parser/writer corruption is
   demonstrated, but a future natural timestamp replay with matching raw bytes
   would still resolve the historical replay-specific attribution question.
@@ -204,10 +206,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Select the v0.7.0 guided interrupted-session recovery
-  slice when implementation work resumes. The conditional v0.6.5 redundant-
-  capture release is not selected; issues #8 and #13 continue to collect evidence
-  opportunistically. No v0.6.5 or v0.7 implementation began during publication.
+- **Next queued task:** After issue #20, scope the next narrow v0.7.0 guided
+  validation/repeat-finalization slice. The conditional v0.6.5 redundant-capture
+  release is not selected; issues #8 and #13 continue to collect evidence
+  opportunistically.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -224,9 +226,10 @@ new work; calendar entries are reminders only.
 - **Current released version:** v0.6.0; its release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
-- **Development target:** v0.7.0 guided interrupted-session recovery is the next
-  roadmap candidate and has not begun. Conditional v0.6.5 redundant capture is
-  not selected.
+- **Development target:** v0.7.0 guided interrupted-session recovery has
+  completed its first read-only discovery/classification slice through issue
+  #20, but remains unreleased. Conditional v0.6.5 redundant capture is not
+  selected.
 
 ## Issue #13 rendition investigation
 

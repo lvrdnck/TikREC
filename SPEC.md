@@ -719,6 +719,26 @@ honors the explicit path while this repository's ignore rules prevent its normal
 artifacts from being staged accidentally. User-selected raw-copy directories
 outside ignored paths remain the user's storage responsibility.
 
+### tikrec/recovery_discovery.py - guided recovery discovery
+
+The first v0.7 slice adds `tikrec recover ROOT` as a read-only classification
+step. Because TikREC has no global recording root, callers must name one parts
+directory or a bounded recording root; only immediate `*.parts` children are
+considered and discovery never recurses. The classifier reuses schema-1 manifest,
+contiguous completed-part/framing, connection-log, declared-output, and completed-
+output media invariants. It reports safe stored identity only: source type and
+canonical room ID where present, never a guessed creator or signed transport URL.
+
+Completed output, safely repeatable manual finalization, possibly active work,
+and incomplete/conflicting evidence are distinct results. A recording/finalizing
+state is never presumed stale. Writer/encoder partials, missing or malformed
+manifests, path/count/log conflicts, symlinks, output-state contradictions, and
+evidence that changes during inspection remain untouched and receive no recovery
+action. The command does not run FFmpeg, decode every retained part, modify a
+manifest, resume capture, repair media, or perform finalization. Structured JSON
+contains the same facts as the plain-language report. Later v0.7 slices may build
+validated recovery actions on this conservative discovery boundary.
+
 ## Testing
 
 Unit tests run offline with no network and no live stream. Network

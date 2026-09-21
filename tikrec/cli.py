@@ -17,6 +17,8 @@ from .finalize import finalize_parts
 from .live import capture_live
 from .manifest import SessionManifest
 from .progress import LiveProgress
+from .recovery_cli import add_recovery_command, run_recovery_command
+from .recovery_discovery import discover_recovery_candidates
 from .remote import RemoteError
 from .service import serve
 from .tiktok import TikTokResolutionError, resolve_live_url
@@ -32,6 +34,7 @@ def main(
     resolver: Callable[[str], str] = resolve_live_url,
     finalizer: Callable[..., Path] = finalize_parts,
     validator: Callable[..., ValidationResult] = validate_target,
+    recovery_discoverer: Callable = discover_recovery_candidates,
     service_runner: Callable = serve,
     remote_opener: Callable | None = None,
     stdout: TextIO = sys.stdout,
@@ -64,6 +67,11 @@ def main(
             else:
                 print(render_validation(result), file=stdout)
             return 0 if result.passed else 1
+
+        if arguments.command == "recover":
+            return run_recovery_command(
+                arguments, stdout, discoverer=recovery_discoverer
+            )
 
         output_path = Path(arguments.output)
         if arguments.command == "finalize":
@@ -264,7 +272,8 @@ def _parser() -> argparse.ArgumentParser:
     validate.add_argument("target", metavar="TARGET")
     validate.add_argument("--deep", action="store_true", help="fully decode completed output")
     validate.add_argument("--json", action="store_true", help="print structured results")
-    for command in (record, finalize, resolve, live, validate):
+    recover = add_recovery_command(subcommands)
+    for command in (record, finalize, resolve, live, validate, recover):
         # Accept the global diagnostic flag after a subcommand as well.
         command.add_argument("--debug", action="store_true", default=argparse.SUPPRESS)
     return parser

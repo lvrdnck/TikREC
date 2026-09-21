@@ -15,6 +15,7 @@ workflows are product direction, but they are not commands or service features t
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
+    tikrec recover ROOT [--json]
     tikrec validate TARGET [--deep] [--json]
     tikrec serve [--host IP] [--port PORT] [--token-file FILE]
     tikrec remote health --server URL [--token-file FILE]
@@ -33,6 +34,17 @@ takes a direct FLV URL and is source-agnostic.
 otherwise stopped recording. It preserves those parts and refuses to overwrite
 an existing output file. `validate` inspects an output file, parts directory,
 or session without changing it.
+
+`recover` is the first read-only step of guided interrupted-session recovery.
+Give it one `*.parts` directory, or a recording root whose immediate children
+are `*.parts` directories. It does not recurse or search the whole disk. TikREC
+reports stored session/source identity, intended output, retained-part count,
+lifecycle/finalization state, evidence consistency, and the safest next action.
+It never finalizes, resumes, repairs, renames, deletes, or updates inspected
+artifacts. Active, changing, partial, malformed, or conflicting evidence is
+left untouched. `--json` provides the same facts for tools. Creator usernames
+are not stored in the session manifest, so TikREC reports the source type and
+canonical room ID when available instead of guessing from filenames.
 
 Initial LIVE-page HTTP 404 remains a resolution failure. After TikREC has retained
 media and a canonical room ID, reconnect resolution overlaps a direct public

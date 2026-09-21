@@ -606,6 +606,17 @@ replay defect rather than a mitigation of it.
 repeat finalization, and record outcomes. Keep manual `tikrec finalize` available
 throughout. Recovery cannot reconstruct media TikTok never delivered.
 
+**First slice completed (2026-09-21, issue #20):** `tikrec recover ROOT` now
+discovers one explicit parts directory or immediate `*.parts` children and
+classifies them without mutation. It reports stored session/source/output facts,
+retained-part count, lifecycle/finalization state, output availability, evidence
+consistency, and a plain-language safe next action, with equivalent `--json`
+output. Existing manifest, retained-part, connection, and completed-output rules
+drive classification. Active/running, partial, malformed, changing, symlinked,
+or conflicting evidence fails closed and remains untouched. This slice does not
+run full media validation, finalize, repair, resume, or record a recovery action;
+those remain later v0.7 work. v0.7.0 is not released.
+
 ### v0.8.0 ? Configuration and defaults
 
 **Goal:** Persist proven choices for output locations/naming, retry policy,
