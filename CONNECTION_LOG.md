@@ -465,16 +465,31 @@ benchmark opens no media and proves resolver behavior only; no natural ordinary
 media reconnect occurred, so that required production validation remains
 outstanding and issue #19 stays open.
 
-Normal deployment validation began from `60d55cb` through the existing Scheduled
+Normal deployment validation ran from `60d55cb` through the existing Scheduled
 Task service, without changing service architecture. Zoraida session
 `a19f366d-1484-47b2-8eb7-64d26e0a47eb`, room `7687797603433483038`, uses
 `C:\Users\Leandro\Videos\zoraidajazmine-v060-issue19-natural-reconnect-validation-20260921.*`.
-After 946.727 seconds, remote status reported connection count 1, reconnect count
-0, 124,755,426 bytes of writer progress, and no recovery, error, stop, closed
-part, or final output. The absent closed connection record means there is no
-reconnect boundary to analyze or validate yet. The service and recording were
-left running normally; no remote stop, service restart, network change, or other
-manufactured failure was used.
+It reached natural room end after 2,210.858 wall seconds with
+`stop_requested=false`, `interrupted=false`, `error=null`, and completed
+finalization. Connection 1 retained 288,436,284 bytes, then three numeric status-4
+observations reached false, false, and true confirmation. Connection 2 ended
+`offline` without resolution, media open, or a retained part. The gap analyzer
+therefore reports zero ordinary reconnects: the manifest reconnect count of one
+is only the terminal room-end attempt and supplies no #19 timing sample.
+
+The sole FLV passed structure and decoder validation. Its packet-DTS check warned
+about a 1,480-unit video reversal and 1,399-unit audio reversal, exactly matching
+two recovered timestamp replays recorded inside connection 1; neither occurred
+at a reconnect. With no raw copy, their origin remains unproven issue #8 evidence
+and is not attributed to #19. Standard and deep validation of the finalized MP4
+both passed. FFprobe reports 2,191.564 seconds, 288,187,757 bytes, H.264 High/AAC
+HE, 432x864, 25 fps, and 48 kHz stereo. SHA-256 is
+`65915E23AFF361B3AC994FAB1F07123555D0FB15A220E4761F9799AB4A7D7A35` for the MP4,
+`FEED2FCBD452C240C82053A5A9622E1D9247F33F5F28405562EE56E234037A47` for the FLV,
+and `C19A800CA40F283E56123FB897991BA4A74F5F39D88DD7FDA21C04FED776AE2F` for
+`connections.jsonl`. No remote stop, service restart, network change, or other
+manufactured failure was used. The natural ordinary-reconnect gate remains
+outstanding, so issue #19 stays open.
 
 ## Raw copy and byte-arrival evidence
 

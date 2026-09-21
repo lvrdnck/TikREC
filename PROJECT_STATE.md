@@ -9,15 +9,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task:** Issue #19 is owner-authorized and remains active for
   real ordinary-reconnect validation. Commit `60d55cb` is normally deployed in
-  the existing Scheduled Task service. Validation session
-  `a19f366d-1484-47b2-8eb7-64d26e0a47eb` is actively recording Zoraida room
-  `7687797603433483038` to the issue-#19 validation paths under `Videos`. After
-  946.727 seconds it reported steady writer progress on connection 1 with
-  124,755,426 bytes, zero reconnects, no recovery/error/stop state, no closed
-  part, and no final output. The recording was left running normally; no
-  disconnect or stop was manufactured. Issue #16 remains open and owner-paused/
-  blocked. v0.6.0 remains untagged and unpublished, and no release action is
-  authorized.
+  the existing Scheduled Task service. Zoraida validation session
+  `a19f366d-1484-47b2-8eb7-64d26e0a47eb`, room `7687797603433483038`, completed
+  naturally after 2,210.858 seconds with one media-bearing connection and one
+  terminal offline attempt. Three status-4 observations confirmed room end;
+  `stop_requested=false`, `interrupted=false`, `error=null`, and finalization
+  completed. No ordinary media reconnect occurred, so the #19 production gate
+  remains outstanding. Issue #16 remains open and owner-paused/blocked. v0.6.0
+  remains untagged and unpublished, and no release action is authorized.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account
@@ -63,7 +62,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   12-pair Zoraida recheck supplied nine strict pairs: safe bound/direct medians
   were 0.366/0.324 seconds, with only 0.044 seconds median identity-check
   overhead. The previous bound median was 0.942 seconds. Full offline coverage
-  passes 774 tests plus 19 subtests; real ordinary-reconnect validation remains
+  passes 774 tests plus 19 subtests. The completed Zoraida deployment run
+  retained 288,436,284 bytes in one FLV and produced a 288,187,757-byte,
+  2,191.564-second H.264/AAC 432x864 MP4; session, standard output, and deep
+  output validation pass. Its only reconnect allocation was the media-free
+  terminal room-end check, so real ordinary-reconnect validation remains
   outstanding.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
@@ -89,15 +92,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   unrecovered tail replays in part 17; their four packet-DTS warnings exactly
   match the recorded magnitudes, all parts decode, and the finalized MP4 deep-
   validates. With no raw copy, this is additional issue #8 evidence and is not
-  attributed to #17. Issue #9 and paused issue #13 remain unchanged.
-- **Pending owner action:** None while the authorized validation recording runs
-  normally. Keep v0.6.0 publication paused; do not create its tag or GitHub
-  Release.
-- **Next queued task:** Reinspect the same active session before any action. If
-  it has a natural ordinary reconnect, preserve and validate that boundary; if
-  it reaches natural end, validate retained media and the final output. Do not
-  stop or disrupt it merely to pass the gate. Keep issue #16 blocked and do not
-  start v0.6.5 or v0.7.
+  attributed to #17. The Zoraida #19 session adds two recovered in-connection
+  replays (video 1,480 and audio 1,399 timestamp units) whose two packet-DTS
+  warnings match the connection evidence; its FLV decodes and finalized MP4
+  deep-validates. No raw copy exists, so origin remains unproven and this is not
+  attributed to #19. Issue #9 and paused issue #13 remain unchanged.
+- **Pending owner action:** None. Keep v0.6.0 publication paused; do not create
+  its tag or GitHub Release.
+- **Next queued task:** Obtain another normal deployed validation opportunity
+  for a natural ordinary reconnect without manufacturing a disconnect. Keep
+  issue #16 blocked and do not start v0.6.5 or v0.7.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

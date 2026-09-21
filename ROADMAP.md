@@ -411,12 +411,16 @@ action authorized.
 
 Commit `60d55cb` is now deployed through the existing Windows Scheduled Task.
 The authorized Zoraida validation session
-`a19f366d-1484-47b2-8eb7-64d26e0a47eb` remained healthy on its first media
-connection through the initial 946.727-second observation: 124,755,426 bytes of
-writer progress, zero reconnects, and no recovery, error, stop, closed part, or
-final output. It was left recording normally. This proves deployment/startup
-health but not the ordinary-reconnect acceptance gate; no disconnect was
-manufactured.
+`a19f366d-1484-47b2-8eb7-64d26e0a47eb` later reached natural room end after
+2,210.858 seconds. Its one media connection closed normally, three status-4
+observations confirmed offline state, and the second allocated attempt retained
+no media. Finalization completed without interruption or error; the retained
+FLV and 2,191.564-second H.264/AAC MP4 validate, including a passing deep output
+decode. Two recovered in-connection timestamp replays produce matching DTS
+warnings but no decoder failure and remain separate issue #8 evidence. Because
+the run contained zero ordinary media reconnects, it proves deployed capture and
+room-end health but not the issue #19 acceptance gate. Issue #19 stays open and
+no disconnect was manufactured.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
