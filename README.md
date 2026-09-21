@@ -14,7 +14,7 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
 ## Usage
 
-    tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
+    tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR]
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
     tikrec finalize PARTS_DIRECTORY --output FILE
@@ -151,7 +151,8 @@ TikTok cookies, credentials, bearer tokens, or signed URLs in it. Operators and
 tests can select one explicit file by placing `--config FILE` before the
 subcommand.
 
-`--output` remains required. Local `live` and advanced local `record` use this
+`--output` is optional only for local `live`; advanced local `record`, remote
+start, and manual finalize still require it. Local explicit outputs retain this
 precedence:
 
 1. An absolute `--output` is authoritative and does not read or use the
@@ -160,10 +161,23 @@ precedence:
 3. Without that setting, a relative `--output` keeps the original
    current-working-directory behavior.
 
-Paths that escape a configured directory with `..` are rejected. Configuration
-does not reinterpret remote PC paths, manual `finalize --output`, guided recovery
-paths, service state, or retained sessions. Automatic output naming, retry,
-validation, and logging defaults remain later v0.8 work.
+When local `live` omits `--output`, a configured `output_directory` is required.
+TikREC extracts only the public creator handle from the supplied standard TikTok
+LIVE URL—without a network request—and creates
+`creator-YYYYMMDD-HHMMSS.mp4` using local system time to one-second precision.
+The leading `@` is removed and unsafe filename characters are replaced. If the
+output or matching `creator-YYYYMMDD-HHMMSS.parts` directory already exists,
+TikREC tries deterministic `-2`, `-3`, and later suffixes through `-1000`, then
+fails rather than reusing data. Generated paths are always direct children of
+the configured directory. A nonstandard URL without a safe creator identity
+fails clearly.
+
+Explicit `--output` always wins and is never automatically renamed. Paths that
+escape a configured directory with `..` are rejected. Configuration does not
+reinterpret remote PC paths, manual `finalize --output`, guided recovery paths,
+service state, or retained sessions. There is no filename-template setting yet;
+retry, validation, and logging defaults remain later v0.8 work. This convenience
+names only manually started LIVEs and does not provide creator automation.
 
 Prefer a dedicated recording directory outside a source checkout. While
 developing TikREC, `runs/` is the repository's ignored local recording directory:

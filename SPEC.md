@@ -62,7 +62,7 @@ when invoked, that is an error, not a wait state.
 
     tikrec record <direct-flv-url> --output FILE [--raw-copy DIR]
     tikrec resolve <tiktok-live-page-url>
-    tikrec live <tiktok-live-page-url> --output FILE [--raw-copy DIR]
+    tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR]
     tikrec finalize PARTS_DIRECTORY --output FILE
     tikrec recover ROOT [--validate] [--finalize] [--json]
     tikrec validate TARGET [--deep] [--json]
@@ -728,13 +728,35 @@ without creating the recording directory, while `config unset output-directory`
 removes only that supported setting. Invalid existing configuration is never
 silently overwritten by either mutation.
 
-`--output` remains required. For local `live` and advanced local `record`, an
-absolute path is authoritative and configuration is not loaded. A relative path
-is resolved beneath configured `output_directory`, with lexical or resolved
-escapes rejected; without the setting it remains relative to the process working
-directory. Remote start still requires and preserves an absolute .mp4 path on
-the service machine. Manual `finalize --output`, guided recovery stored paths,
-service state, and existing retained sessions do not consult this configuration.
+`--output` is optional only for local `live`. When supplied, an absolute path is
+authoritative and configuration is not loaded. A relative explicit path is
+resolved beneath configured `output_directory`, with lexical or resolved escapes
+rejected; without the setting it remains relative to the process working
+directory. Advanced local `record` still requires explicit output and never
+derives names from direct or signed media URLs.
+
+When local `live` omits output, a configured `output_directory` is mandatory.
+The CLI validates the supplied public TikTok LIVE-page URL locally, uses only its
+creator segment, strips `@`, percent-decodes that segment, replaces non-portable
+characters with `-`, collapses separator runs, trims unsafe boundary characters,
+and bounds the result to 64 characters. Empty or nonstandard identities fail
+before capture or network resolution. Query strings, fragments, credentials,
+tokens, signed URLs, and other path segments never enter the filename.
+
+The default is `creator-YYYYMMDD-HHMMSS.mp4`, using local system time with
+one-second precision and an injectable clock for deterministic tests. Both it
+and the matching `.parts` path are direct children of the configured directory.
+If either candidate exists, including as a symlink, suffixes `-2` through `-1000`
+are checked deterministically; exhaustion fails without deleting or reusing any
+artifact. Capture's existing session/output checks add another refusal layer
+before session creation and finalization. Explicit output is never renamed by
+this logic.
+
+Remote start still requires and preserves an absolute .mp4 path on the service
+machine. Manual `finalize --output`, guided recovery stored paths, service state,
+and existing retained sessions do not consult automatic naming. No customizable
+filename template exists yet, and manual naming does not imply creator monitoring
+or automatic recording.
 
 Recordings should normally use a dedicated directory outside a source checkout.
 During development in this repository, `runs/` is the conventional local

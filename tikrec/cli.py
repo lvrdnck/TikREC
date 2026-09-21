@@ -13,11 +13,11 @@ from typing import TextIO
 from . import __version__
 from .capture import CaptureError, CaptureResult, capture_url
 from .config_cli import add_config_command, run_config_command
-from .configuration import ConfigurationStore, default_config_path, resolve_recording_output
 from .control_cli import add_control_commands, run_control_command
 from .finalize import finalize_parts
 from .live import capture_live
 from .manifest import SessionManifest
+from .output_naming import local_recording_paths
 from .progress import LiveProgress
 from .recovery_cli import add_recovery_command, run_recovery_command
 from .recovery_discovery import discover_recovery_candidates
@@ -39,6 +39,7 @@ def main(
     recovery_discoverer: Callable = discover_recovery_candidates,
     service_runner: Callable = serve,
     remote_opener: Callable | None = None,
+    naming_clock: Callable | None = None,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
 ) -> int:
@@ -51,7 +52,6 @@ def main(
     except KeyboardInterrupt:
         print("tikrec: interrupted", file=stderr)
         return 130
-
     live_progress: LiveProgress | None = None
     try:
         if arguments.command in {"serve", "remote"}:
@@ -78,8 +78,8 @@ def main(
                 finalizer=finalizer,
             )
 
-        output_path = Path(arguments.output)
         if arguments.command == "finalize":
+            output_path = Path(arguments.output)
             live_progress = LiveProgress(stdout)
             _finalize_directory(
                 Path(arguments.parts_directory),
@@ -89,15 +89,10 @@ def main(
             )
             return 0
 
-        if not output_path.is_absolute():
-            config_path = (
-                Path(arguments.config_path) if arguments.config_path else default_config_path()
-            )
-            output_path = resolve_recording_output(
-                output_path, ConfigurationStore(config_path).load()
-            )
-
-        parts_directory = output_path.with_name(f"{output_path.stem}.parts")
+        output_path, parts_directory = local_recording_paths(
+            arguments.command, arguments.url, arguments.output,
+            config_path=arguments.config_path, clock=naming_clock,
+        )
         raw_copy_dir = Path(arguments.raw_copy) if arguments.raw_copy is not None else None
         warning = lambda message: print(f"tikrec: warning: {message}", file=stderr)
         capture_function = live_capture if arguments.command == "live" else capture
@@ -238,7 +233,8 @@ def _parser() -> argparse.ArgumentParser:
         description="Record public TikTok LIVE streams or advanced direct media sources.",
         epilog=(
             "Normal use:\n"
-            "  tikrec live https://www.tiktok.com/@creator/live --output creator.mp4\n\n"
+            "  tikrec live https://www.tiktok.com/@creator/live\n\n"
+            "Configure an output directory for automatic naming, or pass --output. "
             "Use `live` for a TikTok LIVE page. `record` is for an advanced direct "
             "FLV/media URL, not a TikTok page."
         ),
@@ -276,13 +272,17 @@ def _parser() -> argparse.ArgumentParser:
         help="normal use: record a public TikTok LIVE page",
         description="Record one manually selected public TikTok LIVE from its page URL.",
         epilog=(
-            "Example:\n"
-            "  tikrec live https://www.tiktok.com/@creator/live --output creator.mp4"
+            "Examples:\n"
+            "  tikrec live https://www.tiktok.com/@creator/live\n"
+            "  tikrec live https://www.tiktok.com/@creator/live --output creator.mp4\n\n"
+            "Without --output, a configured output directory is required and TikREC "
+            "uses creator-YYYYMMDD-HHMMSS.mp4."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     live.add_argument("url", metavar="TIKTOK_LIVE_URL", help="public TikTok LIVE page URL")
-    live.add_argument("--output", required=True, metavar="FILE", help="output MP4 file")
+    live.add_argument("--output", metavar="FILE",
+                      help="output MP4 file; omit for configured automatic naming")
     live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     validate = subcommands.add_parser("validate", help="check recording health")
     validate.add_argument("target", metavar="TARGET")

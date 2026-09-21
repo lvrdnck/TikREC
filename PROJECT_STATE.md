@@ -7,8 +7,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. Issue #23 is complete
-  after the first narrow v0.8.0 configuration/defaults slice. Issues #20, #21, and
+- **Active issue/task:** No implementation task is active. Issues #23 and #24 are
+  complete after the first two narrow v0.8.0 configuration/defaults slices.
+  Issues #20, #21, and
   #22 are complete and closed after the three v0.7.0 guided-recovery slices:
   bounded read-only discovery/classification through `tikrec recover`, optional
   read-only validation through `recover --validate`, and explicit single-session
@@ -32,6 +33,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   base fails closed. Remote, finalize, recover, service state, and retained-session
   paths are unchanged. Automatic naming plus retry, validation, and logging
   defaults remain queued v0.8 work; v0.7.0 remains the current released version.
+- **Completed second v0.8 automatic-naming slice:** Local manually started `live`
+  now permits omitted output only when `output_directory` is configured. It uses
+  a locally parsed/sanitized public creator handle plus an injectable one-second
+  local timestamp and bounded deterministic collision suffix, keeping output and
+  `.parts` direct children of configured storage. Explicit outputs retain first-
+  slice precedence and are never renamed; `record`, remote, finalize, recover,
+  service, and retained sessions are unchanged. Filename templates and retry,
+  validation, and logging defaults remain queued; v0.7.0 remains released.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers

@@ -682,6 +682,17 @@ output naming plus retry, validation, and logging defaults remain future v0.8
 slices. No credentials or account profiles are supported, and v0.8.0 is not yet
 a release candidate.
 
+**Second slice completed (2026-09-21, issue #24):** Manually started local
+`tikrec live` can now omit `--output` when `output_directory` is configured.
+TikREC locally extracts and sanitizes only the public creator handle, combines it
+with an injectable local-time `YYYYMMDD-HHMMSS` timestamp, and selects a bounded
+deterministic suffix when either the output or matching `.parts` path exists.
+Generated paths remain direct children of configured storage and never include
+query/signed URL material. Explicit output precedence is unchanged; direct
+`record`, remote, finalize, recovery, service, and retained-session behavior is
+unchanged. Filename templates plus retry, validation, and logging defaults remain
+future v0.8 slices, and v0.8.0 is not yet a release candidate.
+
 ### v0.9.0 — Creator monitoring and automatic recording
 
 **Goal:** Let the owner explicitly configure public creators to monitor. Detect

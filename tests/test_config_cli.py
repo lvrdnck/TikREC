@@ -1,6 +1,7 @@
 """Offline configuration CLI and local recording precedence tests."""
 
 import json
+from datetime import datetime
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -121,6 +122,53 @@ def test_relative_live_output_uses_configured_directory(tmp_path: Path) -> None:
     assert calls[0][1]["parts_directory"] == recordings / "creator.parts"
 
 
+def test_live_without_output_uses_safe_automatic_name_without_resolving(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "config.json"
+    recordings = tmp_path / "recordings"
+    assert main(["--config", str(path), "config", "set", "output-directory", str(recordings)],
+                stdout=StringIO()) == 0
+    calls, live_capture = _capture_calls()
+    assert main([
+        "--config", str(path), "live",
+        "https://www.tiktok.com/@creator/live?token=must-not-appear",
+    ], live_capture=live_capture,
+       resolver=lambda _: (_ for _ in ()).throw(AssertionError("must not resolve for naming")),
+       naming_clock=lambda: datetime(2026, 9, 21, 18, 45, 0),
+       stdout=StringIO()) == 0
+    assert calls[0][1]["output_path"] == recordings / "creator-20260921-184500.mp4"
+    assert calls[0][1]["parts_directory"] == recordings / "creator-20260921-184500.parts"
+    assert "token" not in str(calls[0][1]["output_path"])
+
+
+def test_explicit_live_output_wins_over_automatic_name(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    recordings = tmp_path / "recordings"
+    assert main(["--config", str(path), "config", "set", "output-directory", str(recordings)],
+                stdout=StringIO()) == 0
+    calls, live_capture = _capture_calls()
+    assert main([
+        "--config", str(path), "live", "https://www.tiktok.com/@creator/live",
+        "--output", "chosen.mp4",
+    ], live_capture=live_capture,
+       naming_clock=lambda: (_ for _ in ()).throw(AssertionError("clock must not run")),
+       stdout=StringIO()) == 0
+    assert calls[0][1]["output_path"] == recordings / "chosen.mp4"
+
+
+def test_live_without_output_requires_configured_directory(tmp_path: Path) -> None:
+    calls, live_capture = _capture_calls()
+    stderr = StringIO()
+    assert main([
+        "--config", str(tmp_path / "missing.json"), "live",
+        "https://www.tiktok.com/@creator/live",
+    ], live_capture=live_capture, stderr=stderr) == 1
+    assert calls == []
+    assert "config set output-directory" in stderr.getvalue()
+    assert "provide --output" in stderr.getvalue()
+
+
 def test_missing_config_keeps_relative_record_output_unchanged(tmp_path: Path) -> None:
     calls, capture = _capture_calls()
     assert main([
@@ -153,3 +201,14 @@ def test_config_help_is_available_without_reading_configuration(tmp_path: Path) 
     path = tmp_path / "bad.json"
     path.write_text("{", encoding="utf-8")
     assert main(["--config", str(path), "config", "--help"]) == 0
+
+
+def test_live_help_explains_optional_automatic_output(capsys) -> None:
+    assert main(["live", "--help"]) == 0
+    help_text = capsys.readouterr().out
+    assert "omit for configured automatic naming" in help_text
+    assert "creator-YYYYMMDD-HHMMSS.mp4" in help_text
+
+
+def test_direct_record_still_requires_output() -> None:
+    assert main(["record", "https://cdn.test/live.flv"]) == 2

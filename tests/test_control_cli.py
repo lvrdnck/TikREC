@@ -30,7 +30,8 @@ def test_help_guides_normal_live_recording_and_advanced_sources(capsys):
     assert main(["--help"]) == 0
     top_level_help = capsys.readouterr().out
     assert "Normal use:" in top_level_help
-    assert "tikrec live https://www.tiktok.com/@creator/live --output creator.mp4" in top_level_help
+    assert "tikrec live https://www.tiktok.com/@creator/live" in top_level_help
+    assert "Configure an output directory for automatic naming" in top_level_help
     assert "normal use: record a public TikTok LIVE page" in top_level_help
     assert "advanced direct FLV/media URL, not a TikTok page" in top_level_help
 
@@ -38,6 +39,7 @@ def test_help_guides_normal_live_recording_and_advanced_sources(capsys):
     live_help = capsys.readouterr().out
     assert "public TikTok LIVE page URL" in live_help
     assert "tikrec live https://www.tiktok.com/@creator/live --output creator.mp4" in live_help
+    assert "creator-YYYYMMDD-HHMMSS.mp4" in live_help
 
     assert main(["record", "--help"]) == 0
     record_help = capsys.readouterr().out
