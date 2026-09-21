@@ -382,13 +382,22 @@ unchanged. Offline safety coverage proves conflicting identity rejection,
 typed offline evidence, malformed-response failure, preservation of different-
 room semantics, safe diagnostics, and capture/session non-mutation.
 
-Both owner-provided rooms were offline during the first bounded check. Their
-direct room/info calls were 0.779 and 0.842 seconds faster than current bound
-resolution, but the bound paths included public account lookups and neither
-pair selected live transport. This is directional evidence only. A paired live
-same-room comparison remains necessary before deciding whether to propose a
-separate production fast path. Issue #16 stays open but paused/blocked; v0.6.0
-remains untagged and unpublished, with no tag or GitHub Release authorized.
+The first owner-provided rooms were offline, providing directional evidence
+only. A later owner-provided Zoraida LIVE completed 22 corrected alternating
+pairs. Ten strict pairs matched saved room, rendition label/source, and exact
+transport; twelve rotating exact transports were excluded. In the primary six-
+pair batch, bound resolution was 0.942 seconds median (0.759--1.453), direct
+known-room resolution was 0.351 (0.275--0.399), and median savings were 0.587
+(0.458--1.085). Every bound sample used page + account lookup + room/info. A
+second supplied creator ended before sampling and contributed no live result.
+
+This material live saving justifies separate implementation/review under issue
+#19, but direct room/info alone cannot preserve current account-movement and
+`live_changed` semantics. The future design must retain a current account check
+and fall back to the full bound resolver for offline, conflicting, malformed,
+unverifiable, or failed evidence. Issue #18's evidence task is complete;
+production behavior remains unchanged. Issue #16 stays paused/blocked and
+v0.6.0 remains untagged/unpublished with no release action authorized.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

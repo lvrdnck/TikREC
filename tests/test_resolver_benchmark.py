@@ -96,6 +96,25 @@ def test_direct_known_room_refresh_rejects_conflicting_room_identity():
     assert report["summary"]["comparable_sample_count"] == 0
 
 
+def test_different_exact_transport_is_not_a_comparable_pair_or_savings_sample():
+    other = "https://cdn.test/live.flv?signature=different"
+    opener = _Opener([live_page("123"), room_info(), room_info(url=other)])
+
+    report = benchmark_resolution(PAGE, "123", samples=1, opener=opener)
+
+    pair = report["pairs"][0]
+    assert pair["equivalence"] == {
+        "comparable": False,
+        "room_id_equal": True,
+        "rendition_label_equal": True,
+        "rendition_source_equal": True,
+        "media_transport_equal": False,
+    }
+    assert pair["direct_savings_seconds"] is None
+    assert report["summary"]["comparable_sample_count"] == 0
+    assert SIGNED not in json.dumps(report) and other not in json.dumps(report)
+
+
 def test_direct_offline_status_remains_typed_trustworthy_evidence():
     opener = _Opener([live_page("123"), room_info(status=4), room_info(status=4)])
 

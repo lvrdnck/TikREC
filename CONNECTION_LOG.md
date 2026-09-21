@@ -307,11 +307,13 @@ python scripts/benchmark_bound_resolution.py TIKTOK_LIVE_URL SAVED_ROOM_ID --sam
 
 `--samples` is bounded to 1--20 and alternates bound/direct order to reduce
 first-request and connection-warmup bias. `--json` emits the same safe facts in
-structured form. Exit status is zero only when at least one pair returned live
-results for the same saved room through both paths. The tool never opens media,
-starts capture, accepts an output/session path, writes evidence, or prints or
-persists a signed CDN URL. Rendition label, source, and exact transport are
-compared only in memory and emitted as equality booleans.
+structured form. A pair is comparable only when both paths return live results
+with the same saved room ID, rendition label, rendition source, and exact signed
+transport. Exit status is zero only when at least one such strict pair exists.
+The tool never opens media, starts capture, accepts an output/session path,
+writes evidence, or prints or persists a signed CDN URL. Rendition label,
+source, and exact transport are compared only in memory and emitted as equality
+booleans.
 
 The current request sequences are:
 
@@ -361,6 +363,69 @@ is therefore still required before recommending a production fast path. Any
 future change must explicitly preserve current different-room handling and
 fail-closed identity behavior rather than treating the faster direct result as
 automatically interchangeable.
+
+### Live paired evidence
+
+On 2026-09-21 the owner supplied `zoraidajazmine` and `slayyyboo22` specifically
+for issue #18. Both initially resolved live through TikREC's normal anonymous
+path, with canonical room IDs `7687797603433483038` and
+`7687888196419586846`. Slayyyboo22 ended before paired measurement: seven
+alternating attempts consistently returned trustworthy status 4 through both
+paths and therefore contributed no live or savings sample. No unrelated creator
+was probed.
+
+The first Zoraida run exposed a diagnostic-only bug: `comparable` required the
+same live room but did not also require its already-reported label, source, and
+exact transport equalities. The predicate was corrected before evidence was
+accepted, a regression test now rejects a different exact transport, and the
+pre-fix summary was discarded. This did not affect production resolution.
+
+Two corrected runs collected 22 alternating live pairs. Every pair returned the
+saved room with equal rendition label and source. Ten also returned the same
+exact signed transport and are the strict comparable dataset; the other twelve
+had a refreshed exact transport and were excluded without exposing either URL.
+The strict subset contained eight bound-first and two direct-first pairs. The
+two direct-first savings were 0.466 and 0.499 seconds, showing a material result
+even when the direct request warmed the later bound requests.
+
+The later 12-pair run supplied six strict pairs and is the primary summary.
+Median and range in seconds were:
+
+| Component | Median | Range |
+| --- | ---: | ---: |
+| Current bound total | 0.942 | 0.759--1.453 |
+| Username LIVE page | 0.308 | 0.267--0.357 |
+| Public account lookup | 0.259 | 0.183--0.759 |
+| Bound room/info | 0.320 | 0.279--0.427 |
+| Direct known-room total | 0.351 | 0.275--0.399 |
+| Direct room/info | 0.350 | 0.275--0.399 |
+| Per-pair time saved | 0.587 | 0.458--1.085 |
+
+All current bound samples invoked the account lookup because the LIVE page did
+not yield usable room identity. The earlier corrected ten-pair run added four
+strict pairs and independently measured median savings of 0.766 seconds with a
+0.499--1.142-second range. Across the two batches, the skipped sequential page
+and account requests therefore reduced same-room live resolution materially;
+the direct room/info request itself remained unavoidable.
+
+For context, Aishaaa's ordinary reconnects spent 1.287 and 1.371 seconds in
+resolution and 1.526 and 1.531 seconds end to end. Substituting the primary
+direct median only as an illustration would remove 0.936 and 1.020 seconds from
+those resolver components and imply about 0.590/0.511-second total gaps if every
+other component and network condition stayed fixed. That cross-session
+calculation is not a promised production result; the paired Zoraida savings are
+the controlling evidence.
+
+The measurements justify separate implementation/review, tracked in issue #19,
+but not a direct-only substitution. Direct room/info proves that the saved room
+is live and rejects an explicit conflicting identity, yet it does not prove that
+the username/account still maps to that room. A production design must retain a
+current account identity check, potentially overlapped with saved-room
+room/info; a different account room must still produce existing `live_changed`
+behavior. Saved-room offline, malformed/unverifiable evidence, conflicting
+identity, account-check failure, or transport failure must fall back to the
+current full bound resolver and preserve three-observation offline confirmation
+and fail-closed recovery. The deployed resolver remains unchanged.
 
 ## Raw copy and byte-arrival evidence
 

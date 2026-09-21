@@ -161,18 +161,18 @@ def _run_resolution(path, live_url, room_id, *, timeout, opener, clock):
 def _pair_report(number, order, room_id, runs):
     bound, direct = runs["bound"], runs["direct"]
     both_live = bound.safe["outcome"] == direct.safe["outcome"] == "live"
-    comparable = bool(
-        both_live
-        and bound.resolution is not None
-        and direct.resolution is not None
-        and bound.resolution.room_id == direct.resolution.room_id == room_id
-    )
+    room_equal = bool(both_live and _equal(bound, direct, "room_id")
+                      and bound.resolution.room_id == room_id)
+    label_equal = bool(both_live and _equal(bound, direct, "rendition_label"))
+    source_equal = bool(both_live and _equal(bound, direct, "rendition_source"))
+    transport_equal = bool(both_live and _equal(bound, direct, "flv_url"))
+    comparable = room_equal and label_equal and source_equal and transport_equal
     equivalence = {
         "comparable": comparable,
-        "room_id_equal": _equal(bound, direct, "room_id") if both_live else False,
-        "rendition_label_equal": _equal(bound, direct, "rendition_label") if comparable else False,
-        "rendition_source_equal": _equal(bound, direct, "rendition_source") if comparable else False,
-        "media_transport_equal": _equal(bound, direct, "flv_url") if comparable else False,
+        "room_id_equal": room_equal,
+        "rendition_label_equal": label_equal,
+        "rendition_source_equal": source_equal,
+        "media_transport_equal": transport_equal,
     }
     savings = (
         bound.safe["total_seconds"] - direct.safe["total_seconds"]
