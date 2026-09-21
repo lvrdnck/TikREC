@@ -716,6 +716,18 @@ and never inherit this preference. Automatic post-recording validation was not
 added. Logging defaults remain the next v0.8 configuration slice, and v0.8.0 is
 not yet a release candidate.
 
+**Fifth slice completed (2026-09-21):** Strict schema-1 configuration now
+optionally persists boolean `debug_tracebacks`, mirroring the existing
+unexpected-error `--debug` behavior without introducing a logging framework.
+Mutually exclusive `--debug` and `--no-debug` flags override configuration;
+otherwise the preference is loaded only after an unexpected exception, with
+built-in false preserving existing behavior. Known errors, successful commands,
+normal progress/warnings, service request-log suppression, remote/API output,
+media behavior, and sensitive-data boundaries are unchanged. This completes the
+intended v0.8 configuration/default slices; configurable filename templates are
+not required for this release and remain deferred. v0.8.0 still requires normal
+release preparation and separate authorization before any tag or GitHub Release.
+
 ### v0.9.0 — Creator monitoring and automatic recording
 
 **Goal:** Let the owner explicitly configure public creators to monitor. Detect

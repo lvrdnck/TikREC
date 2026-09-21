@@ -398,7 +398,7 @@ class CliTests(unittest.TestCase):
         stderr = StringIO()
 
         code = main(
-            ["resolve", "https://www.tiktok.com/@creator/live"],
+            ["resolve", "https://www.tiktok.com/@creator/live", "--no-debug"],
             resolver=lambda _: (_ for _ in ()).throw(RuntimeError("broken resolver")),
             stderr=stderr,
         )
@@ -409,7 +409,7 @@ class CliTests(unittest.TestCase):
     def test_debug_prints_an_unexpected_error_traceback(self) -> None:
         stderr = StringIO()
 
-        with patch("tikrec.cli.traceback.print_exc") as print_exc:
+        with patch("tikrec.diagnostics.traceback.print_exc") as print_exc:
             code = main(
                 ["resolve", "https://www.tiktok.com/@creator/live", "--debug"],
                 resolver=lambda _: (_ for _ in ()).throw(RuntimeError("broken resolver")),
@@ -418,6 +418,83 @@ class CliTests(unittest.TestCase):
 
         self.assertEqual(code, 1)
         print_exc.assert_called_once_with(file=stderr)
+
+    def test_configured_debug_tracebacks_and_explicit_overrides(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            failing = lambda _: (_ for _ in ()).throw(RuntimeError("broken resolver"))
+            for configured, flag, expected in (
+                (True, [], True),
+                (False, [], False),
+                (False, ["--debug"], True),
+                (True, ["--no-debug"], False),
+            ):
+                path.write_text(json.dumps({
+                    "schema_version": 1, "debug_tracebacks": configured,
+                }), encoding="utf-8")
+                with patch("tikrec.diagnostics.traceback.print_exc") as print_exc:
+                    code = main([
+                        "--config", str(path), "resolve",
+                        "https://www.tiktok.com/@creator/live", *flag,
+                    ], resolver=failing, stderr=StringIO())
+                self.assertEqual(code, 1)
+                self.assertEqual(print_exc.called, expected)
+
+    def test_debug_flags_are_mutually_exclusive(self) -> None:
+        for arguments in (
+            ["resolve", "https://www.tiktok.com/@creator/live", "--debug", "--no-debug"],
+            ["--debug", "resolve", "https://www.tiktok.com/@creator/live", "--no-debug"],
+        ):
+            self.assertEqual(main(arguments, stderr=StringIO()), 2)
+
+    def test_explicit_debug_choice_skips_malformed_configuration(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text("{", encoding="utf-8")
+            failing = lambda _: (_ for _ in ()).throw(RuntimeError("broken resolver"))
+            for flag, expected in (("--debug", True), ("--no-debug", False)):
+                with patch("tikrec.diagnostics.traceback.print_exc") as print_exc:
+                    code = main([
+                        "--config", str(path), "resolve",
+                        "https://www.tiktok.com/@creator/live", flag,
+                    ], resolver=failing, stderr=StringIO())
+                self.assertEqual(code, 1)
+                self.assertEqual(print_exc.called, expected)
+
+    def test_malformed_implicit_debug_default_fails_clearly_on_unexpected_error(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text("{", encoding="utf-8")
+            stderr = StringIO()
+            with patch("tikrec.diagnostics.traceback.print_exc") as print_exc:
+                code = main([
+                    "--config", str(path), "resolve",
+                    "https://www.tiktok.com/@creator/live",
+                ], resolver=lambda _: (_ for _ in ()).throw(RuntimeError("broken resolver")),
+                   stderr=stderr)
+            self.assertEqual(code, 1)
+            self.assertIn("debug traceback setting unavailable", stderr.getvalue())
+            self.assertIn("invalid configuration", stderr.getvalue())
+            print_exc.assert_not_called()
+
+    def test_success_and_known_error_do_not_consult_debug_configuration(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text("{", encoding="utf-8")
+            stdout = StringIO()
+            self.assertEqual(main([
+                "--config", str(path), "resolve", "https://www.tiktok.com/@creator/live",
+            ], resolver=lambda _: "https://cdn.test/live.flv", stdout=stdout), 0)
+            self.assertEqual(stdout.getvalue(), "https://cdn.test/live.flv\n")
+            stderr = StringIO()
+            with patch("tikrec.diagnostics.traceback.print_exc") as print_exc:
+                self.assertEqual(main([
+                    "--config", str(path), "resolve", "https://www.tiktok.com/@creator/live",
+                ], resolver=lambda _: (_ for _ in ()).throw(
+                    TikTokResolutionTransientError("short read")
+                ), stderr=stderr), 1)
+            self.assertEqual(stderr.getvalue(), "tikrec: short read\n")
+            print_exc.assert_not_called()
 
     def test_keyboard_interrupt_returns_130_without_a_traceback(self) -> None:
         stderr = StringIO()

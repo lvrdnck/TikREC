@@ -8,8 +8,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 ## Coordination
 
 - **Active issue/task:** No implementation task is active. Issues #23, #24, #25,
-  and #26 are complete after the first four narrow v0.8.0 configuration/defaults
-  slices.
+  and #26 plus the approved logging-default task are complete after the five
+  narrow v0.8.0 configuration/defaults slices.
   Issues #20, #21, and
   #22 are complete and closed after the three v0.7.0 guided-recovery slices:
   bounded read-only discovery/classification through `tikrec recover`, optional
@@ -64,6 +64,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   Focused coverage passes 93 tests, the full offline suite passes 908 tests plus
   19 subtests, and unittest discovery passes 210 tests. Logging defaults remain
   queued; v0.7.0 remains released.
+- **Completed fifth v0.8 logging-default slice:** Strict schema-1 configuration
+  optionally persists boolean `debug_tracebacks`, which controls only whether an
+  unexpected CLI exception includes its Python traceback. Explicit mutually
+  exclusive `--debug`/`--no-debug` overrides win without configuration I/O;
+  otherwise configuration is read lazily only after an unexpected exception,
+  with built-in false preserving prior behavior. Known errors, successful
+  commands, progress/warnings, service request-log suppression, remote/API and
+  media behavior, and sensitive-data boundaries are unchanged. Focused coverage
+  passes 98 tests, the full offline suite passes 921 tests plus 19 subtests, and
+  unittest discovery passes 215 tests. This completes the intended v0.8
+  configuration/default scope; v0.7.0 remains released and v0.8.0 has not been
+  prepared, tagged, or published.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -271,8 +283,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Continue v0.8.0 with one separately approved narrow
-  logging-default slice. The conditional
+- **Next queued task:** Perform separately approved v0.8.0 release preparation
+  and readiness review without tagging or publishing until explicitly
+  authorized. The conditional
   v0.6.5 redundant-capture release is not selected; issues #8 and #13 continue
   to collect evidence opportunistically.
 

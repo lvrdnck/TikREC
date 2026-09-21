@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import traceback
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import TextIO
@@ -14,6 +13,7 @@ from . import __version__
 from .capture import CaptureError, CaptureResult, capture_url
 from .config_cli import add_config_command, run_config_command
 from .control_cli import add_control_commands, run_control_command
+from .diagnostics import add_debug_arguments, parse_arguments, print_unexpected_traceback
 from .finalize import finalize_parts
 from .live import capture_live
 from .manifest import SessionManifest
@@ -48,7 +48,7 @@ def main(
     """Run the small recording CLI and return a conventional process code."""
     parser = _parser()
     try:
-        arguments = parser.parse_args(argv)
+        arguments = parse_arguments(parser, argv)
     except SystemExit as error:
         return int(error.code)
     except KeyboardInterrupt:
@@ -142,8 +142,9 @@ def main(
             f"tikrec: unexpected {type(error).__name__}: {_one_line_error(error)}",
             stderr,
         )
-        if arguments.debug:
-            traceback.print_exc(file=stderr)
+        print_unexpected_traceback(
+            arguments.debug_tracebacks, arguments.config_path, stderr
+        )
         return 1
     finally:
         if live_progress is not None:
@@ -241,7 +242,7 @@ def _parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    parser.add_argument("--debug", action="store_true", help="print unexpected-error tracebacks")
+    add_debug_arguments(parser)
     parser.add_argument("--config", dest="config_path", metavar="FILE",
                         help="use an explicit per-user configuration file")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -290,7 +291,7 @@ def _parser() -> argparse.ArgumentParser:
     recover = add_recovery_command(subcommands)
     for command in (record, finalize, resolve, live, validate, recover, config):
         # Accept the global diagnostic flag after a subcommand as well.
-        command.add_argument("--debug", action="store_true", default=argparse.SUPPRESS)
+        add_debug_arguments(command, suppress_default=True)
     return parser
 
 

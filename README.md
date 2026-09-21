@@ -28,6 +28,8 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec config unset recovery-window-seconds
     tikrec config set validation-mode standard|deep
     tikrec config unset validation-mode
+    tikrec config set debug-tracebacks true|false
+    tikrec config unset debug-tracebacks
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -153,6 +155,14 @@ set validation-mode standard|deep` persists the default for the explicit
 passed to `config set` are converted to absolute paths, and the recording
 directory itself is created only when a recording first uses it.
 
+`tikrec config set debug-tracebacks true|false` persists whether unexpected CLI
+errors include Python tracebacks; `unset` restores the compatible built-in
+`false`. Explicit `--debug` or `--no-debug` wins over configuration. TikREC reads
+this preference only after an unexpected exception when neither flag was given,
+so successful commands, help/version, and known operational errors do not start
+depending on configuration merely for diagnostics. This does not change normal
+progress, warning, validation, service, or remote output.
+
 The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
 wrong types, duplicate fields, and unknown top-level settings fail clearly
 instead of silently changing behavior. It is not a secrets store: do not place
@@ -186,7 +196,7 @@ Explicit `--output` always wins and is never automatically renamed. Paths that
 escape a configured directory with `..` are rejected. Configuration does not
 reinterpret remote PC paths, manual `finalize --output`, guided recovery paths,
 service state, or retained sessions. There is no filename-template setting yet;
-logging defaults remain later v0.8 work. This convenience
+the intended v0.8 configuration/default set is otherwise complete. This convenience
 names only manually started LIVEs and does not provide creator automation.
 
 Local `live` and `serve` use the recovery window in this order: an explicit

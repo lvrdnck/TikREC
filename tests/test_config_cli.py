@@ -47,6 +47,9 @@ def test_config_show_reports_missing_file_and_effective_cwd(
         "effective_validation_mode": "standard",
         "validation_mode": None,
         "validation_mode_source": "built_in_default",
+        "debug_tracebacks": None,
+        "effective_debug_tracebacks": False,
+        "debug_tracebacks_source": "built_in_default",
     }
 
 
@@ -111,6 +114,40 @@ def test_config_validation_mode_deep_show_and_unset(tmp_path: Path) -> None:
         "--config", str(path), "config", "unset", "validation-mode"
     ], stdout=StringIO()) == 0
     assert json.loads(path.read_text(encoding="utf-8")) == {"schema_version": 1}
+
+
+def test_config_debug_tracebacks_set_show_and_unset(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    assert main([
+        "--config", str(path), "config", "set", "debug-tracebacks", "false"
+    ], stdout=StringIO()) == 0
+    stdout = StringIO()
+    assert main(["--config", str(path), "config", "show", "--json"], stdout=stdout) == 0
+    result = json.loads(stdout.getvalue())
+    assert result["debug_tracebacks"] is False
+    assert result["effective_debug_tracebacks"] is False
+    assert result["debug_tracebacks_source"] == "configuration"
+    assert main([
+        "--config", str(path), "config", "set", "debug-tracebacks", "true"
+    ], stdout=StringIO()) == 0
+    stdout = StringIO()
+    assert main(["--config", str(path), "config", "show"], stdout=stdout) == 0
+    assert "Configured debug tracebacks: true" in stdout.getvalue()
+    assert "Effective debug tracebacks: true" in stdout.getvalue()
+    assert "Debug tracebacks source: configuration" in stdout.getvalue()
+    assert main([
+        "--config", str(path), "config", "unset", "debug-tracebacks"
+    ], stdout=StringIO()) == 0
+    assert json.loads(path.read_text(encoding="utf-8")) == {"schema_version": 1}
+
+
+def test_config_debug_tracebacks_rejects_invalid_cli_value(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    for value in ("False", "yes", "1", "enabled"):
+        assert main([
+            "--config", str(path), "config", "set", "debug-tracebacks", value,
+        ], stderr=StringIO()) == 1
+        assert not path.exists()
 
 
 def test_config_recovery_window_unset_preserves_other_setting(tmp_path: Path) -> None:

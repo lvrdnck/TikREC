@@ -10,6 +10,7 @@ from typing import TextIO
 
 from .configuration import (
     ConfigurationStore,
+    configured_debug_tracebacks,
     configured_recovery_window_seconds,
     configured_output_directory,
     configured_validation_mode,
@@ -25,7 +26,10 @@ def add_config_command(subcommands) -> argparse.ArgumentParser:
     show.add_argument("--json", action="store_true", help="print structured results")
     actions.add_parser("path", help="print the configuration file path")
     set_command = actions.add_parser("set", help="set one persisted default")
-    settings = ["output-directory", "recovery-window-seconds", "validation-mode"]
+    settings = [
+        "output-directory", "recovery-window-seconds", "validation-mode",
+        "debug-tracebacks",
+    ]
     set_command.add_argument("setting", choices=settings)
     set_command.add_argument("value", metavar="VALUE")
     unset = actions.add_parser("unset", help="remove one persisted default")
@@ -69,6 +73,13 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 if configuration.validation_mode is not None
                 else "built_in_default"
             ),
+            "debug_tracebacks": configuration.debug_tracebacks,
+            "effective_debug_tracebacks": configuration.effective_debug_tracebacks,
+            "debug_tracebacks_source": (
+                "configuration"
+                if configuration.debug_tracebacks is not None
+                else "built_in_default"
+            ),
         }
         if arguments.json:
             print(json.dumps(result, indent=2, sort_keys=True), file=stdout)
@@ -97,6 +108,17 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 file=stdout,
             )
             print(f"Validation mode source: {result['validation_mode_source']}", file=stdout)
+            configured_debug = result["debug_tracebacks"]
+            configured_debug_text = (
+                "(not set)" if configured_debug is None else str(configured_debug).lower()
+            )
+            print(f"Configured debug tracebacks: {configured_debug_text}", file=stdout)
+            print(
+                "Effective debug tracebacks: "
+                f"{str(result['effective_debug_tracebacks']).lower()}",
+                file=stdout,
+            )
+            print(f"Debug tracebacks source: {result['debug_tracebacks_source']}", file=stdout)
         return 0
     if arguments.config_action == "set":
         if arguments.setting == "output-directory":
@@ -107,10 +129,14 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
             value = configured_recovery_window_seconds(arguments.value)
             store.save(replace(configuration, recovery_window_seconds=value))
             print(f"Set recovery window: {value} seconds", file=stdout)
-        else:
+        elif arguments.setting == "validation-mode":
             value = configured_validation_mode(arguments.value)
             store.save(replace(configuration, validation_mode=value))
             print(f"Set validation mode: {value}", file=stdout)
+        else:
+            value = configured_debug_tracebacks(arguments.value)
+            store.save(replace(configuration, debug_tracebacks=value))
+            print(f"Set debug tracebacks: {str(value).lower()}", file=stdout)
         return 0
     if arguments.setting == "output-directory":
         store.save(replace(configuration, output_directory=None))
@@ -118,7 +144,10 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
     elif arguments.setting == "recovery-window-seconds":
         store.save(replace(configuration, recovery_window_seconds=None))
         print("Unset recovery window", file=stdout)
-    else:
+    elif arguments.setting == "validation-mode":
         store.save(replace(configuration, validation_mode=None))
         print("Unset validation mode", file=stdout)
+    else:
+        store.save(replace(configuration, debug_tracebacks=None))
+        print("Unset debug tracebacks", file=stdout)
     return 0

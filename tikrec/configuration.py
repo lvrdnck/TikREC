@@ -19,6 +19,7 @@ DEFAULT_VALIDATION_MODE = "standard"
 VALIDATION_MODES = frozenset({"standard", "deep"})
 _FIELDS = {
     "schema_version", "output_directory", "recovery_window_seconds", "validation_mode",
+    "debug_tracebacks",
 }
 
 
@@ -33,6 +34,7 @@ class Configuration:
     output_directory: Path | None = None
     recovery_window_seconds: int | None = None
     validation_mode: str | None = None
+    debug_tracebacks: bool | None = None
     schema_version: int = CONFIG_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -47,6 +49,8 @@ class Configuration:
             validate_recovery_window_seconds(self.recovery_window_seconds)
         if self.validation_mode is not None:
             validate_validation_mode(self.validation_mode)
+        if self.debug_tracebacks is not None:
+            validate_debug_tracebacks(self.debug_tracebacks)
 
     @property
     def effective_recovery_window_seconds(self) -> int:
@@ -59,6 +63,11 @@ class Configuration:
     def effective_validation_mode(self) -> str:
         """Return the configured validation mode or the built-in default."""
         return self.validation_mode or DEFAULT_VALIDATION_MODE
+
+    @property
+    def effective_debug_tracebacks(self) -> bool:
+        """Return the configured traceback preference or the safe built-in default."""
+        return self.debug_tracebacks if self.debug_tracebacks is not None else False
 
 
 def default_config_path(
@@ -108,6 +117,8 @@ class ConfigurationStore:
                 raise ConfigurationError(
                     "validation_mode must be one of: standard, deep"
                 )
+            if "debug_tracebacks" in document and document["debug_tracebacks"] is None:
+                raise ConfigurationError("debug_tracebacks must be a boolean")
             raw_directory = document.get("output_directory")
             if raw_directory is not None and not isinstance(raw_directory, str):
                 raise ConfigurationError("output_directory must be an absolute path string")
@@ -116,6 +127,7 @@ class ConfigurationStore:
                 output_directory=Path(raw_directory) if raw_directory is not None else None,
                 recovery_window_seconds=document.get("recovery_window_seconds"),
                 validation_mode=document.get("validation_mode"),
+                debug_tracebacks=document.get("debug_tracebacks"),
             )
             configuration.validate()
             return configuration
@@ -133,6 +145,8 @@ class ConfigurationStore:
             document["recovery_window_seconds"] = configuration.recovery_window_seconds
         if configuration.validation_mode is not None:
             document["validation_mode"] = configuration.validation_mode
+        if configuration.debug_tracebacks is not None:
+            document["debug_tracebacks"] = configuration.debug_tracebacks
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary: Path | None = None
         try:
@@ -204,6 +218,20 @@ def validate_validation_mode(value: object) -> str:
 def configured_validation_mode(value: str) -> str:
     """Validate one CLI validation-mode setting value."""
     return validate_validation_mode(value)
+
+
+def validate_debug_tracebacks(value: object) -> bool:
+    """Return a strict boolean traceback preference."""
+    if type(value) is not bool:
+        raise ConfigurationError("debug_tracebacks must be a boolean")
+    return value
+
+
+def configured_debug_tracebacks(value: str) -> bool:
+    """Parse the lowercase boolean accepted by the configuration CLI."""
+    if value not in {"true", "false"}:
+        raise ConfigurationError("debug tracebacks must be true or false")
+    return value == "true"
 
 
 def resolve_recording_output(output: str | Path, configuration: Configuration) -> Path:

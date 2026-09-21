@@ -74,12 +74,20 @@ when invoked, that is an error, not a wait state.
     tikrec config unset recovery-window-seconds
     tikrec config set validation-mode standard|deep
     tikrec config unset validation-mode
+    tikrec config set debug-tracebacks true|false
+    tikrec config unset debug-tracebacks
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
     tikrec remote stop --server URL [--token-file FILE]
     tikrec --version
+
+Global `--debug` and `--no-debug` are mutually exclusive; local command parsers
+also accept them after the subcommand. They explicitly enable or suppress Python
+tracebacks for unexpected CLI exceptions. Known capture, resolution, remote,
+configuration, filesystem, validation, and interruption outcomes retain their
+concise existing handling and never gain tracebacks from this preference.
 
 `record` takes a direct FLV URL and is the generic path. It must stay
 source-agnostic and must not gain TikTok-specific behaviour. Its optional
@@ -726,8 +734,9 @@ TikREC never scans for alternatives. The schema permits integer
 integer `recovery_window_seconds` from 60 through 3600 inclusive, and optional
 string `validation_mode` equal to `standard` or `deep`; duplicate,
 missing-version, unknown, incorrectly typed, malformed, or unsupported data is an
-error, and explicitly supplying null for `validation_mode` is invalid. Writes use
-a flushed same-directory temporary and atomic replacement,
+error. The optional boolean `debug_tracebacks` controls unexpected CLI traceback
+output. Explicitly supplying null for `validation_mode` or `debug_tracebacks` is
+invalid. Writes use a flushed same-directory temporary and atomic replacement,
 with a parent-directory sync on POSIX. Unsetting all optional settings retains a valid
 versioned document. This store must never contain TikTok cookies, credentials,
 bearer tokens, or signed media URLs.
@@ -741,6 +750,15 @@ the bounded integer and its matching `unset` restores the built-in default.
 `config set validation-mode standard|deep` persists the standalone validation
 default and its matching `unset` restores built-in standard. An explicitly
 persisted `standard` remains distinguishable from an absent setting in `show`.
+`config set debug-tracebacks true|false` persists the unexpected-error diagnostic
+default; its matching `unset` restores built-in false. Persisted false remains
+distinguishable from absence. Explicit `--debug`/`--no-debug` overrides it
+without reading configuration. With neither flag, the CLI loads this preference
+only after an unexpected exception; malformed configuration is then reported
+clearly without hiding the original concise unexpected-error line. Normal command
+execution, known error handling, help, and version output do not consult this
+setting. HTTP request logging remains suppressed because request targets can
+contain secrets or signed URLs.
 Invalid existing configuration is never silently overwritten by a mutation.
 
 `--output` is optional only for local `live`. When supplied, an absolute path is

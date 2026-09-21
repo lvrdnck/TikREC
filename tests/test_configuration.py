@@ -12,12 +12,14 @@ from tikrec.configuration import (
     Configuration,
     ConfigurationError,
     ConfigurationStore,
+    configured_debug_tracebacks,
     configured_recovery_window_seconds,
     configured_output_directory,
     configured_validation_mode,
     default_config_path,
     resolve_recording_output,
     validate_recovery_window_seconds,
+    validate_debug_tracebacks,
     validate_validation_mode,
 )
 
@@ -57,6 +59,7 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
         "output_directory": str(output_directory),
         "recovery_window_seconds": 600,
         "validation_mode": "deep",
+        "debug_tracebacks": False,
     }), encoding="utf-8")
     configuration = ConfigurationStore(path).load()
     assert configuration.output_directory == output_directory
@@ -64,6 +67,8 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
     assert configuration.effective_recovery_window_seconds == 600
     assert configuration.validation_mode == "deep"
     assert configuration.effective_validation_mode == "deep"
+    assert configuration.debug_tracebacks is False
+    assert configuration.effective_debug_tracebacks is False
     assert resolve_recording_output("creator/live.mp4", configuration) == (
         output_directory / "creator/live.mp4"
     )
@@ -82,6 +87,9 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
     ('{"schema_version": 1, "validation_mode": true}', "one of: standard, deep"),
     ('{"schema_version": 1, "validation_mode": 1}', "one of: standard, deep"),
     ('{"schema_version": 1, "validation_mode": null}', "one of: standard, deep"),
+    ('{"schema_version": 1, "debug_tracebacks": 1}', "must be a boolean"),
+    ('{"schema_version": 1, "debug_tracebacks": "false"}', "must be a boolean"),
+    ('{"schema_version": 1, "debug_tracebacks": null}', "must be a boolean"),
     ('{"schema_version": 1, "typo": true}', "unknown or invalid"),
     ('{"schema_version": 1, "schema_version": 1}', "duplicate field"),
     ('{"output_directory": "/recordings"}', "missing schema_version"),
@@ -123,6 +131,18 @@ def test_validation_mode_values_and_default_are_strict() -> None:
             validate_validation_mode(invalid)
 
 
+def test_debug_traceback_values_and_default_are_strict() -> None:
+    assert Configuration().effective_debug_tracebacks is False
+    assert validate_debug_tracebacks(True) is True
+    assert configured_debug_tracebacks("false") is False
+    for invalid in (1, 0, None, "false", 1.0):
+        with pytest.raises(ConfigurationError, match="must be a boolean"):
+            validate_debug_tracebacks(invalid)
+    for invalid in ("False", "yes", "1", ""):
+        with pytest.raises(ConfigurationError, match="true or false"):
+            configured_debug_tracebacks(invalid)
+
+
 def test_relative_cli_value_is_stored_as_absolute_without_creating_it(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -150,14 +170,16 @@ def test_atomic_save_replaces_complete_document_and_leaves_no_partial(tmp_path: 
     directory = tmp_path / "recordings"
     store.save(Configuration(
         output_directory=directory, recovery_window_seconds=1200, validation_mode="standard",
+        debug_tracebacks=False,
     ))
     assert store.load() == Configuration(
         output_directory=directory, recovery_window_seconds=1200, validation_mode="standard",
+        debug_tracebacks=False,
     )
     assert list(path.parent.glob("*.partial")) == []
     assert json.loads(path.read_text(encoding="utf-8")) == {
         "output_directory": str(directory), "recovery_window_seconds": 1200,
-        "schema_version": 1, "validation_mode": "standard",
+        "schema_version": 1, "validation_mode": "standard", "debug_tracebacks": False,
     }
 
 
