@@ -46,6 +46,7 @@ class JobState:
     room_id: str | None = None
     resume_count: int = 0
     recovery_reason: str | None = None
+    raw_copy_enabled: bool = False
 
     @property
     def needs_reconciliation(self) -> bool:
@@ -80,6 +81,7 @@ class JobState:
                 and type(self.stop_requested) is bool
                 and type(self.finalization_completed) is bool
                 and type(self.resume_count) is int and self.resume_count >= 0
+                and type(self.raw_copy_enabled) is bool
                 and (self.room_id is None or
                      (isinstance(self.room_id, str) and
                       canonical_room_id(self.room_id) == self.room_id))
@@ -112,8 +114,12 @@ class JobStateStore:
         except (UnicodeError, ValueError):
             raise JobStateError("invalid durable job state; preserve artifacts") from None
         try:
+            fields = set(JobState.__dataclass_fields__)
+            if isinstance(values, dict) and set(values) == fields - {"raw_copy_enabled"}:
+                # Legacy jobs predate this opt-in diagnostic; absence means disabled.
+                values["raw_copy_enabled"] = False
             # Missing stop/identity flags must not silently acquire permissive defaults.
-            if not isinstance(values, dict) or set(values) != set(JobState.__dataclass_fields__):
+            if not isinstance(values, dict) or set(values) != fields:
                 raise ValueError("unexpected fields")
             job = JobState(**values)
             job.validate()

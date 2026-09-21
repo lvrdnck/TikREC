@@ -82,6 +82,18 @@ def test_remote_commands(action, monkeypatch):
     assert TOKEN not in stdout.getvalue()
 
 
+def test_remote_start_raw_copy_is_explicit_opt_in(monkeypatch):
+    monkeypatch.delenv("TIKREC_TOKEN", raising=False)
+    requests = []
+    def opener(request, **kwargs):
+        requests.append(request)
+        return BytesIO(b'{"state":"resolving"}')
+    argv = ["remote", "start", "--server", "http://main-pc:8765", "--raw-copy",
+            "https://www.tiktok.com/@creator/live", "--output", r"C:\Videos\out.mp4"]
+    assert main(argv, remote_opener=opener, stdout=StringIO()) == 0
+    assert json.loads(requests[0].data)["raw_copy"] is True
+
+
 def test_failed_job_status_returns_failure(monkeypatch):
     monkeypatch.delenv("TIKREC_TOKEN", raising=False)
     assert main(["remote", "status", "--server", "http://main-pc"], stdout=StringIO(),

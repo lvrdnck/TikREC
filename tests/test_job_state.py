@@ -79,6 +79,7 @@ def test_completed_finalization_does_not_need_reconciliation(tmp_path):
     {"started_at": True}, {"started_at": -1}, {"ended_at": 122.0},
     {"state": "unknown"}, {"stop_requested": "false"},
     {"finalization_completed": 1}, {"resume_count": -1}, {"resume_count": True},
+    {"raw_copy_enabled": 1}, {"raw_copy_enabled": "true"},
     {"room_id": "https://cdn.test/secret"}, {"room_id": 123}, {"room_id": ""},
     {"room_id": "0"}, {"room_id": "00123"}, {"room_id": "１２３"},
     {"recovery_reason": "Bearer secret"},
@@ -189,6 +190,16 @@ def test_missing_safety_field_does_not_acquire_a_default(tmp_path, field):
     path.write_text(json.dumps(values), encoding="utf-8")
     with pytest.raises(JobStateError):
         JobStateStore(path).load()
+
+
+def test_legacy_job_without_raw_copy_field_loads_with_diagnostic_disabled(tmp_path):
+    path = tmp_path / "job.json"
+    values = asdict(intent(tmp_path))
+    del values["raw_copy_enabled"]
+    path.write_text(json.dumps(values), encoding="utf-8")
+    original = path.read_bytes()
+    assert JobStateStore(path).load().raw_copy_enabled is False
+    assert path.read_bytes() == original
 
 
 def test_invalid_utf8_state_is_preserved(tmp_path):

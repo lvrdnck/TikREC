@@ -29,6 +29,8 @@ def add_control_commands(subcommands) -> None:
         if name == "start":
             action.add_argument("url", metavar="TIKTOK_LIVE_URL")
             action.add_argument("--output", required=True, metavar="ABSOLUTE_PC_MP4_PATH")
+            action.add_argument("--raw-copy", action="store_true",
+                                help="opt in to raw/arrival evidence beside retained parts")
 
 
 def read_token(token_file: str | None) -> str | None:
@@ -60,7 +62,7 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
     client = RemoteClient(arguments.server, token=token, opener=remote_opener,
                           timeout=arguments.timeout)
     if arguments.action == "start":
-        result = client.start(arguments.url, arguments.output)
+        result = client.start(arguments.url, arguments.output, raw_copy=arguments.raw_copy)
     else:
         result = getattr(client, arguments.action)()
     print(json.dumps(result, indent=2, sort_keys=True), file=stdout)

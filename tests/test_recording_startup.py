@@ -98,11 +98,12 @@ def test_stop_during_resolution_outranks_resume_and_is_durable(tmp_path):
 
 
 def test_resumed_worker_reuses_job_and_handles_normal_remote_stop(tmp_path):
-    store, job, _ = saved_session(tmp_path)
+    store, job, _ = saved_session(tmp_path, raw_copy_enabled=True)
     entered = Event()
     def resume(page, **options):
         assert store.load().resume_count == 1 and store.load().state == "resuming"
         assert options["session_id"] == job.session_id
+        assert options["raw_copy_dir"] == tmp_path / "out.parts"
         options["state"]("recording")
         entered.set()
         assert options["stop_event"].wait(2)

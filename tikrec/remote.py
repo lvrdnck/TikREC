@@ -50,9 +50,15 @@ class RemoteClient:
         """Fetch current recording progress or the most recent result."""
         return self._request("GET", "/recording")
 
-    def start(self, url: str, output: str) -> dict:
-        """Request one recording using an output path on the service machine."""
-        return self._request("POST", "/recording/start", {"url": url, "output": output})
+    def start(self, url: str, output: str, *, raw_copy: bool = False) -> dict:
+        """Request one recording, optionally retaining co-located raw diagnostics."""
+        if type(raw_copy) is not bool:
+            raise ValueError("raw_copy must be a boolean")
+        body = {"url": url, "output": output}
+        if raw_copy:
+            # Omit the disabled option so ordinary requests remain wire-compatible.
+            body["raw_copy"] = True
+        return self._request("POST", "/recording/start", body)
 
     def stop(self) -> dict:
         """Request graceful capture stop; finalization continues on the service."""

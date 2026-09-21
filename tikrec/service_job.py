@@ -23,6 +23,7 @@ def job_snapshot(job: JobState) -> dict:
             "output_path": job.output_path, "parts_directory": job.parts_directory,
             "stop_requested": job.stop_requested, "room_id": job.room_id,
             "resume_count": job.resume_count, "resumed": job.resume_count > 0,
+            "raw_copy_enabled": job.raw_copy_enabled,
             "recovery_state": None, "recovery_reason": job.recovery_reason,
             "final_output_path": job.output_path if job.finalization_completed else None,
             "interrupted": job.stop_requested, "error": None}

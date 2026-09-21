@@ -67,7 +67,7 @@ when invoked, that is an error, not a wait state.
     tikrec serve [--host IP] [--port PORT] [--token-file FILE]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
-    tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--token-file FILE]
+    tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
     tikrec remote stop --server URL [--token-file FILE]
     tikrec --version
 
@@ -694,6 +694,12 @@ each successful HTTP body read plus the observed read end. Both diagnostics are
 best-effort; their failure is a warning, never a capture failure. Arrival logs
 add small variable storage and per-read JSON/flush work only when raw copying is
 explicitly enabled.
+
+Remote diagnostic capture uses the boolean `remote start --raw-copy` opt-in
+rather than accepting an arbitrary diagnostic path. The service co-locates raw
+files and arrival sidecars inside the deterministic `<stem>.parts` directory,
+persists the opt-in in durable job intent, and passes that same location to a
+safe resumed capture. Normal remote starts omit the field and remain unchanged.
 
 ## Recording storage
 

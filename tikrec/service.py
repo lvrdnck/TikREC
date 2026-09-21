@@ -124,12 +124,19 @@ class RecordingHandler(BaseHTTPRequestHandler):
                 return
             self._json(202, self.server.controller.stop())
             return
-        if (set(body) != {"url", "output"}
-                or not all(isinstance(value, str) for value in body.values())):
-            self._json(400, {"error": "start requires only string url and output fields"})
+        fields = set(body)
+        if (fields not in ({"url", "output"}, {"url", "output", "raw_copy"})
+                or not isinstance(body.get("url"), str)
+                or not isinstance(body.get("output"), str)
+                or ("raw_copy" in body and type(body["raw_copy"]) is not bool)):
+            self._json(400, {"error": "start requires string url/output and optional boolean raw_copy"})
             return
         try:
-            status = self.server.controller.start(body["url"], body["output"])
+            if body.get("raw_copy", False):
+                status = self.server.controller.start(body["url"], body["output"], raw_copy=True)
+            else:
+                # Preserve the original call shape for ordinary/default starts.
+                status = self.server.controller.start(body["url"], body["output"])
         except RecordingBusy:
             self._json(409, {"error": "recording active, recovery unresolved, or service shutting down"})
         except (ValueError, OSError):

@@ -19,14 +19,26 @@ def test_health_status_start_stop_requests():
     client = RemoteClient("http://main-pc:8765/", token="secret", opener=opener)
     assert client.health() == {"state": "recording"}
     client.status()
-    client.start("https://www.tiktok.com/@creator/live", r"C:\Videos\out.mp4")
+    client.start("https://www.tiktok.com/@creator/live", r"C:\Videos\out.mp4", raw_copy=True)
     client.stop()
     assert [(r.get_method(), r.full_url) for r, _ in calls] == [
         ("GET", "http://main-pc:8765/health"), ("GET", "http://main-pc:8765/recording"),
         ("POST", "http://main-pc:8765/recording/start"), ("POST", "http://main-pc:8765/recording/stop")]
     assert json.loads(calls[2][0].data)["output"] == r"C:\Videos\out.mp4"
+    assert json.loads(calls[2][0].data)["raw_copy"] is True
     assert json.loads(calls[3][0].data) == {}
     assert all(r.get_header("Authorization") == "Bearer secret" and t == 10 for r, t in calls)
+
+
+def test_start_omits_disabled_raw_copy_for_wire_compatibility():
+    requests = []
+    client = RemoteClient("http://main-pc", opener=lambda request, **_: (
+        requests.append(request) or BytesIO(b'{}')
+    ))
+    client.start("page", "path")
+    assert json.loads(requests[0].data) == {"url": "page", "output": "path"}
+    with pytest.raises(ValueError, match="boolean"):
+        client.start("page", "path", raw_copy=1)
 
 
 @pytest.mark.parametrize("code", [400, 401, 409, 500])

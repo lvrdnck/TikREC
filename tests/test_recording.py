@@ -107,6 +107,26 @@ def test_refuses_relative_output_and_existing_artifacts(tmp_path):
     assert output.read_bytes() == b"keep"
 
 
+def test_raw_copy_opt_in_is_passed_only_to_the_selected_job(tmp_path):
+    calls = []
+    def capture(url, **kwargs):
+        calls.append(kwargs)
+        return CaptureResult((), None)
+    controller = RecordingController(capture=capture)
+    controller.start(PAGE, str(tmp_path / "raw.mp4"), raw_copy=True)
+    controller._worker.join(2)
+    controller.start(PAGE, str(tmp_path / "normal.mp4"))
+    controller.shutdown()
+    assert calls[0]["raw_copy_dir"] == tmp_path / "raw.parts"
+    assert "raw_copy_dir" not in calls[1]
+
+
+def test_raw_copy_option_requires_a_boolean(tmp_path):
+    controller = RecordingController()
+    with pytest.raises(ValueError, match="boolean"):
+        controller.start(PAGE, str(tmp_path / "out.mp4"), raw_copy=1)
+
+
 def test_shutdown_waits_for_worker_and_rejects_new_jobs(tmp_path):
     entered, finalizing, release, done = Event(), Event(), Event(), Event()
 

@@ -533,6 +533,16 @@ that diagnostic, and never interrupts recording. Existing files are never
 overwritten; a sidecar collision disables only the sidecar while the raw copy
 may continue. Partial or unreferenced diagnostic files remain evidence.
 
+For a service-owned validation session, `tikrec remote start --raw-copy` opts in
+without accepting an arbitrary remote diagnostic directory. The service writes
+the numbered raw and arrival files directly beside the session's retained FLVs,
+`connections.jsonl`, and `session.json` in `<stem>.parts`; the finalized MP4
+remains at the requested sibling output path. Durable job intent records the
+boolean opt-in so a safely resumed capture continues using the same evidence
+directory. Without the flag, remote capture performs no raw copy. This is the
+issue-#8 workflow and roughly doubles media storage; it does not alter retry,
+parser, writer, finalization, or default capture behavior.
+
 ## Rendition and part facts
 
 Each live connection records `rendition_label` (the selection's normalized,

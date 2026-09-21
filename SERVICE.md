@@ -52,10 +52,15 @@ one Content-Length, and 1–8192 bytes; transfer encoding is unsupported.
 | --- | --- | --- |
 | `GET /health` | none | 200: service, version, available, active, shutting_down, recovery_state, recovery_reason |
 | `GET /recording` | none | 200: idle or current/latest job snapshot |
-| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4"}` | 202: job accepted; 409 if active/recovery unresolved/shutting down |
+| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: job accepted; 409 if active/recovery unresolved/shutting down |
 | `POST /recording/stop` | `{}` | 202: stop requested/current snapshot; harmless when idle or repeated |
 
-Start accepts only `url` and `output` string fields. LIVE URLs must use
+Start accepts `url` and `output` string fields plus optional boolean `raw_copy`.
+Omitted or false keeps diagnostics disabled. True writes each raw connection and
+arrival sidecar directly in the matching `<stem>.parts` directory so raw bytes,
+retained media, connection evidence, manifest, and final output share one session
+location. The flag is durable across safe service recovery and never changes
+capture/retry policy; diagnostic I/O failures remain warnings. LIVE URLs must use
 `tiktok.com` or `www.tiktok.com` and `/@username/live`; query/fragment metadata
 is discarded and HTTPS/www is normalized. Signed CDN URLs are rejected as
 inputs and never appear in normal status. Output must be an absolute `.mp4`
@@ -80,7 +85,7 @@ service restart; there is no job history database.
 Job snapshots contain session_id, normalized source_url, started_at/ended_at
 (Unix seconds), active/state, parts_directory, output_path (requested),
 final_output_path (actual result or null), stop_requested, interrupted, error,
-room_id, resumed, resume_count, recovery_state, recovery_reason,
+room_id, resumed, resume_count, raw_copy_enabled, recovery_state, recovery_reason,
 part_count (closed retained parts), reconnect_count (this process's resolution attempts after
 the first), bytes_written, and elapsed_seconds (wall time, not media duration).
 Bytes include heartbeat evidence for the open part during capture. The job ID
@@ -141,6 +146,7 @@ Job schema version 1 contains:
 | `room_id` | Canonical positive ASCII decimal public room identity, or null; no leading zeros |
 | `resume_count` | Nonnegative number of recording resumes |
 | `recovery_reason` | Null or a fixed machine-readable recovery reason |
+| `raw_copy_enabled` | Boolean owner opt-in for co-located raw/arrival diagnostics |
 
 Reasons are `process_restart`, `user_stop`, `room_ended`, `live_changed`,
 `identity_unavailable`, `recovery_finalization`, `existing_output`,
@@ -153,7 +159,9 @@ Writes flush/fsync complete JSON in a unique sibling temporary, close for Window
 rename, and atomically replace committed state; POSIX fsyncs the parent directory.
 This prevents half-written JSON, not hardware loss. Abandoned temporaries remain
 evidence and are never loaded. Malformed/duplicate/unknown/missing fields or schema
-fail safely. Concurrent service-process coordination is unsupported.
+fail safely. Legacy schema-1 jobs that predate only `raw_copy_enabled` load it as
+false; missing lifecycle/identity safety fields still fail closed. Concurrent
+service-process coordination is unsupported.
 
 Stopped, terminal, finalized, finalizing, or identity-less jobs cannot resume
 capture. Reconciliation also checks same-LIVE identity and usable retained media;
@@ -343,6 +351,35 @@ result. Do not use Task Scheduler **End** or `Stop-ScheduledTask` for recording
 stop. For service maintenance, first gracefully stop the recording and wait for
 completion, then end the idle task. Restart it after updating the checkout.
 TikREC does not create or modify scheduled tasks automatically.
+
+## Issue #8 raw-copy validation workflow
+
+Deploy the current checkout only while the service is idle, using the existing
+editable-install and Scheduled Task procedure above. For one owner-authorized
+public LIVE, choose a new output whose MP4 and matching `.parts` directory do not
+exist, then use the normal remote service path with the diagnostic opt-in:
+
+```powershell
+$Tikrec = 'C:\Users\Leandro\dev\TikREC\.venv\Scripts\tikrec.exe'
+$Server = 'http://100.123.31.16:8765'
+$TokenFile = 'C:\Users\Leandro\.tikrec-service-token'
+$LiveUrl = 'https://www.tiktok.com/@REPLACE_CREATOR/live'
+$Output = 'C:\Users\Leandro\Videos\REPLACE_ISSUE8_NAME.mp4'
+
+& $Tikrec remote health --server $Server --token-file $TokenFile
+& $Tikrec remote start --server $Server $LiveUrl --output $Output --raw-copy --token-file $TokenFile
+& $Tikrec remote status --server $Server --token-file $TokenFile
+```
+
+Allow normal capture and natural source behavior; do not manufacture a replay,
+corruption, or network fault. Poll status without stopping a healthy recording.
+After natural completion, preserve the MP4 and entire `.parts` directory
+read-only. If `connections.jsonl` records a timestamp replay, the same directory
+must contain that connection's named `.raw` file and `.arrivals.jsonl` sidecar;
+compare raw and retained FLV tag bytes around the recorded positions before any
+repair attempt. If no replay occurs, retain or dispose of the ordinary session
+only under the owner's normal evidence policy and repeat on a later authorized
+LIVE. Never enable this storage-heavy option for routine recordings by default.
 
 ## Deployment verification still required
 

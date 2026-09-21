@@ -19,7 +19,7 @@ workflows are product direction, but they are not commands or service features t
     tikrec serve [--host IP] [--port PORT] [--token-file FILE]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
-    tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--token-file FILE]
+    tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
     tikrec remote stop --server URL [--token-file FILE]
     tikrec --version
 
@@ -120,6 +120,13 @@ tikrec remote start --server http://main-pc:8765 https://www.tiktok.com/@usernam
 tikrec remote status --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
 tikrec remote stop --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
 ```
+
+For an owner-authorized diagnostic recording, add `--raw-copy` to `remote start`.
+The service then places `connection-NNNN.raw` and matching
+`connection-NNNN.arrivals.jsonl` files directly in the recording's matching
+`<stem>.parts` directory, beside `connections.jsonl`, `session.json`, and the
+retained FLVs. The opt-in survives safe service recovery; ordinary remote starts
+remain disabled by default and do not pay the roughly doubled storage cost.
 
 One recording may be active. Start and stop acknowledge requests immediately;
 poll status until `completed` or `failed` to see the final result. Remote stop

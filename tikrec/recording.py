@@ -110,10 +110,12 @@ class RecordingController:
         with self._lock:
             return self._snapshot()
 
-    def start(self, url: str, output: str) -> dict:
+    def start(self, url: str, output: str, *, raw_copy: bool = False) -> dict:
         """Accept one job and launch it independently of the requesting connection."""
         url = normalize_live_url(url)
         output_path = Path(output)
+        if type(raw_copy) is not bool:
+            raise ValueError("raw_copy must be a boolean")
         if not output or "\x00" in output or not output_path.is_absolute():
             raise ValueError("output must be an absolute path on the service machine")
         if output_path.suffix.lower() != ".mp4":
@@ -135,7 +137,7 @@ class RecordingController:
                 "parts_directory": str(self._parts), "stop_requested": False,
                 "interrupted": False, "error": None,
                 "room_id": None, "resumed": False, "resume_count": 0,
-                "recovery_state": None, "recovery_reason": None,
+                "recovery_state": None, "recovery_reason": None, "raw_copy_enabled": raw_copy,
             }
             self._worker = Thread(target=self._run, args=(url, output_path),
                                   name="tikrec-recording", daemon=False)
@@ -194,6 +196,8 @@ class RecordingController:
                            room_identity=self._identity, recovery_observer=self._network_status,
                            retry_policy=self._retry_policy, recovery_clock=self._recovery_clock,
                            recovery_waiter=self._recovery_waiter)
+            if self._job.get("raw_copy_enabled"):
+                options["raw_copy_dir"] = self._parts
             if recovery is None:
                 result = self._capture(url, parts_directory=self._parts, output_path=output_path,
                                        session_id=self._job["session_id"], **options)

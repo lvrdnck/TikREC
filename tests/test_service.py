@@ -78,6 +78,37 @@ def test_http_start_conflict_status_and_stop_signal(tmp_path):
     assert status["final_output_path"] == body["output"]
 
 
+def test_http_start_enables_co_located_raw_diagnostics(tmp_path):
+    received, done = [], Event()
+    def capture(url, **kwargs):
+        received.append(kwargs)
+        done.set()
+        return CaptureResult((), None)
+    controller = RecordingController(capture=capture)
+    output = tmp_path / "diagnostic.mp4"
+    try:
+        code, status = request(controller, "POST", "/recording/start", {
+            "url": PAGE, "output": str(output), "raw_copy": True,
+        })
+        assert code == 202 and status["raw_copy_enabled"] is True
+        assert done.wait(2)
+        controller._worker.join(2)
+    finally:
+        controller.shutdown()
+    assert received[0]["raw_copy_dir"] == tmp_path / "diagnostic.parts"
+
+
+def test_default_http_start_keeps_original_controller_call_shape():
+    calls = []
+    controller = SimpleNamespace(start=lambda url, output: (
+        calls.append((url, output)) or {"state": "resolving"}
+    ))
+    assert request(controller, "POST", "/recording/start", {
+        "url": PAGE, "output": r"C:\Videos\normal.mp4",
+    })[0] == 202
+    assert calls == [(PAGE, r"C:\Videos\normal.mp4")]
+
+
 def test_api_stop_uses_real_live_finalization_path(tmp_path):
     from tikrec.live import capture_live
     from tests.test_live import stream
@@ -125,7 +156,9 @@ def test_all_routes_require_configured_token(path):
 
 
 @pytest.mark.parametrize("body", [[], {}, {"url": PAGE, "output": "a", "executable": "evil"},
-                                  {"url": 1, "output": "a"}])
+                                  {"url": 1, "output": "a"},
+                                  {"url": PAGE, "output": "a", "raw_copy": 1},
+                                  {"url": PAGE, "output": "a", "raw_copy": "yes"}])
 def test_invalid_start_shape_is_rejected(body):
     assert request(RecordingController(), "POST", "/recording/start", body)[0] == 400
 
