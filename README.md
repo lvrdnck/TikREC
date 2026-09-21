@@ -9,9 +9,8 @@ This reliability-first implementation is the foundation of a broader future
 livestream recording platform. Creator automation, a library, playback, and web
 workflows are product direction, but they are not commands or service features today.
 
-The package/development release candidate is v0.7.0. The current immutable tag
-and published GitHub Release remain v0.6.0 until separate publication approval;
-see [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
+The current package, immutable tag, and published GitHub Release are v0.7.0.
+See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
 ## Usage
 

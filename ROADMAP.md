@@ -163,7 +163,7 @@ retained-session and deep output validation passed.
 
 **Release record:** package version v0.4.0, annotated `v0.4.0` tag at
 `9f8e4104f8bc24f439a3e927ca72da29257c41fa`, and the published GitHub Release
-`TikREC v0.4.0` are synchronized. It is a historical released version; v0.6.0
+`TikREC v0.4.0` are synchronized. It is a historical released version; v0.7.0
 is the current released version.
 
 ### v0.5.0 ? Environment survival / resumability
@@ -556,7 +556,7 @@ non-blocking and #19 complete, no demonstrated v0.6.0 release-validation blocker
 remains. Publication still requires separate owner authorization and the normal
 immutable tag/GitHub Release checklist; this reassessment creates neither.
 
-**Release publication (2026-09-21):** v0.6.0 is the current released version.
+**Release publication (2026-09-21):** v0.6.0 became the current released version.
 The immutable annotated `v0.6.0` tag (tag object
 `8ee5c90a57d9d6b5da7e00fe9dd3019a7b1d82c4`, peeled release commit
 `341de6ea154ec1a767fd89a7994381a1a74d7d78`) and the published non-draft,
@@ -650,8 +650,19 @@ correct. The issue #22 isolated real-media recovery check remains the applicable
 finalization evidence: pre-validation, guided stream-copy finalization, updated-
 session validation, and deep output validation all passed without modifying the
 source evidence. No release blocker is demonstrated; issues #8 and #13 remain
-non-blocking/opportunistic. v0.7.0 is ready for separately authorized publication
-but remains untagged and unpublished, so v0.6.0 remains the current release.
+non-blocking/opportunistic. At this checkpoint v0.7.0 was ready for separately
+authorized publication but remained untagged and unpublished, so v0.6.0 was the
+current release.
+
+**Release publication (2026-09-21):** v0.7.0 is the current released version.
+The immutable annotated `v0.7.0` tag (tag object
+`13b0492697d788814ceedcd11017892877be6115`, peeled release commit
+`bf3bee32fcd5267a109006883451bf90718ff722`) and the published non-draft,
+non-prerelease GitHub Release `TikREC v0.7.0` are synchronized with package
+metadata. Final publication verification passed 832 tests, 204 unittest-
+discovery tests, compilation, CLI/help checks, and an installed-wheel smoke test;
+the issue #22 isolated real-media recovery evidence remains applicable. Issues
+#8 and #13 remain open as non-blocking, opportunistic evidence work.
 
 ### v0.8.0 ? Configuration and defaults
 
@@ -790,10 +801,8 @@ or desirable.
 The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability
-through v0.6.0 is released; v0.7.0 guided interrupted-session recovery is a
-verified release candidate awaiting separate publication authorization. After
-that release is synchronized, v0.8.0 configuration/defaults is the next planned
-implementation target.
+and guided interrupted-session recovery through v0.7.0 are released. v0.8.0
+configuration/defaults is the next planned implementation target.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage
