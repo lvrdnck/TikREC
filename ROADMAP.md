@@ -423,6 +423,20 @@ the run contained zero ordinary media reconnects, it proves deployed capture and
 room-end health but not the issue #19 acceptance gate. Issue #19 stays open and
 no disconnect was manufactured.
 
+The active issue #8 `luhpollisecret` session later supplied a successful
+media-bearing connection 1-to-2 recovery on the same deployed code, but it also
+does not complete issue #19. The retained analyzer classifies the boundary as
+`network_recovery`, not `ordinary`, because connection 1 ended in
+`IncompleteRead(0 bytes read)` and an explicit recovery episode began. Media was
+retained on both sides with the same canonical room, `hd1`/`flv_pull_url`, and
+identical H.264/AAC configuration; the adjacent parts pass decoder/DTS checks.
+The 7.758-second total gap included a 5.988-second dying tail, 1.024-second
+failure backoff, 0.419-second established resolution, 0.175-second HTTP setup,
+0.151-second initial media delivery, and no keyframe gate. The deployed bound
+resolver necessarily attempted the identity-safe known-room path, but the
+persisted schema cannot prove fast-result acceptance versus full fallback.
+Issue #19 therefore stays open for its specifically required ordinary reconnect.
+
 **Media-integrity sequencing decision (2026-09-21):** Issue #19's natural
 ordinary-reconnect validation is intentionally paused; its implemented and
 deployed identity-safe fast path remains current code. Issue #8 is now the single
@@ -480,7 +494,11 @@ path and a new collision-free output/parts pair. The first connection is healthy
 writer/raw/arrival evidence is progressing, and the initial checkpoint has zero
 reconnects with no recovery, stop, interruption, or error state. The recording
 was left undisturbed for a natural replay or room-end boundary; no fault was
-manufactured.
+manufactured. Connection 1 later failed naturally and recovered into a productive
+connection 2, which subsequently ended after retaining parts 11--20. Its complete
+666,852,312-byte raw copy contains 235,300 complete tags and no source-aware
+timestamp replay across ten codec configuration epochs. Connection 3 is active;
+issue #8 remains open and the recording remains undisturbed.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 

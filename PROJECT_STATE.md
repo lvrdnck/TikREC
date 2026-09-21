@@ -67,7 +67,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   output validation pass. Its only reconnect allocation was the media-free
   terminal room-end check, so real ordinary-reconnect validation remains
   outstanding. Do not revert or disable the deployed implementation; only its
-  remaining validation is paused.
+  remaining validation is paused. The later `luhpollisecret` media-bearing
+  connection 1-to-2 recovery does not complete that gate: the analyzer classifies
+  it as `network_recovery` after `IncompleteRead(0 bytes read)` and an explicit
+  recovery boundary, not an ordinary healthy-close reconnect. It retained media
+  on both sides with the same room, `hd1`/`flv_pull_url`, codec configuration,
+  and clean decoder/DTS checks. Its 7.758-second gap comprised 5.988 seconds of
+  dying-connection tail, 1.024 local/failure backoff, 0.419 resolution, 0.175
+  HTTP setup, 0.151 initial media, and zero keyframe gate. Established resolution
+  necessarily attempted the identity-safe known-room path, but persisted evidence
+  does not record whether the fast result was accepted or the full fallback ran.
 - **Preserved soak recovery:** Session `43248309-a69f-45cf-a4e2-f4fc35a82a40`,
   room `7687483539771624223`, retained 1,300,258,942 bytes in six unchanged FLVs
   across 10,031.395 wall seconds. Four allocated attempts produced three reported
@@ -151,6 +160,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   parts 1--19 are replay-free, and connection-2 parts 11--19 pass decoder and
   packet-DTS validation without findings. This strengthens the no-divergence
   evidence but still does not supply the rare replay required for attribution.
+  Connection 2 later ended with another natural `IncompleteRead(0 bytes read)`
+  after retaining parts 11--20. Its complete 666,852,312-byte raw copy contains
+  235,300 complete tags and zero source-aware timestamp replays across ten codec
+  configuration epochs; its durable part timings also report zero replays.
+  Connection 3 is now active and remains undisturbed.
 - **Pending owner action:** None while the current validation session remains
   active. Keep v0.6.0 publication paused; do not create its tag or GitHub Release.
 - **Next queued task:** Reinspect the existing `luhpollisecret` session without
