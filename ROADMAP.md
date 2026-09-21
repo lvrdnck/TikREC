@@ -163,7 +163,8 @@ retained-session and deep output validation passed.
 
 **Release record:** package version v0.4.0, annotated `v0.4.0` tag at
 `9f8e4104f8bc24f439a3e927ca72da29257c41fa`, and the published GitHub Release
-`TikREC v0.4.0` are synchronized. It is a historical released version; v0.5.0 is the current released version.
+`TikREC v0.4.0` are synchronized. It is a historical released version; v0.6.0
+is the current released version.
 
 ### v0.5.0 ? Environment survival / resumability
 
@@ -529,7 +530,7 @@ as a release prerequisite is disproportionate to the remaining risk.
 No replay-with-raw-copy sample was captured. A future retained replay absent from
 matching raw timestamps/tags, any raw-versus-retained payload/order divergence,
 or a reproducible TikREC-only decoder failure would make this a correctness
-blocker again. v0.6.0 remains untagged and unpublished.
+blocker again. At this reassessment, v0.6.0 remained untagged and unpublished.
 
 **Issue #19 rare-evidence reassessment (2026-09-21):** Outcome C applies and the
 issue is complete. No qualifying post-change ordinary reconnect was captured,
@@ -554,6 +555,16 @@ open/reconnect regression, or recurring material resolver slowdown. With #8
 non-blocking and #19 complete, no demonstrated v0.6.0 release-validation blocker
 remains. Publication still requires separate owner authorization and the normal
 immutable tag/GitHub Release checklist; this reassessment creates neither.
+
+**Release publication (2026-09-21):** v0.6.0 is the current released version.
+The immutable annotated `v0.6.0` tag (tag object
+`8ee5c90a57d9d6b5da7e00fe9dd3019a7b1d82c4`, peeled release commit
+`341de6ea154ec1a767fd89a7994381a1a74d7d78`) and the published non-draft,
+non-prerelease GitHub Release `TikREC v0.6.0` are synchronized with package
+metadata. Final verification passed 785 tests plus 19 subtests and produced a
+verified `tikrec-0.6.0` wheel. Issues #8 and #13 remain open as non-blocking,
+opportunistic evidence work. No v0.6.5 or v0.7 implementation began during the
+release task.
 
 ### v0.6.5 — Redundant simultaneous capture (conditional)
 
@@ -732,7 +743,8 @@ or desirable.
 The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability
-and completion of the v0.6.0 release still take precedence over later product work.
+through v0.6.0 is released; v0.7.0 guided interrupted-session recovery is the
+next roadmap candidate when implementation work resumes.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage
