@@ -175,6 +175,19 @@ entries are reminders only and never independently define project authority.
 - Before a significant external action (including tags, GitHub Releases, or
   destructive operations), re-check the active issue and repository state.
   Journal what actually succeeded afterward.
+- Routine release preparation does not require a dedicated GitHub issue. Track
+  ordinary release readiness in PROJECT_STATE.md, ROADMAP.md, AGENTS.md, and the
+  relevant feature or bug issues. A separate release issue is optional only when
+  the release has genuinely distinct work such as an unusual bug, blocker, or
+  migration; closing such an issue never authorizes a tag or GitHub Release.
+- Reassess issues waiting on rare real-world evidence periodically. Distinguish
+  an unresolved correctness or product risk from an ideal evidence target that
+  may be increasingly unlikely to occur naturally. If the uncertainty no longer
+  materially affects correctness, release safety, or an important product
+  decision, ChatGPT/project management may make the issue non-blocking, narrow
+  its goal, preserve it as opportunistic evidence work, or close it with the
+  limitation documented. Do not weaken genuine safety or correctness
+  requirements merely because evidence is inconvenient to obtain.
 
 `Continue TikREC` means reconcile that authoritative state and continue the
 active task, or select the next safe task only when no active task remains. It
@@ -263,8 +276,9 @@ A release is not complete until all of the following are true and recorded:
 5. PROJECT_STATE.md, ROADMAP.md, and any affected README/specification documents
    distinguish the current released version from the development target and
    record the synchronized state.
-6. The release issue is journaled with what succeeded, then closed only after
-   this checklist and the repository state have been verified.
+6. Any release-specific issue, when one exists, is journaled with what
+   succeeded, then closed only after this checklist and the repository state have
+   been verified. Routine releases do not require such an issue.
 
 ## Environment
 

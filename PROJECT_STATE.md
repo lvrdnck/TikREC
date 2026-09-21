@@ -12,9 +12,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source bytes and determine whether malformed/replayed media originates at the
   TikTok/CDN source or in TikREC's parser/writer path. Issue #19 is intentionally
   paused after implementation and deployed natural-end validation; its natural
-  ordinary-reconnect gate remains outstanding. Issue #16 remains open and
-  owner-paused/blocked. v0.6.0 remains untagged and unpublished, and no release
-  action is authorized.
+  ordinary-reconnect gate remains outstanding. Issue #13 remains open,
+  paused/non-blocking, and opportunistic. Issue #16 is closed because routine
+  release bookkeeping no longer requires a dedicated issue; v0.6.0 remains
+  untagged and unpublished, and no release action is authorized.
 - **Completed blocker fix:** Established capture and startup recovery now retain
   the canonical room ID as an independent resolution anchor. A username
   LIVE-page 404 can use direct public status for that room and the public account

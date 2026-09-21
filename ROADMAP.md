@@ -306,7 +306,7 @@ and no additional production change is justified. This completes the planned
 v0.6 measurement/reduction behavior; release bookkeeping remains separate.
 
 **Release candidate (2026-09-20):** Package source and release-facing
-documentation are prepared for v0.6.0 under issue #16. The release scope is the
+documentation are prepared for v0.6.0. The release scope is the
 read-only reconnect-gap tooling and evidence, removal of the fixed healthy-close
 wait, and the verified 1.920-second post-change reconnect with 0.010 seconds of
 local/backoff versus the prior 1.004--1.008-second range. Failure/outage backoff,
@@ -372,9 +372,9 @@ warnings exactly matching four logged timestamp-replay records; the replays
 occurred within the third established media connection, not at either reconnect,
 and the finalized MP4 deep-validates. With no raw copy this remains issue #8
 evidence, not a #17 regression or release blocker. The required post-#17 gate has
-passed. At that point issue #16 remained open only for separately authorized
-v0.6.0 tag and GitHub Release bookkeeping; v0.6.0 remained untagged and
-unpublished, and the gate did not start v0.6.5 or v0.7.
+passed. At that point routine release bookkeeping remained separate from the
+feature evidence; v0.6.0 remained untagged and unpublished, and the gate did not
+start v0.6.5 or v0.7.
 
 **Established-room resolution experiment (2026-09-21):** The owner paused
 v0.6.0 publication because the 1.526/1.531-second ordinary reconnects still
@@ -407,9 +407,8 @@ safe bound median was 0.366 seconds (0.297--0.408), direct room/info was 0.324
 (-0.076--0.104). This is 0.576 seconds below issue #18's comparable 0.942-
 second pre-implementation bound median. Offline tests pass 774 tests plus 19
 subtests. No media was opened and no disconnect was manufactured, so a natural
-ordinary-reconnect validation remains required and issue #19 stays open. Issue
-#16 stays paused/blocked and v0.6.0 remains untagged/unpublished with no release
-action authorized.
+ordinary-reconnect validation remains required and issue #19 stays open. v0.6.0
+remains untagged/unpublished with no release action authorized.
 
 Commit `60d55cb` is now deployed through the existing Windows Scheduled Task.
 The authorized Zoraida validation session
@@ -427,8 +426,8 @@ no disconnect was manufactured.
 **Media-integrity sequencing decision (2026-09-21):** Issue #19's natural
 ordinary-reconnect validation is intentionally paused; its implemented and
 deployed identity-safe fast path remains current code. Issue #8 is now the single
-active release-blocking investigation, while issue #16 stays paused and issue
-#13 stays paused/non-blocking. Issue #9's incremental raw-byte preservation,
+active release-blocking investigation, while issue #13 stays open,
+paused/non-blocking, and opportunistic. Issue #9's incremental raw-byte preservation,
 linked arrival sidecars, and non-fatal diagnostic failure behavior support #8;
 the Promi evidence below later completed its real-world validation.
 
