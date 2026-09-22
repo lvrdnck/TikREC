@@ -904,8 +904,8 @@ collision-safe admission with the 10 GiB floor, room-bound automatic start,
 durable same-room suppression, restart persistence, and natural offline re-arm.
 Notifications, retention, concurrent creator recording, authentication bypass,
 and v0.10 behavior remain outside this release. Verification passes 207 focused
-tests, all 1,069 offline pytest tests plus 19 subtests under isolated
-configuration/temp roots, 215 unittest-discovery tests, compilation, 24 CLI
+tests, all 1,069 offline pytest tests under isolated configuration/temp roots,
+215 unittest-discovery tests, compilation, 24 CLI
 help/version paths, strict source-size and diff checks, and an isolated wheel
 build/install smoke. Wheel metadata and the `tikrec` console entry point are
 correct for `tikrec-0.9.0-py3-none-any.whl` (SHA-256

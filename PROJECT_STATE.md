@@ -228,8 +228,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   `westvlammer` deployed gate and preserved the public-only, single-slot,
   authenticated-status, no-auth-bypass, no-notification, no-retention, and
   no-concurrent-recording boundaries. Verification passes 207 focused tests,
-  all 1,069 offline pytest tests plus 19 subtests under isolated configuration
-  and temp roots, all 215 unittest-discovery tests, compilation, 24 CLI help/
+  all 1,069 offline pytest tests under isolated configuration and temp roots,
+  all 215 unittest-discovery tests, compilation, 24 CLI help/
   version paths, strict package source-size and diff checks, and an isolated
   wheel build/install smoke. Wheel metadata and the `tikrec` console entry point
   are correct for `tikrec-0.9.0-py3-none-any.whl` (SHA-256
