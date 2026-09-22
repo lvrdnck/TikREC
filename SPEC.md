@@ -1149,7 +1149,7 @@ investigation as a correctness blocker before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The
-architecture describes the v0.9.0 release candidate in the current checkout.
+architecture describes the released v0.9.0 package.
 
 ## Design principles
 

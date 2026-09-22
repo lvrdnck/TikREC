@@ -163,7 +163,7 @@ retained-session and deep output validation passed.
 
 **Release record:** package version v0.4.0, annotated `v0.4.0` tag at
 `9f8e4104f8bc24f439a3e927ca72da29257c41fa`, and the published GitHub Release
-`TikREC v0.4.0` are synchronized. It is a historical released version; v0.8.0
+`TikREC v0.4.0` are synchronized. It is a historical released version; v0.9.0
 is the current released version.
 
 ### v0.5.0 ? Environment survival / resumability
@@ -744,7 +744,7 @@ applicable. Issues #8 and #13 remain non-blocking/opportunistic. v0.8.0 is ready
 for separate publication authorization but remains untagged and unpublished;
 v0.7.0 remains the current released version.
 
-**Release publication (2026-09-22):** v0.8.0 is the current released version.
+**Release publication (2026-09-22):** v0.8.0 became the current released version.
 The immutable annotated `v0.8.0` tag (tag object
 `f97fc91a4af9e95a8ec91363902d1fa8a9cf6091`, peeled release commit
 `da0390b502cb7bb51ef4b5097b58d4910017e2df`) and the published non-draft,
@@ -916,6 +916,18 @@ remain non-blocking/opportunistic. The candidate is untagged and unpublished;
 v0.8.0 remains the current release until a separately authorized annotated tag
 and GitHub Release are created and verified. Do not begin v0.10.
 
+**Release publication (2026-09-22):** v0.9.0 is the current released version.
+The immutable annotated `v0.9.0` tag (tag object
+`3e26f06903aad9fffa4f1be2e560d5fba30139fa`, peeled release commit
+`9786961d1ecaaed8fddc4c7d10eda85a27b5c968`) and the published non-draft,
+non-prerelease GitHub Release `TikREC v0.9.0` are synchronized with package
+metadata. Final publication verification passed all 1,069 isolated pytest tests,
+215 unittest-discovery tests, compilation, 24 CLI help/version paths, strict
+source-size and diff checks, and the recorded wheel metadata/install smoke. The
+completed `westvlammer` deployed evidence remains applicable; no service,
+configuration, recording, or durable runtime state was changed for publication.
+Issues #8 and #13 remain open as non-blocking, opportunistic evidence work.
+
 ### v0.10.0 — Multiple simultaneous creator recordings
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
@@ -1029,12 +1041,9 @@ or desirable.
 The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
-guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
-creator monitoring and automatic recording is an untagged, unpublished release
-candidate after persistent configuration, conservative detection, unattended
-admission/storage safety, durable single-slot automatic-start/re-arm integration,
-and deployed and packaging readiness gates. Separate publication authorization
-remains outstanding.
+guided recovery, configuration/defaults, and creator automation through v0.9.0
+are released. v0.10.0 multiple simultaneous creator recordings is the next
+planned development target and has not begun.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

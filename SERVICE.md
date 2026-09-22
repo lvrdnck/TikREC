@@ -5,8 +5,7 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
-This document is the exact service contract for the current checkout, whose
-package version is the untagged, unpublished v0.9.0 release candidate. Per-user
+This document is the exact service contract for TikREC v0.9.0. Per-user
 recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can automatically start one safely admitted configured creator. Future multiple
