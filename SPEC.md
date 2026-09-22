@@ -13,6 +13,7 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - Recording a stream from the moment I start the tool
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
+- An opt-in ordered configuration list of canonical public creator handles
 
 TikREC v0.5.0 established service startup reconciliation, v0.6.0 added evidence-
 based reconnect-gap measurement while removing only the fixed healthy-close
@@ -24,7 +25,7 @@ published release records are maintained in PROJECT_STATE.md.
 
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
-- Persistent creator lists, public-handle monitoring, automatic start, and re-arming
+- Public-handle polling/detection, automatic start, and re-arming
 - Multiple simultaneous creator recordings or redundant same-LIVE capture
 - Schedule prediction from recording history
 - Chat collection, transcription, chapters, search, analytics
@@ -77,6 +78,9 @@ when invoked, that is an error, not a wait state.
     tikrec config unset validation-mode
     tikrec config set debug-tracebacks true|false
     tikrec config unset debug-tracebacks
+    tikrec monitor add CREATOR
+    tikrec monitor remove CREATOR
+    tikrec monitor list
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -733,7 +737,8 @@ when placed before the subcommand, selects one deterministic explicit file.
 TikREC never scans for alternatives. The schema permits integer
 `schema_version: 1`, optional absolute string `output_directory`, and optional
 integer `recovery_window_seconds` from 60 through 3600 inclusive, and optional
-string `validation_mode` equal to `standard` or `deep`; duplicate,
+string `validation_mode` equal to `standard` or `deep`, and optional ordered
+string list `monitored_creators`; duplicate,
 missing-version, unknown, incorrectly typed, malformed, or unsupported data is an
 error. The optional boolean `debug_tracebacks` controls unexpected CLI traceback
 output. Explicitly supplying null for `validation_mode` or `debug_tracebacks` is
@@ -741,6 +746,22 @@ invalid. Writes use a flushed same-directory temporary and atomic replacement,
 with a parent-directory sync on POSIX. Unsetting all optional settings retains a valid
 versioned document. This store must never contain TikTok cookies, credentials,
 bearer tokens, or signed media URLs.
+
+Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
+24 ASCII letters, digits, underscores, or internal periods. List order is
+preserved deterministically but does not define scheduling priority. TikREC
+stores no cookies, credentials, room IDs, media URLs, signed URLs, or other
+creator access material in an entry.
+
+`monitor add CREATOR` accepts a bare handle, `@handle`, or exact public
+`https://www.tiktok.com/@handle/live` URL, normalizes it without network access,
+and rejects duplicates. `monitor remove CREATOR` applies the same normalization
+and fails if the creator is absent. `monitor list` preserves configured order and
+reports an empty list without creating a missing configuration file. These
+commands use the existing atomic configuration replacement and preserve every
+v0.8 setting. They do not require `output_directory`, contact TikTok, poll LIVE
+state, run a background loop, start recordings, or enforce future automatic-
+recording storage policy.
 
 `config path` does not need to parse the file. `config show [--json]` reports the
 path, existence, configured values, and effective values/sources. `config set

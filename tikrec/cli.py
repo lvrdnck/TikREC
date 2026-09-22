@@ -17,6 +17,7 @@ from .diagnostics import add_debug_arguments, parse_arguments, print_unexpected_
 from .finalize import finalize_parts
 from .live import capture_live
 from .manifest import SessionManifest
+from .monitor_cli import add_monitor_command, run_monitor_command
 from .output_naming import local_recording_paths
 from .progress import LiveProgress
 from .recovery_cli import add_recovery_command, run_recovery_command
@@ -28,7 +29,6 @@ from .tiktok import TikTokResolutionError, resolve_live_url
 from .validation import validate_target
 from .validation_cli import add_validation_command, effective_validation_mode
 from .validation_report import ValidationResult, render_validation
-
 
 def main(
     argv: Sequence[str] | None = None,
@@ -61,6 +61,8 @@ def main(
                                        remote_opener=remote_opener)
         if arguments.command == "config":
             return run_config_command(arguments, stdout)
+        if arguments.command == "monitor":
+            return run_monitor_command(arguments, stdout)
         if arguments.command == "resolve":
             direct_url = resolver(arguments.url)
             print(direct_url, file=stdout)
@@ -154,12 +156,12 @@ def main(
 def _one_line_error(error: Exception) -> str:
     return " ".join(str(error).split())
 
+
 def _print_final(progress: LiveProgress | None, message: str, stream: TextIO) -> None:
     """Clear an active heartbeat before writing a final CLI result."""
     if progress is not None:
         progress.clear()
     print(message, file=stream)
-
 def _finalize_directory(
     parts_directory: Path,
     output_path: Path,
@@ -226,8 +228,6 @@ def _finish_recovery(
         manifest.finish_recovery(parts, status, output_path=output_path, error=error)
     except (OSError, ValueError) as manifest_error:
         progress(f"warning: session manifest could not be updated: {manifest_error}")
-
-
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tikrec",
@@ -248,6 +248,7 @@ def _parser() -> argparse.ArgumentParser:
     subcommands = parser.add_subparsers(dest="command", required=True)
     add_control_commands(subcommands)
     config = add_config_command(subcommands)
+    monitor = add_monitor_command(subcommands)
     record = subcommands.add_parser(
         "record",
         help="advanced: record a direct FLV/media URL, not a TikTok page",
@@ -289,7 +290,7 @@ def _parser() -> argparse.ArgumentParser:
                       metavar="SECONDS", help="override the 60-3600 second recovery window")
     validate = add_validation_command(subcommands)
     recover = add_recovery_command(subcommands)
-    for command in (record, finalize, resolve, live, validate, recover, config):
+    for command in (record, finalize, resolve, live, validate, recover, config, monitor):
         # Accept the global diagnostic flag after a subcommand as well.
         add_debug_arguments(command, suppress_default=True)
     return parser

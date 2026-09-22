@@ -80,6 +80,7 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 if configuration.debug_tracebacks is not None
                 else "built_in_default"
             ),
+            "monitored_creators": list(configuration.monitored_creators),
         }
         if arguments.json:
             print(json.dumps(result, indent=2, sort_keys=True), file=stdout)
@@ -119,6 +120,8 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 file=stdout,
             )
             print(f"Debug tracebacks source: {result['debug_tracebacks_source']}", file=stdout)
+            creators = ", ".join(f"@{item}" for item in configuration.monitored_creators)
+            print(f"Monitored creators: {creators or '(none)'}", file=stdout)
         return 0
     if arguments.config_action == "set":
         if arguments.setting == "output-directory":

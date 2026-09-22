@@ -30,6 +30,9 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec config unset validation-mode
     tikrec config set debug-tracebacks true|false
     tikrec config unset debug-tracebacks
+    tikrec monitor add CREATOR
+    tikrec monitor remove CREATOR
+    tikrec monitor list
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -162,6 +165,18 @@ this preference only after an unexpected exception when neither flag was given,
 so successful commands, help/version, and known operational errors do not start
 depending on configuration merely for diagnostics. This does not change normal
 progress, warning, validation, service, or remote output.
+
+`tikrec monitor add CREATOR`, `remove`, and `list` manage an ordered opt-in list
+of public TikTok creator handles in the same configuration file. `CREATOR` may
+be a bare handle, `@handle`, or a standard
+`https://www.tiktok.com/@handle/live` URL; TikREC normalizes it locally to a
+lowercase handle and never stores the supplied URL. Duplicate additions and
+absent removals fail clearly. Listing an absent configuration reports no
+creators, and adding a creator does not require `output_directory`.
+
+These commands only configure future monitoring. They do not contact TikTok,
+poll for LIVE status, start a recording, assign scheduling priority, or enforce
+automatic-recording storage requirements.
 
 The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
 wrong types, duplicate fields, and unknown top-level settings fail clearly
@@ -396,13 +411,14 @@ validation notes in SPEC.md for why.
 
 ## Scope
 
-**Today:** TikREC records one manually supplied public LIVE and exposes the
-commands and four service endpoints documented above. It does not currently
-store creator lists, wait for future LIVEs, monitor configured handles, record
+**Today:** TikREC records one manually supplied public LIVE, stores an opt-in
+ordered list of canonical public creator handles, and exposes the commands and
+four service endpoints documented above. It does not currently wait for future
+LIVEs, monitor configured handles, start recordings automatically, record
 multiple creators, authenticate to TikTok, or provide a library/Web UI/playback.
 
-**Future product:** explicitly configured public-creator monitoring and automatic
-recording are planned after the reliability foundation. Library/history/playback,
+**Future product:** read-only detection and automatic recording for explicitly
+configured public creators are later v0.9 slices. Library/history/playback,
 a web interface, and other predecessor capabilities remain in long-term planning;
 their old implementation and architecture are not authoritative.
 

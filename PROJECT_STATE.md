@@ -96,6 +96,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   repeated all 921 offline tests, 215 unittest-discovery tests, compilation, 14
   CLI help paths, CLI version output, and the isolated built-wheel/install smoke
   test. The immutable annotated tag and GitHub Release are now synchronized.
+- **Completed first v0.9 creator-monitoring slice:** Strict schema-1
+  configuration optionally persists an ordered, unique tuple of canonical
+  lowercase public TikTok handles. `monitor add/remove/list` accepts a bare
+  handle, `@handle`, or standard public LIVE URL and normalizes it entirely
+  offline. Duplicate additions and absent removals fail clearly; an absent
+  configuration lists no creators; existing v0.8 settings and atomic writes are
+  preserved; and `output_directory` is not required. List order is deterministic
+  but is not scheduling priority. No polling, detection loop, recording,
+  disk-space check, notification, or concurrency behavior exists yet.
+  Verification passes 139 focused tests, all 960 offline tests, and 215
+  unittest-discovery tests, plus compilation, CLI/help parsing, source-size
+  checks, and an add/list/remove smoke using an isolated configuration file.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -303,10 +315,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** v0.9.0 creator monitoring and automatic recording is the
-  next planned development target. Do not begin it without a separate task. The
-  conditional v0.6.5 redundant-capture release is not selected; issues #8 and
-  #13 continue to collect evidence opportunistically.
+- **Next queued task:** Implement a bounded read-only service monitoring/detection
+  slice that observes configured creators without starting recordings. Do not
+  add automatic recording, disk policy, notifications, or concurrency in that
+  slice. Conditional v0.6.5 is not selected; issues #8 and #13 remain
+  opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -324,7 +337,8 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.9.0 creator monitoring and automatic recording is
-  the next planned roadmap target. No v0.9.0 implementation has started, and
+  in development after its first persistent creator-configuration slice.
+  Read-only service detection is next; automatic recording has not started, and
   conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
@@ -507,8 +521,9 @@ new work; calendar entries are reminders only.
 
 ## Durable decisions and risks
 
-- TikREC supports one manually supplied public LIVE; creator monitoring,
-  future-LIVE automatic recording, and authentication remain deferred.
+- TikREC supports one manually supplied public LIVE and an opt-in configured
+  creator list; polling/detection, future-LIVE automatic recording, and
+  authentication remain deferred.
 - Automatic resume requires the same canonical room ID and valid retained
   evidence. Only the exact proven active writer partial is recoverable; all
   unowned or conflicting partials remain preserved and blocked.

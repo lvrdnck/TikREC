@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile
 
+from .creator_identity import validate_monitored_creators
 from .retry_policy import DEFAULT_RECOVERY_WINDOW_SECONDS
 
 
@@ -19,7 +20,7 @@ DEFAULT_VALIDATION_MODE = "standard"
 VALIDATION_MODES = frozenset({"standard", "deep"})
 _FIELDS = {
     "schema_version", "output_directory", "recovery_window_seconds", "validation_mode",
-    "debug_tracebacks",
+    "debug_tracebacks", "monitored_creators",
 }
 
 
@@ -35,6 +36,7 @@ class Configuration:
     recovery_window_seconds: int | None = None
     validation_mode: str | None = None
     debug_tracebacks: bool | None = None
+    monitored_creators: tuple[str, ...] = ()
     schema_version: int = CONFIG_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -51,6 +53,7 @@ class Configuration:
             validate_validation_mode(self.validation_mode)
         if self.debug_tracebacks is not None:
             validate_debug_tracebacks(self.debug_tracebacks)
+        validate_monitored_creators(self.monitored_creators)
 
     @property
     def effective_recovery_window_seconds(self) -> int:
@@ -119,6 +122,9 @@ class ConfigurationStore:
                 )
             if "debug_tracebacks" in document and document["debug_tracebacks"] is None:
                 raise ConfigurationError("debug_tracebacks must be a boolean")
+            raw_creators = document.get("monitored_creators", [])
+            if type(raw_creators) is not list:
+                raise ConfigurationError("monitored_creators must be an ordered list")
             raw_directory = document.get("output_directory")
             if raw_directory is not None and not isinstance(raw_directory, str):
                 raise ConfigurationError("output_directory must be an absolute path string")
@@ -128,6 +134,7 @@ class ConfigurationStore:
                 recovery_window_seconds=document.get("recovery_window_seconds"),
                 validation_mode=document.get("validation_mode"),
                 debug_tracebacks=document.get("debug_tracebacks"),
+                monitored_creators=tuple(raw_creators),
             )
             configuration.validate()
             return configuration
@@ -147,6 +154,8 @@ class ConfigurationStore:
             document["validation_mode"] = configuration.validation_mode
         if configuration.debug_tracebacks is not None:
             document["debug_tracebacks"] = configuration.debug_tracebacks
+        if configuration.monitored_creators:
+            document["monitored_creators"] = list(configuration.monitored_creators)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary: Path | None = None
         try:

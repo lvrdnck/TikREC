@@ -60,6 +60,7 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
         "recovery_window_seconds": 600,
         "validation_mode": "deep",
         "debug_tracebacks": False,
+        "monitored_creators": ["first_creator", "second.creator"],
     }), encoding="utf-8")
     configuration = ConfigurationStore(path).load()
     assert configuration.output_directory == output_directory
@@ -69,6 +70,7 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
     assert configuration.effective_validation_mode == "deep"
     assert configuration.debug_tracebacks is False
     assert configuration.effective_debug_tracebacks is False
+    assert configuration.monitored_creators == ("first_creator", "second.creator")
     assert resolve_recording_output("creator/live.mp4", configuration) == (
         output_directory / "creator/live.mp4"
     )
@@ -90,6 +92,10 @@ def test_valid_configuration_loads_and_resolves_beneath_directory(tmp_path: Path
     ('{"schema_version": 1, "debug_tracebacks": 1}', "must be a boolean"),
     ('{"schema_version": 1, "debug_tracebacks": "false"}', "must be a boolean"),
     ('{"schema_version": 1, "debug_tracebacks": null}', "must be a boolean"),
+    ('{"schema_version": 1, "monitored_creators": null}', "ordered list"),
+    ('{"schema_version": 1, "monitored_creators": "creator"}', "ordered list"),
+    ('{"schema_version": 1, "monitored_creators": ["Creator"]}', "1-24 character"),
+    ('{"schema_version": 1, "monitored_creators": ["creator", "creator"]}', "duplicates"),
     ('{"schema_version": 1, "typo": true}', "unknown or invalid"),
     ('{"schema_version": 1, "schema_version": 1}', "duplicate field"),
     ('{"output_directory": "/recordings"}', "missing schema_version"),
@@ -170,16 +176,17 @@ def test_atomic_save_replaces_complete_document_and_leaves_no_partial(tmp_path: 
     directory = tmp_path / "recordings"
     store.save(Configuration(
         output_directory=directory, recovery_window_seconds=1200, validation_mode="standard",
-        debug_tracebacks=False,
+        debug_tracebacks=False, monitored_creators=("first", "second.creator"),
     ))
     assert store.load() == Configuration(
         output_directory=directory, recovery_window_seconds=1200, validation_mode="standard",
-        debug_tracebacks=False,
+        debug_tracebacks=False, monitored_creators=("first", "second.creator"),
     )
     assert list(path.parent.glob("*.partial")) == []
     assert json.loads(path.read_text(encoding="utf-8")) == {
         "output_directory": str(directory), "recovery_window_seconds": 1200,
         "schema_version": 1, "validation_mode": "standard", "debug_tracebacks": False,
+        "monitored_creators": ["first", "second.creator"],
     }
 
 

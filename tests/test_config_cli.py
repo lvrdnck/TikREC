@@ -50,6 +50,7 @@ def test_config_show_reports_missing_file_and_effective_cwd(
         "debug_tracebacks": None,
         "effective_debug_tracebacks": False,
         "debug_tracebacks_source": "built_in_default",
+        "monitored_creators": [],
     }
 
 

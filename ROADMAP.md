@@ -773,6 +773,21 @@ storage is insufficient. Full retention policy belongs to v0.11.
 This is opt-in creator automation, not covert monitoring, and it does not change
 the current one-shot recording or same-room crash-resume semantics.
 
+**First slice completed (2026-09-22):** Schema-1 per-user configuration now
+optionally persists an ordered, duplicate-free list of canonical lowercase
+public TikTok handles. `tikrec monitor add/remove/list` accepts bare handles,
+`@handle`, or a standard public LIVE URL and normalizes locally without network
+access. Existing v0.8 settings and atomic-write safety are preserved, and
+`output_directory` is not required merely to configure a creator. Persisted
+order is deterministic but is not scheduling priority. This slice adds no
+polling, LIVE detection loop, automatic recording, disk-space policy,
+notifications, or concurrency. The next v0.9 slice is read-only service
+monitoring/detection that may observe configured creators but must not start a
+recording. Verification passed 139 focused tests, all 960 offline tests, 215
+unittest-discovery tests, compilation, CLI/help parsing, source-size checks, and
+an isolated configuration smoke. No real-LIVE check applies because this slice
+performs no network or recording behavior.
+
 ### v0.10.0 — Multiple simultaneous creator recordings
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
@@ -887,8 +902,8 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
-creator monitoring and automatic recording is the next planned development
-target and has not begun.
+creator monitoring and automatic recording is in development after its first
+persistent-configuration slice; automatic recording has not begun.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage
