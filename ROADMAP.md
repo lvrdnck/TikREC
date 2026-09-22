@@ -939,6 +939,35 @@ remain a long-term limitation. It is separate from v0.6.5 redundant same-LIVE
 capture, whose purpose would be gap filling rather than recording different
 creators.
 
+**First bounded implementation slice (2026-09-22):** Current `main` replaces the
+service's single controller boundary with a built-in two-slot `RecordingManager`.
+The slots retain independent workers, stop events, progress, results, recovery,
+finalization, and durable `job.json`/`job-2.json` intent; legacy state needs no
+migration, corrupt state blocks only its slot, and colliding interrupted intent
+fails closed without rewriting evidence. Aggregate authenticated `/recordings`
+and health capacity facts complement compatible singular status, while canonical
+session IDs enable targeted stop. The remote CLI adds `recordings` and
+`stop --session-id`.
+
+Creator automation now inspects all current jobs, freshly rechecks capacity,
+free space, and collision-safe allocation before each start, and sequentially
+fills up to two slots in canonical-handle lexical order. Schema-1 retains one
+pending claim because each claim is completed or cleared before the next attempt.
+Capacity-exhausted creators are reported and reconsidered later; a synchronous
+start failure conservatively ends the cycle's remaining attempts. Local `live`
+and `record`, the 10 GiB floor, public-only boundary, recovery/finalization,
+no-notification/no-retention scope, and v0.9 released behavior are preserved.
+Verification passes 134 focused tests, all 1,091 isolated offline pytest tests
+plus 19 subtests, 215 unittest-discovery tests, compilation, 25 CLI help/version
+paths, strict source-size checks, and diff checks.
+
+This is not v0.10 release readiness. The real Scheduled Task was not changed and
+no LIVE was started for this offline architecture slice. A later separately
+bounded task must deploy current `main` while idle and validate genuinely
+simultaneous independent recordings, targeted control, completion/failure
+isolation, restart reconciliation, and automation capacity behavior before v0.10
+completion/release review.
+
 ### v0.11.0 — Smart storage, retention, and disk protection
 
 **Goal:** Make unattended recording libraries safe to operate without manual disk
@@ -1042,8 +1071,9 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, configuration/defaults, and creator automation through v0.9.0
-are released. v0.10.0 multiple simultaneous creator recordings is the next
-planned development target and has not begun.
+are released. v0.10.0 multiple simultaneous creator recordings is the active
+development target; its first bounded two-slot manager slice is implemented on
+`main`, while deployed simultaneous validation and later readiness work remain.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage
@@ -1088,7 +1118,8 @@ Evolve separation only when a release needs it; do not scaffold future systems.
 
 - **Capture:** public resolver, one HTTP media source, writer, LIVE orchestration.
 - **Processing:** retained-part finalization and read-only validation.
-- **Application/service:** one recording job, cooperative lifecycle, safe status.
+- **Application/service:** bounded independent recording jobs, cooperative
+  lifecycle, aggregate/per-session control, and safe status.
 - **Interfaces:** existing local CLI, narrow HTTP API, remote CLI; eventual UI.
 - **Versioned product layers:** creator automation, concurrent recordings, smart
   storage, notifications/integrations, recording catalog/remote media access,

@@ -11,10 +11,11 @@ from .automation_state import (
     PendingAutomaticStart,
 )
 from .automation_jobs import (
-    job_matches_claim,
-    job_matches_observation,
-    job_proves_no_claimed_start,
-    prior_session_id,
+    controller_jobs,
+    jobs_match_claim,
+    jobs_match_observation,
+    jobs_prove_no_claimed_start,
+    prior_session_id_for_jobs,
 )
 from .automation_status import automation_snapshot
 from .recording import RecordingBusy
@@ -22,7 +23,7 @@ from .tiktok_identity import canonical_room_id
 
 
 class AutomationCoordinator:
-    """Select, claim, and start at most one admitted LIVE per complete cycle."""
+    """Sequentially claim admitted LIVEs up to current bounded capacity."""
 
     def __init__(self, controller, admission, store: AutomationStateStore) -> None:
         self._controller = controller
@@ -34,10 +35,8 @@ class AutomationCoordinator:
         self._blocked_reason: str | None = None
         self._state = AutomationState()
         self._latest_cycle_count = 0
-        self._selected_creator: str | None = None
-        self._started_creator: str | None = None
-        self._started_session_id: str | None = None
-        self._started_output_path: str | None = None
+        self._selected_creators: list[str] = []
+        self._started_recordings: list[dict] = []
         self._cycle_results: dict[str, dict] = {}
         self._load_and_reconcile()
 
@@ -47,7 +46,7 @@ class AutomationCoordinator:
             self._stopping = True
 
     def cycle_completed(self, monitoring: dict) -> None:
-        """Consume one complete detection cycle and attempt at most one start."""
+        """Consume one complete cycle and sequentially fill available capacity."""
         with self._lock:
             cycle = monitoring.get("cycle_count")
             if self._stopping or type(cycle) is not int or cycle <= self._latest_cycle_count:
@@ -64,25 +63,28 @@ class AutomationCoordinator:
             ready = self._classify(admitted, rearmed)
             if not ready:
                 return
-            selected = min(ready)
-            self._selected_creator = selected
-            for creator in ready:
-                if creator != selected:
-                    self._cycle_results[creator] = _result(
-                        "not_selected", "single_slot_selected_other"
+            ordered = sorted(ready)
+            for index, selected in enumerate(ordered):
+                # Allocate again before every claim; earlier starts change capacity.
+                refreshed = self._admission.evaluate(monitoring)
+                candidate = _creator(refreshed, selected)
+                admission = candidate.get("admission", {}) if candidate else {}
+                if admission.get("state") != "ready":
+                    reason = admission.get("reason") or "admission_unavailable"
+                    if reason == "recording_slot_unavailable":
+                        reason = "capacity_exhausted"
+                    self._cycle_results[selected] = _result(
+                        admission.get("state", "blocked"), reason,
                     )
-            # Allocate again immediately before claiming; older status paths are advisory.
-            refreshed = self._admission.evaluate(monitoring)
-            candidate = _creator(refreshed, selected)
-            admission = candidate.get("admission", {}) if candidate else {}
-            if admission.get("state") != "ready":
-                self._cycle_results[selected] = _result(
-                    admission.get("state", "blocked"),
-                    admission.get("reason") or "admission_unavailable",
-                )
-                return
-            observed = _creator(monitoring, selected)
-            self._attempt(selected, observed, admission)
+                    if reason == "capacity_exhausted":
+                        self._capacity_exhausted(ordered[index + 1:])
+                        break
+                    continue
+                self._selected_creators.append(selected)
+                observed = _creator(monitoring, selected)
+                if not self._attempt(selected, observed, admission):
+                    self._halt_remaining(ordered[index + 1:])
+                    break
 
     def snapshot(self, monitoring: dict) -> dict:
         """Add fresh admission plus safe durable/current automation facts."""
@@ -96,10 +98,8 @@ class AutomationCoordinator:
                 blocked_reason=self._blocked_reason,
                 latest_cycle_count=self._latest_cycle_count,
                 cycle_results=self._cycle_results,
-                selected_creator=self._selected_creator,
-                started_creator=self._started_creator,
-                started_session_id=self._started_session_id,
-                started_output_path=self._started_output_path,
+                selected_creators=self._selected_creators,
+                started_recordings=self._started_recordings,
             )
 
     def _load_and_reconcile(self) -> None:
@@ -112,15 +112,15 @@ class AutomationCoordinator:
         if claim is None:
             return
         try:
-            job = self._controller.status()
+            jobs = controller_jobs(self._controller)
         except Exception:
             self._disable("automation_state_ambiguous")
             return
-        if job_matches_claim(job, claim):
+        if jobs_match_claim(jobs, claim):
             consumed = self._state.consumed()
             consumed[claim.creator] = claim.room_id
             self._replace_state(consumed, None, "automation_state_ambiguous")
-        elif job_proves_no_claimed_start(job, claim):
+        elif jobs_prove_no_claimed_start(jobs, claim):
             self._replace_state(
                 self._state.consumed(), None, "automation_state_ambiguous"
             )
@@ -129,8 +129,8 @@ class AutomationCoordinator:
 
     def _begin_cycle(self, cycle: int) -> None:
         self._latest_cycle_count = cycle
-        self._selected_creator = self._started_creator = None
-        self._started_session_id = self._started_output_path = None
+        self._selected_creators = []
+        self._started_recordings = []
         self._cycle_results = {}
 
     def _apply_rearm_and_existing_job(self, monitoring: dict) -> set[str]:
@@ -138,13 +138,13 @@ class AutomationCoordinator:
         before = dict(consumed)
         rearmed = set()
         try:
-            job = self._controller.status()
+            jobs = controller_jobs(self._controller)
         except Exception:
             self._disable("automation_state_ambiguous")
             return rearmed
         for item in monitoring.get("creators", []):
             creator = item.get("creator")
-            if item.get("state") == "live" and job_matches_observation(job, item):
+            if item.get("state") == "live" and jobs_match_observation(jobs, item):
                 consumed[creator] = item["room_id"]
             elif item.get("state") == "offline" and creator in consumed:
                 consumed.pop(creator)
@@ -183,14 +183,17 @@ class AutomationCoordinator:
                 )
         return ready
 
-    def _attempt(self, creator: str, observation: dict | None, admission: dict) -> None:
+    def _attempt(self, creator: str, observation: dict | None, admission: dict) -> bool:
         try:
-            previous_session = prior_session_id(self._controller.status())
+            fingerprint = getattr(self._controller, "prior_session_id_for_start", None)
+            previous_session = (fingerprint() if callable(fingerprint)
+                                else prior_session_id_for_jobs(
+                                    controller_jobs(self._controller)))
         except Exception:
             self._cycle_results[creator] = _result(
                 "blocked", "controller_state_unavailable"
             )
-            return
+            return False
         try:
             room_id = canonical_room_id(observation["room_id"])
             claim = PendingAutomaticStart(
@@ -202,14 +205,14 @@ class AutomationCoordinator:
             self._cycle_results[creator] = _result(
                 "blocked", "identity_unavailable"
             )
-            return
+            return False
         if not self._replace_state(
             self._state.consumed(), claim, "automation_state_unavailable"
         ):
             self._cycle_results[creator] = _result(
                 "blocked", "automation_state_unavailable"
             )
-            return
+            return False
         page = f"https://www.tiktok.com/@{creator}/live"
         try:
             started = self._controller.start(
@@ -217,22 +220,37 @@ class AutomationCoordinator:
             )
         except RecordingBusy:
             self._rejected(creator, "start_rejected_busy")
-            return
+            return False
         except Exception:
             # A monitor callback must never kill future detection cycles.
             self._rejected(creator, "start_rejected")
-            return
+            return False
         consumed = self._state.consumed()
         consumed[creator] = room_id
         promoted = self._replace_state(
             consumed, None, "automation_state_ambiguous"
         )
-        self._started_creator = creator
-        self._started_session_id = started.get("session_id")
-        self._started_output_path = claim.output_path
+        self._started_recordings.append({
+            "creator": creator,
+            "room_id": room_id,
+            "session_id": started.get("session_id"),
+            "output_path": claim.output_path,
+            "slot_id": started.get("slot_id"),
+        })
         self._cycle_results[creator] = _result(
             "started", None if promoted else "state_promotion_pending"
         )
+        return promoted
+
+    def _capacity_exhausted(self, creators: list[str]) -> None:
+        for creator in creators:
+            self._cycle_results[creator] = _result("skipped", "capacity_exhausted")
+
+    def _halt_remaining(self, creators: list[str]) -> None:
+        for creator in creators:
+            self._cycle_results[creator] = _result(
+                "not_selected", "prior_start_attempt_failed"
+            )
 
     def _rejected(self, creator: str, reason: str) -> None:
         cleared = self._replace_state(

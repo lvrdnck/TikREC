@@ -50,7 +50,11 @@ def test_help_guides_normal_live_recording_and_advanced_sources(capsys):
     assert "--recovery-window-seconds" in capsys.readouterr().out
 
     assert main(["remote", "--help"]) == 0
-    assert "monitor-status" in capsys.readouterr().out
+    remote_help = capsys.readouterr().out
+    assert "monitor-status" in remote_help and "recordings" in remote_help
+
+    assert main(["remote", "stop", "--help"]) == 0
+    assert "--session-id" in capsys.readouterr().out
 
     assert main(["monitor", "--help"]) == 0
     monitor_help = capsys.readouterr().out
@@ -83,7 +87,9 @@ def test_non_loopback_requires_token_and_does_not_print_it(monkeypatch):
     assert TOKEN not in stdout.getvalue()
 
 
-@pytest.mark.parametrize("action", ["health", "status", "monitor-status", "start", "stop"])
+@pytest.mark.parametrize(
+    "action", ["health", "status", "recordings", "monitor-status", "start", "stop"]
+)
 def test_remote_commands(action, monkeypatch):
     monkeypatch.setenv("TIKREC_TOKEN", TOKEN)
     requests = []
@@ -123,6 +129,18 @@ def test_remote_start_raw_copy_is_explicit_opt_in(monkeypatch):
             "https://www.tiktok.com/@creator/live", "--output", r"C:\Videos\out.mp4"]
     assert main(argv, remote_opener=opener, stdout=StringIO()) == 0
     assert json.loads(requests[0].data)["raw_copy"] is True
+
+
+def test_remote_targeted_stop_dispatches_session_id(monkeypatch):
+    monkeypatch.delenv("TIKREC_TOKEN", raising=False)
+    requests = []
+    session_id = "00000000-0000-0000-0000-000000000123"
+    assert main([
+        "remote", "stop", "--server", "http://main-pc",
+        "--session-id", session_id,
+    ], remote_opener=lambda request, **_: requests.append(request) or BytesIO(b'{}'),
+        stdout=StringIO()) == 0
+    assert json.loads(requests[0].data) == {"session_id": session_id}
 
 
 def test_failed_job_status_returns_failure(monkeypatch):

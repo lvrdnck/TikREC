@@ -94,6 +94,25 @@ def test_pending_claim_with_unchanged_prior_job_is_cleared(tmp_path: Path):
     assert coordinator.snapshot(_cycle(0))["automation"]["operational"] is True
 
 
+def test_pending_claim_for_reused_slot_reconciles_across_all_jobs(tmp_path: Path):
+    previous = "00000000-0000-0000-0000-000000000111"
+    claim = replace(_claim(tmp_path), previous_session_id=previous)
+    store = AutomationStateStore(tmp_path / "automation.json")
+    store.save(AutomationState(pending_claim=claim))
+
+    class Manager:
+        def jobs(self):
+            return (
+                {"state": "completed", "active": False, "session_id": previous},
+                {"state": "recording", "active": True,
+                 "session_id": "00000000-0000-0000-0000-000000000222"},
+            )
+
+    coordinator = AutomationCoordinator(Manager(), Admission(tmp_path), store)
+    assert store.load() == AutomationState()
+    assert coordinator.snapshot(_cycle(0))["automation"]["operational"] is True
+
+
 def test_pending_claim_with_ambiguous_job_disables_automation(tmp_path: Path):
     claim = _claim(tmp_path)
     store = AutomationStateStore(tmp_path / "automation.json")

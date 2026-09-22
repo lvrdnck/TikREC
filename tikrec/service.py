@@ -14,9 +14,12 @@ from .automation import AutomationCoordinator
 from .automation_state import AutomationStateStore
 from .monitoring import CreatorMonitor
 from .recording import RecordingBusy, RecordingController
+from .recording_manager import (RecordingAmbiguous, RecordingManager,
+                                RecordingNotFound)
 from .retry_policy import RetryPolicy
 from .job_state import JobStateStore
-from .service_job import default_job_state_path
+from .service_job import (default_job_state_path, independent_job_stores,
+                          second_job_state_path)
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -40,10 +43,11 @@ def validate_bind(host: str, token: str | None) -> str:
 
 
 class RecordingHTTPServer(ThreadingHTTPServer):
-    """Serve requests separately from the single application recording worker."""
+    """Serve requests separately from the bounded recording workers."""
 
     def __init__(self, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *,
                  controller: RecordingController | None = None,
+                 manager: RecordingManager | None = None,
                  monitor: CreatorMonitor | None = None,
                  admission: RecordingAdmission | None = None,
                  automation: AutomationCoordinator | None = None,
@@ -61,9 +65,26 @@ class RecordingHTTPServer(ThreadingHTTPServer):
         super().__init__((host, port), RecordingHandler, bind_and_activate=bind_and_activate)
         try:
             # Reserve the listening address before recovery can open a second media writer.
-            job_store = JobStateStore(default_job_state_path())
-            self.controller = controller if controller is not None else RecordingController(
-                store=job_store, retry_policy=retry_policy)
+            first_path = default_job_state_path()
+            job_store = JobStateStore(first_path)
+            second_store = JobStateStore(second_job_state_path(first_path))
+            if manager is not None:
+                self.controller = manager
+            elif isinstance(controller, RecordingManager):
+                self.controller = controller
+            elif controller is not None:
+                self.controller = RecordingManager((controller,))
+            else:
+                job_store, second_store = independent_job_stores(
+                    job_store, second_store
+                )
+                self.controller = RecordingManager((
+                    RecordingController(store=job_store, retry_policy=retry_policy),
+                    RecordingController(
+                        store=second_store,
+                        retry_policy=retry_policy,
+                    ),
+                ))
             self.admission = admission if admission is not None else RecordingAdmission(
                 output_directory, self.controller.health
             )
@@ -126,7 +147,12 @@ class RecordingHandler(BaseHTTPRequestHandler):
         if self.path == "/health":
             self._json(200, self.server.controller.health())
         elif self.path == "/recording":
-            self._json(200, self.server.controller.status())
+            try:
+                self._json(200, self.server.controller.status())
+            except RecordingAmbiguous:
+                self._json(409, {"error": "multiple recordings active; use /recordings"})
+        elif self.path == "/recordings":
+            self._json(200, self.server.controller.recordings())
         elif self.path == "/monitoring":
             self._json(
                 200, self.server.automation.snapshot(self.server.monitor.snapshot())
@@ -167,10 +193,22 @@ class RecordingHandler(BaseHTTPRequestHandler):
             self._json(400, {"error": "JSON body must be an object"})
             return
         if self.path == "/recording/stop":
-            if body:
-                self._json(400, {"error": "stop requires an empty JSON object"})
+            if set(body) not in (set(), {"session_id"}) or (
+                "session_id" in body and not isinstance(body["session_id"], str)
+            ):
+                self._json(400, {"error": "stop accepts only an optional string session_id"})
                 return
-            self._json(202, self.server.controller.stop())
+            try:
+                status = (self.server.controller.stop(body["session_id"])
+                          if "session_id" in body else self.server.controller.stop())
+            except RecordingAmbiguous:
+                self._json(409, {"error": "multiple recordings active; provide session_id"})
+            except RecordingNotFound:
+                self._json(404, {"error": "active recording session not found"})
+            except ValueError:
+                self._json(400, {"error": "session_id must be a canonical UUID"})
+            else:
+                self._json(202, status)
             return
         fields = set(body)
         if (fields not in ({"url", "output"}, {"url", "output", "raw_copy"})
@@ -223,6 +261,7 @@ class RecordingHandler(BaseHTTPRequestHandler):
 
 def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           token: str | None = None, controller: RecordingController | None = None,
+          manager: RecordingManager | None = None,
           retry_policy: RetryPolicy = RetryPolicy(),
           monitored_creators: tuple[str, ...] = (),
           output_directory: Path | None = None,
@@ -232,6 +271,7 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           automation_store: AutomationStateStore | None = None) -> None:
     """Run until local interruption, then cooperatively finish the current job."""
     with RecordingHTTPServer(host, port, token=token, controller=controller,
+                             manager=manager,
                              retry_policy=retry_policy, monitor=monitor,
                              admission=admission, automation=automation,
                              automation_store=automation_store,

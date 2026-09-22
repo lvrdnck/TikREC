@@ -14,21 +14,24 @@ def automation_snapshot(
     blocked_reason: str | None,
     latest_cycle_count: int,
     cycle_results: dict[str, dict],
-    selected_creator: str | None,
-    started_creator: str | None,
-    started_session_id: str | None,
-    started_output_path: str | None,
+    selected_creators: list[str],
+    started_recordings: list[dict],
 ) -> dict:
     """Return admission data enriched with current and latest-cycle automation facts."""
     snapshot = dict(admitted)
+    single_selected = selected_creators[0] if len(selected_creators) == 1 else None
+    single_started = started_recordings[0] if len(started_recordings) == 1 else {}
     snapshot["automation"] = {
         "operational": operational and not stopping,
         "blocked_reason": "service_shutting_down" if stopping else blocked_reason,
         "latest_cycle_count": latest_cycle_count,
-        "selected_creator": selected_creator,
-        "started_creator": started_creator,
-        "started_session_id": started_session_id,
-        "started_output_path": started_output_path,
+        "selected_creators": list(selected_creators),
+        "started_recordings": [dict(item) for item in started_recordings],
+        # Legacy singular fields remain only when they describe the complete result.
+        "selected_creator": single_selected,
+        "started_creator": single_started.get("creator"),
+        "started_session_id": single_started.get("session_id"),
+        "started_output_path": single_started.get("output_path"),
     }
     cycle = admitted.get("cycle_count")
     consumed = state.consumed()

@@ -6,10 +6,10 @@ Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops, and you get one MP4 out.
 
 This reliability-first implementation is the foundation of a broader future
-livestream recording platform. The service can now observe an explicitly
-configured creator list and automatically start one safely admitted LIVE after
-a complete observation cycle. A library, playback, concurrent creator capture,
-and web workflows remain future work.
+livestream recording platform. Current `main` contains the first v0.10 slice:
+the persistent service can own up to two independent public LIVE recordings and
+automatically fill available capacity after a complete observation cycle. A
+library, playback, retention, notifications, and web workflows remain future work.
 
 The current package, immutable tag, and published GitHub Release are v0.9.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
@@ -38,9 +38,10 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
+    tikrec remote recordings --server URL [--token-file FILE]
     tikrec remote monitor-status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
-    tikrec remote stop --server URL [--token-file FILE]
+    tikrec remote stop --server URL [--session-id UUID] [--token-file FILE]
     tikrec --version
 
 `live` records a public LIVE page and reconnects across dropped
@@ -262,7 +263,9 @@ tikrec remote health --server http://main-pc:8765 --token-file ~/.config/tikrec/
 tikrec remote monitor-status --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
 tikrec remote start --server http://main-pc:8765 https://www.tiktok.com/@username/live --output 'C:\Users\Leandro\Videos\name.mp4' --token-file ~/.config/tikrec/token.txt
 tikrec remote status --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
+tikrec remote recordings --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
 tikrec remote stop --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
+tikrec remote stop --server http://main-pc:8765 --session-id UUID --token-file ~/.config/tikrec/token.txt
 ```
 
 `remote monitor-status` reports each configured handle as `pending`, `live`,
@@ -273,8 +276,9 @@ include its public room ID. Signed media URLs and arbitrary remote error text ar
 discarded and never enter status. Observations reset to pending on service restart.
 
 Each observation also has a current admission result. Non-LIVE creators are
-`not_applicable`. A LIVE is `skipped/recording_slot_unavailable` while manual
-recording, recovery, finalization, or shutdown owns the single slot. It is
+`not_applicable`. A LIVE is `skipped/recording_slot_unavailable` when neither of
+the two service slots can safely accept work because of recording, recovery,
+finalization, blocked state, or shutdown. It is
 `blocked` when output storage is unconfigured or unavailable, free space is below
 the built-in 10 GiB unattended floor, or the bounded name search is exhausted;
 otherwise it is `ready`. Ready status exposes only the local candidate MP4 and
@@ -283,13 +287,14 @@ uses the nearest existing parent for a not-yet-created output directory and neve
 creates or reserves anything. It is recalculated on each status request and does
 not affect manual starts, recovery, or the existing recording pipeline.
 
-After each complete monitoring cycle, the service may make one automatic start
-attempt. It repeats admission immediately before the attempt, lets the recording
-controller recheck its single slot and both candidate paths, and never queues a
-second creator. A fresh resolution must prove the exact room ID observed by the
-monitor before the session directory or media source opens. Manual HTTP starts
-keep their existing unbound behavior, are never preempted, and exact concurrent
-start races remain serialized by the controller.
+After each complete monitoring cycle, the service may start up to the number of
+currently available slots, with a built-in cap of two. Armed/ready creators are
+attempted sequentially in canonical-handle lexical order. Admission, the 10 GiB
+floor, and collision-safe naming are rechecked before every start; capacity-
+exhausted creators remain eligible for a later cycle. A synchronous failure
+conservatively ends that cycle's remaining attempts. A fresh resolution must
+prove the exact room ID observed by the monitor before the session directory or
+media source opens. Manual HTTP starts remain authoritative and unbound.
 
 An accepted automatic start consumes that creator/room until monitoring proves
 the creator offline or observes a different room ID. Unknown observations do not
@@ -300,9 +305,11 @@ state file beside `job.json`. Corrupt or ambiguous automation state disables onl
 automatic starts; monitoring and safe manual controls remain available.
 
 Monitoring status adds fixed automation fields for operational/block state,
-armed or same-room-suppressed creators, the latest deterministic selection, and
-accepted output/session facts. Signed transport, credentials, response bodies,
-and arbitrary exception text never enter automation state or status.
+armed or same-room-suppressed creators, ordered `selected_creators`, and one
+entry in `started_recordings` per accepted output/session. Compatibility singular
+fields are populated only when exactly one selection/start is the whole result.
+Signed transport, credentials, response bodies, and arbitrary exception text
+never enter automation state or status.
 
 For an owner-authorized diagnostic recording, add `--raw-copy` to `remote start`.
 The service then places `connection-NNNN.raw` and matching
@@ -311,9 +318,13 @@ The service then places `connection-NNNN.raw` and matching
 retained FLVs. The opt-in survives safe service recovery; ordinary remote starts
 remain disabled by default and do not pay the roughly doubled storage cost.
 
-One recording may be active. Start and stop acknowledge requests immediately;
-poll status until `completed` or `failed` to see the final result. Remote stop
-closes/retains the active FLV part, finalizes output, and writes `session.json`.
+Up to two service recordings may be active; local standalone `live` and `record`
+remain single invocations. `remote recordings` reports capacity and both stable
+slots. Legacy `remote status` and empty `remote stop` remain useful with zero or
+one current recording, but fail clearly when multiple current recordings make a
+singular answer ambiguous; use `remote stop --session-id UUID` then. Stop closes/
+retains only that session's active FLV part, finalizes its output, and writes its
+own `session.json`.
 It never sends a kill signal to FFmpeg. A stopped job reports `completed` with
 `interrupted: true`; `final_output_path` identifies an actual finalized output.
 Capture/finalizer failure preserves retained parts for `tikrec finalize`.
@@ -325,8 +336,9 @@ the environment-survival and resumability foundation documented below, v0.6.0
 adds the bounded reconnect-gap work described above, v0.7.0 adds the guided
 recovery commands, the v0.8.0 release adds the per-user configuration/default
 behavior documented above, and the v0.9.0 release adds opt-in creator
-monitoring and single-slot automatic recording. Current tag and GitHub Release
-records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
+monitoring and single-slot automatic recording. Current `main` begins v0.10 with
+bounded two-recording service ownership; this is not yet a v0.10 release. Current
+tag and GitHub Release records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
 
 The service now persists its latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks that job against retained
@@ -460,18 +472,19 @@ validation notes in SPEC.md for why.
 
 ## Scope
 
-**Today:** TikREC records one public LIVE at a time, either from an explicit
-manual start or automatically for an opt-in configured creator. The persistent
-service observes canonical handles conservatively, applies a 10 GiB free-space
-floor and collision-safe naming, binds an automatic start to the observed room,
-and durably prevents repeated starts of that room. It does not record multiple
-creators concurrently, authenticate to TikTok, notify the owner, manage
-retention, or provide a library/Web UI/playback.
+**Current checkout:** Local standalone commands record one public LIVE per
+invocation. The persistent service owns a fixed pool of two independent jobs,
+each with its own worker, stop event, durable intent, recovery, retained media,
+finalization, and result. Creator automation can fill both slots while retaining
+the 10 GiB per-start floor, room binding, collision-safe naming, and durable
+same-room suppression. It does not authenticate to TikTok, notify the owner,
+manage retention, or provide a library/Web UI/playback.
 
-**Release state and future product:** v0.9.0 is the current published release
-after completed real-service validation. Concurrent creator recording,
-library/history/playback, a web interface, notifications, and retention remain
-future work; their old implementation and architecture are not authoritative.
+**Release state and future product:** v0.9.0 is still the current published
+release after completed real-service validation. The bounded manager is the
+first untagged v0.10 development slice; real simultaneous deployed validation
+and the remaining v0.10 readiness work are still outstanding. Library/history/
+playback, a web interface, notifications, and retention remain future work.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

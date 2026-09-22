@@ -172,7 +172,7 @@ def test_controller_remains_authoritative_and_rejected_claim_is_cleared(
         "state": "failed", "reason": reason,
         "armed": True, "consumed_room_id": None,
     }
-    assert values["zeta"]["reason"] == "single_slot_selected_other"
+    assert values["zeta"]["reason"] == "prior_start_attempt_failed"
 
 
 def test_same_room_is_consumed_across_cycles_and_manual_stop(tmp_path: Path):
@@ -208,7 +208,7 @@ def test_different_room_is_eligible_without_intermediate_offline(tmp_path: Path)
     assert store.load().consumed() == {"creator": "456"}
 
 
-def test_lexical_tie_break_ignores_configuration_order_and_reports_loser(
+def test_lexical_order_drives_multiple_accepted_starts_with_compatible_fake(
     tmp_path: Path,
 ):
     coordinator, controller, _, _ = _coordinator(tmp_path)
@@ -216,11 +216,14 @@ def test_lexical_tie_break_ignores_configuration_order_and_reports_loser(
         1, ("zeta", "live", "2"), ("alpha", "live", "1")
     )
     coordinator.cycle_completed(cycle)
-    assert len(controller.starts) == 1 and "@alpha/live" in controller.starts[0][0]
+    assert [item[0].split("@")[1].split("/")[0] for item in controller.starts] == [
+        "alpha", "zeta",
+    ]
     status = coordinator.snapshot(cycle)
     values = {item["creator"]: item["automation"] for item in status["creators"]}
-    assert values["zeta"]["state"] == "not_selected"
-    assert values["zeta"]["reason"] == "single_slot_selected_other"
+    assert values["alpha"]["state"] == values["zeta"]["state"] == "started"
+    assert status["automation"]["selected_creators"] == ["alpha", "zeta"]
+    assert status["automation"]["selected_creator"] is None
 
 
 def test_busy_cycle_is_not_queued_and_later_cycle_can_start(tmp_path: Path):

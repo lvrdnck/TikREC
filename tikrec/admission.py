@@ -15,7 +15,7 @@ MINIMUM_FREE_BYTES = 10 * 1024**3
 
 
 class RecordingAdmission:
-    """Evaluate whether detected creators could use the existing recording slot."""
+    """Evaluate whether detected creators could use current recording capacity."""
 
     def __init__(
         self,

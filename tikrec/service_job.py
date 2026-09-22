@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from .job_state import JobState
+from .job_state import JobState, JobStateError
 
 
 def default_job_state_path() -> Path:
@@ -14,6 +14,46 @@ def default_job_state_path() -> Path:
     else:
         base = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
     return base / "TikREC" / "job.json"
+
+
+def second_job_state_path(first: Path | None = None) -> Path:
+    """Place the bounded second slot beside the backward-compatible first job."""
+    first = default_job_state_path() if first is None else Path(first)
+    return first.with_name("job-2.json")
+
+
+def independent_job_stores(first, second):
+    """Fail the second slot closed if two interrupted jobs claim one path."""
+    try:
+        jobs = (first.load(), second.load())
+    except Exception:
+        # Each controller independently reports its own malformed/unreadable store.
+        return first, second
+    if (all(job is not None and job.needs_reconciliation for job in jobs)
+            and (_same_path(jobs[0].output_path, jobs[1].output_path)
+                 or _same_path(jobs[0].parts_directory, jobs[1].parts_directory))):
+        return first, _BlockedJobStore(second)
+    return first, second
+
+
+class _BlockedJobStore:
+    """Expose a colliding job as unavailable without changing its evidence."""
+
+    def __init__(self, store) -> None:
+        self.path = store.path
+
+    def load(self):
+        raise JobStateError("invalid durable job state; preserve artifacts")
+
+    def save(self, job) -> None:
+        raise JobStateError("invalid durable job state; preserve artifacts")
+
+
+def _same_path(first: str, second: str) -> bool:
+    try:
+        return Path(first).resolve(strict=False) == Path(second).resolve(strict=False)
+    except OSError:
+        return Path(first) == Path(second)
 
 
 def job_snapshot(job: JobState) -> dict:

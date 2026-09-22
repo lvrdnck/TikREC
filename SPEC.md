@@ -2,9 +2,10 @@
 
 ## Current implementation goal
 
-Record one public TikTok LIVE stream at a time to disk, reliably and completely,
-from either an explicit URL or an opt-in monitored creator. Stop when the stream
-ends or when I stop it.
+Record public TikTok LIVE streams to disk reliably and completely. Local commands
+remain one recording per invocation; the persistent service has a fixed two-job
+bound for explicit or opt-in monitored creators. Each stops independently when
+its stream ends or when the owner targets it.
 
 ## Scope
 
@@ -13,24 +14,26 @@ ends or when I stop it.
 - Public LIVE streams only
 - Recording a stream from the moment I start the tool
 - Reconnecting within a recording when the connection drops
-- One recording owned by an independently launched service, controlled remotely
+- Up to two independent recordings owned by one persistent service
 - An opt-in ordered configuration list of canonical public creator handles
 - Read-only service polling with conservative in-memory LIVE observations
 - Non-mutating unattended-admission status for detected configured LIVEs
-- One durable room-bound automatic start after a completed monitoring cycle
+- Capacity-aware durable room-bound automatic starts after a completed cycle
 
 TikREC v0.5.0 established service startup reconciliation, v0.6.0 added evidence-
 based reconnect-gap measurement while removing only the fixed healthy-close
 wait, v0.7.0 added guided interrupted-session recovery, and v0.8.0 added the
 per-user configuration/default behavior documented below. Package version
-v0.9.0 adds opt-in creator monitoring and durable single-slot automatic starts;
-published release records are maintained in PROJECT_STATE.md.
+v0.9.0 added opt-in creator monitoring and durable single-slot automatic starts.
+Current `main` contains the first untagged v0.10 slice: bounded two-recording
+service ownership and compatible automation. Published release records are
+maintained in PROJECT_STATE.md.
 
 ### Not implemented yet
 
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
-- Multiple simultaneous creator recordings or redundant same-LIVE capture
+- Redundant same-LIVE capture
 - Schedule prediction from recording history
 - Chat collection, transcription, chapters, search, analytics
 - A recording library, browser playback/downloads, or Web/PWA interface
@@ -87,9 +90,10 @@ when invoked, that is an error, not a wait state.
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
+    tikrec remote recordings --server URL [--token-file FILE]
     tikrec remote monitor-status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
-    tikrec remote stop --server URL [--token-file FILE]
+    tikrec remote stop --server URL [--session-id UUID] [--token-file FILE]
     tikrec --version
 
 Global `--debug` and `--no-debug` are mutually exclusive; local command parsers
@@ -551,6 +555,22 @@ ID. Only that path wraps the initial and bound resolvers so fresh structured
 identity must match before capture creates a session or opens media. The HTTP
 start schema cannot supply this value, and manual starts remain unchanged.
 
+### tikrec/recording_manager.py — bounded service ownership (v0.10 slice 1)
+
+`RecordingManager` owns the built-in capacity of two independent controllers.
+Its lock atomically selects a healthy slot for each API or automation start and
+rejects active cross-slot output/parts collisions. Workers, stop Events, durable
+stores, recovery, byte/reconnect progress, results, and finalization never cross
+slot boundaries. A blocked or recovering slot is unavailable without hiding the
+other slot's capacity. Shutdown first closes the manager to new starts, signals
+both controllers concurrently, and joins both finalizers.
+
+Stable `slot-1`/`slot-2` identities are service-local; canonical session UUIDs
+remain the recording control identity. Aggregate health/status exposes capacity,
+active count, available slots, and sanitized per-slot facts. Singular status or
+empty stop refuses ambiguity when multiple slots own current work. Explicit stop
+validates a session UUID and delegates only to its current owner.
+
 ### tikrec/job_state.py - durable service intent (v0.5.0)
 
 `JobState` and `JobStateStore` provide validated, atomic storage for the latest
@@ -570,9 +590,14 @@ missing, or unknown fields fail safely without modifying stored evidence.
 The controller now persists explicit starts before workers, room identity before
 media opens, stop intent before signalling, and lifecycle/result changes. Default
 state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
-or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
-is added. Only the latest job is stored, with one owning service process/account.
-Package version is v0.9.0.
+or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. The second service slot uses
+the deterministic sibling `job-2.json`; missing second-slot state is idle, so
+legacy v0.9 state needs no migration. Each controller loads and reconciles only
+its store. A malformed store blocks only that slot and remains untouched; two
+interrupted stores claiming the same path fail the second closed before recovery.
+No state-path CLI option is added. Only the latest job per slot is stored, with
+one owning service process/account. Package version remains v0.9.0 until a later
+release-preparation task.
 
 ### Patient outage policy and transport classification
 
@@ -695,8 +720,9 @@ version is 0.9.0.
 ### tikrec/service.py — narrow HTTP adapter
 
 `RecordingHTTPServer` uses the standard-library `ThreadingHTTPServer` with a
-custom handler for GET health/recording/monitoring and POST recording/start/stop only.
-Handlers validate bounded JSON and delegate to the controller. No file serving,
+custom handler for GET health/recording/recordings/monitoring and POST
+recording/start/stop only. Handlers validate bounded JSON and delegate to the
+manager. No file serving,
 commands, executable paths, accounts, or browser UI. Default `127.0.0.1:8765`;
 explicit remote IPs require a token checked in constant time. Raw request logs
 and browser-origin requests are disabled; read timeouts bound stalled clients.
@@ -728,12 +754,12 @@ its current bounded resolver call.
 ### tikrec/admission.py — unattended-recording admission
 
 `RecordingAdmission` is composed by the service but remains separate from the
-resolver worker. On each monitoring-status request it evaluates the current
-controller health and storage state for every observation without selecting a
-winner or calling `RecordingController.start()`. Non-LIVE observations are
-`not_applicable`. If the single slot is unavailable because of manual capture,
-startup recovery, finalization, failure/blocked state, or shutdown, a LIVE is
-`skipped` with `recording_slot_unavailable`; it is never queued.
+resolver worker. On each monitoring-status request it evaluates current manager
+capacity and storage state for every observation without selecting a winner or
+starting a recording. Non-LIVE observations are `not_applicable`. If no slot is
+available because of manual capture, startup recovery, finalization,
+failure/blocked state, or shutdown, a LIVE is `skipped` with
+`recording_slot_unavailable`; it is never queued.
 
 Missing `output_directory` produces `blocked/output_directory_unconfigured` but
 does not prevent service startup or read-only monitoring. Admission checks free
@@ -758,11 +784,12 @@ reaching status.
 ### tikrec/automation.py — automatic selection and durable re-arm
 
 `AutomationCoordinator` consumes only published complete-cycle snapshots and
-makes at most one start attempt per cycle. It reapplies admission immediately
-before start, chooses simultaneous ready creators by canonical-handle lexical
-order, and does not try a second creator after synchronous rejection. Manual,
-recovery, finalization, blocked, and shutdown ownership continues to win through
-the admission view and the controller's authoritative lock/collision checks.
+sequentially attempts ready creators in canonical-handle lexical order until
+freshly checked capacity is exhausted, at the global bound of two. It reapplies
+admission, free-space checks, and collision-safe allocation immediately before
+every start. A synchronous rejection conservatively stops remaining attempts in
+that cycle. Manual, recovery, finalization, blocked, and shutdown ownership wins
+through the admission view and the manager/controller authoritative locks.
 
 The selected start carries the monitor's canonical room ID through the internal
 controller guard described above and never enables raw copy. Acceptance consumes
@@ -772,21 +799,27 @@ re-arms it, unknown does not, and a different canonical room is immediately new.
 An existing service job with matching creator and room also consumes it.
 
 `automation_state.py` stores schema-1 consumed creator/room pairs and at most one
-pending claim in `automation.json` beside service `job.json`. A claim contains
+pending claim in `automation.json` beside service `job.json`. Starts remain
+sequential, so that single pending claim is sufficient. A claim contains
 only canonical creator/room identity and the newly allocated absolute output and
 matching parts candidate, plus the prior safe service job ID when one exists. It
 is atomically committed before controller start, then cleared on synchronous
 rejection or promoted to consumed after acceptance.
-Startup promotes a claim whose durable job matches, clears it only when the job
-store is idle, and otherwise disables automatic starts as ambiguous. Corrupt or
-unwritable state likewise disables automation without deleting evidence or
-unnecessarily disabling monitoring/manual service controls. Signed transports,
+Startup inspects both current jobs: any exact durable match promotes the claim;
+the selected slot's unchanged prior session or continued idle state proves an
+unaccepted claim; any other result disables automatic starts as ambiguous.
+Current jobs are also all inspected to suppress a duplicate when a manual job
+already owns the observed creator/room. Corrupt or unwritable state likewise
+disables automation without deleting evidence or unnecessarily disabling
+monitoring/manual service controls. Signed transports,
 cookies, credentials, response bodies, and arbitrary exception text are never
 persisted.
 
-`automation_status.py` adds fixed JSON-safe top-level operational, cycle,
-selection, session, and output facts plus per-creator armed/suppressed/result
-facts to the existing monitoring response. Admission fields remain compatible.
+`automation_status.py` adds fixed JSON-safe top-level operational/cycle facts,
+ordered selected creators, an accepted-recording array, and per-creator armed/
+suppressed/result facts. Legacy singular selection/session/output fields are
+populated only when exactly one result makes them truthful. Admission fields
+remain compatible.
 
 ### tikrec/service_configuration.py — service startup snapshot
 
@@ -801,7 +834,10 @@ strict because the running service uses them. Missing output storage is valid.
 
 `RemoteClient` sends injected/testable standard-library HTTP JSON requests,
 refuses redirects and environment proxies, bounds responses, and reports safe
-request errors. It never automatically retries an ambiguous start. The CLI
+request errors. `remote recordings` reads aggregate status and
+`remote stop --session-id UUID` targets one current session; legacy singular
+status/stop are preserved only where unambiguous. It never automatically retries
+an ambiguous start. The CLI
 loads `--token-file` or `TIKREC_TOKEN` without printing the value; tokens do not
 reach capture or session metadata. Existing local commands are unchanged.
 
@@ -1148,8 +1184,10 @@ investigation as a correctness blocker before replay handling changes.
 
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
-make deferred product capabilities permanently prohibited. The
-architecture describes the released v0.9.0 package.
+make deferred product capabilities permanently prohibited. The architecture
+describes current `main` and preserves the published v0.9.0 boundaries where
+historical scope matters. Deployed simultaneous validation and release readiness
+remain future v0.10 work.
 
 ## Design principles
 

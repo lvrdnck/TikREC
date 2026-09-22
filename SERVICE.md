@@ -2,16 +2,17 @@
 
 Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 
-One worker records independently of HTTP clients. Launch the service independently
-of SSH so disconnecting the remote shell does not end capture.
+Two bounded workers record independently of HTTP clients and of each other.
+Launch the service independently of SSH so disconnecting the remote shell does
+not end capture.
 
-This document is the exact service contract for TikREC v0.9.0. Per-user
+This document describes current `main`, whose first v0.10 development slice
+extends the published v0.9.0 service. Per-user
 recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
-can automatically start one safely admitted configured creator. Future multiple
-recordings, library,
-download, and browser-control capabilities may extend or replace this boundary,
-but no such endpoint or behavior exists until its own specification is implemented.
+can own and automatically fill a fixed capacity of two independent recordings.
+Library, download, retention, notification, and browser-control capabilities
+remain outside this slice. v0.9.0 remains the current published release.
 
 ## Bind and secret
 
@@ -42,7 +43,7 @@ end with a newline. Tokens must be 16–512 printable ASCII characters without
 spaces; use a randomly generated secret with at least 32 characters. Empty or
 invalid configured tokens are rejected. Token values are never printed, passed
 to capture, or written into session metadata. If a token is configured, all
-five endpoints require `Authorization: Bearer SECRET`, including loopback.
+all endpoints require `Authorization: Bearer SECRET`, including loopback.
 
 Store the secret outside the repo, restrict the file to your user (and the task
 account if different), and copy it securely to the Mac. This avoids putting a
@@ -70,11 +71,12 @@ one Content-Length, and 1–8192 bytes; transfer encoding is unsupported.
 
 | Request | Body | Result |
 | --- | --- | --- |
-| `GET /health` | none | 200: service, version, available, active, shutting_down, recovery_state, recovery_reason |
-| `GET /recording` | none | 200: idle or current/latest job snapshot |
+| `GET /health` | none | 200: service/version plus capacity, active count, available slots, shutdown state, and per-slot recovery summaries |
+| `GET /recording` | none | 200: compatible idle/current/latest snapshot when unambiguous; 409 directs multiple current jobs to `/recordings` |
+| `GET /recordings` | none | 200: capacity, active count, available slots, and one sanitized status per stable slot |
 | `GET /monitoring` | none | 200: sanitized observations, admission, and automatic-selection/re-arm status |
-| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: job accepted; 409 if active/recovery unresolved/shutting down |
-| `POST /recording/stop` | `{}` | 202: stop requested/current snapshot; harmless when idle or repeated |
+| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: one free slot atomically accepted the job; 409 if both slots are unavailable |
+| `POST /recording/stop` | `{}` or `{"session_id":"UUID"}` | 202: sole/targeted job stop requested; empty body is 409 when multiple current jobs are ambiguous; unknown/non-active session is 404 |
 
 Start accepts `url` and `output` string fields plus optional boolean `raw_copy`.
 Omitted or false keeps diagnostics disabled. True writes each raw connection and
@@ -89,6 +91,11 @@ path on the service machine. Existing output or `<stem>.parts` is rejected;
 capture also rechecks to prevent accidental session reuse.
 The internal automatic expected-room guard is not an HTTP field; callers cannot
 choose or override it.
+
+The manager rejects cross-slot output or `.parts` path collisions before
+delegating to a controller. `session_id` is the per-recording control identity;
+`slot_id` is the stable `slot-1`/`slot-2` owner in aggregate status. A targeted
+stop validates a canonical UUID and signals only its owning controller.
 
 Malformed input returns 400, missing authentication 401, browser-origin
 requests 403, unknown endpoints 404, absent/duplicate length 411, oversized or
@@ -114,18 +121,18 @@ The only unknown reasons are fixed categories (`transient`, `unverifiable`, or
 cookies, credentials, and arbitrary remote messages never enter the snapshot.
 
 Observations are memory-only and reset on restart. The monitor does not create or
-change `job.json`, `session.json`, or connection evidence. It continues while a
-manual recording is active without reserving or altering the recording slot and
+change durable job, session, or connection evidence. It continues while manual
+recordings are active without reserving or altering recording capacity and
 publishes only complete-cycle notifications outside its lock. Shutdown blocks
 new automatic starts, wakes the cycle wait, and joins the monitor after any
 current bounded resolver call.
 
 Each creator includes a fresh admission object when monitoring status is read.
 Detection states other than `live` are `not_applicable`. A LIVE is
-`skipped/recording_slot_unavailable` whenever manual recording, startup recovery,
-finalization, blocked state, or shutdown owns the one controller slot. A later
-request may become ready if the creator is still LIVE and the slot is available;
-there is no queue or priority decision between simultaneous LIVEs.
+`skipped/recording_slot_unavailable` whenever no healthy slot remains after
+manual recording, startup recovery, finalization, blocked state, or shutdown.
+A later request may become ready if the creator is still LIVE and capacity has
+returned; there is no queue.
 
 An available slot still requires startup-configured `output_directory`. Missing
 configuration is `blocked/output_directory_unconfigured`; failed stat/disk
@@ -142,17 +149,18 @@ for facts that do not apply or could not be established safely.
 
 Admission is advisory and non-mutating: it stores no decision, reserves no name,
 and never calls the controller by itself. The coordinator reruns allocation
-immediately before each automatic attempt, while the controller's existing slot
-and collision checks remain authoritative. The floor does not apply to manual
+immediately before each automatic attempt, while manager/controller capacity and
+collision checks remain authoritative. The floor does not apply to manual
 API starts, local commands, recovery, or finalization. Fixed reasons prevent
 filesystem exceptions and signed transport from entering status.
 
-After each completed cycle, the service attempts at most one automatic start.
-Among simultaneous armed/ready LIVEs, the lexically smallest canonical handle is
-selected; configured observation order is not priority. Other ready creators
-report `not_selected/single_slot_selected_other`. A selected synchronous failure
-does not fall through to another creator and no work is queued; a later complete
-cycle evaluates current facts again.
+After each completed cycle, the service attempts armed/ready creators sequentially
+in canonical-handle lexical order until current capacity, capped at two, is
+exhausted. Configured observation order is not priority. Admission and free space
+are refreshed before each claim. Remaining ready creators report
+`skipped/capacity_exhausted` and are reconsidered on a later completed cycle. A
+synchronous start failure conservatively stops further attempts in that cycle;
+at most one schema-1 pending claim exists at any instant.
 
 The automatic worker passes the detected canonical room ID through an internal
 controller boundary. Before a session directory or first media connection, a
@@ -164,7 +172,9 @@ owner stops it. Repeated same-room observations remain suppressed; explicit
 offline re-arms, unknown does not, and a different canonical room is eligible.
 
 The response-level `automation` object reports fixed operational/block state,
-latest completed cycle, selection, accepted session, and safe local output facts.
+latest completed cycle, ordered selections, and `started_recordings` entries with
+creator/room/session/slot and safe local output facts. Legacy singular fields are
+non-null only when one result is the complete truth.
 Each creator has an `automation` object with fixed state/reason, `armed`, and the
 consumed public room ID where applicable. These fields contain no signed media,
 credentials, response bodies, or arbitrary exceptions.
@@ -175,8 +185,8 @@ States are `idle`, `resolving`, `reconciling`, `recovering`, `resuming`, `record
 `recovering_network`, `recovery_wait`, `reconnecting`, `finalizing`, `completed`,
 and `failed`. The worker uses `state=recovering_network` with
 `recovery_state=recovery_wait` during patient retries. Without saved intent,
-a fresh service returns `{"state":"idle","active":false}`. The latest job survives
-service restart; there is no job history database.
+a fresh slot returns `{"state":"idle","active":false}`. Each slot's latest job
+survives service restart; there is no job history database.
 
 Job snapshots contain session_id, normalized source_url, started_at/ended_at
 (Unix seconds), active/state, parts_directory, output_path (requested),
@@ -189,6 +199,12 @@ is supplied to `session.json`; manifest start time begins after resolution,
 whereas job start time includes resolution. Errors are bounded, single-line,
 and redact HTTP URLs. This service version adds no library history or persistent
 job database.
+
+`GET /recordings` wraps one such snapshot per stable slot with aggregate capacity
+facts. `GET /recording` returns the sole current owner, or the latest settled
+result when none is current; it refuses ambiguity rather than hiding a second
+current job. Empty stop follows the same rule. Explicit session stop considers
+only current active/recovery/finalization ownership and never signals another slot.
 
 During outages snapshots add retry_attempt, next_retry_in_seconds,
 outage_elapsed_seconds, recovery_window_seconds, and network_failure_kind.
@@ -214,18 +230,23 @@ before retrying; it may already be running. Closing the client does not stop it.
 
 ## Durable job intent - v0.5.0
 
-job_state.py is wired into serve/controller: commit acceptance before worker start,
+job_state.py is wired into each serve/controller slot: commit acceptance before worker start,
 room_id before media opens, stop before signalling its Event, and lifecycle/results
-at transitions. This one latest job is separate from media-owned session.json.
+at transitions. Each latest job is separate from media-owned session.json.
 
 Default storage is `%LOCALAPPDATA%\TikREC\job.json` on Windows (normally
 `C:\Users\Leandro\AppData\Local\TikREC\job.json`), or
-`${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json` elsewhere. No state-file CLI
+`${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json` elsewhere. Slot 2 uses the
+deterministic sibling `job-2.json`; a v0.9 installation with only `job.json`
+therefore starts with an empty second slot and no migration. No state-file CLI
 option is added. Use a consistent task account; the path is independent of the
-working directory. One service process owns this store; multiple services under
-one account on different ports are unsupported. A failed socket bind cannot
-start a recovery worker. Pre-integration v0.4 recordings without durable intent
-are never adopted by scanning storage.
+working directory. One service process owns both stores; multiple services under
+one account on different ports are unsupported. Each store is loaded and
+reconciled only by its owning controller. Corrupt state blocks only that slot and
+is preserved. Two interrupted stores claiming one output/parts path fail the
+second closed before recovery workers start. A failed socket bind cannot start a
+recovery worker. Pre-integration recordings without intent are never adopted by
+scanning storage.
 
 Job schema version 1 contains:
 
@@ -298,8 +319,10 @@ service job ID when one exists.
 Immediately before automatic controller start, a flushed atomic replacement
 records the claim. Synchronous rejection clears it; accepted start promotes the
 room to consumed and clears it. On startup, an exactly matching durable job
-promotes the claim, an idle job store proves it stale and clears it, and every
-other result is ambiguous and disables automatic starts. A corrupt/unreadable
+in either slot promotes the claim. The selected slot's unchanged prior identity
+or a still-idle slot can prove the claim stale; every other result is ambiguous
+and disables automatic starts. All current jobs are also inspected when a manual
+recording may already own an observed creator/room. A corrupt/unreadable
 file or required write failure also disables automation without deleting the
 file, starting capture, or preventing safe manual/read-only service operation.
 Abandoned temporary files are ignored. No signed media URL, cookie, token,
@@ -472,10 +495,12 @@ Microsoft documents the default three-day
 and [ignore-new-instance policy](https://learn.microsoft.com/en-us/windows/win32/api/taskschd/ne-taskschd-task_instances_policy).
 The settings above keep the intended service lifetime independent of a shell.
 
-To stop a recording, use `tikrec remote stop`, then poll status for a terminal
-result. Do not use Task Scheduler **End** or `Stop-ScheduledTask` for recording
-stop. For service maintenance, first gracefully stop the recording and wait for
-completion, then end the idle task. Restart it after updating the checkout.
+To stop the sole current recording, use `tikrec remote stop`; with multiple
+current recordings, list them with `remote recordings` and pass the intended
+`--session-id UUID`. Poll aggregate status for terminal results. Do not use Task
+Scheduler **End** or `Stop-ScheduledTask` for recording stop. For service
+maintenance, first gracefully stop all recordings and wait for completion, then
+end the idle task. Restart it after updating the checkout.
 TikREC does not create or modify scheduled tasks automatically.
 
 ## Issue #8 raw-copy validation workflow
@@ -495,6 +520,7 @@ $Output = 'C:\Users\Leandro\Videos\REPLACE_ISSUE8_NAME.mp4'
 & $Tikrec remote health --server $Server --token-file $TokenFile
 & $Tikrec remote start --server $Server $LiveUrl --output $Output --raw-copy --token-file $TokenFile
 & $Tikrec remote status --server $Server --token-file $TokenFile
+& $Tikrec remote recordings --server $Server --token-file $TokenFile
 ```
 
 Allow normal capture and natural source behavior; do not manufacture a replay,

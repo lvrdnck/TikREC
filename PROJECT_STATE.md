@@ -7,9 +7,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. v0.9.0 is published
-  and synchronized across package metadata, its immutable annotated tag, and its
-  GitHub Release. The primary deployed-service gate passed on 2026-09-22 with
+- **Active issue/task:** The first bounded v0.10.0 multiple-recording slice is
+  complete on `main`; no implementation task remains active. v0.9.0 remains
+  published and synchronized across package metadata, its immutable annotated
+  tag, and its GitHub Release. The v0.9 primary deployed-service gate passed on
+  2026-09-22 with
   owner-authorized `westvlammer`:
   monitoring found one canonical room, automatic recording started without a
   manual start, retained/final media validated, the same room was suppressed,
@@ -20,9 +22,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   idle, and monitoring on its previously started package version 0.8.0. The
   checkout and verified wheel report package version 0.9.0. Comprehensive release
   checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
-  synchronized current release; v0.10.0 is only the next development target and
-  has not begun. Issues #8 and #13 remain open, paused/non-blocking, and
-  opportunistic.
+  synchronized current release. v0.10.0 is now the active development target;
+  its two-slot architecture is proven offline, but real simultaneous Scheduled
+  Task validation and later completion/readiness work remain. Issues #8 and #13
+  remain open, paused/non-blocking, and opportunistic.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
   location, with an explicit global `--config FILE` override and atomic writes.
@@ -241,6 +244,37 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   repeated all 1,069 isolated pytest tests, 215 unittest-discovery tests,
   compilation, 24 CLI help/version paths, strict source-size and diff checks,
   and the recorded wheel metadata/install smoke.
+- **Completed first v0.10 multiple-recording slice:** The persistent service now
+  owns a built-in fixed capacity of two independent `RecordingController`
+  instances behind `RecordingManager`. Each slot retains its own worker/Event,
+  session identity, capture/reconnect progress, recovery, result, finalization,
+  output/parts, and durable store. Slot 1 preserves legacy `job.json`; slot 2
+  uses sibling `job-2.json`, so old installs need no migration. Corrupt state
+  blocks only its slot, and two interrupted jobs claiming one path fail the
+  second closed without rewriting either record. Atomic allocation and path
+  checks prevent a third start or cross-slot collision; global shutdown closes
+  and joins both independently.
+  Authenticated `/recordings` and extended health expose safe capacity and stable
+  slot/session facts. Singular status/empty stop remain compatible only when
+  unambiguous; validated session-targeted stop and the new `remote recordings`
+  / `remote stop --session-id` controls never signal another slot. Automation
+  now inspects all jobs, sequentially fills freshly admitted capacity in lexical
+  order, preserves the single crash-safe pending claim invariant, represents
+  simultaneous starts honestly, and reconsiders capacity-skipped creators.
+  One synchronous start failure conservatively ends remaining attempts for that
+  cycle. The 10 GiB per-start floor, room binding, same-room suppression/re-arm,
+  public-only security boundary, and local standalone commands remain unchanged.
+  Verification passes 134 focused service/manager/automation/admission/remote/
+  CLI tests, all 1,091 offline pytest tests plus 19 subtests in a fresh isolated
+  non-checkout root, all 215 unittest-discovery tests, compilation, 25 CLI help/
+  version paths, strict under-300-line package source and diff checks. One prior
+  checkout-local full run hit the known intermittent Windows `os.replace`
+  `WinError 5` in an unrelated manifest test; that exact test and the complete
+  non-checkout rerun passed without a product change.
+  The real Scheduled Task, deployed configuration, recordings, and durable state
+  were not touched; real simultaneous-LIVE deployment validation remains the
+  next bounded v0.10 task. Issues #8 and #13 produced no new evidence and remain
+  non-blocking/opportunistic.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -448,9 +482,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** v0.10.0 multiple simultaneous creator recordings is the
-  next planned development target. Do not begin it without a separate task.
-  Conditional v0.6.5 is not selected; issues #8 and #13 remain opportunistic.
+- **Next queued task:** Perform a separately bounded v0.10 deployed-service
+  validation/completion slice: install current `main` only while idle, then use
+  owner-authorized natural public LIVEs to prove two independent simultaneous
+  sessions, per-session control/finalization, automation capacity, and restart
+  reconciliation without manufacturing faults. Do not begin it without a
+  separate task. Conditional v0.6.5 is not selected; issues #8 and #13 remain
+  opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -468,8 +506,9 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings is
-  the next planned roadmap target. No v0.10.0 implementation has started, and
-  conditional v0.6.5 redundant capture is not selected.
+  active. Its first bounded two-slot service/automation slice is complete on
+  `main`; deployed simultaneous validation and remaining completion/readiness
+  review are outstanding. Conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 

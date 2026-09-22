@@ -10,6 +10,7 @@ import pytest
 
 from tikrec.capture import CaptureResult
 from tikrec.recording import RecordingController
+from tikrec.recording_manager import RecordingManager
 from tikrec.service import DEFAULT_HOST, RecordingHandler, RecordingHTTPServer, serve, validate_bind
 from tikrec.retry_policy import RetryPolicy
 
@@ -189,8 +190,61 @@ def test_api_stop_uses_real_live_finalization_path(tmp_path):
     assert (tmp_path / "out.parts/part-0001.flv").is_file()
 
 
+def test_aggregate_routes_capacity_and_targeted_stop(tmp_path):
+    entered = {"one": Event(), "two": Event()}
+    stop_events = {}
+
+    def capture(url, **kwargs):
+        name = kwargs["output_path"].stem
+        stop_events[name] = kwargs["stop_event"]
+        kwargs["state"]("recording")
+        entered[name].set()
+        assert kwargs["stop_event"].wait(2)
+        return CaptureResult((), kwargs["output_path"], True)
+
+    manager = RecordingManager((RecordingController(capture=capture),
+                                RecordingController(capture=capture)))
+    try:
+        first = request(manager, "POST", "/recording/start", {
+            "url": PAGE, "output": str(tmp_path / "one.mp4"),
+        })
+        assert entered["one"].wait(2)
+        code, singular = request(manager, "GET", "/recording")
+        assert code == 200 and singular["session_id"] == first[1]["session_id"]
+        code, health = request(manager, "GET", "/health")
+        assert code == 200 and health["active_count"] == 1
+        assert health["available"] is True and health["available_slots"] == 1
+        second = request(manager, "POST", "/recording/start", {
+            "url": PAGE, "output": str(tmp_path / "two.mp4"),
+        })
+        assert first[0] == second[0] == 202
+        assert entered["two"].wait(2)
+        assert first[1]["session_id"] != second[1]["session_id"]
+        code, aggregate = request(manager, "GET", "/recordings")
+        assert code == 200 and aggregate["capacity"] == 2
+        assert aggregate["active_count"] == 2 and aggregate["available_slots"] == 0
+        assert [item["slot_id"] for item in aggregate["slots"]] == ["slot-1", "slot-2"]
+        assert request(manager, "GET", "/recording")[0] == 409
+        assert request(manager, "POST", "/recording/stop", {})[0] == 409
+        assert request(manager, "POST", "/recording/start", {
+            "url": PAGE, "output": str(tmp_path / "three.mp4"),
+        })[0] == 409
+
+        code, stopped = request(manager, "POST", "/recording/stop", {
+            "session_id": second[1]["session_id"],
+        })
+        assert code == 202 and stopped["session_id"] == second[1]["session_id"]
+        assert stop_events["two"].is_set() and not stop_events["one"].is_set()
+        assert request(manager, "POST", "/recording/stop", {
+            "session_id": "00000000-0000-0000-0000-000000000099",
+        })[0] == 404
+    finally:
+        manager.shutdown()
+
+
 @pytest.mark.parametrize(
-    "path", ["/health", "/recording", "/monitoring", "/recording/start", "/recording/stop"]
+    "path", ["/health", "/recording", "/recordings", "/monitoring",
+             "/recording/start", "/recording/stop"]
 )
 def test_all_routes_require_configured_token(path):
     method = "POST" if path.endswith(("start", "stop")) else "GET"
@@ -213,6 +267,7 @@ def test_invalid_start_shape_is_rejected(body):
 
 def test_body_limits_and_browser_origin():
     controller = RecordingController()
+    manager = RecordingManager((controller,))
     assert request(controller, "POST", "/recording/start", raw=b"broken")[0] == 400
     assert request(controller, "POST", "/recording/start", raw=b"x" * 8193)[0] == 413
     assert request(controller, "POST", "/recording/stop", {},
@@ -221,7 +276,11 @@ def test_body_limits_and_browser_origin():
                    headers={"Origin": "https://evil.test"})[0] == 403
     assert request(controller, "GET", "/monitoring",
                    headers={"Origin": "https://evil.test"})[0] == 403
+    assert request(controller, "GET", "/recordings",
+                   headers={"Origin": "https://evil.test"})[0] == 403
     assert request(controller, "POST", "/recording/stop", {"command": "kill"})[0] == 400
+    assert request(manager, "POST", "/recording/stop", {"session_id": 1})[0] == 400
+    assert request(manager, "POST", "/recording/stop", {"session_id": "bad"})[0] == 400
     assert request(controller, "GET", "/files")[0] == 404
 
 
@@ -255,7 +314,7 @@ def test_server_supplies_selected_policy_to_default_controller(tmp_path):
     with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
         with patch("tikrec.service.default_job_state_path", return_value=tmp_path / "job.json"):
             server = RecordingHTTPServer(retry_policy=policy)
-    assert server.controller._retry_policy is policy
+    assert all(item._retry_policy is policy for item in server.controller.controllers)
 
 
 def test_server_owns_monitor_start_stop_and_join():
@@ -309,7 +368,8 @@ def test_server_builds_admission_from_startup_output_snapshot(tmp_path):
                 controller=controller, monitor=monitor, automation=automation,
                 output_directory=tmp_path
             )
-    assert factory.call_args.args == (tmp_path, controller.health)
+    assert factory.call_args.args == (tmp_path, server.controller.health)
+    assert server.controller.controllers == (controller,)
     assert server.admission is admission
     server.shutdown_components()
 

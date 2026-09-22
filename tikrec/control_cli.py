@@ -30,11 +30,12 @@ def add_control_commands(subcommands) -> None:
     help_text = {
         "health": "show service and recording availability",
         "status": "show manual recording status",
+        "recordings": "show aggregate recording capacity and per-slot status",
         "monitor-status": "show sanitized creator monitoring observations",
         "start": "start one manual recording",
-        "stop": "stop the active manual recording",
+        "stop": "stop the sole active or one specified recording",
     }
-    for name in ("health", "status", "monitor-status", "start", "stop"):
+    for name in ("health", "status", "recordings", "monitor-status", "start", "stop"):
         action = actions.add_parser(name, help=help_text[name])
         action.add_argument("--server", required=True, metavar="URL")
         action.add_argument("--token-file", metavar="FILE", help="overrides TIKREC_TOKEN")
@@ -44,6 +45,9 @@ def add_control_commands(subcommands) -> None:
             action.add_argument("--output", required=True, metavar="ABSOLUTE_PC_MP4_PATH")
             action.add_argument("--raw-copy", action="store_true",
                                 help="opt in to raw/arrival evidence beside retained parts")
+        elif name == "stop":
+            action.add_argument("--session-id", metavar="UUID",
+                                help="target one active session when multiple are recording")
 
 
 def read_token(token_file: str | None) -> str | None:
@@ -93,6 +97,8 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         result = client.start(arguments.url, arguments.output, raw_copy=arguments.raw_copy)
     elif arguments.action == "monitor-status":
         result = client.monitoring()
+    elif arguments.action == "stop":
+        result = client.stop(arguments.session_id)
     else:
         result = getattr(client, arguments.action)()
     print(json.dumps(result, indent=2, sort_keys=True), file=stdout)

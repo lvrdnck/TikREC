@@ -19,17 +19,19 @@ def test_health_status_monitoring_start_stop_requests():
     client = RemoteClient("http://main-pc:8765/", token="secret", opener=opener)
     assert client.health() == {"state": "recording"}
     client.status()
+    client.recordings()
     client.monitoring()
     client.start("https://www.tiktok.com/@creator/live", r"C:\Videos\out.mp4", raw_copy=True)
     client.stop()
     assert [(r.get_method(), r.full_url) for r, _ in calls] == [
         ("GET", "http://main-pc:8765/health"), ("GET", "http://main-pc:8765/recording"),
+        ("GET", "http://main-pc:8765/recordings"),
         ("GET", "http://main-pc:8765/monitoring"),
         ("POST", "http://main-pc:8765/recording/start"),
         ("POST", "http://main-pc:8765/recording/stop")]
-    assert json.loads(calls[3][0].data)["output"] == r"C:\Videos\out.mp4"
-    assert json.loads(calls[3][0].data)["raw_copy"] is True
-    assert json.loads(calls[4][0].data) == {}
+    assert json.loads(calls[4][0].data)["output"] == r"C:\Videos\out.mp4"
+    assert json.loads(calls[4][0].data)["raw_copy"] is True
+    assert json.loads(calls[5][0].data) == {}
     assert all(r.get_header("Authorization") == "Bearer secret" and t == 10 for r, t in calls)
 
 
@@ -42,6 +44,27 @@ def test_start_omits_disabled_raw_copy_for_wire_compatibility():
     assert json.loads(requests[0].data) == {"url": "page", "output": "path"}
     with pytest.raises(ValueError, match="boolean"):
         client.start("page", "path", raw_copy=1)
+
+
+def test_targeted_stop_validates_and_sends_canonical_session_id():
+    requests = []
+    client = RemoteClient("http://main-pc", opener=lambda request, **_: (
+        requests.append(request) or BytesIO(b'{}')
+    ))
+    session_id = "00000000-0000-0000-0000-000000000123"
+    client.stop(session_id)
+    assert json.loads(requests[0].data) == {"session_id": session_id}
+    with pytest.raises(ValueError, match="canonical UUID"):
+        client.stop("not-a-session")
+
+
+def test_ambiguous_status_and_stop_errors_direct_to_aggregate_controls():
+    def opener(request, **kwargs):
+        raise HTTPError(request.full_url, 409, "secret", {}, BytesIO(b"secret"))
+    client = RemoteClient("http://main-pc", opener=opener)
+    for operation in (client.status, client.stop):
+        with pytest.raises(RemoteError, match="recordings or an explicit session ID"):
+            operation()
 
 
 @pytest.mark.parametrize("code", [400, 401, 409, 500])
