@@ -5,8 +5,8 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
-This document is the exact service contract for the TikREC v0.8.0 release
-candidate. Per-user recovery-window configuration changes startup policy but not
+This document is the exact service contract for TikREC v0.8.0. Per-user
+recovery-window configuration changes startup policy but not
 these routes; guided recovery remains a local CLI addition. Future
 creator automation, multiple recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,

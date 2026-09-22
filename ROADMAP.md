@@ -163,7 +163,7 @@ retained-session and deep output validation passed.
 
 **Release record:** package version v0.4.0, annotated `v0.4.0` tag at
 `9f8e4104f8bc24f439a3e927ca72da29257c41fa`, and the published GitHub Release
-`TikREC v0.4.0` are synchronized. It is a historical released version; v0.7.0
+`TikREC v0.4.0` are synchronized. It is a historical released version; v0.8.0
 is the current released version.
 
 ### v0.5.0 ? Environment survival / resumability
@@ -654,7 +654,7 @@ non-blocking/opportunistic. At this checkpoint v0.7.0 was ready for separately
 authorized publication but remained untagged and unpublished, so v0.6.0 was the
 current release.
 
-**Release publication (2026-09-21):** v0.7.0 is the current released version.
+**Release publication (2026-09-21):** v0.7.0 became the current released version.
 The immutable annotated `v0.7.0` tag (tag object
 `13b0492697d788814ceedcd11017892877be6115`, peeled release commit
 `bf3bee32fcd5267a109006883451bf90718ff722`) and the published non-draft,
@@ -743,6 +743,17 @@ boundaries, or finalization, so existing media validation evidence remains
 applicable. Issues #8 and #13 remain non-blocking/opportunistic. v0.8.0 is ready
 for separate publication authorization but remains untagged and unpublished;
 v0.7.0 remains the current released version.
+
+**Release publication (2026-09-22):** v0.8.0 is the current released version.
+The immutable annotated `v0.8.0` tag (tag object
+`f97fc91a4af9e95a8ec91363902d1fa8a9cf6091`, peeled release commit
+`da0390b502cb7bb51ef4b5097b58d4910017e2df`) and the published non-draft,
+non-prerelease GitHub Release `TikREC v0.8.0` are synchronized with package
+metadata. Final publication verification passed all 921 offline tests, 215
+unittest-discovery tests, compilation, 14 CLI help paths, CLI version checks,
+and an installed-wheel smoke test. Existing media evidence remains applicable
+because v0.8 changed configuration/default selection rather than media handling.
+Issues #8 and #13 remain open as non-blocking, opportunistic evidence work.
 
 ### v0.9.0 — Creator monitoring and automatic recording
 
@@ -874,10 +885,10 @@ or desirable.
 
 The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
-capabilities should no longer sit in an unversioned "someday" bucket. Reliability
-and guided interrupted-session recovery through v0.7.0 are released. v0.8.0
-configuration/defaults is a verified release candidate awaiting separate
-publication authorization; v0.9.0 has not begun.
+capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
+guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
+creator monitoring and automatic recording is the next planned development
+target and has not begun.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

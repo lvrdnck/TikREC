@@ -7,9 +7,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. The v0.8.0 release
-  candidate is prepared after issues #23, #24, #25, and #26 plus the approved
-  logging-default task completed the five narrow configuration/defaults slices.
+- **Active issue/task:** No implementation task is active. v0.8.0 is published
+  after issues #23, #24, #25, and #26 plus the approved logging-default task
+  completed the five narrow configuration/defaults slices.
   Issues #20, #21, and
   #22 are complete and closed after the three v0.7.0 guided-recovery slices:
   bounded read-only discovery/classification through `tikrec recover`, optional
@@ -23,7 +23,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   would still resolve the historical replay-specific attribution question.
   Issue #13 likewise remains open, paused/non-blocking, and opportunistic. Issue
   #16 is closed because routine release bookkeeping no longer requires a
-  dedicated issue. v0.7.0 is published and synchronized across package metadata,
+  dedicated issue. v0.8.0 is published and synchronized across package metadata,
   its immutable annotated tag, and its GitHub Release.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
@@ -76,7 +76,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   unittest discovery passes 215 tests. This completes the intended v0.8
   configuration/default scope. At slice completion, v0.7.0 remained released
   and v0.8.0 had not yet been prepared, tagged, or published.
-- **Prepared v0.8 release candidate:** Package metadata now reports v0.8.0. A
+- **Released v0.8 configuration/defaults:** Package metadata reports v0.8.0. A
   combined review found the five configuration/default slices coherent: strict
   schema-1 validation is preserved; explicit CLI choices retain precedence;
   unrelated commands avoid configuration I/O where designed; absent settings
@@ -92,7 +92,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   focused and full runs, and no TikREC `os.replace` failure reproduced. No new
   real-media run is required because v0.8 changes configuration/default
   selection only, not media handling; existing capture, recovery, finalization,
-  and validation evidence remains applicable. v0.8.0 is untagged and unpublished.
+  and validation evidence remains applicable. Final publication verification
+  repeated all 921 offline tests, 215 unittest-discovery tests, compilation, 14
+  CLI help paths, CLI version output, and the isolated built-wheel/install smoke
+  test. The immutable annotated tag and GitHub Release are now synchronized.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -299,10 +302,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** Separately authorize the immutable annotated v0.8.0
-  tag and GitHub Release if this release candidate is accepted.
-- **Next queued task:** Publish the prepared v0.8.0 release candidate only after
-  separate owner authorization. Do not begin v0.9.0 as part of publication. The
+- **Pending owner action:** None.
+- **Next queued task:** v0.9.0 creator monitoring and automatic recording is the
+  next planned development target. Do not begin it without a separate task. The
   conditional v0.6.5 redundant-capture release is not selected; issues #8 and
   #13 continue to collect evidence opportunistically.
 
@@ -312,20 +314,18 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.8.0 release candidate, from `tikrec.__version__` and
-  packaging metadata.
-- **Tagged version:** annotated `v0.7.0`, whose tag object is
-  `13b0492697d788814ceedcd11017892877be6115` and which peels to release commit
-  `bf3bee32fcd5267a109006883451bf90718ff722`.
-- **GitHub Release:** published non-draft, non-prerelease `TikREC v0.7.0` for
-  `v0.7.0` on 2026-09-21.
-- **Current released version:** v0.7.0; its release-commit package metadata,
+- **Package version:** v0.8.0, from `tikrec.__version__` and packaging metadata.
+- **Tagged version:** annotated `v0.8.0`, whose tag object is
+  `f97fc91a4af9e95a8ec91363902d1fa8a9cf6091` and which peels to release commit
+  `da0390b502cb7bb51ef4b5097b58d4910017e2df`.
+- **GitHub Release:** published non-draft, non-prerelease `TikREC v0.8.0` for
+  `v0.8.0` on 2026-09-22.
+- **Current released version:** v0.8.0; its release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
-- **Development target:** v0.8.0 configuration and defaults is a verified release
-  candidate awaiting separate tag/GitHub Release authorization. It remains
-  unreleased; v0.7.0 is still the current released version. v0.9.0 has not begun,
-  and conditional v0.6.5 redundant capture is not selected.
+- **Development target:** v0.9.0 creator monitoring and automatic recording is
+  the next planned roadmap target. No v0.9.0 implementation has started, and
+  conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 
