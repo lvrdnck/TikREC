@@ -6,6 +6,33 @@ tag, original media, or durable job/automation evidence was changed.
 
 ## Conclusion and limitations
 
+### Supplemental Kayla attempt (2026-09-22, approximately 21:34 +02:00)
+
+The owner authorized `kaylakreynes` for a manual `remote start --raw-copy`
+investigation, without adding her to monitoring or replacing the future Moe
+reproduction. Preflight found both slots safely available, 49,544,634,368 free
+bytes, the preserved completed Moe job in slot 1, and idle slot 2. Monitoring
+still contained only offline `phoebelightt`; no service restart was requested.
+
+The execution tool rejected the capture command before process creation with
+`blocked by policy`. The command would have selected a fresh timestamped output,
+preserved pre-start durable-state copies, and invoked normal authenticated
+raw-backed start. None of that command executed. A subsequent authenticated
+recordings check confirmed active count 0 and the unchanged completed Moe job.
+No bypass or alternate execution path was attempted.
+
+**PARTIAL: no Kayla recording or media evidence was obtained.** Whether Kayla
+was LIVE or battling, visible corruption, raw/retained decode, and payload/order
+comparison were not established. There is no new causal classification or
+v0.9.1 implication. Continue only when execution policy permits the authorized
+capture; recheck slots/storage and use the requested normal raw-copy CLI path
+with a fresh `kaylakreynes-issue27-raw-YYYYMMDD-HHMMSS.mp4` output. Preserve all
+other sessions and monitoring, and do not restart the service. The Moe analysis
+below and future raw-backed Moe reproduction remain applicable; #27 stays open
+and v0.10 stays paused.
+
+### Moe findings
+
 **Causal class 5: unresolved without raw source.** Corruption already exists in
 the retained FLV, is visibly severe, and survives an independent fresh decoder
 at actual IDRs. Finalization is not the origin: all original video NAL bytes and

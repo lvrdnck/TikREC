@@ -9,6 +9,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task: correctness blocker #27.** v0.10 simultaneous validation
   and readiness are paused, superseding the historical gate status below.
+  The supplemental owner-authorized `kaylakreynes` raw-capture attempt on
+  2026-09-22 was blocked by execution policy before process creation. No Kayla
+  session or evidence exists; post-attempt recordings still show active 0,
+  available 2 and the preserved completed Moe job. No configuration or task
+  change occurred. Retry only when execution policy permits the normal capture
+  path, after fresh slot/storage checks; this does not replace future Moe work.
   Completed forensic investigation is in [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
   Severe visible corruption already exists in retained FLV; full FLV/MP4 decodes
   emit the same 10,352 errors and finalization preserves original NAL/AAC bytes.

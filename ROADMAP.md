@@ -944,6 +944,13 @@ blocking; #8 and #13 remain separate/non-blocking. Shared writer/parser code
 matches v0.9.0; if a shared defect is proven, recommend v0.9.1 before v0.10,
 without preparing any release here. The following gate entries are historical.
 
+The supplemental owner-authorized Kayla raw-copy attempt later on 2026-09-22
+was rejected by execution policy before it ran. Both slots remained available;
+no recording, battle observation, media comparison, or configuration/task change
+occurred. Resume the authorized normal capture only when policy permits, with
+fresh safety checks. This supplies no new causal evidence and does not replace
+the pending Moe reproduction or unblock v0.10.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
