@@ -9,7 +9,10 @@ This reliability-first implementation is the foundation of a broader future
 livestream recording platform. Current `main` contains the first v0.10 slice:
 the persistent service can own up to two independent public LIVE recordings and
 automatically fill available capacity after a complete observation cycle. A
-library, playback, retention, notifications, and web workflows remain future work.
+bounded main-pc deployment confirms two healthy idle slots and two-creator
+monitoring, but both authorized creators were offline; simultaneous recording
+and isolation validation therefore remain outstanding. A library, playback,
+retention, notifications, and web workflows remain future work.
 
 The current package, immutable tag, and published GitHub Release are v0.9.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.

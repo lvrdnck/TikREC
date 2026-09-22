@@ -26,8 +26,10 @@ wait, v0.7.0 added guided interrupted-session recovery, and v0.8.0 added the
 per-user configuration/default behavior documented below. Package version
 v0.9.0 added opt-in creator monitoring and durable single-slot automatic starts.
 Current `main` contains the first untagged v0.10 slice: bounded two-recording
-service ownership and compatible automation. Published release records are
-maintained in PROJECT_STATE.md.
+service ownership and compatible automation. Its deployed idle/configuration/
+status checks pass, but the authorized creators did not naturally overlap, so
+simultaneous recording and isolation validation remain outstanding. Published
+release records are maintained in PROJECT_STATE.md.
 
 ### Not implemented yet
 
@@ -1186,8 +1188,9 @@ See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The architecture
 describes current `main` and preserves the published v0.9.0 boundaries where
-historical scope matters. Deployed simultaneous validation and release readiness
-remain future v0.10 work.
+historical scope matters. Deployed idle/configuration/status checks pass;
+simultaneous recording/isolation validation and release readiness remain future
+v0.10 work.
 
 ## Design principles
 

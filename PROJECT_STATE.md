@@ -8,7 +8,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 ## Coordination
 
 - **Active issue/task:** The first bounded v0.10.0 multiple-recording slice is
-  complete on `main`; no implementation task remains active. v0.9.0 remains
+  implemented and deployed from `dd00400`; its natural simultaneous-LIVE gate
+  remains active and outstanding. v0.9.0 remains
   published and synchronized across package metadata, its immutable annotated
   tag, and its GitHub Release. The v0.9 primary deployed-service gate passed on
   2026-09-22 with
@@ -17,14 +18,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   manual start, retained/final media validated, the same room was suppressed,
   durable state survived an idle task restart, and a natural explicit-offline
   cycle then re-armed the creator without a duplicate session or output. The
-  deployed configuration contains only `westvlammer` and
-  `C:\Users\Leandro\Videos`; the unchanged Scheduled Task is healthy, available,
-  idle, and monitoring on its previously started package version 0.8.0. The
-  checkout and verified wheel report package version 0.9.0. Comprehensive release
-  checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
+  v0.9 deployed configuration contained only `westvlammer` and
+  `C:\Users\Leandro\Videos`. The current unchanged Scheduled Task now runs the
+  editable v0.10 development checkout at `dd00400` while package version remains
+  0.9.0. Its host-visible configuration contains exactly `westvlammer` and
+  `lilymaye207` with the same output directory; health is idle/available with
+  capacity 2 and stable `slot-1`/`slot-2` status. Five bounded complete-cycle
+  checkpoints found both creators naturally offline, so no automatic session or
+  media was created and the simultaneous gate did not begin. Comprehensive v0.9
+  release checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
   synchronized current release. v0.10.0 is now the active development target;
-  its two-slot architecture is proven offline, but real simultaneous Scheduled
-  Task validation and later completion/readiness work remain. Issues #8 and #13
+  its two-slot architecture is proven offline and its deployed idle/status path
+  is proven, but real simultaneous recording, isolation, restart, and later
+  completion/readiness work remain. Issues #8 and #13
   remain open, paused/non-blocking, and opportunistic.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
@@ -271,9 +277,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   checkout-local full run hit the known intermittent Windows `os.replace`
   `WinError 5` in an unrelated manifest test; that exact test and the complete
   non-checkout rerun passed without a product change.
-  The real Scheduled Task, deployed configuration, recordings, and durable state
-  were not touched; real simultaneous-LIVE deployment validation remains the
-  next bounded v0.10 task. Issues #8 and #13 produced no new evidence and remain
+  A separately authorized bounded deployment then installed `dd00400` into the
+  existing editable environment only while idle. The unchanged Scheduled Task
+  now reports capacity 2, two stable available slots, useful legacy singular
+  status, authenticated/sanitized monitoring, and package version 0.9.0 while
+  the checkout separately verifies the development commit. Host-visible
+  configuration contains exactly `westvlammer` and `lilymaye207`, with automatic
+  output under `C:\Users\Leandro\Videos`. Legacy `job.json` remained completed
+  and finalized, missing `job-2.json` remained a clean idle second slot without
+  migration, and `automation.json` retained no pending claim or consumed room.
+  Five bounded complete-cycle checkpoints found both creators naturally offline;
+  no start, new session, output, or media was manufactured. The service remains
+  healthy and monitoring on current `main`, while the simultaneous-LIVE,
+  targeted isolation, dual-media validation, and idle-restart gate remains
+  outstanding. Issues #8 and #13 produced no new evidence and remain
   non-blocking/opportunistic.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
@@ -482,13 +499,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Perform a separately bounded v0.10 deployed-service
-  validation/completion slice: install current `main` only while idle, then use
-  owner-authorized natural public LIVEs to prove two independent simultaneous
-  sessions, per-session control/finalization, automation capacity, and restart
-  reconciliation without manufacturing faults. Do not begin it without a
-  separate task. Conditional v0.6.5 is not selected; issues #8 and #13 remain
-  opportunistic.
+- **Next queued task:** Resume the bounded v0.10 deployed-service gate on the
+  already deployed/configured service when `westvlammer` and `lilymaye207`
+  naturally overlap. Prove two independent simultaneous sessions, per-session
+  control/finalization, automation capacity, media validity, and idle-restart
+  reconciliation without manufacturing faults. Do not substitute creators or
+  wait indefinitely. Conditional v0.6.5 is not selected; issues #8 and #13
+  remain opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -507,8 +524,9 @@ new work; calendar entries are reminders only.
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings is
   active. Its first bounded two-slot service/automation slice is complete on
-  `main`; deployed simultaneous validation and remaining completion/readiness
-  review are outstanding. Conditional v0.6.5 redundant capture is not selected.
+  `main` and its deployed idle/configuration/status checks pass; simultaneous
+  recording/isolation and remaining completion/readiness review are outstanding.
+  Conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 

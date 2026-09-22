@@ -961,12 +961,27 @@ Verification passes 134 focused tests, all 1,091 isolated offline pytest tests
 plus 19 subtests, 215 unittest-discovery tests, compilation, 25 CLI help/version
 paths, strict source-size checks, and diff checks.
 
-This is not v0.10 release readiness. The real Scheduled Task was not changed and
-no LIVE was started for this offline architecture slice. A later separately
-bounded task must deploy current `main` while idle and validate genuinely
-simultaneous independent recordings, targeted control, completion/failure
-isolation, restart reconciliation, and automation capacity behavior before v0.10
-completion/release review.
+The implementation slice itself did not change the real Scheduled Task or start
+a LIVE. A separately authorized bounded deployment attempt on 2026-09-22 then
+installed `dd00400` into the existing editable environment while idle and
+restarted only the unchanged **TikREC Service** task. Deployed health reports
+capacity 2 with stable available `slot-1`/`slot-2`; aggregate and legacy singular
+status work, authentication rejects an unauthenticated request, and combined
+health/recording/monitoring responses contain no bearer token, signed-media
+marker, traceback, or unsafe exception text. Host-visible configuration contains
+exactly owner-authorized `westvlammer` and `lilymaye207`, with output under
+`C:\Users\Leandro\Videos`. Legacy completed `job.json` remained slot 1,
+`job-2.json` remained absent/idle without migration, and automation state had no
+pending claim or consumed room.
+
+Five bounded complete-cycle checkpoints found both creators naturally offline,
+with no selection, automatic start, new session, or output. The healthy service
+was left running and monitoring current `main`; no random creator, manual start,
+fault, or media was manufactured. This is deployed idle/configuration/status
+evidence, not v0.10 release readiness. Genuinely simultaneous independent
+recordings, targeted control/finalization isolation, dual retained/final media
+validation, automation-capacity behavior under overlap, and idle-restart durable
+state validation remain for a later bounded natural opportunity.
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
@@ -1073,7 +1088,8 @@ capabilities should no longer sit in an unversioned "someday" bucket. Reliabilit
 guided recovery, configuration/defaults, and creator automation through v0.9.0
 are released. v0.10.0 multiple simultaneous creator recordings is the active
 development target; its first bounded two-slot manager slice is implemented on
-`main`, while deployed simultaneous validation and later readiness work remain.
+`main` and deployed idle/configuration/status checks pass, while simultaneous
+recording/isolation validation and later readiness work remain.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

@@ -38,6 +38,16 @@ unrelated known validation/debug preferences remain lazy so they cannot
 needlessly defeat the override. Malformed fields needed by the running service
 fail startup explicitly. Configuration changes require a service restart.
 
+Run configuration commands in the same host filesystem view used by the
+Scheduled Task. Packaged desktop development environments can redirect writes
+under `%APPDATA%` while still displaying the conventional path; a successful
+`monitor list` in that environment is therefore not proof that the task-visible
+file changed. The 2026-09-22 main-pc deployment detected this by comparing the
+fresh service snapshot with the CLI result, then used TikREC's normal CLI with
+an explicit UNC spelling of the same host file and verified the restarted
+service listed both creators. Do not compensate by editing JSON or by changing
+the task definition.
+
 Use `--token-file FILE` or `TIKREC_TOKEN`. Files override the environment and may
 end with a newline. Tokens must be 16–512 printable ASCII characters without
 spaces; use a randomly generated secret with at least 32 characters. Empty or
