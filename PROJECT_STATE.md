@@ -33,8 +33,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   remained active, the host-visible persisted configuration was safely staged to
   exactly `moealkaf` and newly authorized `phoebelightt`. The running service was
   not restarted and correctly retains its old in-memory `ranaerose7`/`moealkaf`
-  snapshot until the recording is safely inactive. The `moealkaf` session
-  remains active, healthy, and intentionally unstopped. Comprehensive v0.9
+  snapshot until the recording is safely inactive. A later bounded reinspection
+  confirmed the same `moealkaf` session still active and intentionally unstopped
+  in `slot-1`: retained bytes grew from 390,912,511 to 406,181,774 during the
+  bounded checks and reached about 50.6 minutes elapsed, with zero reconnects,
+  no recovery, stop request, finalization, or error, capacity 2, and `slot-2`
+  available. Comprehensive v0.9
   release checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
   synchronized current release. v0.10.0 is now the active development target;
   its two-slot architecture is proven offline and its deployed idle/status path

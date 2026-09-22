@@ -1013,6 +1013,17 @@ available. Applying and observing the staged pair is deferred until safe natural
 completion. The earlier `ranaerose7` evidence remains historical rather than
 being attributed to `phoebelightt`.
 
+**Bounded preserved-session reinspection (2026-09-22):** The unchanged
+`moealkaf` session `c7927922-0381-410d-8020-0272aa96f265` remained healthy and
+active in `slot-1`. Across the bounded checks, retained bytes grew from
+390,912,511 to 406,181,774 and reached about 50.6 minutes elapsed, with zero reconnects
+and no recovery, stop request, finalization, or error. Service capacity remained
+2 with `slot-2` idle and available; the running service still correctly showed
+its earlier `ranaerose7`/`moealkaf` startup snapshot while the persisted
+configuration remained staged as `moealkaf`/`phoebelightt`. The task definition
+hash remained unchanged. No stop or restart was performed, and applying the
+staged pair remains deferred until safe natural completion.
+
 ### v0.11.0 — Smart storage, retention, and disk protection
 
 **Goal:** Make unattended recording libraries safe to operate without manual disk
