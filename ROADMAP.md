@@ -860,14 +860,18 @@ required automatic-start/output/suppression evidence gate is not satisfied and
 v0.9.0 is not yet a release-preparation candidate.
 
 **Configured validation continuation (2026-09-22):** The deployed service now
-monitors the owner-authorized creator `lilsmaye207` with automatic output under
-`C:\Users\Leandro\Videos`. Its unchanged Scheduled Task is healthy, available,
-idle, and running the normal monitor. Five complete cycles returned conservative
-`unknown/unverifiable`, not a canonical LIVE room or trustworthy offline result;
-no admission candidate, automatic start, new session/output, consumed-room state,
-or re-arm evidence was created. The configuration remains active for a later
-natural opportunity, but the primary deployed gate is still outstanding and
-v0.9.0 is not yet a release-preparation candidate.
+monitors owner-authorized `lilymaye207` with automatic output under
+`C:\Users\Leandro\Videos`. The earlier `lilsmaye207` configuration was a typo,
+so its five `unknown/unverifiable` cycles provide no evidence about the intended
+creator. The typo was replaced through normal TikREC CLI commands, and the
+unchanged Scheduled Task is healthy, available, idle, and running the normal
+monitor. Three complete corrected-creator cycles returned trustworthy `offline`;
+no canonical room, admission candidate, automatic start, new session/output, or
+consumed-room state was created. With nothing consumed, this is an offline
+baseline rather than a post-consumption re-arm transition. The corrected
+configuration remains active for a later natural opportunity, but the primary
+deployed gate is still outstanding and v0.9.0 is not yet a release-preparation
+candidate.
 
 The next bounded v0.9 action is to resume when this configured creator produces a
 trustworthy LIVE observation, then validate one natural automatic start through

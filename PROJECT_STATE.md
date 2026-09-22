@@ -8,16 +8,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 ## Coordination
 
 - **Active issue/task:** v0.9 deployed-service validation remains active and is
-  waiting for owner-authorized `lilsmaye207` to become verifiably LIVE. The
-  deployed per-user configuration now contains exactly that creator and
+  waiting for owner-authorized `lilymaye207` to become LIVE. The deployed
+  per-user configuration now contains exactly that corrected creator and
   `C:\Users\Leandro\Videos`; the unchanged Scheduled Task is healthy, available,
-  idle, and monitoring on package version 0.8.0. Five complete natural cycles
-  reported conservative `unknown/unverifiable`, with no canonical room,
-  admission candidate, automatic start, new session, output, or automation-state
-  mutation. Do not interpret that result as explicit offline evidence or re-arm.
-  Leave the configuration and normal monitor running, then repeat the bounded
-  validation when the service observes a trustworthy LIVE room. v0.8.0 remains
-  the synchronized current release. Issues #8 and #13 remain open,
+  idle, and monitoring on package version 0.8.0. Three complete natural cycles
+  reported trustworthy `offline`, with no canonical room, admission candidate,
+  automatic start, new session, output, or automation-state mutation. The prior
+  `unknown/unverifiable` cycles observed the mistyped `lilsmaye207` and provide
+  no evidence about the intended creator. Because no room has been consumed,
+  the current offline baseline does not exercise post-consumption re-arm. Leave
+  the corrected configuration and normal monitor running, then repeat the
+  bounded validation when the service observes a trustworthy LIVE room. v0.8.0
+  remains the synchronized current release. Issues #8 and #13 remain open,
   paused/non-blocking, and opportunistic.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
@@ -180,20 +182,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   compilation, CLI/help/version, diff, and strict under-300-line source checks
   pass. An initial shared-temp full run was interrupted after widespread Windows
   temp setup errors; the clean isolated run did not reproduce a TikREC failure.
-- **Configured v0.9 deployed-validation continuation:** The owner authorized
-  `lilsmaye207` with output under `C:\Users\Leandro\Videos`. Normal `tikrec
-  config set` and `monitor add` commands created and verified the exact host-
-  visible schema-1 configuration; no JSON was edited manually. The Codex command
-  sandbox initially produced a same-path file invisible to the Session 0 task,
-  so the same CLI commands were directed through the existing localhost `C$`
-  view, after which the unchanged Scheduled Task loaded the configuration.
-  Startup health is good and monitoring is operational. Five complete cycles
-  reported only `unknown/unverifiable`; monitoring stayed sanitized and no room,
-  admission candidate, automatic job, output, or `automation.json` appeared.
-  The service remains healthy, idle, and normally monitoring. The primary
-  automatic-start/output/suppression gate and optional natural re-arm evidence
-  therefore remain outstanding; v0.9.0 is still not a release-preparation
-  candidate.
+- **Configured v0.9 deployed-validation continuation:** The originally supplied
+  `lilsmaye207` handle was a typo. Its five `unknown/unverifiable` cycles are not
+  evidence about the intended creator. Normal `tikrec monitor remove` and
+  `monitor add` commands against the host-visible configuration replaced it with
+  owner-authorized `lilymaye207` while preserving
+  `C:\Users\Leandro\Videos`; no JSON or Scheduled Task definition was edited.
+  After the idle task restarted, health remained good and three complete cycles
+  reported trustworthy `offline` for the corrected creator. Monitoring stayed
+  sanitized and no room, admission candidate, automatic job, output, or
+  `automation.json` appeared. With no consumed room, this is an offline baseline
+  rather than evidence of a post-consumption re-arm transition. The service
+  remains healthy, idle, and normally monitoring. The primary automatic-start/
+  output/suppression gate remains outstanding; v0.9.0 is still not a release-
+  preparation candidate.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
