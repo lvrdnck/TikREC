@@ -19,7 +19,7 @@ PAGE = "https://www.tiktok.com/@creator/live"
 
 
 def request(controller, method, path, body=None, *, token=None, headers=None, raw=None,
-            monitor=None):
+            monitor=None, admission=None):
     data = json.dumps(body).encode() if raw is None and body is not None else (raw or b"")
     fields = {"Host": "localhost", "Content-Type": "application/json",
               "Content-Length": str(len(data)), **(headers or {})}
@@ -42,7 +42,10 @@ def request(controller, method, path, body=None, *, token=None, headers=None, ra
 
     connection = FakeSocket()
     monitoring = monitor or SimpleNamespace(snapshot=lambda: {"creators": []})
-    server = SimpleNamespace(controller=controller, monitor=monitoring, token=token)
+    policy = admission or SimpleNamespace(evaluate=lambda snapshot: snapshot)
+    server = SimpleNamespace(
+        controller=controller, monitor=monitoring, admission=policy, token=token
+    )
     RecordingHandler(connection, ("127.0.0.1", 1), server)
     head, response = bytes(connection.output).split(b"\r\n\r\n", 1)
     return int(head.split()[1]), json.loads(response)
@@ -59,6 +62,21 @@ def test_monitoring_status_comes_from_independent_component():
     snapshot = {"poll_interval_seconds": 30.0, "creators": [{"creator": "one"}]}
     monitor = SimpleNamespace(snapshot=lambda: snapshot)
     assert request(RecordingController(), "GET", "/monitoring", monitor=monitor) == (200, snapshot)
+
+
+def test_monitoring_status_is_enriched_by_current_admission():
+    snapshot = {"creators": [{"creator": "one", "state": "live"}]}
+    enriched = {**snapshot, "minimum_free_bytes": 10 * 1024**3}
+    calls = []
+    monitor = SimpleNamespace(snapshot=lambda: snapshot)
+    admission = SimpleNamespace(
+        evaluate=lambda value: calls.append(value) or enriched
+    )
+    assert request(
+        RecordingController(), "GET", "/monitoring",
+        monitor=monitor, admission=admission,
+    ) == (200, enriched)
+    assert calls == [snapshot]
 
 
 def test_http_start_conflict_status_and_stop_signal(tmp_path):
@@ -223,7 +241,10 @@ def test_server_supplies_selected_policy_to_default_controller(tmp_path):
 
 def test_server_owns_monitor_start_stop_and_join():
     calls = []
-    controller = SimpleNamespace(shutdown=lambda: calls.append("controller shutdown"))
+    controller = SimpleNamespace(
+        health=lambda: {"available": True},
+        shutdown=lambda: calls.append("controller shutdown"),
+    )
     monitor = SimpleNamespace(
         start=lambda: calls.append("monitor start"),
         stop=lambda: calls.append("monitor stop"),
@@ -239,13 +260,27 @@ def test_server_owns_monitor_start_stop_and_join():
 
 def test_server_builds_monitor_from_startup_creator_snapshot():
     monitor = SimpleNamespace(start=lambda: None, stop=lambda: None, join=lambda: None)
-    controller = SimpleNamespace(shutdown=lambda: None)
+    controller = SimpleNamespace(health=lambda: {"available": True}, shutdown=lambda: None)
     with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
         with patch("tikrec.service.CreatorMonitor", return_value=monitor) as factory:
             server = RecordingHTTPServer(
                 controller=controller, monitored_creators=("first", "second")
             )
     factory.assert_called_once_with(("first", "second"))
+    server.shutdown_components()
+
+
+def test_server_builds_admission_from_startup_output_snapshot(tmp_path):
+    monitor = SimpleNamespace(start=lambda: None, stop=lambda: None, join=lambda: None)
+    controller = SimpleNamespace(health=lambda: {"available": True}, shutdown=lambda: None)
+    admission = SimpleNamespace(evaluate=lambda snapshot: snapshot)
+    with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
+        with patch("tikrec.service.RecordingAdmission", return_value=admission) as factory:
+            server = RecordingHTTPServer(
+                controller=controller, monitor=monitor, output_directory=tmp_path
+            )
+    assert factory.call_args.args == (tmp_path, controller.health)
+    assert server.admission is admission
     server.shutdown_components()
 
 

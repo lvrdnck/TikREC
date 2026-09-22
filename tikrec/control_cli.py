@@ -9,11 +9,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TextIO
 
-from .configuration import ConfigurationStore, default_config_path
+from .configuration import default_config_path
 from .remote import RemoteClient
 from .recovery_options import effective_retry_policy, recovery_window_argument
 from .retry_policy import RetryPolicy
 from .service import DEFAULT_HOST, DEFAULT_PORT, serve, validate_bind
+from .service_configuration import load_service_configuration
 
 
 def add_control_commands(subcommands) -> None:
@@ -69,22 +70,22 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         if not 1 <= arguments.port <= 65535:
             raise ValueError("port must be between 1 and 65535")
         path = Path(arguments.config_path) if arguments.config_path else default_config_path()
-        store = ConfigurationStore(path)
+        configuration = load_service_configuration(
+            path, validate_all=arguments.recovery_window_seconds is None
+        )
         if arguments.recovery_window_seconds is None:
-            configuration = store.load()
             retry_policy = RetryPolicy(
-                window_seconds=configuration.effective_recovery_window_seconds
+                window_seconds=configuration.recovery_window_seconds
             )
-            monitored_creators = configuration.monitored_creators
         else:
             retry_policy = effective_retry_policy(
                 arguments.recovery_window_seconds, arguments.config_path
             )
-            # An explicit recovery override keeps unrelated preferences lazy.
-            monitored_creators = store.load_monitored_creators()
         print(f"Starting TikREC service on {host}:{arguments.port}", file=stdout, flush=True)
         service_runner(host=host, port=arguments.port, token=token,
-                       retry_policy=retry_policy, monitored_creators=monitored_creators)
+                       retry_policy=retry_policy,
+                       monitored_creators=configuration.monitored_creators,
+                       output_directory=configuration.output_directory)
         return 0
     client = RemoteClient(arguments.server, token=token, opener=remote_opener,
                           timeout=arguments.timeout)

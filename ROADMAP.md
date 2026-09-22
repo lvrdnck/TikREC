@@ -806,10 +806,31 @@ Verification passed 179 focused tests, all 974 offline tests plus 19 subtests,
 215 unittest-discovery tests, compilation, CLI/help checks, and source-size
 checks. No real-LIVE recording applies because this slice records no media;
 resolver outcomes and timing are fully injectable and were tested offline.
-The next bounded prerequisite is unattended-recording admission/storage policy:
-configured output readiness, collision-safe path reservation, a basic free-space
-floor, and explicit single-slot skip behavior, without yet wiring LIVE detection
-to automatic capture.
+**Third slice completed (2026-09-22):** The service now snapshots configured
+output storage alongside creators and adds a separate, non-mutating admission
+evaluation to each monitoring-status response. A detected LIVE is skipped while
+manual capture, recovery, finalization, blocked state, or shutdown owns the
+single slot; otherwise it reports fixed blocked reasons for missing/unavailable
+storage, less than the built-in 10 GiB free-space floor, or exhausted bounded
+name candidates. Ready status uses the existing creator/timestamp and collision-
+suffix convention and exposes only safe local candidates/free-byte facts.
+Not-yet-created output directories are assessed through their nearest existing
+parent without creating files, directories, locks, or reservations. Admission is
+recomputed from current state, persists nothing, chooses no winner among
+simultaneous LIVEs, and never starts recording. Manual recording/recovery paths
+do not inherit the floor. Explicit recovery overrides keep unrelated known
+validation/debug preferences lazy while schema and service-needed creator/output
+fields remain strict. Verification passes 136 focused tests and all 1,015
+offline tests plus 19 subtests; compilation, unittest discovery, CLI/help, and
+source-size checks also pass. No real-LIVE/media validation applies because the
+slice performs no recording or media change.
+
+The next bounded v0.9 slice is automatic-start/re-arm integration: consume LIVE
+detection plus this admission policy to select and start at most one eligible
+recording, then re-arm safely after a completed LIVE. It must reallocate the
+candidate immediately before start and preserve authoritative controller
+collision/slot checks. Notifications, concurrent recording, retention, and
+v0.10 work remain out of scope.
 
 ### v0.10.0 — Multiple simultaneous creator recordings
 
@@ -926,7 +947,8 @@ Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
 creator monitoring and automatic recording is in development after persistent
-configuration and read-only service detection; automatic recording has not begun.
+configuration, read-only detection, and unattended admission/storage safety;
+automatic recording has not begun.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

@@ -7,7 +7,11 @@ from pathlib import Path
 import pytest
 
 from tikrec.configuration import ConfigurationError
-from tikrec.output_naming import local_recording_paths, safe_creator_handle
+from tikrec.output_naming import (
+    local_recording_paths,
+    monitored_recording_paths,
+    safe_creator_handle,
+)
 
 
 def _config(path: Path, output_directory: Path | None) -> Path:
@@ -56,6 +60,14 @@ def test_automatic_name_and_parts_are_deterministic_direct_children(tmp_path: Pa
     assert output == directory / "creator-20260921-184500.mp4"
     assert parts == directory / "creator-20260921-184500.parts"
     assert output.parent == directory and parts.parent == directory
+
+
+def test_monitored_candidate_reuses_naming_without_creating_artifacts(tmp_path: Path):
+    moment = datetime(2026, 9, 21, 18, 45, 0)
+    output, parts = monitored_recording_paths(tmp_path, "creator", moment=moment)
+    assert output == tmp_path / "creator-20260921-184500.mp4"
+    assert parts == tmp_path / "creator-20260921-184500.parts"
+    assert tuple(tmp_path.iterdir()) == ()
 
 
 def test_malicious_handle_text_cannot_escape_configured_directory(tmp_path: Path) -> None:

@@ -21,7 +21,8 @@ def test_serve_defaults_and_existing_commands(monkeypatch, tmp_path):
     assert main(["--config", str(config), "serve"],
                 service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
     assert calls == [{"host": "127.0.0.1", "port": 8765, "token": None,
-                      "retry_policy": RetryPolicy(), "monitored_creators": ()}]
+                      "retry_policy": RetryPolicy(), "monitored_creators": (),
+                      "output_directory": None}]
     parser = _parser()
     for command, args in [("live", ["page", "--output", "out.mp4"]),
                           ("record", ["flv", "--output", "out.mp4"]),
@@ -178,6 +179,9 @@ def test_serve_recovery_window_precedence_and_lazy_configuration(tmp_path, monke
     config.write_text(json.dumps({
         "schema_version": 1,
         "validation_mode": "not-a-mode",
+        "debug_tracebacks": "not-a-boolean",
+        "recovery_window_seconds": "not-an-integer",
+        "output_directory": str(tmp_path / "recordings"),
         "monitored_creators": ["first", "second"],
     }), encoding="utf-8")
     assert main(["--config", str(config), "serve"], stderr=StringIO(),
@@ -187,6 +191,7 @@ def test_serve_recovery_window_precedence_and_lazy_configuration(tmp_path, monke
     ], service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
     assert calls[-1]["retry_policy"].window_seconds == 60
     assert calls[-1]["monitored_creators"] == ("first", "second")
+    assert calls[-1]["output_directory"] == tmp_path / "recordings"
 
     config.write_text(json.dumps({
         "schema_version": 1, "monitored_creators": ["NotCanonical"],
@@ -200,19 +205,21 @@ def test_service_snapshots_configured_creators_at_startup(tmp_path, monkeypatch)
     monkeypatch.delenv("TIKREC_TOKEN", raising=False)
     config = tmp_path / "config.json"
     config.write_text(json.dumps({
-        "schema_version": 1, "monitored_creators": ["first", "second"],
+        "schema_version": 1,
+        "output_directory": str(tmp_path / "recordings"),
+        "monitored_creators": ["first", "second"],
     }), encoding="utf-8")
     received = []
 
     def run(**kwargs):
-        received.append(kwargs["monitored_creators"])
+        received.append((kwargs["monitored_creators"], kwargs["output_directory"]))
         config.write_text(json.dumps({
             "schema_version": 1, "monitored_creators": ["changed"],
         }), encoding="utf-8")
 
     assert main(["--config", str(config), "serve"], service_runner=run,
                 stdout=StringIO()) == 0
-    assert received == [("first", "second")]
+    assert received == [(('first', 'second'), tmp_path / "recordings")]
 
 
 def test_remote_shape_has_no_recovery_window_option() -> None:

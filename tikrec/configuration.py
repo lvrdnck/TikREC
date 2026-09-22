@@ -140,32 +140,6 @@ class ConfigurationStore:
             detail = str(error) or "invalid document"
             raise ConfigurationError(f"invalid configuration at {self.path}: {detail}") from None
 
-    def load_monitored_creators(self) -> tuple[str, ...]:
-        """Load only service monitoring identity while ignoring unrelated preferences."""
-        try:
-            with self.path.open("r", encoding="utf-8") as handle:
-                document = json.load(handle, object_pairs_hook=_unique_fields)
-        except FileNotFoundError:
-            return ()
-        except (OSError, UnicodeError, ValueError) as error:
-            raise ConfigurationError(f"invalid configuration at {self.path}: {error}") from None
-        try:
-            if not isinstance(document, dict) or set(document) - _FIELDS:
-                raise ConfigurationError("unknown or invalid top-level fields")
-            if "schema_version" not in document:
-                raise ConfigurationError("missing schema_version")
-            if type(version := document.get("schema_version")) is not int or version != CONFIG_SCHEMA_VERSION:
-                raise ConfigurationError(
-                    f"unsupported configuration schema version; expected {CONFIG_SCHEMA_VERSION}"
-                )
-            raw_creators = document.get("monitored_creators", [])
-            if type(raw_creators) is not list:
-                raise ConfigurationError("monitored_creators must be an ordered list")
-            return validate_monitored_creators(tuple(raw_creators))
-        except (TypeError, ValueError) as error:
-            detail = str(error) or "invalid document"
-            raise ConfigurationError(f"invalid configuration at {self.path}: {detail}") from None
-
     def save(self, configuration: Configuration) -> None:
         """Flush a complete document before atomically replacing committed configuration."""
         configuration.validate()

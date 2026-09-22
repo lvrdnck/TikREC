@@ -109,36 +109,6 @@ def test_invalid_configuration_fails_clearly(
         ConfigurationStore(path).load()
 
 
-def test_service_creator_loader_is_selective_but_keeps_schema_strict(tmp_path: Path) -> None:
-    path = tmp_path / "config.json"
-    store = ConfigurationStore(path)
-    assert store.load_monitored_creators() == ()
-    path.write_text(json.dumps({
-        "schema_version": 1,
-        "validation_mode": "invalid-but-unrelated-to-service-with-cli-override",
-        "monitored_creators": ["first", "second.creator"],
-    }), encoding="utf-8")
-    assert store.load_monitored_creators() == ("first", "second.creator")
-    with pytest.raises(ConfigurationError):
-        store.load()
-
-    for document in (
-        {"monitored_creators": ["first"]},
-        {"schema_version": True, "monitored_creators": ["first"]},
-        {"schema_version": 2, "monitored_creators": ["first"]},
-        {"schema_version": 1, "monitored_creators": ["First"]},
-        {"schema_version": 1, "monitored_creators": ["first", "first"]},
-        {"schema_version": 1, "monitored_creators": "first"},
-        {"schema_version": 1, "unknown": True},
-    ):
-        path.write_text(json.dumps(document), encoding="utf-8")
-        with pytest.raises(ConfigurationError):
-            store.load_monitored_creators()
-    path.write_text("{", encoding="utf-8")
-    with pytest.raises(ConfigurationError):
-        store.load_monitored_creators()
-
-
 def test_configured_directory_must_be_absolute_and_not_a_file(tmp_path: Path) -> None:
     with pytest.raises(ConfigurationError, match="absolute"):
         Configuration(output_directory=Path("relative")).validate()

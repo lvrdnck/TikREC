@@ -7,8 +7,9 @@ of SSH so disconnecting the remote shell does not end capture.
 
 This document is the exact service contract for the current checkout, whose
 package version remains v0.8.0 while v0.9.0 is in development. Per-user
-recovery-window and monitored-creator configuration are selected at startup;
-guided recovery remains a local CLI addition. Future automatic recording,
+recovery-window, monitored-creator, and output-directory configuration are
+selected at startup; guided recovery remains a local CLI addition. Future
+automatic recording,
 multiple recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,
 but no such endpoint or behavior exists until its own specification is implemented.
@@ -27,13 +28,15 @@ values are integers from 60 through 3600. Configuration is read once at startup;
 restart the service after changing it. This setting is not part of remote start
 or the HTTP API.
 
-The same startup snapshots `monitored_creators`. An empty list is valid and
-starts no polling worker. With no explicit recovery-window override, normal
-strict configuration validation applies to the whole document. With an explicit
-override, the service still validates JSON/schema/unknown fields and the creator
-list, while unrelated known preferences remain lazy so they cannot needlessly
-defeat the override. Malformed or noncanonical creator configuration fails
-startup explicitly. Creator changes require a service restart.
+The same startup snapshots `monitored_creators` and `output_directory`. An empty
+creator list and a missing output directory are both valid; the former starts no
+polling worker, while the latter reports unattended admission as blocked. With no
+explicit recovery-window override, normal strict configuration validation applies
+to the whole document. With an explicit override, the service still validates
+JSON/schema/unknown fields plus the creator list and output directory, while
+unrelated known validation/debug preferences remain lazy so they cannot
+needlessly defeat the override. Malformed fields needed by the running service
+fail startup explicitly. Configuration changes require a service restart.
 
 Use `--token-file FILE` or `TIKREC_TOKEN`. Files override the environment and may
 end with a newline. Tokens must be 16–512 printable ASCII characters without
@@ -70,7 +73,7 @@ one Content-Length, and 1–8192 bytes; transfer encoding is unsupported.
 | --- | --- | --- |
 | `GET /health` | none | 200: service, version, available, active, shutting_down, recovery_state, recovery_reason |
 | `GET /recording` | none | 200: idle or current/latest job snapshot |
-| `GET /monitoring` | none | 200: sanitized in-memory creator observations and cycle timing |
+| `GET /monitoring` | none | 200: sanitized creator observations, cycle timing, and current unattended admission |
 | `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: job accepted; 409 if active/recovery unresolved/shutting down |
 | `POST /recording/stop` | `{}` | 202: stop requested/current snapshot; harmless when idle or repeated |
 
@@ -114,6 +117,33 @@ change `job.json`, `session.json`, or connection evidence. It continues while a
 manual recording is active without reserving or altering the recording slot and
 cannot start a recording. Shutdown wakes the cycle wait and joins the monitor
 after any current bounded resolver call.
+
+Each creator includes a fresh admission object when monitoring status is read.
+Detection states other than `live` are `not_applicable`. A LIVE is
+`skipped/recording_slot_unavailable` whenever manual recording, startup recovery,
+finalization, blocked state, or shutdown owns the one controller slot. A later
+request may become ready if the creator is still LIVE and the slot is available;
+there is no queue or priority decision between simultaneous LIVEs.
+
+An available slot still requires startup-configured `output_directory`. Missing
+configuration is `blocked/output_directory_unconfigured`; failed stat/disk
+inspection is `blocked/storage_unavailable`; observed free space below the
+built-in 10 GiB (`10 * 1024**3`) floor is `blocked/low_free_space`; and exhausting
+the bounded output-name search is `blocked/output_name_unavailable`. Exact-floor
+space is sufficient. For an output directory not yet created, admission inspects
+its nearest existing parent and creates nothing. A ready result includes the
+collision-safe `creator-YYYYMMDD-HHMMSS[-N].mp4` candidate, matching `.parts`
+path, observed free bytes, and the response-level threshold.
+The response field is `minimum_free_bytes`; each admission object always has
+`state`, `reason`, `free_bytes`, `output_path`, and `parts_directory`, using null
+for facts that do not apply or could not be established safely.
+
+Admission is advisory and non-mutating: it stores no decision, reserves no name,
+and never calls the controller. Candidate allocation must run again immediately
+before a later automatic start, while the controller's existing collision check
+remains authoritative. The floor does not apply to manual API starts, local
+commands, recovery, or finalization. Fixed machine-readable reasons prevent
+filesystem exceptions and signed transport from entering status.
 
 ## Job status and stop
 
@@ -374,8 +404,9 @@ Create a task named **TikREC Service** manually:
    whether user is logged on or not**, and save the account credentials if
    prompted. Administrator elevation is not required for TikREC itself.
 2. **Triggers:** **At startup**, with a delay such as one minute to let Tailscale
-   establish its address. This launches both controls and configured read-only
-   monitoring; it still cannot start a recording automatically.
+   establish its address. This launches controls, configured read-only monitoring,
+   and non-mutating admission reporting; it still cannot start a recording
+   automatically.
 3. **Actions / Start a program:** Program/script:
    `C:\Users\Leandro\dev\TikREC\.venv\Scripts\tikrec.exe`.
    Arguments (replace `100.x.y.z` with the actual PC Tailscale IP):

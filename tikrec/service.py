@@ -7,7 +7,9 @@ import ipaddress
 import json
 import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
+from .admission import RecordingAdmission
 from .monitoring import CreatorMonitor
 from .recording import RecordingBusy, RecordingController
 from .retry_policy import RetryPolicy
@@ -41,7 +43,9 @@ class RecordingHTTPServer(ThreadingHTTPServer):
     def __init__(self, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *,
                  controller: RecordingController | None = None,
                  monitor: CreatorMonitor | None = None,
+                 admission: RecordingAdmission | None = None,
                  monitored_creators: tuple[str, ...] = (),
+                 output_directory: Path | None = None,
                  token: str | None = None, retry_policy: RetryPolicy = RetryPolicy(),
                  bind_and_activate: bool = True) -> None:
         host = validate_bind(host, token)
@@ -55,6 +59,9 @@ class RecordingHTTPServer(ThreadingHTTPServer):
             # Reserve the listening address before recovery can open a second media writer.
             self.controller = controller if controller is not None else RecordingController(
                 store=JobStateStore(default_job_state_path()), retry_policy=retry_policy)
+            self.admission = admission if admission is not None else RecordingAdmission(
+                output_directory, self.controller.health
+            )
             self.monitor = monitor if monitor is not None else CreatorMonitor(monitored_creators)
             self.monitor.start()
         except BaseException:
@@ -105,7 +112,9 @@ class RecordingHandler(BaseHTTPRequestHandler):
         elif self.path == "/recording":
             self._json(200, self.server.controller.status())
         elif self.path == "/monitoring":
-            self._json(200, self.server.monitor.snapshot())
+            self._json(
+                200, self.server.admission.evaluate(self.server.monitor.snapshot())
+            )
         else:
             self._json(404, {"error": "unknown endpoint"})
 
@@ -200,11 +209,15 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           token: str | None = None, controller: RecordingController | None = None,
           retry_policy: RetryPolicy = RetryPolicy(),
           monitored_creators: tuple[str, ...] = (),
-          monitor: CreatorMonitor | None = None) -> None:
+          output_directory: Path | None = None,
+          monitor: CreatorMonitor | None = None,
+          admission: RecordingAdmission | None = None) -> None:
     """Run until local interruption, then cooperatively finish the current job."""
     with RecordingHTTPServer(host, port, token=token, controller=controller,
                              retry_policy=retry_policy, monitor=monitor,
-                             monitored_creators=monitored_creators) as server:
+                             admission=admission,
+                             monitored_creators=monitored_creators,
+                             output_directory=output_directory) as server:
         try:
             server.serve_forever()
         except KeyboardInterrupt:

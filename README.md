@@ -7,8 +7,9 @@ reconnecting if the connection drops, and you get one MP4 out.
 
 This reliability-first implementation is the foundation of a broader future
 livestream recording platform. The service can now observe an explicitly
-configured creator list, but automatic recording, a library, playback, and web
-workflows remain future work.
+configured creator list and report whether a detected LIVE is admissible for
+unattended recording, but it still does not start that recording automatically.
+A library, playback, and web workflows also remain future work.
 
 The current package, immutable tag, and published GitHub Release are v0.8.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
@@ -177,11 +178,11 @@ absent removals fail clearly. Listing an absent configuration reports no
 creators, and adding a creator does not require `output_directory`.
 
 These configuration commands do not contact TikTok or start recording. The
-persistent service snapshots the ordered list at startup, polls each creator in
-that order immediately and then 30 seconds after each completed cycle, and keeps
-sanitized observations in memory. Restart the service after add/remove changes.
-Observation order is not scheduling priority, and detection never starts a
-recording or enforces future automatic-recording storage requirements.
+persistent service snapshots the ordered list and `output_directory` at startup,
+polls each creator in that order immediately and then 30 seconds after each
+completed cycle, and keeps sanitized observations in memory. Restart the service
+after configuration changes. Observation order is not scheduling priority, and
+detection/admission never starts a recording.
 
 The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
 wrong types, duplicate fields, and unknown top-level settings fail clearly
@@ -268,6 +269,17 @@ result becomes `offline`; network, access, malformed-data, missing-identity, and
 unexpected failures remain `unknown` with fixed categories. A LIVE result may
 include its public room ID. Signed media URLs and arbitrary remote error text are
 discarded and never enter status. Observations reset to pending on service restart.
+
+Each observation also has a current admission result. Non-LIVE creators are
+`not_applicable`. A LIVE is `skipped/recording_slot_unavailable` while manual
+recording, recovery, finalization, or shutdown owns the single slot. It is
+`blocked` when output storage is unconfigured or unavailable, free space is below
+the built-in 10 GiB unattended floor, or the bounded name search is exhausted;
+otherwise it is `ready`. Ready status exposes only the local candidate MP4 and
+matching `.parts` paths, observed free bytes, and the fixed threshold. Admission
+uses the nearest existing parent for a not-yet-created output directory and never
+creates or reserves anything. It is recalculated on each status request and does
+not affect manual starts, recovery, or the existing recording pipeline.
 
 For an owner-authorized diagnostic recording, add `--raw-copy` to `remote start`.
 The service then places `connection-NNNN.raw` and matching
@@ -427,8 +439,11 @@ validation notes in SPEC.md for why.
 **Today:** TikREC records one manually supplied public LIVE, stores an opt-in
 ordered list of canonical public creator handles, and has a persistent service
 that observes those handles with conservative `live`/`offline`/`unknown` status.
-It does not wait to start a future recording, start recordings automatically,
-record multiple creators, authenticate to TikTok, or provide a library/Web UI/playback.
+For a detected LIVE, the service also reports whether the current single slot,
+configured storage, 10 GiB free-space floor, and collision-safe candidate name
+would admit unattended recording. It does not wait to start a future recording,
+start recordings automatically, record multiple creators, authenticate to TikTok,
+or provide a library/Web UI/playback.
 
 **Future product:** automatic recording for explicitly configured public
 creators is a later v0.9 slice. Library/history/playback,

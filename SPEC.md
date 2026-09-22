@@ -15,6 +15,7 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - One recording owned by an independently launched service, controlled remotely
 - An opt-in ordered configuration list of canonical public creator handles
 - Read-only service polling with conservative in-memory LIVE observations
+- Non-mutating unattended-admission status for detected configured LIVEs
 
 TikREC v0.5.0 established service startup reconciliation, v0.6.0 added evidence-
 based reconnect-gap measurement while removing only the fixed healthy-close
@@ -717,6 +718,45 @@ consults nor mutates `RecordingController`, so manual capture continues
 independently. Service shutdown requests monitor stop, shuts down recording, and
 joins the monitor after its current bounded resolver call.
 
+### tikrec/admission.py — unattended-recording admission
+
+`RecordingAdmission` is composed by the service but remains separate from the
+resolver worker. On each monitoring-status request it evaluates the current
+controller health and storage state for every observation without selecting a
+winner or calling `RecordingController.start()`. Non-LIVE observations are
+`not_applicable`. If the single slot is unavailable because of manual capture,
+startup recovery, finalization, failure/blocked state, or shutdown, a LIVE is
+`skipped` with `recording_slot_unavailable`; it is never queued.
+
+Missing `output_directory` produces `blocked/output_directory_unconfigured` but
+does not prevent service startup or read-only monitoring. Admission checks free
+space at the configured directory or its nearest existing parent without
+creating directories. Failure to inspect storage is
+`blocked/storage_unavailable`; fewer than `10 * 1024**3` free bytes is
+`blocked/low_free_space`. This built-in floor applies only to future unattended
+recording, never manual local/remote starts, recovery, or finalization.
+
+With storage available, admission reuses the creator/local-time
+`creator-YYYYMMDD-HHMMSS.mp4` convention and bounded `-2` through `-1000`
+collision search. Both output and matching `.parts` paths must be unoccupied;
+inspection failure is storage unavailable and exhaustion is
+`output_name_unavailable`. A `ready` result may expose those candidate local
+paths plus observed/required free bytes because the authenticated recording API
+already exposes local paths. Candidate allocation creates no file, directory,
+lock, reservation, or persisted decision. A later automatic-start slice must
+allocate again immediately before starting, and controller collision checks
+remain authoritative. Fixed reasons prevent exception text or signed transport
+from reaching status.
+
+### tikrec/service_configuration.py — service startup snapshot
+
+The service snapshots `output_directory`, `monitored_creators`, and the effective
+recovery window once at startup. Normal startup validates the complete strict
+schema. When the recovery window is explicitly overridden, malformed unrelated
+known validation/debug preferences stay lazy, while JSON syntax, duplicate and
+unknown fields, schema version, output storage, and monitored creators remain
+strict because the running service uses them. Missing output storage is valid.
+
 ### tikrec/remote.py and tikrec/control_cli.py — remote client and CLI wiring
 
 `RemoteClient` sends injected/testable standard-library HTTP JSON requests,
@@ -783,9 +823,9 @@ and fails if the creator is absent. `monitor list` preserves configured order an
 reports an empty list without creating a missing configuration file. These
 commands use the existing atomic configuration replacement and preserve every
 v0.8 setting. They do not require `output_directory`, contact TikTok, start
-recordings, or enforce future automatic-recording storage policy. The separately
-launched service snapshots this list at startup and performs the read-only
-polling specified above.
+recordings, or perform admission themselves. The separately launched service
+snapshots this list and `output_directory` at startup, performs the read-only
+polling specified above, and evaluates admission only in status snapshots.
 
 `config path` does not need to parse the file. `config show [--json]` reports the
 path, existence, configured values, and effective values/sources. `config set
@@ -833,9 +873,9 @@ this logic.
 
 Remote start still requires and preserves an absolute .mp4 path on the service
 machine. Manual `finalize --output`, guided recovery stored paths, service state,
-and existing retained sessions do not consult automatic naming. No customizable
-filename template exists yet, and manual naming does not imply creator monitoring
-or automatic recording.
+and existing retained sessions do not consult automatic naming or the unattended
+10 GiB admission floor. No customizable filename template exists yet. Admission
+may report a candidate but does not reserve it or imply automatic recording.
 
 Local `live` and `serve` resolve the recovery window as CLI override, then
 configuration, then the built-in 900 seconds. An explicit override avoids reading

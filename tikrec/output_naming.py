@@ -14,12 +14,21 @@ from .configuration import (
     default_config_path,
     resolve_recording_output,
 )
+from .creator_identity import CreatorIdentityError, validate_creator_handle
 from .tiktok import TikTokResolutionError, _validate_live_page_url
 
 
 _UNSAFE_FILENAME = re.compile(r"[^A-Za-z0-9._-]+")
 _REPEATED_SEPARATOR = re.compile(r"[-_.]{2,}")
 _MAX_COLLISION_INDEX = 1000
+
+
+class OutputNameUnavailableError(ConfigurationError):
+    """The bounded automatic-name search found no unoccupied candidate."""
+
+
+class OutputPathInspectionError(ConfigurationError):
+    """Automatic naming could not safely determine whether a path is occupied."""
 
 
 def local_recording_paths(
@@ -51,11 +60,20 @@ def local_recording_paths(
         )
     handle = safe_creator_handle(url)
     moment = (clock or datetime.now)()
-    timestamp = (
-        f"{moment.year:04d}{moment.month:02d}{moment.day:02d}-"
-        f"{moment.hour:02d}{moment.minute:02d}{moment.second:02d}"
+    return _available_paths(
+        configuration.output_directory, f"{handle}-{_timestamp(moment)}"
     )
-    return _available_paths(configuration.output_directory, f"{handle}-{timestamp}")
+
+
+def monitored_recording_paths(
+    directory: Path, creator: str, *, moment: datetime
+) -> tuple[Path, Path]:
+    """Allocate a non-mutating automatic candidate for one canonical creator."""
+    try:
+        creator = validate_creator_handle(creator)
+    except CreatorIdentityError as error:
+        raise ConfigurationError(str(error)) from None
+    return _available_paths(directory, f"{creator}-{_timestamp(moment)}")
 
 
 def safe_creator_handle(url: str) -> str:
@@ -96,7 +114,9 @@ def _available_paths(directory: Path, stem: str) -> tuple[Path, Path]:
             raise ConfigurationError("automatic recording path escaped output_directory")
         if not _occupied(output) and not _occupied(parts):
             return output, parts
-    raise ConfigurationError("could not find an unused automatic LIVE output name")
+    raise OutputNameUnavailableError(
+        "could not find an unused automatic LIVE output name"
+    )
 
 
 def _parts_path(output: Path) -> Path:
@@ -104,5 +124,20 @@ def _parts_path(output: Path) -> Path:
 
 
 def _occupied(path: Path) -> bool:
-    # Broken symlinks still reserve a name and must never be reused.
-    return path.exists() or path.is_symlink()
+    try:
+        # lstat treats regular files, directories, and broken symlinks as occupied.
+        path.lstat()
+    except FileNotFoundError:
+        return False
+    except OSError:
+        raise OutputPathInspectionError(
+            "could not inspect automatic recording path"
+        ) from None
+    return True
+
+
+def _timestamp(moment: datetime) -> str:
+    return (
+        f"{moment.year:04d}{moment.month:02d}{moment.day:02d}-"
+        f"{moment.hour:02d}{moment.minute:02d}{moment.second:02d}"
+    )

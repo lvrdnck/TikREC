@@ -125,6 +125,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   compilation, CLI/help checks, and source-size checks. No real-LIVE recording
   applies because the slice records no media; resolver outcomes and timing were
   exercised with deterministic injected offline tests.
+- **Completed third v0.9 admission/storage slice:** A separate service-owned
+  admission component now enriches each monitoring-status snapshot from current
+  controller and storage state without selecting or starting a recording.
+  Non-LIVE observations are not applicable; every unavailable controller state
+  safely skips a LIVE; missing/unavailable storage, less than the built-in
+  10 GiB floor, and bounded naming exhaustion use fixed blocked reasons. Ready
+  status reuses creator/timestamp naming and exposes collision-safe candidate
+  output/parts paths plus safe byte facts. A not-yet-created output directory is
+  assessed at its nearest existing parent, and admission creates/reserves
+  nothing, persists nothing, and does not affect manual recording or recovery.
+  The service snapshots `output_directory` with creators; under an explicit
+  recovery override, unrelated known validation/debug preferences remain lazy
+  while strict JSON/schema/unknown-field and service-needed settings validation
+  remains intact. Verification passes 136 focused tests, all 1,015 offline tests
+  plus 19 subtests, 215 unittest-discovery tests, compilation, CLI/help, and
+  source-size checks. No real-LIVE/media check applies because no recording or
+  media behavior changed. Automatic recording still does not start.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -332,11 +349,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Implement the bounded unattended-recording
-  admission/storage prerequisite: configured output readiness, collision-safe
-  path reservation, a basic free-space floor, and explicit single-slot skip
-  behavior, without yet connecting LIVE observations to automatic capture.
-  Conditional v0.6.5 is not selected; issues #8 and #13 remain opportunistic.
+- **Next queued task:** Implement the bounded automatic-start/re-arm integration
+  that consumes LIVE detection plus admission, reallocates immediately before
+  start, and starts at most one eligible recording without weakening controller
+  slot/collision authority. Conditional v0.6.5 is not selected; issues #8 and
+  #13 remain opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -354,9 +371,10 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.9.0 creator monitoring and automatic recording is
-  in development after persistent creator configuration and read-only service
-  detection. Automatic recording has not started; admission/storage safety is
-  next, and conditional v0.6.5 redundant capture is not selected.
+  in development after persistent creator configuration, read-only service
+  detection, and unattended admission/storage safety. Automatic recording has
+  not started; bounded automatic-start/re-arm integration is next, and
+  conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 
@@ -539,8 +557,8 @@ new work; calendar entries are reminders only.
 ## Durable decisions and risks
 
 - TikREC supports one manually supplied public LIVE plus read-only service
-  polling of an opt-in configured creator list; future-LIVE automatic recording
-  and TikTok authentication remain deferred.
+  polling and non-mutating admission evaluation for an opt-in configured creator
+  list; future-LIVE automatic recording and TikTok authentication remain deferred.
 - Automatic resume requires the same canonical room ID and valid retained
   evidence. Only the exact proven active writer partial is recoverable; all
   unowned or conflicting partials remain preserved and blocked.
