@@ -23,13 +23,17 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   editable v0.10 development checkout at `dd00400` while package version remains
   0.9.0. The first deployed attempt configured `westvlammer` and `lilymaye207`;
   five bounded complete-cycle checkpoints found both naturally offline, so no
-  automatic session or media was created. The current host-visible configuration
-  instead contains exactly owner-authorized `ranaerose7` and `moealkaf`, with the
-  same output directory. `moealkaf` was naturally LIVE in room
+  automatic session or media was created. The second deployed attempt configured
+  exactly owner-authorized `ranaerose7` and `moealkaf`, with the same output
+  directory. `moealkaf` was naturally LIVE in room
   `7688395628493949717` and automatically started session
   `c7927922-0381-410d-8020-0272aa96f265` in `slot-1`; `ranaerose7` remained
   unverifiable through the bounded overlap window, so `slot-2` stayed available
-  and the simultaneous gate did not begin. The legitimate `moealkaf` recording
+  and the simultaneous gate did not begin. While that legitimate recording
+  remained active, the host-visible persisted configuration was safely staged to
+  exactly `moealkaf` and newly authorized `phoebelightt`. The running service was
+  not restarted and correctly retains its old in-memory `ranaerose7`/`moealkaf`
+  snapshot until the recording is safely inactive. The `moealkaf` session
   remains active, healthy, and intentionally unstopped. Comprehensive v0.9
   release checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
   synchronized current release. v0.10.0 is now the active development target;
@@ -315,6 +319,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   left running; no restart, manual start, or stop was used to manufacture the
   missing overlap. This is useful one-slot deployed evidence, not the v0.10
   simultaneous gate.
+  The owner then replaced only the non-useful validation creator with
+  `phoebelightt`. While the same `moealkaf` session remained active, normal
+  TikREC CLI commands against the proven host-visible path removed `ranaerose7`
+  and added `phoebelightt`, leaving persisted order exactly `moealkaf`,
+  `phoebelightt` and preserving `C:\Users\Leandro\Videos`. The service was not
+  restarted, so live monitoring correctly continued to show its startup snapshot
+  `ranaerose7`/`moealkaf`. Three bounded post-change checkpoints left session
+  `c7927922-0381-410d-8020-0272aa96f265` healthy in `slot-1`; status grew from
+  126,257,571 to 137,712,136 bytes with zero reconnects, no recovery, stop,
+  finalization, or error, while `slot-2` remained available. Applying the staged
+  pair and observing `phoebelightt` are explicitly deferred until the recording
+  safely completes; the historical `ranaerose7` evidence remains unchanged.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -524,11 +540,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 - **Pending owner action:** None.
 - **Next queued task:** Resume the bounded v0.10 deployed-service gate on the
   already deployed/configured service. First reinspect active `moealkaf` session
-  `c7927922-0381-410d-8020-0272aa96f265` without disturbing it. If `ranaerose7`
-  becomes verifiably LIVE while that room is still recording, continue the full
-  two-session isolation/media/restart gate; otherwise preserve normal completion
-  and use a later bounded natural overlap opportunity with this authorized pair.
-  Do not substitute creators, manufacture a LIVE, or wait indefinitely.
+  `c7927922-0381-410d-8020-0272aa96f265` without disturbing it. If still active,
+  leave the old process snapshot and recording untouched. After safe completion,
+  validate the session as appropriate, restart only the unchanged idle task to
+  apply the already staged `moealkaf`/`phoebelightt` pair, then resume the bounded
+  natural-overlap gate. Do not manufacture a LIVE or wait indefinitely.
   Conditional v0.6.5 is not selected; issues #8 and #13 remain opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile

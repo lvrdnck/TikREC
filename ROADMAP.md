@@ -1000,6 +1000,19 @@ automatic recording was left running normally; no restart, stop, manual start,
 or fault was manufactured. The simultaneous, targeted-isolation, dual-output,
 and idle-restart gates remain outstanding.
 
+**Active-session creator replacement (2026-09-22):** With the legitimate
+`moealkaf` session still recording, the owner replaced only non-useful
+`ranaerose7` with `phoebelightt`. Normal TikREC CLI operations against the proven
+host-visible configuration path persisted exactly `moealkaf`, `phoebelightt` in
+that order and preserved `C:\Users\Leandro\Videos`. The running service was not
+restarted, so it correctly retains the earlier `ranaerose7`/`moealkaf` startup
+snapshot until idle. Three bounded post-change checkpoints showed the unchanged
+session healthy in `slot-1`, growing from 126,257,571 to 137,712,136 bytes with
+zero reconnects and no recovery, stop, finalization, or error; `slot-2` remained
+available. Applying and observing the staged pair is deferred until safe natural
+completion. The earlier `ranaerose7` evidence remains historical rather than
+being attributed to `phoebelightt`.
+
 ### v0.11.0 — Smart storage, retention, and disk protection
 
 **Goal:** Make unattended recording libraries safe to operate without manual disk
