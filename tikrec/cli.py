@@ -144,9 +144,7 @@ def main(
             f"tikrec: unexpected {type(error).__name__}: {_one_line_error(error)}",
             stderr,
         )
-        print_unexpected_traceback(
-            arguments.debug_tracebacks, arguments.config_path, stderr
-        )
+        print_unexpected_traceback(arguments.debug_tracebacks, arguments.config_path, stderr)
         return 1
     finally:
         if live_progress is not None:
@@ -162,6 +160,8 @@ def _print_final(progress: LiveProgress | None, message: str, stream: TextIO) ->
     if progress is not None:
         progress.clear()
     print(message, file=stream)
+
+
 def _finalize_directory(
     parts_directory: Path,
     output_path: Path,
@@ -283,8 +283,7 @@ def _parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     live.add_argument("url", metavar="TIKTOK_LIVE_URL", help="public TikTok LIVE page URL")
-    live.add_argument("--output", metavar="FILE",
-                      help="output MP4 file; omit for configured automatic naming")
+    live.add_argument("--output", metavar="FILE", help="output MP4 file; omit for configured automatic naming")
     live.add_argument("--raw-copy", metavar="DIR", help="save unmodified connection bytes")
     live.add_argument("--recovery-window-seconds", type=recovery_window_argument,
                       metavar="SECONDS", help="override the 60-3600 second recovery window")

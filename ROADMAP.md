@@ -845,11 +845,25 @@ size checks.
 No suitable owner-authorized public LIVE was identified, so natural deployed
 automatic-start/re-arm validation remains outstanding.
 
-The next bounded v0.9 task is operational validation and release-completion
-review: validate one natural owner-authorized automatic start and re-arm through
-the deployed service when a suitable public LIVE is available, then reconcile
-any evidence and assess v0.9.0 readiness. Do not manufacture a LIVE or treat the
-absence of a suitable stream as an implementation failure.
+**Bounded deployed validation pass (2026-09-22):** Current `main` was installed
+into the existing main-pc editable environment only after the deployed service
+proved idle with its previous job completed. The established Scheduled Task was
+restarted without changing its action or security/network/storage architecture.
+It is healthy, available, and idle on package version 0.8.0, and authenticated
+monitoring reports an operational coordinator. The per-user configuration is
+absent, however, so no owner-authorized monitored creator or output directory was
+available and no LIVE was manufactured. Automatic start, identity binding,
+output/finalization, durable same-room suppression, restart persistence, and
+natural re-arm therefore remain unobserved in deployment. Comprehensive offline
+verification still passes, so no correctness blocker is demonstrated, but the
+required automatic-start/output/suppression evidence gate is not satisfied and
+v0.9.0 is not yet a release-preparation candidate.
+
+The next bounded v0.9 action is to configure an owner-authorized creator and
+output directory, then validate one natural automatic start through completed or
+gracefully stopped output plus durable same-room suppression. Observe re-arm if
+a natural offline or different-room transition occurs, but do not manufacture
+one or block release solely on its absence when the primary deployed gate passes.
 
 ### v0.10.0 — Multiple simultaneous creator recordings
 

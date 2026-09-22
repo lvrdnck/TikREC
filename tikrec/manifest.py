@@ -294,7 +294,6 @@ def _media_values(info: MediaInfo | None) -> dict[str, str | int | None]:
         "height": info.height,
     }
 
+
 def _safe_reason(error: BaseException | str | None) -> str | None:
-    if error is None:
-        return None
-    return _URL_PATTERN.sub("[URL redacted]", str(error))
+    return None if error is None else _URL_PATTERN.sub("[URL redacted]", str(error))

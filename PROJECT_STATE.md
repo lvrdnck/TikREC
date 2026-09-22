@@ -7,24 +7,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. v0.8.0 is published
-  after issues #23, #24, #25, and #26 plus the approved logging-default task
-  completed the five narrow configuration/defaults slices.
-  Issues #20, #21, and
-  #22 are complete and closed after the three v0.7.0 guided-recovery slices:
-  bounded read-only discovery/classification through `tikrec recover`, optional
-  read-only validation through `recover --validate`, and explicit single-session
-  repeat finalization through `recover PARTS_DIRECTORY --finalize`. No
-  demonstrated release blocker
-  exists. Issue #19 is complete and closed after its rare-evidence reassessment.
-  Issue #8 remains open as a non-blocking,
-  opportunistic evidence target: no current TikREC parser/writer corruption is
-  demonstrated, but a future natural timestamp replay with matching raw bytes
-  would still resolve the historical replay-specific attribution question.
-  Issue #13 likewise remains open, paused/non-blocking, and opportunistic. Issue
-  #16 is closed because routine release bookkeeping no longer requires a
-  dedicated issue. v0.8.0 is published and synchronized across package metadata,
-  its immutable annotated tag, and its GitHub Release.
+- **Active issue/task:** v0.9 deployed-service validation is paused after a
+  bounded 2026-09-22 readiness pass. Current `main` at `d3166bd` is installed in
+  the established editable environment and the normal Scheduled Task is healthy,
+  available, and idle on package version 0.8.0. The per-user configuration is
+  absent, so there are no owner-authorized monitored creators or configured
+  output directory; no natural automatic-start candidate exists and no
+  configuration or durable runtime evidence was reset to manufacture one. The
+  next action is to configure an owner-authorized creator and output directory,
+  then repeat the bounded deployed validation. v0.8.0 remains the synchronized
+  current release. Issues #8 and #13 remain open, paused/non-blocking, and
+  opportunistic; no current parser/writer or rendition-selection release blocker
+  is demonstrated.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
   location, with an explicit global `--config FILE` override and atomic writes.
@@ -168,6 +162,24 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   `os.replace` `WinError 5` in varying unrelated manifest tests after 1,065+
   passes; the non-checkout full run and focused automation-state persistence
   tests did not reproduce it.
+- **Bounded v0.9 deployed-service readiness pass:** Before deployment, the
+  existing service reported a completed, error-free prior job and no unresolved
+  recovery/finalization; `automation.json` did not yet exist. The idle Scheduled
+  Task alone was stopped, current `main` was installed into its existing `.venv`,
+  and the same task was restarted without changing its action, token, bind,
+  firewall, recovery, or storage architecture. Deployed health now reports
+  version 0.8.0, `available=true`, `active=false`; authenticated monitoring is
+  operational and safely reports zero configured creators and no selected or
+  started automatic job. Because `%APPDATA%\TikREC\config.json` is absent, this
+  pass could not observe automatic start, room binding, output/finalization,
+  durable same-room suppression, restart persistence, or natural re-arm. That is
+  an evidence limitation rather than a demonstrated correctness defect, but the
+  required automatic-start/output/suppression gate remains unmet, so v0.9.0 is
+  not yet a release-preparation candidate. A unique non-checkout temp root passes
+  all 1,069 offline tests plus 19 subtests; unittest discovery passes 215 tests;
+  compilation, CLI/help/version, diff, and strict under-300-line source checks
+  pass. An initial shared-temp full run was interrupted after widespread Windows
+  temp setup errors; the clean isolated run did not reproduce a TikREC failure.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -584,9 +596,10 @@ new work; calendar entries are reminders only.
 
 ## Durable decisions and risks
 
-- TikREC supports one manually supplied public LIVE plus read-only service
-  polling and non-mutating admission evaluation for an opt-in configured creator
-  list; future-LIVE automatic recording and TikTok authentication remain deferred.
+- TikREC supports one manually supplied public LIVE plus configured creator
+  monitoring, admission, and durable one-slot automatic recording. Deployed
+  automatic-start/output/suppression validation and v0.9 release completion
+  remain outstanding; TikTok authentication remains deferred.
 - Automatic resume requires the same canonical room ID and valid retained
   evidence. Only the exact proven active writer partial is recoverable; all
   unowned or conflicting partials remain preserved and blocked.
