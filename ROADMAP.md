@@ -825,12 +825,31 @@ offline tests plus 19 subtests; compilation, unittest discovery, CLI/help, and
 source-size checks also pass. No real-LIVE/media validation applies because the
 slice performs no recording or media change.
 
-The next bounded v0.9 slice is automatic-start/re-arm integration: consume LIVE
-detection plus this admission policy to select and start at most one eligible
-recording, then re-arm safely after a completed LIVE. It must reallocate the
-candidate immediately before start and preserve authoritative controller
-collision/slot checks. Notifications, concurrent recording, retention, and
-v0.10 work remain out of scope.
+**Fourth slice completed (2026-09-22):** After each complete monitor cycle, a
+separate service-owned coordinator may attempt exactly one admitted automatic
+start. Simultaneous candidates use canonical-handle lexical order rather than
+configuration order; admission and collision-safe naming are refreshed before
+start, and the recording controller remains authoritative for its slot and path
+collisions. The automatic capture must freshly prove the monitored canonical
+room before creating session/media artifacts, while manual starts remain
+unchanged. Accepted rooms are durably suppressed through completion, failure,
+manual stop, and restart until explicit offline or a different room re-arms the
+creator. A strict atomic automation state plus pending claim closes the start
+crash window; corrupt or ambiguous state disables only automatic starts. The
+existing monitoring route now reports safe selection, armed/suppressed, and
+fixed block/failure facts. Notifications, concurrent recording, retention, and
+v0.10 behavior were not added. Verification passes 99 focused tests, all 1,069
+offline tests plus 19 subtests in a clean non-checkout temp root, 215 unittest-
+discovery tests, compilation, CLI/help/version checks, diff checks, and source-
+size checks.
+No suitable owner-authorized public LIVE was identified, so natural deployed
+automatic-start/re-arm validation remains outstanding.
+
+The next bounded v0.9 task is operational validation and release-completion
+review: validate one natural owner-authorized automatic start and re-arm through
+the deployed service when a suitable public LIVE is available, then reconcile
+any evidence and assess v0.9.0 readiness. Do not manufacture a LIVE or treat the
+absence of a suitable stream as an implementation failure.
 
 ### v0.10.0 — Multiple simultaneous creator recordings
 
@@ -947,8 +966,9 @@ Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
 creator monitoring and automatic recording is in development after persistent
-configuration, read-only detection, and unattended admission/storage safety;
-automatic recording has not begun.
+configuration, conservative detection, unattended admission/storage safety, and
+durable single-slot automatic-start/re-arm integration. Real deployed automatic-
+start validation and v0.9 release completion remain outstanding.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

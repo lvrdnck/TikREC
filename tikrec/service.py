@@ -10,6 +10,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from .admission import RecordingAdmission
+from .automation import AutomationCoordinator
+from .automation_state import AutomationStateStore
 from .monitoring import CreatorMonitor
 from .recording import RecordingBusy, RecordingController
 from .retry_policy import RetryPolicy
@@ -44,6 +46,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                  controller: RecordingController | None = None,
                  monitor: CreatorMonitor | None = None,
                  admission: RecordingAdmission | None = None,
+                 automation: AutomationCoordinator | None = None,
+                 automation_store: AutomationStateStore | None = None,
                  monitored_creators: tuple[str, ...] = (),
                  output_directory: Path | None = None,
                  token: str | None = None, retry_policy: RetryPolicy = RetryPolicy(),
@@ -57,14 +61,25 @@ class RecordingHTTPServer(ThreadingHTTPServer):
         super().__init__((host, port), RecordingHandler, bind_and_activate=bind_and_activate)
         try:
             # Reserve the listening address before recovery can open a second media writer.
+            job_store = JobStateStore(default_job_state_path())
             self.controller = controller if controller is not None else RecordingController(
-                store=JobStateStore(default_job_state_path()), retry_policy=retry_policy)
+                store=job_store, retry_policy=retry_policy)
             self.admission = admission if admission is not None else RecordingAdmission(
                 output_directory, self.controller.health
             )
-            self.monitor = monitor if monitor is not None else CreatorMonitor(monitored_creators)
+            state_store = automation_store or AutomationStateStore(
+                job_store.path.with_name("automation.json")
+            )
+            self.automation = automation if automation is not None else AutomationCoordinator(
+                self.controller, self.admission, state_store
+            )
+            self.monitor = monitor if monitor is not None else CreatorMonitor(
+                monitored_creators, cycle_completed=self.automation.cycle_completed
+            )
             self.monitor.start()
         except BaseException:
+            if hasattr(self, "automation"):
+                self.automation.stop()
             if hasattr(self, "monitor"):
                 self.monitor.stop()
             if hasattr(self, "controller"):
@@ -76,6 +91,7 @@ class RecordingHTTPServer(ThreadingHTTPServer):
 
     def shutdown_components(self) -> None:
         """Stop monitoring and recording cooperatively before closing the listener."""
+        self.automation.stop()
         self.monitor.stop()
         try:
             self.controller.shutdown()
@@ -113,7 +129,7 @@ class RecordingHandler(BaseHTTPRequestHandler):
             self._json(200, self.server.controller.status())
         elif self.path == "/monitoring":
             self._json(
-                200, self.server.admission.evaluate(self.server.monitor.snapshot())
+                200, self.server.automation.snapshot(self.server.monitor.snapshot())
             )
         else:
             self._json(404, {"error": "unknown endpoint"})
@@ -211,11 +227,14 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           monitored_creators: tuple[str, ...] = (),
           output_directory: Path | None = None,
           monitor: CreatorMonitor | None = None,
-          admission: RecordingAdmission | None = None) -> None:
+          admission: RecordingAdmission | None = None,
+          automation: AutomationCoordinator | None = None,
+          automation_store: AutomationStateStore | None = None) -> None:
     """Run until local interruption, then cooperatively finish the current job."""
     with RecordingHTTPServer(host, port, token=token, controller=controller,
                              retry_policy=retry_policy, monitor=monitor,
-                             admission=admission,
+                             admission=admission, automation=automation,
+                             automation_store=automation_store,
                              monitored_creators=monitored_creators,
                              output_directory=output_directory) as server:
         try:

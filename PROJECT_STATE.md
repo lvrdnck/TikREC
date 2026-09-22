@@ -142,6 +142,32 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   plus 19 subtests, 215 unittest-discovery tests, compilation, CLI/help, and
   source-size checks. No real-LIVE/media check applies because no recording or
   media behavior changed. Automatic recording still does not start.
+- **Completed fourth v0.9 automatic-start/re-arm slice:** A separate service-
+  owned coordinator consumes only complete monitoring cycles and makes at most
+  one automatic attempt. It refreshes admission/candidate naming immediately
+  before start, applies a canonical-handle lexical tie-break to simultaneous
+  ready LIVEs, and preserves controller authority for the single slot and path
+  collisions. Automatic capture freshly proves the monitor's canonical room ID
+  before session/media creation; manual/API starts remain unbound and compatible.
+  Accepted creator/room pairs are durably suppressed across completion, failure,
+  manual stop, and restart until explicit offline or a different room re-arms
+  them. Strict atomic `automation.json` state and a pending claim reconcile the
+  controller-start crash window; corrupt, unwritable, or ambiguous state disables
+  only automatic starts and preserves manual/read-only service operation.
+  Monitoring status exposes only fixed safe operational, selection, armed,
+  suppression, failure, output, and session facts. Notifications, concurrent
+  recordings, retention, configurable storage thresholds, authenticated TikTok,
+  and v0.10 behavior remain out of scope. No suitable owner-authorized public
+  LIVE was identified during implementation, so deployed natural automatic-
+  start/re-arm validation remains outstanding rather than being manufactured.
+  Focused verification passes 99 tests; a clean full run in an explicit fresh
+  non-checkout temp root passes all 1,069 offline tests plus 19 subtests;
+  unittest discovery passes 215 tests; and
+  compilation, 14 CLI help paths, version output, diff, and source-size checks
+  pass. Checkout-local isolated roots intermittently hit the known Windows
+  `os.replace` `WinError 5` in varying unrelated manifest tests after 1,065+
+  passes; the non-checkout full run and focused automation-state persistence
+  tests did not reproduce it.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -349,11 +375,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Implement the bounded automatic-start/re-arm integration
-  that consumes LIVE detection plus admission, reallocates immediately before
-  start, and starts at most one eligible recording without weakening controller
-  slot/collision authority. Conditional v0.6.5 is not selected; issues #8 and
-  #13 remain opportunistic.
+- **Next queued task:** Perform bounded deployed-service validation and v0.9.0
+  completion/readiness review. When a suitable owner-authorized public LIVE is
+  naturally available, verify one automatic start, safe status, completion/stop,
+  same-room suppression, and later trustworthy re-arm; do not manufacture a
+  LIVE. Conditional v0.6.5 is not selected; issues #8 and #13 remain
+  opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -372,9 +399,10 @@ new work; calendar entries are reminders only.
   releases remain published from their existing tags.
 - **Development target:** v0.9.0 creator monitoring and automatic recording is
   in development after persistent creator configuration, read-only service
-  detection, and unattended admission/storage safety. Automatic recording has
-  not started; bounded automatic-start/re-arm integration is next, and
-  conditional v0.6.5 redundant capture is not selected.
+  detection, unattended admission/storage safety, and durable one-slot
+  automatic-start/re-arm integration. Deployed natural-LIVE validation and
+  completion/readiness review remain next; conditional v0.6.5 redundant capture
+  is not selected.
 
 ## Issue #13 rendition investigation
 

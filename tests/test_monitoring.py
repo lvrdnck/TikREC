@@ -55,6 +55,77 @@ def test_immediate_cycles_are_sequential_ordered_and_wait_after_completion():
     assert POLL_INTERVAL_SECONDS == 30.0
 
 
+def test_cycle_callback_runs_once_after_complete_published_snapshot():
+    callbacks = []
+    finished = Event()
+
+    def completed(snapshot):
+        callbacks.append(snapshot)
+        finished.set()
+
+    monitor = CreatorMonitor(
+        ("second", "first"),
+        resolver=lambda page: LiveResolution(
+            "2" if "second" in page else "1", "https://cdn.test/live.flv"
+        ),
+        waiter=lambda _: True,
+        cycle_completed=completed,
+        clock=lambda: 10.0,
+    )
+    monitor.start()
+    assert finished.wait(2)
+    monitor.join()
+    assert len(callbacks) == 1
+    assert callbacks[0]["cycle_count"] == 1
+    assert callbacks[0]["cycle_in_progress"] is False
+    assert [item["creator"] for item in callbacks[0]["creators"]] == [
+        "second", "first",
+    ]
+
+
+def test_interrupted_partial_cycle_never_calls_completion_policy():
+    first_entered = Event()
+    release = Event()
+    callbacks = []
+
+    def resolver(page):
+        if "first" in page:
+            first_entered.set()
+            assert release.wait(2)
+        return LiveResolution("1", "https://cdn.test/live.flv")
+
+    monitor = CreatorMonitor(
+        ("first", "second"), resolver=resolver,
+        cycle_completed=callbacks.append,
+    )
+    monitor.start()
+    assert first_entered.wait(2)
+    monitor.stop()
+    release.set()
+    monitor.join()
+    assert callbacks == []
+    assert monitor.snapshot()["cycle_count"] == 0
+
+
+def test_callback_failure_does_not_stop_later_detection_cycles():
+    callbacks = []
+
+    def fail(snapshot):
+        callbacks.append(snapshot["cycle_count"])
+        raise RuntimeError("contained policy failure")
+
+    monitor = CreatorMonitor(
+        ("creator",),
+        resolver=lambda _: LiveResolution("1", "https://cdn.test/live.flv"),
+        cycle_completed=fail,
+        waiter=lambda _: len(callbacks) >= 2,
+    )
+    monitor.start()
+    monitor.join()
+    assert callbacks == [1, 2]
+    assert monitor.snapshot()["cycle_count"] == 2
+
+
 def test_live_offline_and_failures_use_conservative_fixed_categories():
     signed = "https://cdn.test/live.flv?token=must-not-escape"
     outcomes = {

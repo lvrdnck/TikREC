@@ -19,7 +19,7 @@ PAGE = "https://www.tiktok.com/@creator/live"
 
 
 def request(controller, method, path, body=None, *, token=None, headers=None, raw=None,
-            monitor=None, admission=None):
+            monitor=None, admission=None, automation=None):
     data = json.dumps(body).encode() if raw is None and body is not None else (raw or b"")
     fields = {"Host": "localhost", "Content-Type": "application/json",
               "Content-Length": str(len(data)), **(headers or {})}
@@ -43,8 +43,10 @@ def request(controller, method, path, body=None, *, token=None, headers=None, ra
     connection = FakeSocket()
     monitoring = monitor or SimpleNamespace(snapshot=lambda: {"creators": []})
     policy = admission or SimpleNamespace(evaluate=lambda snapshot: snapshot)
+    coordinator = automation or SimpleNamespace(snapshot=policy.evaluate)
     server = SimpleNamespace(
-        controller=controller, monitor=monitoring, admission=policy, token=token
+        controller=controller, monitor=monitoring, admission=policy,
+        automation=coordinator, token=token,
     )
     RecordingHandler(connection, ("127.0.0.1", 1), server)
     head, response = bytes(connection.output).split(b"\r\n\r\n", 1)
@@ -75,6 +77,21 @@ def test_monitoring_status_is_enriched_by_current_admission():
     assert request(
         RecordingController(), "GET", "/monitoring",
         monitor=monitor, admission=admission,
+    ) == (200, enriched)
+    assert calls == [snapshot]
+
+
+def test_monitoring_status_is_composed_by_automation():
+    snapshot = {"cycle_count": 2, "creators": [{"creator": "one"}]}
+    enriched = {**snapshot, "automation": {"operational": True}}
+    calls = []
+    monitor = SimpleNamespace(snapshot=lambda: snapshot)
+    automation = SimpleNamespace(
+        snapshot=lambda value: calls.append(value) or enriched
+    )
+    assert request(
+        RecordingController(), "GET", "/monitoring",
+        monitor=monitor, automation=automation,
     ) == (200, enriched)
     assert calls == [snapshot]
 
@@ -186,6 +203,7 @@ def test_all_routes_require_configured_token(path):
 
 
 @pytest.mark.parametrize("body", [[], {}, {"url": PAGE, "output": "a", "executable": "evil"},
+                                  {"url": PAGE, "output": "a", "expected_room_id": "123"},
                                   {"url": 1, "output": "a"},
                                   {"url": PAGE, "output": "a", "raw_copy": 1},
                                   {"url": PAGE, "output": "a", "raw_copy": "yes"}])
@@ -229,6 +247,7 @@ def test_server_constructs_loopback_by_default_without_opening_socket(tmp_path):
             server = RecordingHTTPServer()
     assert constructor.call_args.args[0] == ("127.0.0.1", 8765)
     assert server.controller.status()["state"] == "idle"
+    assert server.automation._store.path == tmp_path / "automation.json"
 
 
 def test_server_supplies_selected_policy_to_default_controller(tmp_path):
@@ -250,23 +269,32 @@ def test_server_owns_monitor_start_stop_and_join():
         stop=lambda: calls.append("monitor stop"),
         join=lambda: calls.append("monitor join"),
     )
+    automation = SimpleNamespace(stop=lambda: calls.append("automation stop"))
     with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
-        server = RecordingHTTPServer(controller=controller, monitor=monitor)
+        server = RecordingHTTPServer(
+            controller=controller, monitor=monitor, automation=automation
+        )
     server.shutdown_components()
     assert calls == [
-        "monitor start", "monitor stop", "controller shutdown", "monitor join",
+        "monitor start", "automation stop", "monitor stop",
+        "controller shutdown", "monitor join",
     ]
 
 
 def test_server_builds_monitor_from_startup_creator_snapshot():
     monitor = SimpleNamespace(start=lambda: None, stop=lambda: None, join=lambda: None)
     controller = SimpleNamespace(health=lambda: {"available": True}, shutdown=lambda: None)
+    callback = lambda snapshot: None
+    automation = SimpleNamespace(cycle_completed=callback, stop=lambda: None)
     with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
         with patch("tikrec.service.CreatorMonitor", return_value=monitor) as factory:
             server = RecordingHTTPServer(
-                controller=controller, monitored_creators=("first", "second")
+                controller=controller, automation=automation,
+                monitored_creators=("first", "second")
             )
-    factory.assert_called_once_with(("first", "second"))
+    factory.assert_called_once_with(
+        ("first", "second"), cycle_completed=callback
+    )
     server.shutdown_components()
 
 
@@ -274,10 +302,12 @@ def test_server_builds_admission_from_startup_output_snapshot(tmp_path):
     monitor = SimpleNamespace(start=lambda: None, stop=lambda: None, join=lambda: None)
     controller = SimpleNamespace(health=lambda: {"available": True}, shutdown=lambda: None)
     admission = SimpleNamespace(evaluate=lambda snapshot: snapshot)
+    automation = SimpleNamespace(stop=lambda: None)
     with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
         with patch("tikrec.service.RecordingAdmission", return_value=admission) as factory:
             server = RecordingHTTPServer(
-                controller=controller, monitor=monitor, output_directory=tmp_path
+                controller=controller, monitor=monitor, automation=automation,
+                output_directory=tmp_path
             )
     assert factory.call_args.args == (tmp_path, controller.health)
     assert server.admission is admission

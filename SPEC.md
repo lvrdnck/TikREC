@@ -2,8 +2,9 @@
 
 ## Current implementation goal
 
-Record a single public TikTok LIVE stream to disk, reliably and completely,
-from a URL supplied manually. Stop when the stream ends or when I stop it.
+Record one public TikTok LIVE stream at a time to disk, reliably and completely,
+from either an explicit URL or an opt-in monitored creator. Stop when the stream
+ends or when I stop it.
 
 ## Scope
 
@@ -16,6 +17,7 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - An opt-in ordered configuration list of canonical public creator handles
 - Read-only service polling with conservative in-memory LIVE observations
 - Non-mutating unattended-admission status for detected configured LIVEs
+- One durable room-bound automatic start after a completed monitoring cycle
 
 TikREC v0.5.0 established service startup reconciliation, v0.6.0 added evidence-
 based reconnect-gap measurement while removing only the fixed healthy-close
@@ -27,16 +29,14 @@ published release records are maintained in PROJECT_STATE.md.
 
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
-- Automatic recording start and re-arming from creator observations
 - Multiple simultaneous creator recordings or redundant same-LIVE capture
 - Schedule prediction from recording history
 - Chat collection, transcription, chapters, search, analytics
 - A recording library, browser playback/downloads, or Web/PWA interface
 - Notifications, cloud publishing/storage, accounts, or multi-user/mobile operation
 
-These are release/product scope statements, not permanent prohibitions. Automatic
-creator recording is a planned future capability;
-library/history/playback and a web interface are also part of the product
+These are release/product scope statements, not permanent prohibitions.
+Library/history/playback and a web interface are also part of the product
 direction. Other items remain possible later. ROADMAP.md owns sequencing and
 capability status; this specification remains authoritative for behavior that
 exists in the current checkout.
@@ -545,6 +545,10 @@ writer byte heartbeat, reconnect attempts, interruption, and a bounded redacted
 error. Successful stop is completed/interrupted; capture/finalizer errors are
 failed. Requested output and actual final output are distinct fields. Shutdown
 rejects new starts, requests stop, and joins the worker outside the lock.
+Automatic callers may additionally pass one internal canonical expected room
+ID. Only that path wraps the initial and bound resolvers so fresh structured
+identity must match before capture creates a session or opens media. The HTTP
+start schema cannot supply this value, and manual starts remain unchanged.
 
 ### tikrec/job_state.py - durable service intent (v0.5.0)
 
@@ -713,10 +717,12 @@ failures, and non-structured resolver results remain `unknown` under fixed safe
 categories. Positive LIVE results retain only canonical public `room_id`.
 Signed transport URLs and arbitrary exception text are discarded immediately.
 Snapshots and cycle timing are protected by a lock, remain memory-only, reset on
-restart, and never extend job/session/connection schemas. The monitor neither
-consults nor mutates `RecordingController`, so manual capture continues
-independently. Service shutdown requests monitor stop, shuts down recording, and
-joins the monitor after its current bounded resolver call.
+restart, and never extend job/session/connection schemas. After publishing a
+complete cycle, the monitor invokes one injected notification outside its lock;
+partial shutdown cycles never notify. The monitor itself neither consults nor
+mutates `RecordingController`. Service shutdown first prevents later automatic
+starts, requests monitor stop, shuts down recording, and joins the monitor after
+its current bounded resolver call.
 
 ### tikrec/admission.py — unattended-recording admission
 
@@ -743,10 +749,43 @@ inspection failure is storage unavailable and exhaustion is
 `output_name_unavailable`. A `ready` result may expose those candidate local
 paths plus observed/required free bytes because the authenticated recording API
 already exposes local paths. Candidate allocation creates no file, directory,
-lock, reservation, or persisted decision. A later automatic-start slice must
-allocate again immediately before starting, and controller collision checks
-remain authoritative. Fixed reasons prevent exception text or signed transport
-from reaching status.
+lock, reservation, or persisted decision. The automation coordinator allocates
+again immediately before starting, and controller collision checks remain
+authoritative. Fixed reasons prevent exception text or signed transport from
+reaching status.
+
+### tikrec/automation.py — automatic selection and durable re-arm
+
+`AutomationCoordinator` consumes only published complete-cycle snapshots and
+makes at most one start attempt per cycle. It reapplies admission immediately
+before start, chooses simultaneous ready creators by canonical-handle lexical
+order, and does not try a second creator after synchronous rejection. Manual,
+recovery, finalization, blocked, and shutdown ownership continues to win through
+the admission view and the controller's authoritative lock/collision checks.
+
+The selected start carries the monitor's canonical room ID through the internal
+controller guard described above and never enables raw copy. Acceptance consumes
+that creator/room even if capture later fails. The same room remains suppressed
+through completion, failure, manual stop, and process restart; explicit offline
+re-arms it, unknown does not, and a different canonical room is immediately new.
+An existing service job with matching creator and room also consumes it.
+
+`automation_state.py` stores schema-1 consumed creator/room pairs and at most one
+pending claim in `automation.json` beside service `job.json`. A claim contains
+only canonical creator/room identity and the newly allocated absolute output and
+matching parts candidate, plus the prior safe service job ID when one exists. It
+is atomically committed before controller start, then cleared on synchronous
+rejection or promoted to consumed after acceptance.
+Startup promotes a claim whose durable job matches, clears it only when the job
+store is idle, and otherwise disables automatic starts as ambiguous. Corrupt or
+unwritable state likewise disables automation without deleting evidence or
+unnecessarily disabling monitoring/manual service controls. Signed transports,
+cookies, credentials, response bodies, and arbitrary exception text are never
+persisted.
+
+`automation_status.py` adds fixed JSON-safe top-level operational, cycle,
+selection, session, and output facts plus per-creator armed/suppressed/result
+facts to the existing monitoring response. Admission fields remain compatible.
 
 ### tikrec/service_configuration.py — service startup snapshot
 
@@ -825,7 +864,8 @@ commands use the existing atomic configuration replacement and preserve every
 v0.8 setting. They do not require `output_directory`, contact TikTok, start
 recordings, or perform admission themselves. The separately launched service
 snapshots this list and `output_directory` at startup, performs the read-only
-polling specified above, and evaluates admission only in status snapshots.
+polling specified above, evaluates admission for status and completed-cycle
+decisions, and owns the automatic coordinator described above.
 
 `config path` does not need to parse the file. `config show [--json]` reports the
 path, existence, configured values, and effective values/sources. `config set

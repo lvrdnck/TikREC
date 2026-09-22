@@ -26,6 +26,7 @@ class CreatorMonitor:
         poll_interval: float = POLL_INTERVAL_SECONDS,
         clock: Callable[[], float] = time.time,
         waiter: Callable[[float], bool] | None = None,
+        cycle_completed: Callable[[dict], None] | None = None,
     ) -> None:
         self._creators = validate_monitored_creators(creators)
         if poll_interval <= 0:
@@ -35,6 +36,7 @@ class CreatorMonitor:
         self._clock = clock
         self._stop = Event()
         self._waiter = waiter or self._stop.wait
+        self._cycle_completed = cycle_completed
         self._lock = Lock()
         self._thread: Thread | None = None
         self._running = False
@@ -107,12 +109,14 @@ class CreatorMonitor:
 
     def _poll_cycle(self) -> None:
         started_at = self._clock()
+        complete = True
         with self._lock:
             self._cycle_in_progress = True
             self._last_cycle_started_at = started_at
         try:
             for creator in self._creators:
                 if self._stop.is_set():
+                    complete = False
                     break
                 observation = self._observe(creator)
                 with self._lock:
@@ -120,9 +124,17 @@ class CreatorMonitor:
         finally:
             completed_at = self._clock()
             with self._lock:
-                self._last_cycle_completed_at = completed_at
-                self._cycle_count += 1
+                if complete:
+                    self._last_cycle_completed_at = completed_at
+                    self._cycle_count += 1
                 self._cycle_in_progress = False
+        if complete and self._cycle_completed is not None:
+            try:
+                # Policy runs after the published complete snapshot and outside the lock.
+                self._cycle_completed(self.snapshot())
+            except Exception:
+                # One automation failure must not terminate later read-only detection.
+                pass
 
     def _observe(self, creator: str) -> dict:
         page = f"https://www.tiktok.com/@{creator}/live"

@@ -8,9 +8,9 @@ of SSH so disconnecting the remote shell does not end capture.
 This document is the exact service contract for the current checkout, whose
 package version remains v0.8.0 while v0.9.0 is in development. Per-user
 recovery-window, monitored-creator, and output-directory configuration are
-selected at startup; guided recovery remains a local CLI addition. Future
-automatic recording,
-multiple recordings, library,
+selected at startup; guided recovery remains a local CLI addition. The service
+can automatically start one safely admitted configured creator. Future multiple
+recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,
 but no such endpoint or behavior exists until its own specification is implemented.
 
@@ -73,7 +73,7 @@ one Content-Length, and 1–8192 bytes; transfer encoding is unsupported.
 | --- | --- | --- |
 | `GET /health` | none | 200: service, version, available, active, shutting_down, recovery_state, recovery_reason |
 | `GET /recording` | none | 200: idle or current/latest job snapshot |
-| `GET /monitoring` | none | 200: sanitized creator observations, cycle timing, and current unattended admission |
+| `GET /monitoring` | none | 200: sanitized observations, admission, and automatic-selection/re-arm status |
 | `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: job accepted; 409 if active/recovery unresolved/shutting down |
 | `POST /recording/stop` | `{}` | 202: stop requested/current snapshot; harmless when idle or repeated |
 
@@ -88,6 +88,8 @@ is discarded and HTTPS/www is normalized. Signed CDN URLs are rejected as
 inputs and never appear in normal status. Output must be an absolute `.mp4`
 path on the service machine. Existing output or `<stem>.parts` is rejected;
 capture also rechecks to prevent accidental session reuse.
+The internal automatic expected-room guard is not an HTTP field; callers cannot
+choose or override it.
 
 Malformed input returns 400, missing authentication 401, browser-origin
 requests 403, unknown endpoints 404, absent/duplicate length 411, oversized or
@@ -115,8 +117,9 @@ cookies, credentials, and arbitrary remote messages never enter the snapshot.
 Observations are memory-only and reset on restart. The monitor does not create or
 change `job.json`, `session.json`, or connection evidence. It continues while a
 manual recording is active without reserving or altering the recording slot and
-cannot start a recording. Shutdown wakes the cycle wait and joins the monitor
-after any current bounded resolver call.
+publishes only complete-cycle notifications outside its lock. Shutdown blocks
+new automatic starts, wakes the cycle wait, and joins the monitor after any
+current bounded resolver call.
 
 Each creator includes a fresh admission object when monitoring status is read.
 Detection states other than `live` are `not_applicable`. A LIVE is
@@ -139,11 +142,33 @@ The response field is `minimum_free_bytes`; each admission object always has
 for facts that do not apply or could not be established safely.
 
 Admission is advisory and non-mutating: it stores no decision, reserves no name,
-and never calls the controller. Candidate allocation must run again immediately
-before a later automatic start, while the controller's existing collision check
-remains authoritative. The floor does not apply to manual API starts, local
-commands, recovery, or finalization. Fixed machine-readable reasons prevent
+and never calls the controller by itself. The coordinator reruns allocation
+immediately before each automatic attempt, while the controller's existing slot
+and collision checks remain authoritative. The floor does not apply to manual
+API starts, local commands, recovery, or finalization. Fixed reasons prevent
 filesystem exceptions and signed transport from entering status.
+
+After each completed cycle, the service attempts at most one automatic start.
+Among simultaneous armed/ready LIVEs, the lexically smallest canonical handle is
+selected; configured observation order is not priority. Other ready creators
+report `not_selected/single_slot_selected_other`. A selected synchronous failure
+does not fall through to another creator and no work is queued; a later complete
+cycle evaluates current facts again.
+
+The automatic worker passes the detected canonical room ID through an internal
+controller boundary. Before a session directory or first media connection, a
+fresh structured resolution must identify that exact room. Missing, offline,
+changed, or unverifiable identity fails without opening media for another room.
+Manual starts use the unchanged page-based behavior. Once any automatic start is
+accepted, that creator/room is consumed even if recording later fails or the
+owner stops it. Repeated same-room observations remain suppressed; explicit
+offline re-arms, unknown does not, and a different canonical room is eligible.
+
+The response-level `automation` object reports fixed operational/block state,
+latest completed cycle, selection, accepted session, and safe local output facts.
+Each creator has an `automation` object with fixed state/reason, `armed`, and the
+consumed public room ID where applicable. These fields contain no signed media,
+credentials, response bodies, or arbitrary exceptions.
 
 ## Job status and stop
 
@@ -260,6 +285,26 @@ live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
 CLI/routes stay unchanged and package version is 0.8.0.
+
+## Durable automatic-start state - v0.9.0 development
+
+The service owns `%LOCALAPPDATA%\TikREC\automation.json` on Windows or
+`${XDG_STATE_HOME:-~/.local/state}/TikREC/automation.json` elsewhere, beside
+`job.json`. This runtime state is separate from per-user configuration and media
+evidence. Schema 1 contains only a sorted object of canonical creator handles to
+consumed canonical room IDs and either null or one pending claim with creator,
+room ID, absolute MP4 candidate, matching `.parts` candidate, and the prior safe
+service job ID when one exists.
+
+Immediately before automatic controller start, a flushed atomic replacement
+records the claim. Synchronous rejection clears it; accepted start promotes the
+room to consumed and clears it. On startup, an exactly matching durable job
+promotes the claim, an idle job store proves it stale and clears it, and every
+other result is ambiguous and disables automatic starts. A corrupt/unreadable
+file or required write failure also disables automation without deleting the
+file, starting capture, or preventing safe manual/read-only service operation.
+Abandoned temporary files are ignored. No signed media URL, cookie, token,
+credential, TikTok response body, or arbitrary exception belongs in this file.
 
 ## Service startup reconciliation (v0.5.0)
 
@@ -404,9 +449,9 @@ Create a task named **TikREC Service** manually:
    whether user is logged on or not**, and save the account credentials if
    prompted. Administrator elevation is not required for TikREC itself.
 2. **Triggers:** **At startup**, with a delay such as one minute to let Tailscale
-   establish its address. This launches controls, configured read-only monitoring,
-   and non-mutating admission reporting; it still cannot start a recording
-   automatically.
+   establish its address. This launches controls, configured monitoring, and
+   automatic recording for creators that pass room identity, slot, storage, and
+   free-space safety checks.
 3. **Actions / Start a program:** Program/script:
    `C:\Users\Leandro\dev\TikREC\.venv\Scripts\tikrec.exe`.
    Arguments (replace `100.x.y.z` with the actual PC Tailscale IP):

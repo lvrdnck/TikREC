@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import re
 import time
 import uuid
 from dataclasses import replace
 from collections.abc import Callable
 from pathlib import Path
 from threading import Event, Lock, Thread
-from urllib.parse import urlsplit
 
+from .automatic_identity import expected_room_resolvers
 from .capture import CaptureResult
 from .live import capture_live
 from .reconciliation import StartupReconciler
@@ -19,27 +18,12 @@ from .service_job import (job_snapshot, persist_snapshot, progress_snapshot,
 from .capture_control import CaptureControl
 from .retry_policy import RetryPolicy
 from .live_recovery import OutageCaptureError
+from .recording_safety import normalize_live_url, safe_error
+from .tiktok_identity import canonical_room_id
 
 
 class RecordingBusy(ValueError):
     """A recording is already active, or the controller is shutting down."""
-
-
-def normalize_live_url(url: str) -> str:
-    """Accept a public LIVE page and discard query/fragment metadata."""
-    parsed = urlsplit(url)
-    if (parsed.scheme not in {"http", "https"}
-            or parsed.hostname not in {"tiktok.com", "www.tiktok.com"}
-            or parsed.netloc not in {"tiktok.com", "www.tiktok.com"}
-            or not re.fullmatch(r"/@[A-Za-z0-9_.]+/live/?", parsed.path)):
-        raise ValueError("provide a public https://www.tiktok.com/@username/live URL")
-    # Only the known public host reaches the resolver; callers cannot supply a CDN URL.
-    return "https://www.tiktok.com" + parsed.path.rstrip("/")
-
-
-def safe_error(error: BaseException) -> str:
-    """Return a bounded single-line summary with ephemeral URLs removed."""
-    return " ".join(re.sub(r"https?://\S+", "[URL redacted]", str(error)).split())[:500]
 
 
 class RecordingController:
@@ -47,7 +31,8 @@ class RecordingController:
 
     def __init__(self, *, capture: Callable[..., CaptureResult] = capture_live,
                  clock: Callable[[], float] = time.time, store=None, reconciler=None,
-                 retry_policy=RetryPolicy(), recovery_clock=time.monotonic, recovery_waiter=None) -> None:
+                 retry_policy=RetryPolicy(), recovery_clock=time.monotonic,
+                 recovery_waiter=None, automatic_resolvers=expected_room_resolvers) -> None:
         self._capture = capture
         self._clock = clock
         self._lock = Lock()
@@ -61,6 +46,7 @@ class RecordingController:
         self._current_bytes = 0
         self._resolutions = 0
         self._retry_policy, self._recovery_clock, self._recovery_waiter = retry_policy, recovery_clock, recovery_waiter
+        self._automatic_resolvers = automatic_resolvers
         self._store = store
         self._reconciler = reconciler or (StartupReconciler(
             store, clock=clock, save_job=self._save_recovery, should_stop=self._user_stop)
@@ -109,9 +95,12 @@ class RecordingController:
         with self._lock:
             return self._snapshot()
 
-    def start(self, url: str, output: str, *, raw_copy: bool = False) -> dict:
+    def start(self, url: str, output: str, *, raw_copy: bool = False,
+              expected_room_id: str | None = None) -> dict:
         """Accept one job and launch it independently of the requesting connection."""
         url = normalize_live_url(url)
+        if expected_room_id is not None:
+            expected_room_id = canonical_room_id(expected_room_id)
         output_path = Path(output)
         if type(raw_copy) is not bool:
             raise ValueError("raw_copy must be a boolean")
@@ -139,6 +128,7 @@ class RecordingController:
                 "recovery_state": None, "recovery_reason": None, "raw_copy_enabled": raw_copy,
             }
             self._worker = Thread(target=self._run, args=(url, output_path),
+                                  kwargs={"expected_room_id": expected_room_id},
                                   name="tikrec-recording", daemon=False)
             try:
                 self._persist()
@@ -189,7 +179,8 @@ class RecordingController:
             self._current_part = path
             self._current_bytes = byte_count
 
-    def _run(self, url: str, output_path: Path, recovery=None) -> None:
+    def _run(self, url: str, output_path: Path, recovery=None,
+             expected_room_id: str | None = None) -> None:
         try:
             options = dict(stop_event=self._stop, state=self._state, heartbeat=self._heartbeat,
                            room_identity=self._identity, recovery_observer=self._network_status,
@@ -197,6 +188,8 @@ class RecordingController:
                            recovery_waiter=self._recovery_waiter)
             if self._job.get("raw_copy_enabled"):
                 options["raw_copy_dir"] = self._parts
+            if expected_room_id is not None:
+                options.update(self._automatic_resolvers(expected_room_id))
             if recovery is None:
                 result = self._capture(url, parts_directory=self._parts, output_path=output_path,
                                        session_id=self._job["session_id"], **options)

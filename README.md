@@ -7,9 +7,9 @@ reconnecting if the connection drops, and you get one MP4 out.
 
 This reliability-first implementation is the foundation of a broader future
 livestream recording platform. The service can now observe an explicitly
-configured creator list and report whether a detected LIVE is admissible for
-unattended recording, but it still does not start that recording automatically.
-A library, playback, and web workflows also remain future work.
+configured creator list and automatically start one safely admitted LIVE after
+a complete observation cycle. A library, playback, concurrent creator capture,
+and web workflows remain future work.
 
 The current package, immutable tag, and published GitHub Release are v0.8.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
@@ -182,7 +182,9 @@ persistent service snapshots the ordered list and `output_directory` at startup,
 polls each creator in that order immediately and then 30 seconds after each
 completed cycle, and keeps sanitized observations in memory. Restart the service
 after configuration changes. Observation order is not scheduling priority, and
-detection/admission never starts a recording.
+simultaneous ready LIVEs use a canonical-handle lexical tie-break. Automatic
+starts require configured output storage; merely managing the list still does
+not contact TikTok or record anything.
 
 The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
 wrong types, duplicate fields, and unknown top-level settings fail clearly
@@ -280,6 +282,27 @@ matching `.parts` paths, observed free bytes, and the fixed threshold. Admission
 uses the nearest existing parent for a not-yet-created output directory and never
 creates or reserves anything. It is recalculated on each status request and does
 not affect manual starts, recovery, or the existing recording pipeline.
+
+After each complete monitoring cycle, the service may make one automatic start
+attempt. It repeats admission immediately before the attempt, lets the recording
+controller recheck its single slot and both candidate paths, and never queues a
+second creator. A fresh resolution must prove the exact room ID observed by the
+monitor before the session directory or media source opens. Manual HTTP starts
+keep their existing unbound behavior, are never preempted, and exact concurrent
+start races remain serialized by the controller.
+
+An accepted automatic start consumes that creator/room until monitoring proves
+the creator offline or observes a different room ID. Unknown observations do not
+re-arm it, so a failed, completed, or manually stopped automatic job cannot loop
+back into the same LIVE every polling cycle. This suppression and the narrow
+pending-start crash window are stored atomically in a separate strict service
+state file beside `job.json`. Corrupt or ambiguous automation state disables only
+automatic starts; monitoring and safe manual controls remain available.
+
+Monitoring status adds fixed automation fields for operational/block state,
+armed or same-room-suppressed creators, the latest deterministic selection, and
+accepted output/session facts. Signed transport, credentials, response bodies,
+and arbitrary exception text never enter automation state or status.
 
 For an owner-authorized diagnostic recording, add `--raw-copy` to `remote start`.
 The service then places `connection-NNNN.raw` and matching
@@ -436,18 +459,17 @@ validation notes in SPEC.md for why.
 
 ## Scope
 
-**Today:** TikREC records one manually supplied public LIVE, stores an opt-in
-ordered list of canonical public creator handles, and has a persistent service
-that observes those handles with conservative `live`/`offline`/`unknown` status.
-For a detected LIVE, the service also reports whether the current single slot,
-configured storage, 10 GiB free-space floor, and collision-safe candidate name
-would admit unattended recording. It does not wait to start a future recording,
-start recordings automatically, record multiple creators, authenticate to TikTok,
-or provide a library/Web UI/playback.
+**Today:** TikREC records one public LIVE at a time, either from an explicit
+manual start or automatically for an opt-in configured creator. The persistent
+service observes canonical handles conservatively, applies a 10 GiB free-space
+floor and collision-safe naming, binds an automatic start to the observed room,
+and durably prevents repeated starts of that room. It does not record multiple
+creators concurrently, authenticate to TikTok, notify the owner, manage
+retention, or provide a library/Web UI/playback.
 
-**Future product:** automatic recording for explicitly configured public
-creators is a later v0.9 slice. Library/history/playback,
-a web interface, and other predecessor capabilities remain in long-term planning;
+**Future product:** v0.9 still needs real-service validation and release
+completion. Concurrent creator recording, library/history/playback, a web
+interface, and other predecessor capabilities remain in long-term planning;
 their old implementation and architecture are not authoritative.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
