@@ -859,11 +859,22 @@ verification still passes, so no correctness blocker is demonstrated, but the
 required automatic-start/output/suppression evidence gate is not satisfied and
 v0.9.0 is not yet a release-preparation candidate.
 
-The next bounded v0.9 action is to configure an owner-authorized creator and
-output directory, then validate one natural automatic start through completed or
-gracefully stopped output plus durable same-room suppression. Observe re-arm if
-a natural offline or different-room transition occurs, but do not manufacture
-one or block release solely on its absence when the primary deployed gate passes.
+**Configured validation continuation (2026-09-22):** The deployed service now
+monitors the owner-authorized creator `lilsmaye207` with automatic output under
+`C:\Users\Leandro\Videos`. Its unchanged Scheduled Task is healthy, available,
+idle, and running the normal monitor. Five complete cycles returned conservative
+`unknown/unverifiable`, not a canonical LIVE room or trustworthy offline result;
+no admission candidate, automatic start, new session/output, consumed-room state,
+or re-arm evidence was created. The configuration remains active for a later
+natural opportunity, but the primary deployed gate is still outstanding and
+v0.9.0 is not yet a release-preparation candidate.
+
+The next bounded v0.9 action is to resume when this configured creator produces a
+trustworthy LIVE observation, then validate one natural automatic start through
+completed or gracefully stopped output plus durable same-room suppression and an
+idle service restart. Observe re-arm if a natural offline or different-room
+transition occurs, but do not manufacture one or block release solely on its
+absence when the primary deployed gate passes.
 
 ### v0.10.0 — Multiple simultaneous creator recordings
 
