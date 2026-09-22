@@ -896,6 +896,26 @@ tests plus 19 subtests, 215 unittest-discovery tests, compilation, CLI/help/
 version, diff, and strict source-size checks. No v0.9 correctness blocker is
 demonstrated. The next task is v0.9.0 release preparation; do not begin v0.10.
 
+**Release candidate prepared (2026-09-22):** Package metadata now reports
+v0.9.0. Combined review confirms the four creator-automation slices and deployed
+gate form one coherent public-only, single-recording-slot release: ordered
+configuration, conservative detection, authenticated sanitized status,
+collision-safe admission with the 10 GiB floor, room-bound automatic start,
+durable same-room suppression, restart persistence, and natural offline re-arm.
+Notifications, retention, concurrent creator recording, authentication bypass,
+and v0.10 behavior remain outside this release. Verification passes 207 focused
+tests, all 1,069 offline pytest tests plus 19 subtests under isolated
+configuration/temp roots, 215 unittest-discovery tests, compilation, 24 CLI
+help/version paths, strict source-size and diff checks, and an isolated wheel
+build/install smoke. Wheel metadata and the `tikrec` console entry point are
+correct for `tikrec-0.9.0-py3-none-any.whl` (SHA-256
+`7CDFACD9887B2D3D3ADA599F3724202846326EDB5C171849962B875919E450CC`). The
+completed `westvlammer` retained/final media evidence remains the applicable real
+deployment validation; no ceremonial recording was started. Issues #8 and #13
+remain non-blocking/opportunistic. The candidate is untagged and unpublished;
+v0.8.0 remains the current release until a separately authorized annotated tag
+and GitHub Release are created and verified. Do not begin v0.10.
+
 ### v0.10.0 — Multiple simultaneous creator recordings
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
@@ -1010,11 +1030,11 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
-creator monitoring and automatic recording is implemented after persistent
-configuration, conservative detection, unattended admission/storage safety, and
-durable single-slot automatic-start/re-arm integration. Its primary deployed
-automatic-start, media, suppression, restart, re-arm, and readiness gates pass;
-release preparation remains outstanding.
+creator monitoring and automatic recording is an untagged, unpublished release
+candidate after persistent configuration, conservative detection, unattended
+admission/storage safety, durable single-slot automatic-start/re-arm integration,
+and deployed and packaging readiness gates. Separate publication authorization
+remains outstanding.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

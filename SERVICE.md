@@ -6,7 +6,7 @@ One worker records independently of HTTP clients. Launch the service independent
 of SSH so disconnecting the remote shell does not end capture.
 
 This document is the exact service contract for the current checkout, whose
-package version remains v0.8.0 while v0.9.0 is in development. Per-user
+package version is the untagged, unpublished v0.9.0 release candidate. Per-user
 recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can automatically start one safely admitted configured creator. Future multiple
@@ -284,9 +284,9 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
-CLI/routes stay unchanged and package version is 0.8.0.
+CLI/routes stay unchanged and package version is 0.9.0.
 
-## Durable automatic-start state - v0.9.0 development
+## Durable automatic-start state - v0.9.0
 
 The service owns `%LOCALAPPDATA%\TikREC\automation.json` on Windows or
 `${XDG_STATE_HOME:-~/.local/state}/TikREC/automation.json` elsewhere, beside
@@ -549,4 +549,4 @@ That restart exposed and fixed one status-only accounting defect: an inactive
 controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
-atomically replace it on Windows. Package version is 0.8.0.
+atomically replace it on Windows. Package version is 0.9.0.

@@ -11,8 +11,9 @@ configured creator list and automatically start one safely admitted LIVE after
 a complete observation cycle. A library, playback, concurrent creator capture,
 and web workflows remain future work.
 
-The current package, immutable tag, and published GitHub Release are v0.8.0.
-See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
+The current checkout is the untagged, unpublished v0.9.0 release candidate.
+The immutable tag and published GitHub Release remain v0.8.0; see
+[PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
 ## Usage
 
@@ -323,8 +324,9 @@ Scheduler settings, startup recovery, and deployment verification. There is no
 Web UI or media-download endpoint in the current service. TikREC v0.5.0 provides
 the environment-survival and resumability foundation documented below, v0.6.0
 adds the bounded reconnect-gap work described above, v0.7.0 adds the guided
-recovery commands, and the v0.8.0 package adds the per-user
-configuration/default behavior documented above. Current tag and GitHub Release
+recovery commands, the v0.8.0 release adds the per-user configuration/default
+behavior documented above, and the v0.9.0 release candidate adds opt-in creator
+monitoring and single-slot automatic recording. Current tag and GitHub Release
 records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
 
 The service now persists its latest explicitly started job. After an unexpected
@@ -467,10 +469,11 @@ and durably prevents repeated starts of that room. It does not record multiple
 creators concurrently, authenticate to TikTok, notify the owner, manage
 retention, or provide a library/Web UI/playback.
 
-**Future product:** v0.9 still needs real-service validation and release
-completion. Concurrent creator recording, library/history/playback, a web
-interface, and other predecessor capabilities remain in long-term planning;
-their old implementation and architecture are not authoritative.
+**Release state and future product:** v0.9.0 has completed real-service
+validation and is prepared as an untagged, unpublished release candidate.
+Concurrent creator recording, library/history/playback, a web interface,
+notifications, and retention remain future work; their old implementation and
+architecture are not authoritative.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

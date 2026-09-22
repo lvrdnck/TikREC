@@ -7,18 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** No implementation task is active. The primary v0.9
-  deployed-service gate passed on 2026-09-22 with owner-authorized `westvlammer`:
+- **Active issue/task:** No implementation task is active. The v0.9.0 release
+  candidate is prepared and ready for a separate publication authorization. The
+  primary deployed-service gate passed on 2026-09-22 with owner-authorized
+  `westvlammer`:
   monitoring found one canonical room, automatic recording started without a
   manual start, retained/final media validated, the same room was suppressed,
   durable state survived an idle task restart, and a natural explicit-offline
   cycle then re-armed the creator without a duplicate session or output. The
   deployed configuration contains only `westvlammer` and
   `C:\Users\Leandro\Videos`; the unchanged Scheduled Task is healthy, available,
-  idle, and monitoring on package version 0.8.0. Comprehensive offline readiness
-  checks pass and no v0.9 correctness blocker is demonstrated. The next task is
-  v0.9.0 release preparation, not v0.10. v0.8.0 remains the synchronized current
-  release. Issues #8 and #13 remain open, paused/non-blocking, and opportunistic.
+  idle, and monitoring on its previously started package version 0.8.0. The
+  checkout and verified wheel now report package version 0.9.0. Comprehensive
+  release-candidate checks pass and no v0.9 correctness blocker is demonstrated.
+  The candidate remains untagged and unpublished; v0.8.0 remains the synchronized
+  current release. Issues #8 and #13 remain open, paused/non-blocking, and
+  opportunistic. Do not begin v0.10 before the separate v0.9.0 publication task.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
   location, with an explicit global `--config FILE` override and atomic writes.
@@ -218,6 +222,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   assertions because the real configured output directory correctly made their
   relative test paths absolute; isolation removed that environmental influence.
   No correctness blocker remains, so v0.9.0 release preparation is next.
+- **Prepared v0.9.0 release candidate:** Package metadata, CLI version output,
+  service version source, and new session manifests now report 0.9.0. Combined
+  review found the four implementation slices coherent with the completed
+  `westvlammer` deployed gate and preserved the public-only, single-slot,
+  authenticated-status, no-auth-bypass, no-notification, no-retention, and
+  no-concurrent-recording boundaries. Verification passes 207 focused tests,
+  all 1,069 offline pytest tests plus 19 subtests under isolated configuration
+  and temp roots, all 215 unittest-discovery tests, compilation, 24 CLI help/
+  version paths, strict package source-size and diff checks, and an isolated
+  wheel build/install smoke. Wheel metadata and the `tikrec` console entry point
+  are correct for `tikrec-0.9.0-py3-none-any.whl` (SHA-256
+  `7CDFACD9887B2D3D3ADA599F3724202846326EDB5C171849962B875919E450CC`). The
+  candidate is intentionally untagged and unpublished; v0.8.0 remains current
+  until separately authorized annotated-tag and GitHub Release creation is
+  completed and verified.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -424,13 +443,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None.
-- **Next queued task:** Perform bounded deployed-service validation and v0.9.0
-  completion/readiness review. When a suitable owner-authorized public LIVE is
-  naturally available, verify one automatic start, safe status, completion/stop,
-  same-room suppression, and later trustworthy re-arm; do not manufacture a
-  LIVE. Conditional v0.6.5 is not selected; issues #8 and #13 remain
-  opportunistic.
+- **Pending owner action:** Separately authorize creation and verification of the
+  immutable annotated `v0.9.0` tag and published GitHub Release.
+- **Next queued task:** Publish v0.9.0 only after that explicit authorization;
+  verify the tag, release commit, package metadata, GitHub Release, and final
+  documentation synchronization. Do not begin v0.10. Conditional v0.6.5 is not
+  selected; issues #8 and #13 remain opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -438,7 +456,8 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.8.0, from `tikrec.__version__` and packaging metadata.
+- **Package version:** v0.9.0, from `tikrec.__version__` and packaging metadata;
+  this release candidate is not yet a tagged or published release.
 - **Tagged version:** annotated `v0.8.0`, whose tag object is
   `f97fc91a4af9e95a8ec91363902d1fa8a9cf6091` and which peels to release commit
   `da0390b502cb7bb51ef4b5097b58d4910017e2df`.
@@ -447,11 +466,12 @@ new work; calendar entries are reminders only.
 - **Current released version:** v0.8.0; its release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
-- **Development target:** v0.9.0 creator monitoring and automatic recording is
-  implemented and has passed its primary deployed automatic-start, room-binding,
-  media/finalization, same-room suppression, restart-persistence, natural re-arm,
-  and completion/readiness checks. Release preparation remains next; conditional
-  v0.6.5 redundant capture is not selected.
+- **Development target:** v0.9.0 creator monitoring and automatic recording is a
+  verified, untagged, unpublished release candidate. It has passed primary
+  deployed automatic-start, room-binding, media/finalization, same-room
+  suppression, restart-persistence, natural re-arm, offline, packaging, and
+  readiness checks. Separate tag and GitHub Release authorization is next;
+  conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 
