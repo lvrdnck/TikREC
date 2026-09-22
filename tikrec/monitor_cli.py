@@ -1,4 +1,4 @@
-"""Owner-facing CLI for configuring public creators to monitor later."""
+"""Owner-facing CLI for configuring public creators observed by the service."""
 
 from __future__ import annotations
 
@@ -14,8 +14,11 @@ from .creator_identity import CreatorIdentityError, normalize_creator
 def add_monitor_command(subcommands) -> argparse.ArgumentParser:
     """Add creator configuration commands without adding monitoring behavior."""
     monitor = subcommands.add_parser(
-        "monitor", help="configure public creators for future monitoring",
-        description="Configure public creators for future monitoring; no monitoring or recording starts.",
+        "monitor", help="configure public creators for service monitoring",
+        description=(
+            "Configure creators observed after the TikREC service restarts; "
+            "this command does not contact TikTok or start recording."
+        ),
     )
     actions = monitor.add_subparsers(dest="monitor_action", required=True)
     add = actions.add_parser("add", help="add one monitored creator")

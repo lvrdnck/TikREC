@@ -21,7 +21,7 @@ def test_serve_defaults_and_existing_commands(monkeypatch, tmp_path):
     assert main(["--config", str(config), "serve"],
                 service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
     assert calls == [{"host": "127.0.0.1", "port": 8765, "token": None,
-                      "retry_policy": RetryPolicy()}]
+                      "retry_policy": RetryPolicy(), "monitored_creators": ()}]
     parser = _parser()
     for command, args in [("live", ["page", "--output", "out.mp4"]),
                           ("record", ["flv", "--output", "out.mp4"]),
@@ -47,6 +47,14 @@ def test_help_guides_normal_live_recording_and_advanced_sources(capsys):
 
     assert main(["serve", "--help"]) == 0
     assert "--recovery-window-seconds" in capsys.readouterr().out
+
+    assert main(["remote", "--help"]) == 0
+    assert "monitor-status" in capsys.readouterr().out
+
+    assert main(["monitor", "--help"]) == 0
+    monitor_help = capsys.readouterr().out
+    assert "service restarts" in monitor_help
+    assert "does not contact TikTok or start recording" in monitor_help.replace("\n", " ")
 
     assert main(["record", "--help"]) == 0
     record_help = capsys.readouterr().out
@@ -74,7 +82,7 @@ def test_non_loopback_requires_token_and_does_not_print_it(monkeypatch):
     assert TOKEN not in stdout.getvalue()
 
 
-@pytest.mark.parametrize("action", ["health", "status", "start", "stop"])
+@pytest.mark.parametrize("action", ["health", "status", "monitor-status", "start", "stop"])
 def test_remote_commands(action, monkeypatch):
     monkeypatch.setenv("TIKREC_TOKEN", TOKEN)
     requests = []
@@ -89,6 +97,19 @@ def test_remote_commands(action, monkeypatch):
     assert json.loads(stdout.getvalue())["state"] == "completed"
     assert requests[0].get_header("Authorization") == f"Bearer {TOKEN}"
     assert TOKEN not in stdout.getvalue()
+
+
+def test_remote_monitor_status_uses_dedicated_read_endpoint(monkeypatch):
+    monkeypatch.delenv("TIKREC_TOKEN", raising=False)
+    requests = []
+    response = b'{"poll_interval_seconds":30.0,"creators":[]}'
+    assert main(
+        ["remote", "monitor-status", "--server", "http://main-pc:8765"],
+        remote_opener=lambda request, **_: requests.append(request) or BytesIO(response),
+        stdout=StringIO(),
+    ) == 0
+    assert requests[0].get_method() == "GET"
+    assert requests[0].full_url == "http://main-pc:8765/monitoring"
 
 
 def test_remote_start_raw_copy_is_explicit_opt_in(monkeypatch):
@@ -154,13 +175,44 @@ def test_serve_recovery_window_precedence_and_lazy_configuration(tmp_path, monke
     ], service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
     assert calls[-1]["retry_policy"].window_seconds == 1200
 
-    config.write_text("{", encoding="utf-8")
+    config.write_text(json.dumps({
+        "schema_version": 1,
+        "validation_mode": "not-a-mode",
+        "monitored_creators": ["first", "second"],
+    }), encoding="utf-8")
     assert main(["--config", str(config), "serve"], stderr=StringIO(),
                 service_runner=lambda **kw: pytest.fail("must not run")) == 1
     assert main([
         "--config", str(config), "serve", "--recovery-window-seconds", "60",
     ], service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
     assert calls[-1]["retry_policy"].window_seconds == 60
+    assert calls[-1]["monitored_creators"] == ("first", "second")
+
+    config.write_text(json.dumps({
+        "schema_version": 1, "monitored_creators": ["NotCanonical"],
+    }), encoding="utf-8")
+    assert main([
+        "--config", str(config), "serve", "--recovery-window-seconds", "60",
+    ], stderr=StringIO(), service_runner=lambda **kw: pytest.fail("must not run")) == 1
+
+
+def test_service_snapshots_configured_creators_at_startup(tmp_path, monkeypatch):
+    monkeypatch.delenv("TIKREC_TOKEN", raising=False)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({
+        "schema_version": 1, "monitored_creators": ["first", "second"],
+    }), encoding="utf-8")
+    received = []
+
+    def run(**kwargs):
+        received.append(kwargs["monitored_creators"])
+        config.write_text(json.dumps({
+            "schema_version": 1, "monitored_creators": ["changed"],
+        }), encoding="utf-8")
+
+    assert main(["--config", str(config), "serve"], service_runner=run,
+                stdout=StringIO()) == 0
+    assert received == [("first", "second")]
 
 
 def test_remote_shape_has_no_recovery_window_option() -> None:

@@ -18,7 +18,8 @@ TOKEN = "test-secret-0123456789"
 PAGE = "https://www.tiktok.com/@creator/live"
 
 
-def request(controller, method, path, body=None, *, token=None, headers=None, raw=None):
+def request(controller, method, path, body=None, *, token=None, headers=None, raw=None,
+            monitor=None):
     data = json.dumps(body).encode() if raw is None and body is not None else (raw or b"")
     fields = {"Host": "localhost", "Content-Type": "application/json",
               "Content-Length": str(len(data)), **(headers or {})}
@@ -40,7 +41,9 @@ def request(controller, method, path, body=None, *, token=None, headers=None, ra
             self.output.extend(data)
 
     connection = FakeSocket()
-    RecordingHandler(connection, ("127.0.0.1", 1), SimpleNamespace(controller=controller, token=token))
+    monitoring = monitor or SimpleNamespace(snapshot=lambda: {"creators": []})
+    server = SimpleNamespace(controller=controller, monitor=monitoring, token=token)
+    RecordingHandler(connection, ("127.0.0.1", 1), server)
     head, response = bytes(connection.output).split(b"\r\n\r\n", 1)
     return int(head.split()[1]), json.loads(response)
 
@@ -50,6 +53,12 @@ def test_health_and_idle_status():
     code, health = request(controller, "GET", "/health")
     assert code == 200 and health["service"] == "tikrec" and health["available"]
     assert request(controller, "GET", "/recording") == (200, {"state": "idle", "active": False})
+
+
+def test_monitoring_status_comes_from_independent_component():
+    snapshot = {"poll_interval_seconds": 30.0, "creators": [{"creator": "one"}]}
+    monitor = SimpleNamespace(snapshot=lambda: snapshot)
+    assert request(RecordingController(), "GET", "/monitoring", monitor=monitor) == (200, snapshot)
 
 
 def test_http_start_conflict_status_and_stop_signal(tmp_path):
@@ -145,7 +154,9 @@ def test_api_stop_uses_real_live_finalization_path(tmp_path):
     assert (tmp_path / "out.parts/part-0001.flv").is_file()
 
 
-@pytest.mark.parametrize("path", ["/health", "/recording", "/recording/start", "/recording/stop"])
+@pytest.mark.parametrize(
+    "path", ["/health", "/recording", "/monitoring", "/recording/start", "/recording/stop"]
+)
 def test_all_routes_require_configured_token(path):
     method = "POST" if path.endswith(("start", "stop")) else "GET"
     controller = RecordingController()
@@ -171,6 +182,8 @@ def test_body_limits_and_browser_origin():
     assert request(controller, "POST", "/recording/stop", {},
                    headers={"Content-Type": "text/plain"})[0] == 415
     assert request(controller, "POST", "/recording/stop", {},
+                   headers={"Origin": "https://evil.test"})[0] == 403
+    assert request(controller, "GET", "/monitoring",
                    headers={"Origin": "https://evil.test"})[0] == 403
     assert request(controller, "POST", "/recording/stop", {"command": "kill"})[0] == 400
     assert request(controller, "GET", "/files")[0] == 404
@@ -208,12 +221,38 @@ def test_server_supplies_selected_policy_to_default_controller(tmp_path):
     assert server.controller._retry_policy is policy
 
 
+def test_server_owns_monitor_start_stop_and_join():
+    calls = []
+    controller = SimpleNamespace(shutdown=lambda: calls.append("controller shutdown"))
+    monitor = SimpleNamespace(
+        start=lambda: calls.append("monitor start"),
+        stop=lambda: calls.append("monitor stop"),
+        join=lambda: calls.append("monitor join"),
+    )
+    with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
+        server = RecordingHTTPServer(controller=controller, monitor=monitor)
+    server.shutdown_components()
+    assert calls == [
+        "monitor start", "monitor stop", "controller shutdown", "monitor join",
+    ]
+
+
+def test_server_builds_monitor_from_startup_creator_snapshot():
+    monitor = SimpleNamespace(start=lambda: None, stop=lambda: None, join=lambda: None)
+    controller = SimpleNamespace(shutdown=lambda: None)
+    with patch("tikrec.service.ThreadingHTTPServer.__init__", return_value=None):
+        with patch("tikrec.service.CreatorMonitor", return_value=monitor) as factory:
+            server = RecordingHTTPServer(
+                controller=controller, monitored_creators=("first", "second")
+            )
+    factory.assert_called_once_with(("first", "second"))
+    server.shutdown_components()
+
+
 def test_service_interrupt_shuts_down_controller_without_killing_worker():
     calls = []
 
     class FakeServer:
-        controller = SimpleNamespace(shutdown=lambda: calls.append("cooperative shutdown"))
-
         def __enter__(self):
             return self
 
@@ -222,6 +261,9 @@ def test_service_interrupt_shuts_down_controller_without_killing_worker():
 
         def serve_forever(self):
             raise KeyboardInterrupt()
+
+        def shutdown_components(self):
+            calls.append("cooperative shutdown")
 
     with patch("tikrec.service.RecordingHTTPServer", return_value=FakeServer()):
         serve()

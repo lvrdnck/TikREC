@@ -9,7 +9,7 @@ import pytest
 from tikrec.remote import RemoteClient, RemoteError, _NoRedirect
 
 
-def test_health_status_start_stop_requests():
+def test_health_status_monitoring_start_stop_requests():
     calls = []
 
     def opener(request, timeout):
@@ -19,14 +19,17 @@ def test_health_status_start_stop_requests():
     client = RemoteClient("http://main-pc:8765/", token="secret", opener=opener)
     assert client.health() == {"state": "recording"}
     client.status()
+    client.monitoring()
     client.start("https://www.tiktok.com/@creator/live", r"C:\Videos\out.mp4", raw_copy=True)
     client.stop()
     assert [(r.get_method(), r.full_url) for r, _ in calls] == [
         ("GET", "http://main-pc:8765/health"), ("GET", "http://main-pc:8765/recording"),
-        ("POST", "http://main-pc:8765/recording/start"), ("POST", "http://main-pc:8765/recording/stop")]
-    assert json.loads(calls[2][0].data)["output"] == r"C:\Videos\out.mp4"
-    assert json.loads(calls[2][0].data)["raw_copy"] is True
-    assert json.loads(calls[3][0].data) == {}
+        ("GET", "http://main-pc:8765/monitoring"),
+        ("POST", "http://main-pc:8765/recording/start"),
+        ("POST", "http://main-pc:8765/recording/stop")]
+    assert json.loads(calls[3][0].data)["output"] == r"C:\Videos\out.mp4"
+    assert json.loads(calls[3][0].data)["raw_copy"] is True
+    assert json.loads(calls[4][0].data) == {}
     assert all(r.get_header("Authorization") == "Bearer secret" and t == 10 for r, t in calls)
 
 

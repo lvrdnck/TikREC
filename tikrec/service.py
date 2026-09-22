@@ -8,6 +8,7 @@ import json
 import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from .monitoring import CreatorMonitor
 from .recording import RecordingBusy, RecordingController
 from .retry_policy import RetryPolicy
 from .job_state import JobStateStore
@@ -39,6 +40,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
 
     def __init__(self, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *,
                  controller: RecordingController | None = None,
+                 monitor: CreatorMonitor | None = None,
+                 monitored_creators: tuple[str, ...] = (),
                  token: str | None = None, retry_policy: RetryPolicy = RetryPolicy(),
                  bind_and_activate: bool = True) -> None:
         host = validate_bind(host, token)
@@ -52,13 +55,29 @@ class RecordingHTTPServer(ThreadingHTTPServer):
             # Reserve the listening address before recovery can open a second media writer.
             self.controller = controller if controller is not None else RecordingController(
                 store=JobStateStore(default_job_state_path()), retry_policy=retry_policy)
+            self.monitor = monitor if monitor is not None else CreatorMonitor(monitored_creators)
+            self.monitor.start()
         except BaseException:
+            if hasattr(self, "monitor"):
+                self.monitor.stop()
+            if hasattr(self, "controller"):
+                self.controller.shutdown()
+            if hasattr(self, "monitor"):
+                self.monitor.join()
             self.server_close()
             raise
 
+    def shutdown_components(self) -> None:
+        """Stop monitoring and recording cooperatively before closing the listener."""
+        self.monitor.stop()
+        try:
+            self.controller.shutdown()
+        finally:
+            self.monitor.join()
+
 
 class RecordingHandler(BaseHTTPRequestHandler):
-    """Handle only four JSON routes; never serve files or execute caller commands."""
+    """Handle only narrow JSON routes; never serve files or execute caller commands."""
 
     server: RecordingHTTPServer
     server_version = "TikREC"
@@ -78,13 +97,15 @@ class RecordingHandler(BaseHTTPRequestHandler):
         self._json(code, {"error": "unsupported or malformed HTTP request"})
 
     def do_GET(self) -> None:
-        """Return health or the latest recording snapshot."""
+        """Return health, recording, or creator-monitoring snapshots."""
         if not self._authorized():
             return
         if self.path == "/health":
             self._json(200, self.server.controller.health())
         elif self.path == "/recording":
             self._json(200, self.server.controller.status())
+        elif self.path == "/monitoring":
+            self._json(200, self.server.monitor.snapshot())
         else:
             self._json(404, {"error": "unknown endpoint"})
 
@@ -177,13 +198,16 @@ class RecordingHandler(BaseHTTPRequestHandler):
 
 def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           token: str | None = None, controller: RecordingController | None = None,
-          retry_policy: RetryPolicy = RetryPolicy()) -> None:
+          retry_policy: RetryPolicy = RetryPolicy(),
+          monitored_creators: tuple[str, ...] = (),
+          monitor: CreatorMonitor | None = None) -> None:
     """Run until local interruption, then cooperatively finish the current job."""
     with RecordingHTTPServer(host, port, token=token, controller=controller,
-                             retry_policy=retry_policy) as server:
+                             retry_policy=retry_policy, monitor=monitor,
+                             monitored_creators=monitored_creators) as server:
         try:
             server.serve_forever()
         except KeyboardInterrupt:
             pass
         finally:
-            server.controller.shutdown()
+            server.shutdown_components()

@@ -108,6 +108,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   Verification passes 139 focused tests, all 960 offline tests, and 215
   unittest-discovery tests, plus compilation, CLI/help parsing, source-size
   checks, and an add/list/remove smoke using an isolated configuration file.
+- **Completed second v0.9 creator-monitoring slice:** The persistent service now
+  snapshots configured creators at startup and observes them with one independent
+  read-only worker. It polls promptly, sequentially in configured order, and 30
+  seconds after each completed non-overlapping cycle. Thread-safe memory-only
+  observations remain conservative: only structured LIVE identity becomes
+  `live`, only `TikTokOfflineError` becomes `offline`, and every network,
+  access, malformed, missing-identity, or unexpected outcome remains `unknown`
+  with a fixed safe category. LIVE status retains canonical room ID but never
+  signed transport. Authenticated `GET /monitoring` and `remote monitor-status`
+  expose sanitized status/cycle timing. Monitoring remains independent of manual
+  recording and is cooperatively stopped on service shutdown. No automatic
+  recording, output creation, disk policy, notification, schema persistence, or
+  multi-recording behavior exists yet. Verification passes 179 focused tests,
+  all 974 offline tests plus 19 subtests, 215 unittest-discovery tests,
+  compilation, CLI/help checks, and source-size checks. No real-LIVE recording
+  applies because the slice records no media; resolver outcomes and timing were
+  exercised with deterministic injected offline tests.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -315,11 +332,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Implement a bounded read-only service monitoring/detection
-  slice that observes configured creators without starting recordings. Do not
-  add automatic recording, disk policy, notifications, or concurrency in that
-  slice. Conditional v0.6.5 is not selected; issues #8 and #13 remain
-  opportunistic.
+- **Next queued task:** Implement the bounded unattended-recording
+  admission/storage prerequisite: configured output readiness, collision-safe
+  path reservation, a basic free-space floor, and explicit single-slot skip
+  behavior, without yet connecting LIVE observations to automatic capture.
+  Conditional v0.6.5 is not selected; issues #8 and #13 remain opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -337,9 +354,9 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.9.0 creator monitoring and automatic recording is
-  in development after its first persistent creator-configuration slice.
-  Read-only service detection is next; automatic recording has not started, and
-  conditional v0.6.5 redundant capture is not selected.
+  in development after persistent creator configuration and read-only service
+  detection. Automatic recording has not started; admission/storage safety is
+  next, and conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 
@@ -521,9 +538,9 @@ new work; calendar entries are reminders only.
 
 ## Durable decisions and risks
 
-- TikREC supports one manually supplied public LIVE and an opt-in configured
-  creator list; polling/detection, future-LIVE automatic recording, and
-  authentication remain deferred.
+- TikREC supports one manually supplied public LIVE plus read-only service
+  polling of an opt-in configured creator list; future-LIVE automatic recording
+  and TikTok authentication remain deferred.
 - Automatic resume requires the same canonical room ID and valid retained
   evidence. Only the exact proven active writer partial is recoverable; all
   unowned or conflicting partials remain preserved and blocked.

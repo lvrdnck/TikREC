@@ -9,8 +9,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TextIO
 
+from .configuration import ConfigurationStore, default_config_path
 from .remote import RemoteClient
 from .recovery_options import effective_retry_policy, recovery_window_argument
+from .retry_policy import RetryPolicy
 from .service import DEFAULT_HOST, DEFAULT_PORT, serve, validate_bind
 
 
@@ -24,8 +26,15 @@ def add_control_commands(subcommands) -> None:
                         metavar="SECONDS", help="override the 60-3600 second recovery window")
     remote = subcommands.add_parser("remote", help="control a trusted TikREC service")
     actions = remote.add_subparsers(dest="action", required=True)
-    for name in ("health", "status", "start", "stop"):
-        action = actions.add_parser(name)
+    help_text = {
+        "health": "show service and recording availability",
+        "status": "show manual recording status",
+        "monitor-status": "show sanitized creator monitoring observations",
+        "start": "start one manual recording",
+        "stop": "stop the active manual recording",
+    }
+    for name in ("health", "status", "monitor-status", "start", "stop"):
+        action = actions.add_parser(name, help=help_text[name])
         action.add_argument("--server", required=True, metavar="URL")
         action.add_argument("--token-file", metavar="FILE", help="overrides TIKREC_TOKEN")
         action.add_argument("--timeout", type=float, default=10, help="HTTP timeout in seconds")
@@ -59,16 +68,30 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         host = validate_bind(arguments.host, token)
         if not 1 <= arguments.port <= 65535:
             raise ValueError("port must be between 1 and 65535")
-        retry_policy = effective_retry_policy(
-            arguments.recovery_window_seconds, arguments.config_path
-        )
+        path = Path(arguments.config_path) if arguments.config_path else default_config_path()
+        store = ConfigurationStore(path)
+        if arguments.recovery_window_seconds is None:
+            configuration = store.load()
+            retry_policy = RetryPolicy(
+                window_seconds=configuration.effective_recovery_window_seconds
+            )
+            monitored_creators = configuration.monitored_creators
+        else:
+            retry_policy = effective_retry_policy(
+                arguments.recovery_window_seconds, arguments.config_path
+            )
+            # An explicit recovery override keeps unrelated preferences lazy.
+            monitored_creators = store.load_monitored_creators()
         print(f"Starting TikREC service on {host}:{arguments.port}", file=stdout, flush=True)
-        service_runner(host=host, port=arguments.port, token=token, retry_policy=retry_policy)
+        service_runner(host=host, port=arguments.port, token=token,
+                       retry_policy=retry_policy, monitored_creators=monitored_creators)
         return 0
     client = RemoteClient(arguments.server, token=token, opener=remote_opener,
                           timeout=arguments.timeout)
     if arguments.action == "start":
         result = client.start(arguments.url, arguments.output, raw_copy=arguments.raw_copy)
+    elif arguments.action == "monitor-status":
+        result = client.monitoring()
     else:
         result = getattr(client, arguments.action)()
     print(json.dumps(result, indent=2, sort_keys=True), file=stdout)

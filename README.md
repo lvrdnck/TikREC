@@ -6,8 +6,9 @@ Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops, and you get one MP4 out.
 
 This reliability-first implementation is the foundation of a broader future
-livestream recording platform. Creator automation, a library, playback, and web
-workflows are product direction, but they are not commands or service features today.
+livestream recording platform. The service can now observe an explicitly
+configured creator list, but automatic recording, a library, playback, and web
+workflows remain future work.
 
 The current package, immutable tag, and published GitHub Release are v0.8.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
@@ -36,6 +37,7 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
+    tikrec remote monitor-status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
     tikrec remote stop --server URL [--token-file FILE]
     tikrec --version
@@ -174,9 +176,12 @@ lowercase handle and never stores the supplied URL. Duplicate additions and
 absent removals fail clearly. Listing an absent configuration reports no
 creators, and adding a creator does not require `output_directory`.
 
-These commands only configure future monitoring. They do not contact TikTok,
-poll for LIVE status, start a recording, assign scheduling priority, or enforce
-automatic-recording storage requirements.
+These configuration commands do not contact TikTok or start recording. The
+persistent service snapshots the ordered list at startup, polls each creator in
+that order immediately and then 30 seconds after each completed cycle, and keeps
+sanitized observations in memory. Restart the service after add/remove changes.
+Observation order is not scheduling priority, and detection never starts a
+recording or enforces future automatic-recording storage requirements.
 
 The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
 wrong types, duplicate fields, and unknown top-level settings fail clearly
@@ -251,10 +256,18 @@ On the Mac (replace the address and username):
 
 ```sh
 tikrec remote health --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
+tikrec remote monitor-status --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
 tikrec remote start --server http://main-pc:8765 https://www.tiktok.com/@username/live --output 'C:\Users\Leandro\Videos\name.mp4' --token-file ~/.config/tikrec/token.txt
 tikrec remote status --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
 tikrec remote stop --server http://main-pc:8765 --token-file ~/.config/tikrec/token.txt
 ```
+
+`remote monitor-status` reports each configured handle as `pending`, `live`,
+`offline`, or `unknown`, plus cycle timing. Only an explicit resolver offline
+result becomes `offline`; network, access, malformed-data, missing-identity, and
+unexpected failures remain `unknown` with fixed categories. A LIVE result may
+include its public room ID. Signed media URLs and arbitrary remote error text are
+discarded and never enter status. Observations reset to pending on service restart.
 
 For an owner-authorized diagnostic recording, add `--raw-copy` to `remote start`.
 The service then places `connection-NNNN.raw` and matching
@@ -412,13 +425,13 @@ validation notes in SPEC.md for why.
 ## Scope
 
 **Today:** TikREC records one manually supplied public LIVE, stores an opt-in
-ordered list of canonical public creator handles, and exposes the commands and
-four service endpoints documented above. It does not currently wait for future
-LIVEs, monitor configured handles, start recordings automatically, record
-multiple creators, authenticate to TikTok, or provide a library/Web UI/playback.
+ordered list of canonical public creator handles, and has a persistent service
+that observes those handles with conservative `live`/`offline`/`unknown` status.
+It does not wait to start a future recording, start recordings automatically,
+record multiple creators, authenticate to TikTok, or provide a library/Web UI/playback.
 
-**Future product:** read-only detection and automatic recording for explicitly
-configured public creators are later v0.9 slices. Library/history/playback,
+**Future product:** automatic recording for explicitly configured public
+creators is a later v0.9 slice. Library/history/playback,
 a web interface, and other predecessor capabilities remain in long-term planning;
 their old implementation and architecture are not authoritative.
 

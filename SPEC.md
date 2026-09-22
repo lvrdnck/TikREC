@@ -14,6 +14,7 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
 - An opt-in ordered configuration list of canonical public creator handles
+- Read-only service polling with conservative in-memory LIVE observations
 
 TikREC v0.5.0 established service startup reconciliation, v0.6.0 added evidence-
 based reconnect-gap measurement while removing only the fixed healthy-close
@@ -25,15 +26,15 @@ published release records are maintained in PROJECT_STATE.md.
 
 - Subscriber-only, private, or otherwise gated streams
 - Authentication and session management
-- Public-handle polling/detection, automatic start, and re-arming
+- Automatic recording start and re-arming from creator observations
 - Multiple simultaneous creator recordings or redundant same-LIVE capture
 - Schedule prediction from recording history
 - Chat collection, transcription, chapters, search, analytics
 - A recording library, browser playback/downloads, or Web/PWA interface
 - Notifications, cloud publishing/storage, accounts, or multi-user/mobile operation
 
-These are release/product scope statements, not permanent prohibitions. Public
-creator monitoring and automatic recording are planned future capabilities;
+These are release/product scope statements, not permanent prohibitions. Automatic
+creator recording is a planned future capability;
 library/history/playback and a web interface are also part of the product
 direction. Other items remain possible later. ROADMAP.md owns sequencing and
 capability status; this specification remains authoritative for behavior that
@@ -84,6 +85,7 @@ when invoked, that is an error, not a wait state.
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
+    tikrec remote monitor-status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
     tikrec remote stop --server URL [--token-file FILE]
     tikrec --version
@@ -116,7 +118,7 @@ usage, 130 interrupted capture.
 
 `serve` runs a loopback-by-default HTTP service. Explicit non-loopback IP binding
 requires a bearer secret; all configured-token endpoints check it. `remote`
-prints JSON from health/status/start/stop. Start/stop acknowledge asynchronously;
+prints JSON from health/status/monitor-status/start/stop. Start/stop acknowledge asynchronously;
 responses reporting a failed job and request failures exit 1. There is one
 active recording; latest explicit intent is persisted for startup reconciliation. See
 [SERVICE.md](SERVICE.md) for the exact API and independent Windows deployment.
@@ -279,8 +281,8 @@ the successful public room-info query. This is the strongest public identity
 available to TikREC, not a documented TikTok guarantee against future ID reuse.
 Automatic resume must remain conservative if identity cannot be established.
 
-Both resolver APIs make a single resolution attempt, never monitor future LIVE
-starts, and preserve typed failures. A valid numeric room status other than 2
+Both resolver APIs make a single resolution attempt and preserve typed failures;
+the separate service monitor schedules repeated calls. A valid numeric room status other than 2
 raises `TikTokOfflineError` carrying raw status and queried room_id. Missing or
 nonnumeric status, malformed room data, and conflicting identity raise
 `TikTokResolutionError`. Classified transport failures and HTTP 408/425/429/5xx
@@ -687,12 +689,33 @@ version is 0.8.0.
 ### tikrec/service.py — narrow HTTP adapter
 
 `RecordingHTTPServer` uses the standard-library `ThreadingHTTPServer` with a
-custom handler for GET health/recording and POST recording/start/stop only.
+custom handler for GET health/recording/monitoring and POST recording/start/stop only.
 Handlers validate bounded JSON and delegate to the controller. No file serving,
 commands, executable paths, accounts, or browser UI. Default `127.0.0.1:8765`;
 explicit remote IPs require a token checked in constant time. Raw request logs
 and browser-origin requests are disabled; read timeouts bound stalled clients.
 This service is for trusted LAN/Tailscale use, not public internet hosting.
+
+### tikrec/monitoring.py — read-only creator observation
+
+`CreatorMonitor` receives the immutable ordered creator tuple selected at service
+startup. An empty tuple starts no worker. Otherwise one worker begins a cycle
+promptly, resolves creators sequentially in configured order, then waits 30
+seconds after the completed cycle before starting another. The single worker
+prevents overlap; each creator failure is contained so later creators are still
+checked. Configuration changes take effect only after service restart.
+
+Each observation is `pending`, `live`, `offline`, or `unknown`. Only
+`TikTokOfflineError` proves `offline`; transient transport errors, permanent or
+malformed public responses, access restrictions, missing identity, unexpected
+failures, and non-structured resolver results remain `unknown` under fixed safe
+categories. Positive LIVE results retain only canonical public `room_id`.
+Signed transport URLs and arbitrary exception text are discarded immediately.
+Snapshots and cycle timing are protected by a lock, remain memory-only, reset on
+restart, and never extend job/session/connection schemas. The monitor neither
+consults nor mutates `RecordingController`, so manual capture continues
+independently. Service shutdown requests monitor stop, shuts down recording, and
+joins the monitor after its current bounded resolver call.
 
 ### tikrec/remote.py and tikrec/control_cli.py — remote client and CLI wiring
 
@@ -759,9 +782,10 @@ and rejects duplicates. `monitor remove CREATOR` applies the same normalization
 and fails if the creator is absent. `monitor list` preserves configured order and
 reports an empty list without creating a missing configuration file. These
 commands use the existing atomic configuration replacement and preserve every
-v0.8 setting. They do not require `output_directory`, contact TikTok, poll LIVE
-state, run a background loop, start recordings, or enforce future automatic-
-recording storage policy.
+v0.8 setting. They do not require `output_directory`, contact TikTok, start
+recordings, or enforce future automatic-recording storage policy. The separately
+launched service snapshots this list at startup and performs the read-only
+polling specified above.
 
 `config path` does not need to parse the file. `config show [--json]` reports the
 path, existence, configured values, and effective values/sources. `config set

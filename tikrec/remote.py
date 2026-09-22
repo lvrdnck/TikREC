@@ -50,6 +50,10 @@ class RemoteClient:
         """Fetch current recording progress or the most recent result."""
         return self._request("GET", "/recording")
 
+    def monitoring(self) -> dict:
+        """Fetch the service's sanitized in-memory creator observations."""
+        return self._request("GET", "/monitoring")
+
     def start(self, url: str, output: str, *, raw_copy: bool = False) -> dict:
         """Request one recording, optionally retaining co-located raw diagnostics."""
         if type(raw_copy) is not bool:

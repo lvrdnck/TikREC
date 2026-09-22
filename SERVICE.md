@@ -5,10 +5,11 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
-This document is the exact service contract for TikREC v0.8.0. Per-user
-recovery-window configuration changes startup policy but not
-these routes; guided recovery remains a local CLI addition. Future
-creator automation, multiple recordings, library,
+This document is the exact service contract for the current checkout, whose
+package version remains v0.8.0 while v0.9.0 is in development. Per-user
+recovery-window and monitored-creator configuration are selected at startup;
+guided recovery remains a local CLI addition. Future automatic recording,
+multiple recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,
 but no such endpoint or behavior exists until its own specification is implemented.
 
@@ -26,12 +27,20 @@ values are integers from 60 through 3600. Configuration is read once at startup;
 restart the service after changing it. This setting is not part of remote start
 or the HTTP API.
 
+The same startup snapshots `monitored_creators`. An empty list is valid and
+starts no polling worker. With no explicit recovery-window override, normal
+strict configuration validation applies to the whole document. With an explicit
+override, the service still validates JSON/schema/unknown fields and the creator
+list, while unrelated known preferences remain lazy so they cannot needlessly
+defeat the override. Malformed or noncanonical creator configuration fails
+startup explicitly. Creator changes require a service restart.
+
 Use `--token-file FILE` or `TIKREC_TOKEN`. Files override the environment and may
 end with a newline. Tokens must be 16–512 printable ASCII characters without
 spaces; use a randomly generated secret with at least 32 characters. Empty or
 invalid configured tokens are rejected. Token values are never printed, passed
 to capture, or written into session metadata. If a token is configured, all
-four endpoints require `Authorization: Bearer SECRET`, including loopback.
+five endpoints require `Authorization: Bearer SECRET`, including loopback.
 
 Store the secret outside the repo, restrict the file to your user (and the task
 account if different), and copy it securely to the Mac. This avoids putting a
@@ -61,6 +70,7 @@ one Content-Length, and 1–8192 bytes; transfer encoding is unsupported.
 | --- | --- | --- |
 | `GET /health` | none | 200: service, version, available, active, shutting_down, recovery_state, recovery_reason |
 | `GET /recording` | none | 200: idle or current/latest job snapshot |
+| `GET /monitoring` | none | 200: sanitized in-memory creator observations and cycle timing |
 | `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: job accepted; 409 if active/recovery unresolved/shutting down |
 | `POST /recording/stop` | `{}` | 202: stop requested/current snapshot; harmless when idle or repeated |
 
@@ -81,6 +91,29 @@ requests 403, unknown endpoints 404, absent/duplicate length 411, oversized or
 empty body 413, unsupported content type 415, and worker launch failure 500.
 Start acceptance is asynchronous: a later resolver, capture, or finalizer
 failure appears in job status. These failures do not shut down the service.
+
+## Creator monitoring status
+
+The service polls the startup creator snapshot sequentially in configured order.
+It starts the first cycle promptly, never overlaps cycles, and waits 30 seconds
+after every completed cycle before beginning the next. Failure for one creator
+does not skip later creators. Configured order is deterministic observation
+order, not scheduling priority.
+
+`GET /monitoring` and `tikrec remote monitor-status` report the configured poll
+interval, whether the worker/cycle is active, cycle count and last start/end
+times, plus each handle's state and observation time. State begins `pending` and
+becomes `live` only from a structured public LIVE resolution, `offline` only
+from explicit `TikTokOfflineError`, or `unknown` for all insufficient evidence.
+The only unknown reasons are fixed categories (`transient`, `unverifiable`, or
+`unexpected`). A LIVE may include canonical public `room_id`; signed media URLs,
+cookies, credentials, and arbitrary remote messages never enter the snapshot.
+
+Observations are memory-only and reset on restart. The monitor does not create or
+change `job.json`, `session.json`, or connection evidence. It continues while a
+manual recording is active without reserving or altering the recording slot and
+cannot start a recording. Shutdown wakes the cycle wait and joins the monitor
+after any current bounded resolver call.
 
 ## Job status and stop
 
@@ -239,13 +272,14 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
 | --- | --- |
 | Same room ID | Resume only the prior explicitly-started LIVE, opening a new direct FLV connection and next numbered part; no append or reused timestamp/config/keyframe state. |
 | Different room ID | Never record the new LIVE automatically. Retain saved identity, treat prior LIVE as ended during downtime, and finalize its retained parts if safe. |
-| Explicit `TikTokOfflineError` | Prior LIVE ended; finalize retained parts if safe. No future-LIVE monitoring or polling. |
+| Explicit `TikTokOfflineError` | Prior explicitly started LIVE ended; finalize retained parts if safe. This recovery decision does not control the independent creator monitor. |
 | Transient DNS/timeout/connection/temporary HTTP failure | Keep prior identity and media, persist recovering_network/network_outage, and retry in-process with the shared bounded policy. |
 | Patient recovery window exhausted | Terminal failed/outage_timeout; retain parts without finalizing, release service slot, never auto-relaunch on restart. |
 | Malformed public data/programming/storage failure | Preserve evidence/media and expose fixed failure diagnostics. Remain blocked with `recovery_state=failed`; never treat this as offline. |
 
-Automatic resume applies only to the explicitly-started prior LIVE; it never
-monitors a username for the next LIVE. Username/output path prove no identity.
+Automatic resume applies only to the explicitly-started prior LIVE; that recovery
+path never monitors a username for the next LIVE. The independent read-only
+monitor cannot resume or start recordings. Username/output path prove no identity.
 Signed transport never enters job state or diagnostics.
 
 ### Patient DNS/network recovery
@@ -340,7 +374,8 @@ Create a task named **TikREC Service** manually:
    whether user is logged on or not**, and save the account credentials if
    prompted. Administrator elevation is not required for TikREC itself.
 2. **Triggers:** **At startup**, with a delay such as one minute to let Tailscale
-   establish its address. This launches the service, not future LIVE monitoring.
+   establish its address. This launches both controls and configured read-only
+   monitoring; it still cannot start a recording automatically.
 3. **Actions / Start a program:** Program/script:
    `C:\Users\Leandro\dev\TikREC\.venv\Scripts\tikrec.exe`.
    Arguments (replace `100.x.y.z` with the actual PC Tailscale IP):

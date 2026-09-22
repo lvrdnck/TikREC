@@ -788,6 +788,29 @@ unittest-discovery tests, compilation, CLI/help parsing, source-size checks, and
 an isolated configuration smoke. No real-LIVE check applies because this slice
 performs no network or recording behavior.
 
+**Second slice completed (2026-09-22):** The persistent service snapshots the
+configured creator list at startup and observes it with one independent
+read-only worker. It polls promptly, sequentially in configured order, and then
+30 seconds after each completed non-overlapping cycle. Observations are
+thread-safe, memory-only `pending`/`live`/`offline`/`unknown` state; only an
+explicit resolver offline result proves `offline`, while insufficient evidence
+stays `unknown` under fixed safe categories. Positive LIVE state retains only
+canonical public room ID and immediately discards signed media transport. The
+authenticated, browser-origin-rejecting `GET /monitoring` route and `tikrec
+remote monitor-status` expose sanitized status and cycle timing. Monitoring
+continues independently of the single manual recording slot, changes require a
+service restart, and shutdown is cooperative. No recording, output creation,
+disk policy, notification, persistence-schema change, or concurrent-recording
+behavior was added.
+Verification passed 179 focused tests, all 974 offline tests plus 19 subtests,
+215 unittest-discovery tests, compilation, CLI/help checks, and source-size
+checks. No real-LIVE recording applies because this slice records no media;
+resolver outcomes and timing are fully injectable and were tested offline.
+The next bounded prerequisite is unattended-recording admission/storage policy:
+configured output readiness, collision-safe path reservation, a basic free-space
+floor, and explicit single-slot skip behavior, without yet wiring LIVE detection
+to automatic capture.
+
 ### v0.10.0 — Multiple simultaneous creator recordings
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
@@ -902,8 +925,8 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
-creator monitoring and automatic recording is in development after its first
-persistent-configuration slice; automatic recording has not begun.
+creator monitoring and automatic recording is in development after persistent
+configuration and read-only service detection; automatic recording has not begun.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage
