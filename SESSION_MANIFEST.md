@@ -199,7 +199,7 @@ Schema version remains 1; `writer_recoveries` is optional, validated evidence.
 Successfully completed jobs are never relaunched. Writer-partial and finalization
 reconciliation are implemented. Repeat real process-restart/outage deployment
 validation passed, as did final graceful-stop/finalization and deep-output
-validation. Package version is 0.7.0; the manifest schema remains 1.
+validation. Package version is 0.8.0; the manifest schema remains 1.
 
 ## Guided recovery (v0.7.0)
 

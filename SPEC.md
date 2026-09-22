@@ -14,9 +14,10 @@ from a URL supplied manually. Stop when the stream ends or when I stop it.
 - Reconnecting within a recording when the connection drops
 - One recording owned by an independently launched service, controlled remotely
 
-TikREC v0.5.0 established service startup reconciliation, and v0.6.0 added
-evidence-based reconnect-gap measurement while removing only the fixed healthy-
-close wait. Package version v0.7.0 adds guided interrupted-session recovery;
+TikREC v0.5.0 established service startup reconciliation, v0.6.0 added evidence-
+based reconnect-gap measurement while removing only the fixed healthy-close
+wait, and v0.7.0 added guided interrupted-session recovery. Package version
+v0.8.0 adds the per-user configuration/default behavior documented below;
 published release records are maintained in PROJECT_STATE.md.
 
 ### Not implemented yet
@@ -559,7 +560,7 @@ media opens, stop intent before signalling, and lifecycle/result changes. Defaul
 state lives outside the checkout at %LOCALAPPDATA%\TikREC\job.json (Windows),
 or ${XDG_STATE_HOME:-~/.local/state}/TikREC/job.json. No state-path CLI option
 is added. Only the latest job is stored, with one owning service process/account.
-Package version is v0.7.0.
+Package version is v0.8.0.
 
 ### Patient outage policy and transport classification
 
@@ -677,7 +678,7 @@ output rather than represented as capture. After proxy retirement and an idle
 service restart, status also restores the completed manifest's reconnect count;
 active capture avoids reading the manifest while its atomic replacement may be
 in progress. All v0.5 real deployment-validation phases are complete. Package
-version is 0.7.0.
+version is 0.8.0.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -1022,7 +1023,7 @@ investigation as a correctness blocker before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The
-architecture describes the released v0.7.0 package.
+architecture describes the v0.8.0 release candidate.
 
 ## Design principles
 

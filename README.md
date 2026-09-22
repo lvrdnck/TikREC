@@ -9,8 +9,9 @@ This reliability-first implementation is the foundation of a broader future
 livestream recording platform. Creator automation, a library, playback, and web
 workflows are product direction, but they are not commands or service features today.
 
-The current package, immutable tag, and published GitHub Release are v0.7.0.
-See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
+The package is the v0.8.0 release candidate. The current immutable tag and
+published GitHub Release remain v0.7.0 until separate publication authorization;
+see [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
 ## Usage
 
@@ -259,9 +260,10 @@ See [SERVICE.md](SERVICE.md) for the API contract, secret handling, Windows Task
 Scheduler settings, startup recovery, and deployment verification. There is no
 Web UI or media-download endpoint in the current service. TikREC v0.5.0 provides
 the environment-survival and resumability foundation documented below, v0.6.0
-adds the bounded reconnect-gap work described above, and the v0.7.0 package adds
-the guided recovery commands. Current tag and GitHub Release records are
-maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
+adds the bounded reconnect-gap work described above, v0.7.0 adds the guided
+recovery commands, and the v0.8.0 release candidate adds the per-user
+configuration/default behavior documented above. Current tag and GitHub Release
+records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
 
 The service now persists its latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks that job against retained

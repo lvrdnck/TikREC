@@ -728,6 +728,22 @@ intended v0.8 configuration/default slices; configurable filename templates are
 not required for this release and remain deferred. v0.8.0 still requires normal
 release preparation and separate authorization before any tag or GitHub Release.
 
+**Release candidate prepared (2026-09-22):** Package metadata now reports
+v0.8.0. Combined review confirms the five slices preserve strict schema-1
+validation, explicit CLI precedence, lazy configuration loading, unchanged
+no-configuration behavior, and the existing remote/API and media boundaries.
+Verification passed 182 focused tests, all 921 offline tests, 215 unittest-
+discovery tests, compilation, 14 CLI help paths, CLI version checks, and an
+isolated built-wheel/install smoke test. The wheel metadata and `tikrec` entry
+point are correct. A first focused attempt hit `WinError 5` while pytest scanned
+its shared Windows temp root; focused and full reruns passed in fresh isolated
+roots, with no TikREC `os.replace` failure. No new real-media run is required:
+v0.8 changes configuration/default selection, not codecs, capture, part
+boundaries, or finalization, so existing media validation evidence remains
+applicable. Issues #8 and #13 remain non-blocking/opportunistic. v0.8.0 is ready
+for separate publication authorization but remains untagged and unpublished;
+v0.7.0 remains the current released version.
+
 ### v0.9.0 — Creator monitoring and automatic recording
 
 **Goal:** Let the owner explicitly configure public creators to monitor. Detect
@@ -860,7 +876,8 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability
 and guided interrupted-session recovery through v0.7.0 are released. v0.8.0
-configuration/defaults is the next planned implementation target.
+configuration/defaults is a verified release candidate awaiting separate
+publication authorization; v0.9.0 has not begun.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

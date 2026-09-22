@@ -5,8 +5,9 @@ Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
 One worker records independently of HTTP clients. Launch the service independently
 of SSH so disconnecting the remote shell does not end capture.
 
-This document is the exact service contract for TikREC v0.7.0. Guided recovery
-is a local CLI addition and does not change these routes. Future
+This document is the exact service contract for the TikREC v0.8.0 release
+candidate. Per-user recovery-window configuration changes startup policy but not
+these routes; guided recovery remains a local CLI addition. Future
 creator automation, multiple recordings, library,
 download, and browser-control capabilities may extend or replace this boundary,
 but no such endpoint or behavior exists until its own specification is implemented.
@@ -195,7 +196,7 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
-CLI/routes stay unchanged and package version is 0.7.0.
+CLI/routes stay unchanged and package version is 0.8.0.
 
 ## Service startup reconciliation (v0.5.0)
 
@@ -437,4 +438,4 @@ That restart exposed and fixed one status-only accounting defect: an inactive
 controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
-atomically replace it on Windows. Package version is 0.7.0.
+atomically replace it on Windows. Package version is 0.8.0.
