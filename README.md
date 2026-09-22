@@ -15,6 +15,12 @@ healthy recording while the second creator stayed unverifiable, so simultaneous
 recording and isolation validation remain outstanding. A library, playback,
 retention, notifications, and web workflows remain future work.
 
+**Known correctness blocker [#27](https://github.com/lvrdnck/TikREC/issues/27):**
+the completed Moe recording contains severe battle-linked H.264 corruption in
+both retained FLV and final MP4. v0.10 validation/readiness is paused. Standard
+structural validation can pass while deep decoding fails; no source-vs-capture
+attribution or safe fix is proven. See [the forensic report](ISSUE_27_FORENSICS.md).
+
 The current package, immutable tag, and published GitHub Release are v0.9.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 

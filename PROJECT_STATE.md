@@ -7,9 +7,27 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** The first bounded v0.10.0 multiple-recording slice is
+- **Active issue/task: correctness blocker #27.** v0.10 simultaneous validation
+  and readiness are paused, superseding the historical gate status below.
+  Completed forensic investigation is in [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
+  Severe visible corruption already exists in retained FLV; full FLV/MP4 decodes
+  emit the same 10,352 errors and finalization preserves original NAL/AAC bytes.
+  There is only one AVC header and every marked keyframe is an actual IDR;
+  neither proposed repeated-header nor false-keyframe explanation fits this
+  session. Causal class 5 remains unresolved without raw source; no speculative
+  product fix was made. Issue #27 remains blocking, separate from #8 and #13.
+  **Current deployment:** normal host-visible CLI temporarily removed Moe only
+  while idle, then the unchanged task restarted once; monitoring now contains
+  only `phoebelightt`, preserving `C:\Users\Leandro\Videos`. This prevents Moe
+  automation racing the next opt-in raw capture. Two bounded Moe checks found
+  offline; no diagnostic recording started. Final health: capacity 2, active 0,
+  available 2; cycle 16 completed, phoebe offline. Original media/metadata and
+  durable job/automation state remain preserved. Next raw-backed command and
+  safe restoration instructions are in the report; do not resume the dual gate.
+- **Historical v0.10 gate (superseded by #27):** The first bounded v0.10.0
+  multiple-recording slice is
   implemented and deployed from `dd00400`; its natural simultaneous-LIVE gate
-  remains active and outstanding. v0.9.0 remains
+  remains outstanding but is now paused. v0.9.0 remains
   published and synchronized across package metadata, its immutable annotated
   tag, and its GitHub Release. The v0.9 primary deployed-service gate passed on
   2026-09-22 with
@@ -35,8 +53,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   initially left on its old in-memory `ranaerose7`/`moealkaf` snapshot while the
   recording remained active. That session later ended naturally and finalized:
   788,464,216 retained bytes in one FLV over 5,886.833 seconds, two connections,
-  one reconnect, `room_ended`, and no interruption, recovery, job/finalization
-  error, or stop request. Its 787,935,979-byte, 6,250.443-second H.264/AAC MP4
+  one reconnect, `room_ended`, and no interruption, startup recovery, job/finalization
+  error, or stop request. A 16.109-second transient network-recovery episode
+  confirmed offline at the end; the earlier "no recovery" wording was incorrect.
+  Its 787,935,979-byte, 6,250.443-second H.264/AAC MP4
   passes standard validation, but retained-session and deep MP4 validation both
   fail on extensive matching H.264 decoder errors. The connection evidence has
   zero timestamp replays and raw copy was disabled, so this does not resolve or
@@ -46,9 +66,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   sanitization, capacity 2, durable completed slot 1, absent/idle slot 2, and
   empty pending/consumed automation state all remained coherent. Six completed
   cycles through cycle 7 found both creators explicitly offline, so no overlap,
-  new session, relaunch, or output occurred. Comprehensive v0.9
-  release checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
-  synchronized current release. v0.10.0 is now the active development target;
+  new session, relaunch, or output occurred. Historical v0.9 release checks
+  passed; #27 now requires investigation of possible shared-path exposure.
+  v0.9.0 remains the synchronized current release. v0.10.0 is a paused
+  development target;
   its two-slot architecture, deployed idle/status path, one-slot natural
   completion, and idle restart are proven, but valid simultaneous recording,
   targeted isolation, dual-output validation, and completion/readiness work
@@ -551,14 +572,15 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Resume the bounded v0.10 deployed-service gate on the
-  already deployed/configured service. First reinspect active `moealkaf` session
-  `c7927922-0381-410d-8020-0272aa96f265` without disturbing it. If still active,
-  leave the old process snapshot and recording untouched. After safe completion,
-  validate the session as appropriate, restart only the unchanged idle task to
-  apply the already staged `moealkaf`/`phoebelightt` pair, then resume the bounded
-  natural-overlap gate. Do not manufacture a LIVE or wait indefinitely.
-  Conditional v0.6.5 is not selected; issues #8 and #13 remain opportunistic.
+- **Next queued task:** Continue #27 at the next owner-authorized Moe battle
+  using the existing opt-in authenticated `remote start --raw-copy` command in
+  [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md#deployed-state-and-exact-next-raw-backed-opportunity).
+  Keep Moe temporarily excluded from automation until diagnostic capture is
+  secured; preserve phoebe, existing recordings, output storage, and durable
+  evidence. Compare raw/retained transitions before choosing a fix. Any fix
+  requires clean real battle/retained/deep-final acceptance. If a shared v0.9
+  defect is proven, recommend v0.9.1 before v0.10; no release work is authorized.
+  Do not wait indefinitely. Issues #8 and #13 remain opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -576,7 +598,8 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings is
-  active. Its first bounded two-slot service/automation slice is complete on
+  paused behind correctness blocker #27. Its first bounded two-slot
+  service/automation slice is complete on
   `main` and its deployed idle/configuration/status checks pass; simultaneous
   recording/isolation and remaining completion/readiness review are outstanding.
   Conditional v0.6.5 redundant capture is not selected.

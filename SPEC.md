@@ -33,6 +33,13 @@ have not naturally overlapped, so simultaneous recording and isolation
 validation remain outstanding. Published release records are maintained in
 PROJECT_STATE.md.
 
+**Current correctness limitation (#27):** the completed Moe battle-linked
+recording has severe visible corruption already in retained FLV, with matching
+deep MP4 errors despite passing standard structural validation. v0.10 readiness
+is paused. Raw-backed source comparison remains necessary; repeated-header and
+false-keyframe hypotheses do not fit this recording. This does not weaken the
+independently decodable-part requirement. See [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
+
 ### Not implemented yet
 
 - Subscriber-only, private, or otherwise gated streams

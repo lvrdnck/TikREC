@@ -930,6 +930,20 @@ Issues #8 and #13 remain open as non-blocking, opportunistic evidence work.
 
 ### v0.10.0 — Multiple simultaneous creator recordings
 
+**Paused by correctness blocker #27 (2026-09-22).** Do not resume simultaneous
+validation/readiness or begin release work until battle corruption is resolved.
+[The forensic report](ISSUE_27_FORENSICS.md) proves visible retained-FLV
+corruption before finalization, identical full FLV/MP4 decoder errors, one AVC
+header, and actual IDRs at all marked keyframes. No safe code fix is proven;
+source-vs-capture attribution requires raw source. The next task is an existing
+opt-in raw-backed Moe battle capture, not another dual-recording gate attempt.
+Moe was temporarily removed through host-visible CLI and the unchanged task
+restarted only while idle to prevent capture without raw evidence; phoebe and
+output storage are preserved. Two bounded checks found Moe offline. #27 remains
+blocking; #8 and #13 remain separate/non-blocking. Shared writer/parser code
+matches v0.9.0; if a shared defect is proven, recommend v0.9.1 before v0.10,
+without preparing any release here. The following gate entries are historical.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1027,8 +1041,10 @@ staged pair remains deferred until safe natural completion.
 **Natural completion and staged-pair activation (2026-09-22):** Session
 `c7927922-0381-410d-8020-0272aa96f265` ended naturally and finalized in
 `slot-1` with 788,464,216 retained bytes in one FLV over 5,886.833 seconds,
-two allocated connections, one reconnect, `room_ended`, and no recovery,
+two allocated connections, one reconnect, `room_ended`, and no startup recovery,
 interruption, stop request, session error, or finalization error. The final
+connection did enter 16.109 seconds of transient network recovery before
+confirmed offline; this corrects the earlier overbroad "no recovery" record. The
 787,935,979-byte MP4 contains 6,250.443 seconds of 640x1280 H.264/AAC media and
 passes standard validation. Retained-session and deep MP4 validation both fail
 on extensive matching H.264 decoder errors, however. The connection evidence
@@ -1048,8 +1064,9 @@ The service loaded exactly `moealkaf` and `phoebelightt`, preserved
 `C:\Users\Leandro\Videos`, rejected unauthenticated health, and exposed no
 unsafe status marker. Six completed monitoring checkpoints through cycle 7
 reported both creators explicitly offline with both slots available, no new
-session or output, and no natural overlap. The service remains healthy and
-monitoring the staged pair; simultaneous recording, targeted-stop isolation,
+session or output, and no natural overlap. At that historical checkpoint the
+service monitored the staged pair; #27's temporary Moe exclusion now supersedes
+that configuration. Simultaneous recording, targeted-stop isolation,
 dual-media validation, and post-dual-session restart evidence remain outstanding.
 
 ### v0.11.0 — Smart storage, retention, and disk protection
@@ -1155,8 +1172,9 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, configuration/defaults, and creator automation through v0.9.0
-are released. v0.10.0 multiple simultaneous creator recordings is the active
-development target; its first bounded two-slot manager slice is implemented on
+are released. v0.10.0 multiple simultaneous creator recordings is the paused
+development target behind correctness blocker #27; its first bounded two-slot
+manager slice is implemented on
 `main` and deployed idle/configuration/status checks pass, while simultaneous
 recording/isolation validation and later readiness work remain.
 
