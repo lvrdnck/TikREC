@@ -21,11 +21,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   v0.9 deployed configuration contained only `westvlammer` and
   `C:\Users\Leandro\Videos`. The current unchanged Scheduled Task now runs the
   editable v0.10 development checkout at `dd00400` while package version remains
-  0.9.0. Its host-visible configuration contains exactly `westvlammer` and
-  `lilymaye207` with the same output directory; health is idle/available with
-  capacity 2 and stable `slot-1`/`slot-2` status. Five bounded complete-cycle
-  checkpoints found both creators naturally offline, so no automatic session or
-  media was created and the simultaneous gate did not begin. Comprehensive v0.9
+  0.9.0. The first deployed attempt configured `westvlammer` and `lilymaye207`;
+  five bounded complete-cycle checkpoints found both naturally offline, so no
+  automatic session or media was created. The current host-visible configuration
+  instead contains exactly owner-authorized `ranaerose7` and `moealkaf`, with the
+  same output directory. `moealkaf` was naturally LIVE in room
+  `7688395628493949717` and automatically started session
+  `c7927922-0381-410d-8020-0272aa96f265` in `slot-1`; `ranaerose7` remained
+  unverifiable through the bounded overlap window, so `slot-2` stayed available
+  and the simultaneous gate did not begin. The legitimate `moealkaf` recording
+  remains active, healthy, and intentionally unstopped. Comprehensive v0.9
   release checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
   synchronized current release. v0.10.0 is now the active development target;
   its two-slot architecture is proven offline and its deployed idle/status path
@@ -292,6 +297,24 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   targeted isolation, dual-media validation, and idle-restart gate remains
   outstanding. Issues #8 and #13 produced no new evidence and remain
   non-blocking/opportunistic.
+  A later authorized validation pair replaced only the monitored list through
+  the proven host-visible CLI path: `ranaerose7` then `moealkaf`, with
+  `C:\Users\Leandro\Videos` preserved. After the unchanged task restarted,
+  `moealkaf` was trustworthy LIVE in canonical room `7688395628493949717` and
+  automatic recording started without a manual request as session
+  `c7927922-0381-410d-8020-0272aa96f265`, output
+  `moealkaf-20260922-182902.mp4`, in `slot-1`. Its retained-byte status grew from
+  1,274,670 to 26,839,748 bytes over about 194 seconds with no reconnect,
+  recovery, stop, or error. `ranaerose7` remained `unknown/unverifiable` through
+  seven completed cycles, so no genuine overlap or second session occurred and
+  `slot-2` remained idle/available. Authentication still rejects missing tokens;
+  status exposed no bearer token, signed transport marker, traceback, or unsafe
+  exception text. Durable `job.json` matches the active room/session/output,
+  `job-2.json` remains absent/idle, and `automation.json` contains only the
+  consumed `moealkaf` room with no pending claim. The recording was deliberately
+  left running; no restart, manual start, or stop was used to manufacture the
+  missing overlap. This is useful one-slot deployed evidence, not the v0.10
+  simultaneous gate.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -500,12 +523,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
 - **Next queued task:** Resume the bounded v0.10 deployed-service gate on the
-  already deployed/configured service when `westvlammer` and `lilymaye207`
-  naturally overlap. Prove two independent simultaneous sessions, per-session
-  control/finalization, automation capacity, media validity, and idle-restart
-  reconciliation without manufacturing faults. Do not substitute creators or
-  wait indefinitely. Conditional v0.6.5 is not selected; issues #8 and #13
-  remain opportunistic.
+  already deployed/configured service. First reinspect active `moealkaf` session
+  `c7927922-0381-410d-8020-0272aa96f265` without disturbing it. If `ranaerose7`
+  becomes verifiably LIVE while that room is still recording, continue the full
+  two-session isolation/media/restart gate; otherwise preserve normal completion
+  and use a later bounded natural overlap opportunity with this authorized pair.
+  Do not substitute creators, manufacture a LIVE, or wait indefinitely.
+  Conditional v0.6.5 is not selected; issues #8 and #13 remain opportunistic.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

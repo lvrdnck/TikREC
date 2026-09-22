@@ -983,6 +983,23 @@ recordings, targeted control/finalization isolation, dual retained/final media
 validation, automation-capacity behavior under overlap, and idle-restart durable
 state validation remain for a later bounded natural opportunity.
 
+**Second deployed validation attempt (2026-09-22):** The owner-authorized pair
+was changed through the proven host-visible CLI path to exactly `ranaerose7` and
+`moealkaf`, preserving `C:\Users\Leandro\Videos`; the unchanged task definition
+was restarted only after both slots were idle. `moealkaf` was naturally LIVE in
+canonical room `7688395628493949717` and automation started session
+`c7927922-0381-410d-8020-0272aa96f265` in `slot-1` without a manual start. Its
+status grew from 1,274,670 to 26,839,748 retained bytes over about 194 seconds
+with no reconnect, recovery, stop request, or error. `ranaerose7` remained
+`unknown/unverifiable` through seven complete cycles, so no simultaneous overlap
+or second session occurred and `slot-2` stayed idle/available. Authentication
+and sanitization checks still pass. Read-only durable inspection matches the
+active slot-1 session/room/output, leaves `job-2.json` absent/idle, and records
+only the independently consumed `moealkaf` room with no pending claim. The useful
+automatic recording was left running normally; no restart, stop, manual start,
+or fault was manufactured. The simultaneous, targeted-isolation, dual-output,
+and idle-restart gates remain outstanding.
+
 ### v0.11.0 — Smart storage, retention, and disk protection
 
 **Goal:** Make unattended recording libraries safe to operate without manual disk

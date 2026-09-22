@@ -27,9 +27,11 @@ per-user configuration/default behavior documented below. Package version
 v0.9.0 added opt-in creator monitoring and durable single-slot automatic starts.
 Current `main` contains the first untagged v0.10 slice: bounded two-recording
 service ownership and compatible automation. Its deployed idle/configuration/
-status checks pass, but the authorized creators did not naturally overlap, so
-simultaneous recording and isolation validation remain outstanding. Published
-release records are maintained in PROJECT_STATE.md.
+status checks pass, and a later authorized attempt automatically started one
+healthy recording while the other creator remained unverifiable. The creators
+have not naturally overlapped, so simultaneous recording and isolation
+validation remain outstanding. Published release records are maintained in
+PROJECT_STATE.md.
 
 ### Not implemented yet
 
