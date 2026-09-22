@@ -32,18 +32,27 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   and the simultaneous gate did not begin. While that legitimate recording
   remained active, the host-visible persisted configuration was safely staged to
   exactly `moealkaf` and newly authorized `phoebelightt`. The running service was
-  not restarted and correctly retains its old in-memory `ranaerose7`/`moealkaf`
-  snapshot until the recording is safely inactive. A later bounded reinspection
-  confirmed the same `moealkaf` session still active and intentionally unstopped
-  in `slot-1`: retained bytes grew from 390,912,511 to 406,181,774 during the
-  bounded checks and reached about 50.6 minutes elapsed, with zero reconnects,
-  no recovery, stop request, finalization, or error, capacity 2, and `slot-2`
-  available. Comprehensive v0.9
+  initially left on its old in-memory `ranaerose7`/`moealkaf` snapshot while the
+  recording remained active. That session later ended naturally and finalized:
+  788,464,216 retained bytes in one FLV over 5,886.833 seconds, two connections,
+  one reconnect, `room_ended`, and no interruption, recovery, job/finalization
+  error, or stop request. Its 787,935,979-byte, 6,250.443-second H.264/AAC MP4
+  passes standard validation, but retained-session and deep MP4 validation both
+  fail on extensive matching H.264 decoder errors. The connection evidence has
+  zero timestamp replays and raw copy was disabled, so this does not resolve or
+  reclassify opportunistic issue #8; all evidence remains preserved. Once both
+  slots were idle, the unchanged task restarted once with its definition hash
+  preserved and loaded exactly `moealkaf`/`phoebelightt`. Authentication,
+  sanitization, capacity 2, durable completed slot 1, absent/idle slot 2, and
+  empty pending/consumed automation state all remained coherent. Six completed
+  cycles through cycle 7 found both creators explicitly offline, so no overlap,
+  new session, relaunch, or output occurred. Comprehensive v0.9
   release checks pass and no v0.9 correctness blocker is demonstrated. v0.9.0 is the
   synchronized current release. v0.10.0 is now the active development target;
-  its two-slot architecture is proven offline and its deployed idle/status path
-  is proven, but real simultaneous recording, isolation, restart, and later
-  completion/readiness work remain. Issues #8 and #13
+  its two-slot architecture, deployed idle/status path, one-slot natural
+  completion, and idle restart are proven, but valid simultaneous recording,
+  targeted isolation, dual-output validation, and completion/readiness work
+  remain. Issues #8 and #13
   remain open, paused/non-blocking, and opportunistic.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config

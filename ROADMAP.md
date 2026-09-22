@@ -1024,6 +1024,34 @@ configuration remained staged as `moealkaf`/`phoebelightt`. The task definition
 hash remained unchanged. No stop or restart was performed, and applying the
 staged pair remains deferred until safe natural completion.
 
+**Natural completion and staged-pair activation (2026-09-22):** Session
+`c7927922-0381-410d-8020-0272aa96f265` ended naturally and finalized in
+`slot-1` with 788,464,216 retained bytes in one FLV over 5,886.833 seconds,
+two allocated connections, one reconnect, `room_ended`, and no recovery,
+interruption, stop request, session error, or finalization error. The final
+787,935,979-byte MP4 contains 6,250.443 seconds of 640x1280 H.264/AAC media and
+passes standard validation. Retained-session and deep MP4 validation both fail
+on extensive matching H.264 decoder errors, however. The connection evidence
+contains zero timestamp replays and raw copy was disabled, so the source versus
+writer origin cannot be established from this session; the media and retained
+evidence remain preserved, and issue #8 remains non-blocking/opportunistic.
+This session proves automatic single-slot start, binding, natural completion,
+and finalization under the v0.10 service, but it is not valid-media evidence for
+the outstanding simultaneous gate.
+
+Only after both slots were idle, the unchanged **TikREC Service** task was
+restarted once. Its definition hash remained
+`54FCCDE50E6B34BDA27A2BA9AB42A0D19B49A4727C450C741543AD05B6B4C443`;
+capacity remained 2, the completed slot-1 job did not relaunch, `job-2.json`
+remained absent/idle, and automation retained no pending claim or consumed room.
+The service loaded exactly `moealkaf` and `phoebelightt`, preserved
+`C:\Users\Leandro\Videos`, rejected unauthenticated health, and exposed no
+unsafe status marker. Six completed monitoring checkpoints through cycle 7
+reported both creators explicitly offline with both slots available, no new
+session or output, and no natural overlap. The service remains healthy and
+monitoring the staged pair; simultaneous recording, targeted-stop isolation,
+dual-media validation, and post-dual-session restart evidence remain outstanding.
+
 ### v0.11.0 — Smart storage, retention, and disk protection
 
 **Goal:** Make unattended recording libraries safe to operate without manual disk
