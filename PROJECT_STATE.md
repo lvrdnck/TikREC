@@ -7,20 +7,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task:** v0.9 deployed-service validation remains active and is
-  waiting for owner-authorized `lilymaye207` to become LIVE. The deployed
-  per-user configuration now contains exactly that corrected creator and
+- **Active issue/task:** No implementation task is active. The primary v0.9
+  deployed-service gate passed on 2026-09-22 with owner-authorized `westvlammer`:
+  monitoring found one canonical room, automatic recording started without a
+  manual start, retained/final media validated, the same room was suppressed,
+  durable state survived an idle task restart, and a natural explicit-offline
+  cycle then re-armed the creator without a duplicate session or output. The
+  deployed configuration contains only `westvlammer` and
   `C:\Users\Leandro\Videos`; the unchanged Scheduled Task is healthy, available,
-  idle, and monitoring on package version 0.8.0. Three complete natural cycles
-  reported trustworthy `offline`, with no canonical room, admission candidate,
-  automatic start, new session, output, or automation-state mutation. The prior
-  `unknown/unverifiable` cycles observed the mistyped `lilsmaye207` and provide
-  no evidence about the intended creator. Because no room has been consumed,
-  the current offline baseline does not exercise post-consumption re-arm. Leave
-  the corrected configuration and normal monitor running, then repeat the
-  bounded validation when the service observes a trustworthy LIVE room. v0.8.0
-  remains the synchronized current release. Issues #8 and #13 remain open,
-  paused/non-blocking, and opportunistic.
+  idle, and monitoring on package version 0.8.0. Comprehensive offline readiness
+  checks pass and no v0.9 correctness blocker is demonstrated. The next task is
+  v0.9.0 release preparation, not v0.10. v0.8.0 remains the synchronized current
+  release. Issues #8 and #13 remain open, paused/non-blocking, and opportunistic.
 - **Completed first v0.8 configuration slice:** Strict schema-1 JSON configuration
   now lives at `%APPDATA%\TikREC\config.json` on Windows or the POSIX XDG config
   location, with an explicit global `--config FILE` override and atomic writes.
@@ -196,6 +194,30 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   remains healthy, idle, and normally monitoring. The primary automatic-start/
   output/suppression gate remains outstanding; v0.9.0 is still not a release-
   preparation candidate.
+- **Completed v0.9 deployed automatic-start/readiness gate:** With
+  `westvlammer` as the sole monitored creator, the first service cycle observed
+  canonical room `7688299000113400608` and automatically started session
+  `a6b73227-d637-48d5-8ea5-90cd8ea1c806` at
+  `C:\Users\Leandro\Videos\westvlammer-20260922-152933.mp4` with matching
+  `.parts`; no manual start occurred. The job and monitor room IDs matched, the
+  10 GiB floor was enforced, and a later idle admission snapshot was explicitly
+  `ready` with 52,455,370,752 free bytes. Capture retained 30,723,109 bytes over
+  129.406 seconds with no error or reconnect before a normal authenticated stop.
+  Finalization produced a 30,750,722-byte MP4 and one retained FLV; retained-
+  session, standard output, and deep output validation all pass. Durable
+  `automation.json` consumed the room, a later same-room LIVE cycle reported
+  `suppressed/same_room_consumed`, and no second artifact or session appeared.
+  After the idle Scheduled Task restarted, its first trustworthy observation was
+  naturally `offline` and reported `rearmed/offline_observed`; that result is
+  emitted only when the consumed room was restored and then removed, proving
+  durable restart loading plus natural re-arm. No duplicate was created and the
+  service remains healthy, idle, and monitoring. A clean run with isolated
+  `APPDATA` passes all 1,069 offline tests plus 19 subtests and all 215 unittest-
+  discovery tests; compilation, 15 CLI/help paths, version, diff, and strict
+  source-size checks pass. An initial unisolated run failed only two CLI text
+  assertions because the real configured output directory correctly made their
+  relative test paths absolute; isolation removed that environmental influence.
+  No correctness blocker remains, so v0.9.0 release preparation is next.
 - **Completed v0.7 guided recovery implementation:** `recover --finalize`
   implies standard validation and accepts only one explicitly named, consistently
   `recoverable` session with a safe stored output. It snapshots and rediscovers
@@ -426,11 +448,10 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.9.0 creator monitoring and automatic recording is
-  in development after persistent creator configuration, read-only service
-  detection, unattended admission/storage safety, and durable one-slot
-  automatic-start/re-arm integration. Deployed natural-LIVE validation and
-  completion/readiness review remain next; conditional v0.6.5 redundant capture
-  is not selected.
+  implemented and has passed its primary deployed automatic-start, room-binding,
+  media/finalization, same-room suppression, restart-persistence, natural re-arm,
+  and completion/readiness checks. Release preparation remains next; conditional
+  v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 

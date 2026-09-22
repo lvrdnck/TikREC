@@ -873,12 +873,28 @@ configuration remains active for a later natural opportunity, but the primary
 deployed gate is still outstanding and v0.9.0 is not yet a release-preparation
 candidate.
 
-The next bounded v0.9 action is to resume when this configured creator produces a
-trustworthy LIVE observation, then validate one natural automatic start through
-completed or gracefully stopped output plus durable same-room suppression and an
-idle service restart. Observe re-arm if a natural offline or different-room
-transition occurs, but do not manufacture one or block release solely on its
-absence when the primary deployed gate passes.
+The corrected `lilymaye207` offline baseline remains valid historical evidence.
+The owner later selected `westvlammer` as the sole creator for the primary
+automatic-start validation attempt; that configuration change does not invalidate
+the earlier trustworthy offline observations.
+
+**Primary deployed gate completed (2026-09-22):** Monitoring owner-authorized
+`westvlammer` observed canonical room `7688299000113400608` and automatically
+started session `a6b73227-d637-48d5-8ea5-90cd8ea1c806` without a manual start.
+The job used matching room identity and collision-safe output
+`westvlammer-20260922-152933.mp4` under configured storage. It retained
+30,723,109 bytes over 129.406 seconds without error or reconnect before a normal
+authenticated stop; finalization produced a 30,750,722-byte MP4 plus one retained
+FLV. Retained-session, standard MP4, and deep MP4 validation pass. The same room
+was durably consumed and suppressed on a later LIVE cycle with no duplicate.
+After an idle Scheduled Task restart, the first natural observation was explicit
+offline and reported `rearmed/offline_observed`, which proves the persisted
+consumed room was restored and then legitimately cleared; no duplicate output or
+session was created. The service remains healthy, idle, and monitoring only
+`westvlammer`. Full isolated readiness verification passes all 1,069 offline
+tests plus 19 subtests, 215 unittest-discovery tests, compilation, CLI/help/
+version, diff, and strict source-size checks. No v0.9 correctness blocker is
+demonstrated. The next task is v0.9.0 release preparation; do not begin v0.10.
 
 ### v0.10.0 — Multiple simultaneous creator recordings
 
@@ -994,10 +1010,11 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, and configuration/defaults through v0.8.0 are released. v0.9.0
-creator monitoring and automatic recording is in development after persistent
+creator monitoring and automatic recording is implemented after persistent
 configuration, conservative detection, unattended admission/storage safety, and
-durable single-slot automatic-start/re-arm integration. Real deployed automatic-
-start validation and v0.9 release completion remain outstanding.
+durable single-slot automatic-start/re-arm integration. Its primary deployed
+automatic-start, media, suppression, restart, re-arm, and readiness gates pass;
+release preparation remains outstanding.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage
