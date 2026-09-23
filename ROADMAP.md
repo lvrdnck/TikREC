@@ -1011,6 +1011,20 @@ resolved. Eliss was still recording at handoff, so its eventual finalization is
 ordinary follow-up. Resume the v0.10 deployed two-slot isolation gate as the
 next task; do not begin release preparation.
 
+**Two-slot gate partial checkpoint (2026-09-23):** Eliss's recovered original
+session remained active in slot 1 and grew beyond 327 MB of service progress;
+slot 2 was free. Fresh public resolution found owner-authorized `tomwhoasmr`
+LIVE in room `7688596234675800849`, but automatic command review rejected
+both normal authenticated `remote start` invocations before execution with
+`blocked by policy`. No second recording or output was created. Tom then
+became explicitly offline (status 4) in the same room at 08:51:59 UTC; Phoebe
+remained offline. The two-active isolation, dual-media validation, and idle
+restart gates therefore remain outstanding. Focused and full isolated offline
+tests pass, but they do not replace deployed overlap evidence. Continue the
+same v0.10 gate from a fresh live/slot check; leave Eliss running while active.
+An independent fresh-context review of the complete v0.10 and #29 correctness
+delta remains required after the deployed gate and before release preparation.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.

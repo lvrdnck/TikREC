@@ -7,6 +7,36 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Active v0.10 deployed two-slot gate: PARTIAL checkpoint on 2026-09-23.**
+  GitHub `main` was current at `3960007`; #29 was closed, and #8/#13/#28
+  remained separate non-blocking issues. Authenticated health reported capacity
+  2 with Eliss session `349adec0-b203-499b-bb05-444e3a99240d` in slot 1,
+  same room `7688598578159274765`, `resume_count=1`, recording without error,
+  and slot 2 available with the historical completed Phoebe job. Eliss service
+  progress grew from 286,220,513 to 327,732,701 bytes; its active part 8 grew
+  from 38,871,761 to 93,948,583 bytes. Monitoring continued to list exactly
+  Phoebe (offline) and Eliss (LIVE/same-room suppressed). Public resolution
+  found owner-authorized `tomwhoasmr` trustworthy LIVE at 08:46:44 UTC in room
+  `7688596234675800849`, status 2, `hd1`/`flv_pull_url`. Two attempts to invoke
+  the normal authenticated `remote start` CLI, first with precondition checks
+  and then as a single command, were rejected before process execution by
+  automatic command review with only `blocked by policy` stated. No Tom session,
+  output, parts directory, or automation claim was created; the service was not
+  restarted, reconfigured, or stopped. A fresh public check at 08:51:59 UTC
+  returned explicit status 4/offline for Tom's same room, so the overlap window
+  ended without a legitimate second recording. No two-active, ambiguity,
+  targeted-stop, dual-media, or idle-restart acceptance was possible. Focused
+  offline tests passed 160/160; isolated pytest passed 1,114 plus 19 subtests;
+  unittest discovery passed 223; compilation, CLI help/version, source-size,
+  and diff checks passed. The v0.10 delta was surveyed from tagged v0.9.0,
+  but deployed readiness and the independent fresh-context review remain
+  outstanding. **Safe resume:** while Eliss remains active, recheck both slots
+  and a newly trustworthy LIVE owner-authorized second creator. Use a permitted
+  normal authenticated CLI path for real overlap; do not manufacture a LIVE,
+  stop Eliss alone, or restart the active service. If command review still
+  blocks the start, obtain an operator-executed normal CLI action or wait for a
+  configured creator's natural automatic start. Do not proceed to release
+  preparation.
 - **Issue #29 deployed acceptance completed on 2026-09-23; v0.10 two-slot
   gate is next.** Immediately before the one authorized restart, public
   resolution found `eliss4r.n` trustworthy LIVE in the original room
@@ -668,10 +698,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None for #29. Existing authorization permits an
-  explicit `tomwhoasmr` start in free slot 2 as real two-slot isolation evidence
-  only while Eliss remains actively recording; the next task must recheck live
-  identity, capacity, and current durable state before acting.
+- **Pending owner action:** None for closed #29. The authorized Tom LIVE ended
+  before a permitted start could occur; a later attempt requires fresh public
+  identity and slot checks. If automatic command review continues to reject
+  the normal remote CLI, an operator must execute the authorized action while
+  a second creator is genuinely LIVE. No blanket permission to manufacture
+  overlap or restart the active service is implied.
 - **Next queued task:** Resume the v0.10 two-slot deployed isolation gate.
   Verify genuine simultaneous independent sessions, targeted-stop/finalization
   isolation, both retained/final outputs, and idle restart persistence. Do not
