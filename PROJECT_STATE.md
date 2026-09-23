@@ -7,9 +7,27 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active v0.10 task: first-read unknown ownership corrected; independent
-  review pending (2026-09-23).** Fresh independent review of `4dbcf45` found
-  that an unreadable rich status and narrow ownership snapshot, with no cached
+- **Active v0.10 task: pending output/parts ownership corrected; independent
+  review pending (2026-09-23).** Independent review of `0759e6f` found that a
+  current pending or restored session could lose its output/parts collision
+  guard when rich status failed, while narrow LIVE ownership still allowed
+  slot 2 allocation. Five offline manager/API regressions failed on that
+  baseline, including real controllers, durable slots, first-read restored
+  ownership, and HTTP. Current controller ownership and the manager's
+  session-bound cache now include accepted absolute output and parts paths.
+  Known paths survive weaker reads, missing current path facts fail allocation
+  closed, and settlement/session replacement release old facts. A proven-empty
+  corrupt slot remains isolated. The earlier deployed Eliss/Sinaloan
+  distinct-LIVE gate remains valid; v0.9.0 is the current release and v0.10.0
+  remains unreleased. Release preparation is blocked pending fresh independent
+  review of this correction and final readiness. #8, #13, and #28 remain
+  separate non-blocking evidence work. Focused tests pass 242; isolated pytest
+  passes 1,164 plus 19 subtests; unittest discovery passes 223. Compilation,
+  24 CLI help paths plus version, and all 78 package sources under 300 lines pass.
+- **Previous v0.10 task: first-read unknown ownership corrected; independent
+  review found a pending-path gap (2026-09-23).** Fresh independent review of
+  `4dbcf45` found that an unreadable rich status and narrow ownership snapshot,
+  with no cached
   owner, could leave slot 2 available when health reported `ambiguous_state` or
   health itself failed. Offline real-controller active and blocked-recovery
   regressions failed on `4dbcf45`. The manager now treats this state as unknown
@@ -864,8 +882,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None for the completed deployed gate. Do not treat
   its completion as authorization to bump, tag, or publish v0.10.
-- **Next queued task:** Fresh independent review of the restored/learned
-  ownership fallback correction and final v0.10 readiness on corrected `main`.
+- **Next queued task:** Fresh independent review of session-bound output/parts
+  ownership and final v0.10 readiness on corrected `main`.
   Keep #8, #13, and #28 separate and non-blocking; do not begin v0.11 or
   release preparation before that review.
 
@@ -886,9 +904,9 @@ new work; calendar entries are reminders only.
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings has
   passed the deployed two-slot recording/isolation and idle-restart gate on
-  current `main`. Independent review found restored/learned ownership fallback
-  gaps after the atomic and mixed-case fixes; their bounded correction requires
-  fresh independent review before release preparation. Conditional
+  current `main`. Independent review found pending output/parts ownership
+  could be lost when rich status failed; its bounded correction requires fresh
+  independent review before release preparation. Conditional
   v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation

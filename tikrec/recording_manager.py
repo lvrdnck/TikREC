@@ -7,7 +7,8 @@ from threading import Lock, Thread
 from uuid import UUID
 
 from .recording import RecordingBusy
-from .recording_ownership import OwnerCache, page_identity, same_page, same_room
+from .recording_ownership import (OwnerCache, page_identity, same_page,
+                                  same_path, same_room)
 from .recording_safety import normalize_live_url
 from .tiktok_identity import canonical_room_id
 
@@ -131,9 +132,13 @@ class RecordingManager:
             for slot_id, status, health, _ in entries:
                 if _owns_current_work(status, health):
                     owner = self._owners.get(slot_id)
-                    if _same_path(status.get("output_path"), output_path):
+                    if (same_path(status.get("output_path"), output_path)
+                            or (owner is not None
+                                and same_path(owner.output_path, output_path))):
                         raise ValueError("output is already owned by another recording")
-                    if _same_path(status.get("parts_directory"), parts_path):
+                    if (same_path(status.get("parts_directory"), parts_path)
+                            or (owner is not None
+                                and same_path(owner.parts_directory, parts_path))):
                         raise ValueError("retained parts are already owned by another recording")
                     if same_page(status.get("source_url"), canonical_page) or (
                         owner is not None and owner.page == canonical_page
@@ -153,7 +158,8 @@ class RecordingManager:
             started = controller.start(page, output, **options)
             # The lock keeps both claims atomic with the accepted session.
             self._owners.claim(slot_id, _session_id(started.get("session_id")),
-                               canonical_page, expected_room)
+                               canonical_page, expected_room,
+                               str(output_path), str(parts_path))
             return _with_slot(slot_id, started)
 
     def stop(self, session_id: str | None = None) -> dict:
@@ -265,14 +271,3 @@ def _session_id(value: object) -> str:
     if value != canonical:
         raise ValueError("session_id must be a canonical UUID")
     return canonical
-
-
-def _same_path(value: object, candidate: Path) -> bool:
-    """Compare native paths without requiring candidate targets to exist."""
-    if not isinstance(value, str):
-        return False
-    try:
-        return Path(value).resolve(strict=False) == candidate.resolve(strict=False)
-    except OSError:
-        # If parent inspection fails, retain the lexical native-path guard.
-        return Path(value) == candidate

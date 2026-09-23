@@ -1119,6 +1119,20 @@ is unchanged. Fresh independent review of this correction and final v0.10
 readiness is required before release preparation; #8/#13/#28 remain separate
 non-blocking evidence work.
 
+**Pending path-owner review and correction (2026-09-23):** Independent review of
+`0759e6f` reproduced a distinct LIVE being allocated to the same pending output
+and parts paths after the first controller's rich status failed. The same gap
+affected a restored owner on the manager's first observation. Current narrow
+ownership and the session-bound manager cache now include accepted local paths;
+partial reads retain known paths, and unknown current paths fail allocation
+closed. Settlement and session replacement release old path facts, while a
+proven-empty corrupt slot can still be isolated. Offline real-controller and
+HTTP regressions failed on the baseline and pass after correction; the full
+isolated suite passes 1,164 tests plus 19 subtests. The deployed two-slot
+distinct-LIVE gate remains valid. Fresh independent review of this correction
+and final v0.10 readiness is required before release preparation; #8/#13/#28
+remain separate non-blocking evidence work.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1351,8 +1365,9 @@ are released. v0.10.0 multiple simultaneous creator recordings is the current
 development target. Its bounded two-slot manager slice and deployed
 concurrency/isolation/idle-restart gate are complete on `main`. Subsequent
 independent reviews found duplicate-start, mixed-case, restored/learned-owner,
-and first-read unknown-owner gaps. Their bounded corrections need fresh
-independent review before release preparation. #27 and #29 are closed; #8,
+first-read unknown-owner, and pending output/parts ownership gaps. Their
+bounded corrections need fresh independent review of current `main` before
+release preparation. #27 and #29 are closed; #8,
 #13, and #28 remain separate non-blocking evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and

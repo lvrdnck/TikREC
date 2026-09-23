@@ -106,14 +106,17 @@ The manager rejects cross-slot output or `.parts` path collisions and duplicate
 normalized public LIVE pages under one allocation lock. Creator handle spelling
 is case-equivalent for page ownership, including existing mixed-case durable jobs
 and temporary unreadable status; accepted source URLs retain their spelling.
-Each controller exposes only current session/page/proven-room facts under its
-lock. The manager refreshes those facts within allocation so restored owners and
-manual jobs that later prove a room remain protected if rich status fails. A
-partial read cannot erase a known claim; if current ownership is still unknown,
-new allocation fails with a bounded 409 busy response. If both rich status and
-narrow ownership are unreadable on the first observation, `ambiguous_state`
-health or a failed health read cannot prove the slot empty; allocation stays
-closed. An invalid narrow `current=true` identity also stays unknown even if an
+Each controller exposes only current session/page/proven-room and accepted
+local output/parts paths under its lock. The manager refreshes those facts
+within allocation so restored owners, manual jobs that later prove a room, and
+pending paths remain protected if rich status fails. Path ownership begins at
+start acceptance, before either target must exist on disk. A partial read
+cannot erase a known claim; if current identity or required path ownership is
+still unknown, new allocation fails with a bounded 409 busy response. If both
+rich status and narrow ownership are unreadable on the first observation,
+`ambiguous_state` health or a failed health read cannot prove the slot empty;
+allocation stays closed. An invalid narrow `current=true` identity also stays
+unknown even if an
 earlier health read showed availability. A reliable narrow `current=false` can
 prove a corrupt slot has no current session, leaving a healthy other slot
 available. Later healthy reads

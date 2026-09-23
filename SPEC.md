@@ -27,9 +27,9 @@ per-user configuration/default behavior documented below. Package version
 v0.9.0 added opt-in creator monitoring and durable single-slot automatic starts.
 Current `main` contains an untagged v0.10 two-recording service slice. A deployed
 manual second start passed simultaneous isolation, targeted stops, dual media
-validation, and idle restart. Independent review found a duplicate-start race;
-the bounded ownership correction awaits a fresh independent review before
-release preparation. Published release records are in PROJECT_STATE.md.
+validation, and idle restart. Independent reviews found LIVE and pending
+output/parts ownership gaps; their bounded corrections await a fresh review
+before release preparation. Published release records are in PROJECT_STATE.md.
 Issue #27 closed after input decode health was preserved; historical Moe source
 attribution is non-blocking #28. See [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
 
@@ -583,12 +583,14 @@ pages. Page ownership compares creator handle spelling case-insensitively for
 both readable current status and session-bound in-memory fallback, including
 mixed-case source URLs loaded from durable jobs. Accepted source URLs retain
 their spelling. Each controller provides a locked snapshot of only current
-session/page/proven-room facts. The manager refreshes its session-bound cache
-within allocation, including restored owners and manual rooms proven later;
-partial reads retain known facts. If a current owner's identity remains unknown,
-allocation fails closed. On an unreadable first observation, ambiguous recovery
-health and a failed health read do not prove emptiness. An invalid current
-snapshot stays unknown even after an earlier available-health read. A narrow
+session/page/proven-room and accepted local output/parts paths. The manager
+refreshes its session-bound cache within allocation, including restored owners
+and manual rooms proven later; partial reads retain known facts. Accepted
+paths are owned before storage exists. If current identity or required path
+ownership remains unknown, allocation fails closed. On an unreadable first
+observation, ambiguous recovery health and a failed health read do not prove
+emptiness. An invalid current snapshot stays unknown even after an earlier
+available-health read. A narrow
 `current=false` snapshot can prove an isolated corrupt slot has no current
 session, so the other
 slot remains usable; recovered reads restore ordinary capacity. An automatic

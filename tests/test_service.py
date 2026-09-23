@@ -268,6 +268,39 @@ def test_duplicate_manual_page_returns_conflict_without_new_session(tmp_path):
         manager.shutdown()
 
 
+def test_http_start_rejects_pending_path_owner_when_status_unreadable(
+    tmp_path, monkeypatch,
+):
+    first_entered, second_entered = Event(), Event()
+    def pending_capture(url, **kwargs):
+        (first_entered if url == PAGE else second_entered).set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    manager = RecordingManager((RecordingController(capture=pending_capture),
+                                RecordingController(capture=pending_capture)))
+    output = str(tmp_path / "shared.mp4")
+    try:
+        first_code, first = request(manager, "POST", "/recording/start", {
+            "url": PAGE, "output": output,
+        })
+        assert first_code == 202 and first_entered.wait(2)
+        original = manager.controllers[0]
+        monkeypatch.setattr(original, "status",
+                            lambda: (_ for _ in ()).throw(OSError("signed://secret")))
+        code, response = request(manager, "POST", "/recording/start", {
+            "url": "https://www.tiktok.com/@beta/live", "output": output,
+        })
+        assert (code, response) == (400, {
+            "error": "invalid LIVE page or absolute .mp4 output; "
+                     "output and retained parts must not already exist",
+        })
+        assert not second_entered.is_set()
+        assert original._job["session_id"] == first["session_id"]
+        assert not original._stop.is_set()
+    finally:
+        manager.shutdown()
+
+
 def test_mixed_case_duplicate_page_returns_sanitized_conflict(tmp_path):
     entered = Event()
     def capture(url, **kwargs):

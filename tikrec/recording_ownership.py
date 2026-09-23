@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from uuid import UUID
 
 from .recording_safety import normalize_live_url
@@ -11,15 +12,17 @@ from .tiktok_identity import canonical_room_id
 
 @dataclass(frozen=True)
 class CurrentOwner:
-    """One current slot's stable public identity, without transport data."""
+    """One current slot's public identity and accepted local paths."""
 
     session_id: str
     page: str
     room_id: str | None
+    output_path: str | None
+    parts_directory: str | None
 
 
 class OwnerCache:
-    """Retain proven page/room facts until settlement or session replacement."""
+    """Retain session-bound identity and paths until settlement or replacement."""
 
     def __init__(self) -> None:
         self._owners: dict[str, CurrentOwner] = {}
@@ -29,9 +32,12 @@ class OwnerCache:
         return self._owners.get(slot_id)
 
     def claim(self, slot_id: str, session_id: str, page: str,
-              expected_room: str | None) -> None:
+              expected_room: str | None, output_path: str,
+              parts_directory: str) -> None:
         """Reserve an accepted start before its worker can publish identity."""
-        self._owners[slot_id] = CurrentOwner(session_id, page, expected_room)
+        self._owners[slot_id] = CurrentOwner(
+            session_id, page, expected_room, output_path, parts_directory,
+        )
 
     def refresh(self, slot_id: str, controller: object, status: dict,
                 health: dict, status_current: bool) -> bool:
@@ -60,6 +66,15 @@ class OwnerCache:
                 self._owners.pop(slot_id, None)
                 return False
             else:
+                # The worker may settle between the earlier health read and
+                # this newer ownership read; require a second health sample.
+                try:
+                    settled = controller.health()
+                except Exception:
+                    settled = None
+                if isinstance(settled, dict) and settled.get("active") is False:
+                    self._owners.pop(slot_id, None)
+                    return False
                 return True
 
         if incomplete:
@@ -73,8 +88,9 @@ class OwnerCache:
         if readable:
             return uncertain or (status_current and owner is None)
         if owner is not None:
-            # A page-only claim cannot rule out a room learned during failed reads.
-            return owner.room_id is None
+            # Weaker reads cannot prove a later room or missing path ownership.
+            return (owner.room_id is None or owner.output_path is None
+                    or owner.parts_directory is None)
         # Only affirmative availability proves emptiness when both identity
         # reads fail; ambiguous recovery and failed health reads do not.
         return health.get("active") is True or health.get("available") is not True
@@ -85,12 +101,20 @@ class OwnerCache:
             if prior.page != facts.page or (
                 prior.room_id is not None and facts.room_id is not None
                 and prior.room_id != facts.room_id
+            ) or (
+                prior.output_path is not None and facts.output_path is not None
+                and not same_path(prior.output_path, Path(facts.output_path))
+            ) or (
+                prior.parts_directory is not None and facts.parts_directory is not None
+                and not same_path(prior.parts_directory, Path(facts.parts_directory))
             ):
                 return True
             facts = CurrentOwner(facts.session_id, facts.page,
-                                 facts.room_id or prior.room_id)
+                                 facts.room_id or prior.room_id,
+                                 facts.output_path or prior.output_path,
+                                 facts.parts_directory or prior.parts_directory)
         self._owners[slot_id] = facts
-        return False
+        return facts.output_path is None or facts.parts_directory is None
 
 
 def page_identity(normalized_page: str) -> str:
@@ -113,6 +137,17 @@ def same_room(value: object, candidate: str) -> bool:
         return canonical_room_id(value) == candidate
     except (TypeError, ValueError):
         return False
+
+
+def same_path(value: object, candidate: Path) -> bool:
+    """Compare native paths without requiring candidate targets to exist."""
+    if not isinstance(value, str):
+        return False
+    try:
+        return Path(value).resolve(strict=False) == candidate.resolve(strict=False)
+    except OSError:
+        # If parent inspection fails, retain the lexical native-path guard.
+        return Path(value) == candidate
 
 
 def _snapshot(controller: object) -> dict | None:
@@ -138,4 +173,16 @@ def _facts(value: dict) -> CurrentOwner | None:
         room = None if room is None else canonical_room_id(room)
     except (TypeError, ValueError, AttributeError):
         return None
-    return CurrentOwner(session_id, page, room)
+    return CurrentOwner(session_id, page, room,
+                        _local_path(value.get("output_path"), output=True),
+                        _local_path(value.get("parts_directory")))
+
+
+def _local_path(value: object, *, output: bool = False) -> str | None:
+    """Accept only absolute non-transport path facts from a current job."""
+    if (type(value) is not str or not value or "\x00" in value or "://" in value):
+        return None
+    path = Path(value)
+    if not path.is_absolute() or (output and path.suffix.lower() != ".mp4"):
+        return None
+    return value

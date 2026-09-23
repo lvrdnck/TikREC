@@ -105,6 +105,151 @@ def test_cross_slot_output_and_parts_collision_is_rejected(tmp_path):
         manager.shutdown()
 
 
+@pytest.mark.parametrize("alias", [False, True])
+def test_pending_output_owner_survives_unreadable_status_with_durable_slots(
+    tmp_path, monkeypatch, alias,
+):
+    entered = {PAGE: Event(), PAGE_BETA: Event()}
+    def pending_capture(url, **kwargs):
+        entered[url].set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    stores = (JobStateStore(tmp_path / "job.json"),
+              JobStateStore(tmp_path / "job-2.json"))
+    manager = RecordingManager(tuple(
+        RecordingController(capture=pending_capture, store=store) for store in stores
+    ))
+    output = tmp_path / "shared.mp4"
+    first = manager.start(PAGE, str(output))
+    assert entered[PAGE].wait(2)
+    assert not output.exists() and not (tmp_path / "shared.parts").exists()
+    controller = manager.controllers[0]
+    monkeypatch.setattr(controller, "status",
+                        lambda: (_ for _ in ()).throw(OSError("rich status unavailable")))
+    candidate = (tmp_path / "unused-parent" / ".." / "shared.mp4") if alias else output
+    try:
+        with pytest.raises(ValueError, match="already owned"):
+            manager.start(PAGE_BETA, str(candidate))
+        assert not entered[PAGE_BETA].is_set()
+        assert stores[0].load().session_id == first["session_id"]
+        assert stores[0].load().state == "resolving"
+        assert stores[1].load() is None
+        assert not controller._stop.is_set()
+    finally:
+        manager.shutdown()
+
+
+def test_parts_path_collision_is_checked_without_rich_status(tmp_path, monkeypatch):
+    entered = {PAGE: Event(), PAGE_BETA: Event()}
+    def pending_capture(url, **kwargs):
+        entered[url].set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    first_controller = RecordingController(capture=pending_capture)
+    first_controller.start(PAGE, str(tmp_path / "original.mp4"))
+    assert entered[PAGE].wait(2)
+    manager = RecordingManager((first_controller,
+                                RecordingController(capture=pending_capture)))
+    # Isolate the parts guard: valid jobs derive this path from the output, so
+    # their parts collision would ordinarily also be an output collision.
+    narrow = first_controller.ownership()
+    narrow["parts_directory"] = str(tmp_path / "shared.parts")
+    monkeypatch.setattr(first_controller, "ownership", lambda: dict(narrow))
+    monkeypatch.setattr(first_controller, "status",
+                        lambda: (_ for _ in ()).throw(OSError("rich status unavailable")))
+    try:
+        with pytest.raises(ValueError, match="retained parts are already owned"):
+            manager.start(PAGE_BETA, str(tmp_path / "shared.mp4"))
+        assert not entered[PAGE_BETA].is_set()
+    finally:
+        manager.shutdown()
+
+
+def test_uncached_missing_path_owner_blocks_then_recovers(tmp_path, monkeypatch):
+    entered = {PAGE: Event(), PAGE_BETA: Event()}
+    def pending_capture(url, **kwargs):
+        entered[url].set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    first_controller = RecordingController(capture=pending_capture)
+    first_controller.start(PAGE, str(tmp_path / "first.mp4"))
+    assert entered[PAGE].wait(2)
+    manager = RecordingManager((first_controller,
+                                RecordingController(capture=pending_capture)))
+    original_ownership = first_controller.ownership
+    incomplete = original_ownership()
+    incomplete["output_path"] = None
+    monkeypatch.setattr(first_controller, "status",
+                        lambda: (_ for _ in ()).throw(OSError("rich status unavailable")))
+    monkeypatch.setattr(first_controller, "ownership", lambda: dict(incomplete))
+    try:
+        assert manager.health()["available_slots"] == 0
+        with pytest.raises(RecordingBusy, match="ownership unavailable"):
+            manager.start(PAGE_BETA, str(tmp_path / "second.mp4"))
+        assert not entered[PAGE_BETA].is_set()
+        monkeypatch.setattr(first_controller, "ownership", original_ownership)
+        assert manager.health()["available_slots"] == 1
+        second = manager.start(PAGE_BETA, str(tmp_path / "second.mp4"))
+        assert second["slot_id"] == "slot-2"
+        assert entered[PAGE_BETA].wait(2)
+    finally:
+        manager.shutdown()
+
+
+def test_cached_paths_survive_partial_current_snapshot(tmp_path, monkeypatch):
+    entered = Event()
+    def pending_capture(url, **kwargs):
+        entered.set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    manager = RecordingManager((RecordingController(capture=pending_capture),
+                                RecordingController(capture=pending_capture)))
+    first = manager.start(PAGE, str(tmp_path / "shared.mp4"))
+    assert entered.wait(2)
+    controller = manager.controllers[0]
+    partial = controller.ownership()
+    partial["output_path"] = None
+    partial["parts_directory"] = "relative.parts"
+    monkeypatch.setattr(controller, "status",
+                        lambda: (_ for _ in ()).throw(OSError("rich status unavailable")))
+    monkeypatch.setattr(controller, "ownership", lambda: dict(partial))
+    try:
+        assert manager.health()["available_slots"] == 1
+        with pytest.raises(ValueError, match="already owned"):
+            manager.start(PAGE_BETA, str(tmp_path / "shared.mp4"))
+        assert controller._job["session_id"] == first["session_id"]
+        assert not controller._stop.is_set()
+    finally:
+        manager.shutdown()
+
+
+def test_settled_path_owner_releases_claim_for_later_slot_reuse(tmp_path):
+    first_entered, later_entered, first_done = Event(), Event(), Event()
+    def capture(url, **kwargs):
+        if url == PAGE:
+            first_entered.set()
+            assert first_done.wait(3)
+            return CaptureResult((), None)
+        later_entered.set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    manager = RecordingManager((RecordingController(capture=capture),
+                                RecordingController(capture=capture)))
+    shared = str(tmp_path / "shared.mp4")
+    first = manager.start(PAGE, shared)
+    assert first_entered.wait(2)
+    try:
+        first_done.set()
+        manager.controllers[0]._worker.join(2)
+        assert manager.health()["available_slots"] == 2
+        later = manager.start(PAGE_BETA, shared)
+        assert later["slot_id"] == "slot-1"
+        assert later["session_id"] != first["session_id"]
+        assert later_entered.wait(2)
+    finally:
+        manager.shutdown()
+
+
 def test_equivalent_manual_pages_cannot_own_two_slots(tmp_path):
     harness = CaptureHarness()
     manager = _manager(harness)
@@ -591,6 +736,22 @@ def test_restored_owner_is_protected_on_first_unreadable_status(tmp_path, monkey
             manager.start("https://www.tiktok.com/@alpha/live",
                           str(tmp_path / "second.mp4"))
         assert "second" not in harness.entered
+    finally:
+        manager.shutdown()
+
+
+def test_restored_path_owner_hydrates_on_first_unreadable_status(tmp_path, monkeypatch):
+    manager, restored, store, harness = _resumed_manager(tmp_path)
+    prior = store.path.read_bytes()
+    monkeypatch.setattr(restored, "status",
+                        lambda: (_ for _ in ()).throw(OSError("rich status unavailable")))
+    try:
+        with pytest.raises(ValueError, match="already owned"):
+            manager.start(PAGE_BETA, str(tmp_path / "restored.mp4"))
+        assert "restored" not in harness.entered
+        assert store.path.read_bytes() == prior
+        assert restored.health()["active"] is True
+        assert not restored._stop.is_set()
     finally:
         manager.shutdown()
 

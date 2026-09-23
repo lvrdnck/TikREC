@@ -13,8 +13,7 @@ from .automatic_identity import expected_room_resolvers
 from .capture import CaptureResult
 from .live import capture_live
 from .reconciliation import StartupReconciler
-from .service_job import (job_snapshot, persist_snapshot, progress_snapshot,
-                          update_network_status, update_capture_state)
+from .service_job import (job_snapshot, persist_snapshot, progress_snapshot, update_network_status, update_capture_state)
 from .capture_control import CaptureControl
 from .retry_policy import RetryPolicy
 from .live_recovery import OutageCaptureError
@@ -96,11 +95,12 @@ class RecordingController:
             return self._snapshot()
 
     def ownership(self) -> dict:
-        """Return current session/page/proven room under the controller lock."""
+        """Return current identity and local paths under the controller lock."""
         with self._lock:
             return {"current": bool((self._active or self._blocked) and self._job.get("session_id")),
                     "session_id": self._job.get("session_id"), "source_url": self._job.get("source_url"),
-                    "room_id": self._job.get("room_id")}
+                    "room_id": self._job.get("room_id"), "output_path": self._job.get("output_path"),
+                    "parts_directory": self._job.get("parts_directory")}
 
     def start(self, url: str, output: str, *, raw_copy: bool = False,
               expected_room_id: str | None = None) -> dict:

@@ -19,6 +19,7 @@ def test_idle_and_health():
     assert controller.health()["available"]
     assert controller.ownership() == {
         "current": False, "session_id": None, "source_url": None, "room_id": None,
+        "output_path": None, "parts_directory": None,
     }
 
 
@@ -36,6 +37,8 @@ def test_narrow_ownership_tracks_proven_room_without_progress(tmp_path):
         assert controller.ownership() == {
             "current": True, "session_id": first["session_id"],
             "source_url": "https://www.tiktok.com/@Alpha/live", "room_id": None,
+            "output_path": str(tmp_path / "first.mp4"),
+            "parts_directory": str(tmp_path / "first.parts"),
         }
         controller._identity("123")
         assert controller.ownership()["room_id"] == "123"
