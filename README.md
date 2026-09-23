@@ -330,10 +330,12 @@ remain disabled by default and do not pay the roughly doubled storage cost.
 
 Up to two service recordings may be active; local standalone `live` and `record`
 remain single invocations. `remote recordings` reports capacity and both stable
-slots. Legacy `remote status` and empty `remote stop` remain useful with zero or
-one current recording, but fail clearly when multiple current recordings make a
-singular answer ambiguous; use `remote stop --session-id UUID` then. Stop closes/
-retains only that session's active FLV part, finalizes its output, and writes its
+slots. `remote recordings` shows only the latest job in each slot; historical
+session evidence remains in that recording's parts directory. Legacy
+`remote status` and empty `remote stop` remain useful with zero or one current
+recording, but fail clearly when multiple current recordings make a singular
+answer ambiguous; use `remote stop --session-id UUID` then. Stop closes/retains
+only that session's active FLV part, finalizes its output, and writes its
 own `session.json`.
 It never sends a kill signal to FFmpeg. A stopped job reports `completed` with
 `interrupted: true`; `final_output_path` identifies an actual finalized output.

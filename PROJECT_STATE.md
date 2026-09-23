@@ -1,6 +1,6 @@
 # TikREC current state
 
-Last reviewed: 2026-09-22. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-23. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
@@ -9,27 +9,31 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 - **Active issue/task: correctness blocker #27.** v0.10 simultaneous validation
   and readiness are paused, superseding the historical gate status below.
-  The supplemental owner-authorized `kaylakreynes` raw-capture attempt on
-  2026-09-22 was blocked by execution policy before process creation. No Kayla
-  session or evidence exists; post-attempt recordings still show active 0,
-  available 2 and the preserved completed Moe job. No configuration or task
-  change occurred. Retry only when execution policy permits the normal capture
-  path, after fresh slot/storage checks; this does not replace future Moe work.
-  Completed forensic investigation is in [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
-  Severe visible corruption already exists in retained FLV; full FLV/MP4 decodes
-  emit the same 10,352 errors and finalization preserves original NAL/AAC bytes.
-  There is only one AVC header and every marked keyframe is an actual IDR;
-  neither proposed repeated-header nor false-keyframe explanation fits this
-  session. Causal class 5 remains unresolved without raw source; no speculative
-  product fix was made. Issue #27 remains blocking, separate from #8 and #13.
-  **Current deployment:** normal host-visible CLI temporarily removed Moe only
-  while idle, then the unchanged task restarted once; monitoring now contains
-  only `phoebelightt`, preserving `C:\Users\Leandro\Videos`. This prevents Moe
-  automation racing the next opt-in raw capture. Two bounded Moe checks found
-  offline; no diagnostic recording started. Final health: capacity 2, active 0,
-  available 2; cycle 16 completed, phoebe offline. Original media/metadata and
-  durable job/automation state remain preserved. Next raw-backed command and
-  safe restoration instructions are in the report; do not resume the dual gate.
+  The prior Codex Kayla launch was policy-blocked, but the owner then started
+  session `40173c3c-24f6-47d7-aa49-e054bc999b69` with raw copy. Its own
+  manifest proves natural completion and successful finalization: 34 parts,
+  two media connections plus an offline confirmation attempt. Exhaustive audit
+  matches all 331,395 raw and retained media tags by type, payload, order, and
+  timestamp rebase. Both untouched raw streams and retained parts log the same
+  101 H.264 errors; matching raw/MP4 stills show severe vertical columns.
+  Standard and deep MP4 validation pass because mixed-resolution finalization
+  re-encodes the already damaged frames. Kayla proves source-origin corruption
+  in this session and implicates no TikREC code fix or v0.9.1; it supports but
+  does not prove the same origin for Moe. Split-screen/multi-guest composition
+  is visible, but no decisive battle UI is available, so Kayla is a corrupt
+  raw-backed baseline rather than confirmed battle acceptance evidence.
+  Moe's long retained-FLV/MP4 error clusters remain unattributed without raw
+  source. The full comparison and preserved hashes are in
+  [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md). Next action: raw-backed Moe
+  reproduction or project-manager decision on an evidenced source limitation;
+  no speculative frame dropping. Keep #27 blocking and #8/#13 separate.
+  **Current deployment:** monitoring remains `phoebelightt` only after the
+  earlier idle CLI change; do not re-enable Moe automation before raw-backed
+  capture. Read-only 2026-09-23 health reports capacity 2, active 0, available
+  2. Both slots now show completed Phoebe jobs, whose media exists and passes
+  standard MP4 validation. `/recordings` retains only the latest job per slot;
+  Kayla remains on disk despite its absence from this operational snapshot.
+  The paused v0.10 dual-recording gate must not resume yet.
 - **Historical v0.10 gate (superseded by #27):** The first bounded v0.10.0
   multiple-recording slice is
   implemented and deployed from `dd00400`; its natural simultaneous-LIVE gate

@@ -1,35 +1,127 @@
 # Issue #27: battle-linked H.264 corruption
 
-2026-09-22 investigation, based on `a46f1b3`. **PARTIAL; blocker remains open.**
-v0.10 simultaneous validation/readiness is paused. No product code, release,
-tag, original media, or durable job/automation evidence was changed.
+2026-09-22 Moe investigation, extended 2026-09-23 with the owner-started Kayla
+raw-backed session. **PARTIAL; blocker remains open.** v0.10 simultaneous
+validation/readiness is paused. No product code, release, tag, original media,
+or durable job/automation evidence was changed by this investigation.
 
 ## Conclusion and limitations
 
-### Supplemental Kayla attempt (2026-09-22, approximately 21:34 +02:00)
+### Kayla raw-backed session (owner started after the blocked Codex attempt)
 
-The owner authorized `kaylakreynes` for a manual `remote start --raw-copy`
-investigation, without adding her to monitoring or replacing the future Moe
-reproduction. Preflight found both slots safely available, 49,544,634,368 free
-bytes, the preserved completed Moe job in slot 1, and idle slot 2. Monitoring
-still contained only offline `phoebelightt`; no service restart was requested.
+The 2026-09-22 Codex launch attempt was blocked before process creation. The
+owner subsequently started the authorized `kaylakreynes` capture through the
+normal remote CLI with `raw_copy_enabled=true`. Historical slot state was later
+superseded by Phoebe jobs; Kayla's own files establish the outcome. Session
+`40173c3c-24f6-47d7-aa49-e054bc999b69`, room
+`7688429147089046302`, began in `slot-1`. Its manifest reports natural
+`completed` status, no interruption or error, 34 parts, successful finalization,
+three allocated connections/two reconnects, `recovery_performed=false`, and
+8384.464 s wall elapsed. Connections 1 and 2 contain media and ended at clean
+EOF; connection 3 contained no media and confirmed the room offline after three
+status-4 observations. The gap before connection 2's first retained media was
+0.006633 s. Ten source timestamp replays were recorded in parts 4, 7, 13, 19,
+and 26; they were retained, not repaired or suppressed. Final MP4 is
+1,044,473,468 bytes, 720x1280 H.264/AAC, with 8150.733 s media duration.
 
-The execution tool rejected the capture command before process creation with
-`blocked by policy`. The command would have selected a fresh timestamped output,
-preserved pre-start durable-state copies, and invoked normal authenticated
-raw-backed start. None of that command executed. A subsequent authenticated
-recordings check confirmed active count 0 and the unchanged completed Moe job.
-No bypass or alternate execution path was attempted.
+Original output: `C:\Users\Leandro\Videos\kaylakreynes-issue27-raw-20260922-213725.mp4`;
+parts directory: same stem plus `.parts`. All 41 original files were SHA-256
+hashed before forensic processing and rehashed afterward, with matching values.
+The complete hash list, read-only audit scripts/results, decoder logs, and
+disposable stills are under
+`C:\Users\Leandro\Videos\TikREC-diagnostics\issue-27-kayla-20260923`.
+Key original SHA-256 values:
 
-**PARTIAL: no Kayla recording or media evidence was obtained.** Whether Kayla
-was LIVE or battling, visible corruption, raw/retained decode, and payload/order
-comparison were not established. There is no new causal classification or
-v0.9.1 implication. Continue only when execution policy permits the authorized
-capture; recheck slots/storage and use the requested normal raw-copy CLI path
-with a fresh `kaylakreynes-issue27-raw-YYYYMMDD-HHMMSS.mp4` output. Preserve all
-other sessions and monitoring, and do not restart the service. The Moe analysis
-below and future raw-backed Moe reproduction remain applicable; #27 stays open
-and v0.10 stays paused.
+| Artifact | SHA-256 |
+| --- | --- |
+| MP4 | `9437d66d42200bd829a2062fc1162e2e635aa523a0ca55c9a2c67983801ff80f` |
+| `connection-0001.raw` | `2ec805c4c0bd744ca0b034da81000244073f6dde1117646764cbe283793004d1` |
+| `connection-0002.raw` | `68c6f44b37f364eb6826a072937b09b9428bd7fb7fed35dcf76caaa76edff12f` |
+| `connections.jsonl` | `9f7b7b8dc95bc85b6cccde51db316b9ecefe008917518e7936bffd22407da95c` |
+| `session.json` | `d82a4869b93ef114162731d2c9066b53c8903b965804463f4c83b9b4ec469939` |
+
+The two raw copies have 315,313,991 and 667,212,055 bytes. Their arrival
+sidecars record 469,273 and 970,339 byte arrivals respectively, covering every
+raw byte contiguously, with one `read_end=eof` each. Both raw files end at
+complete FLV tag boundaries. No incomplete tail or pre-keyframe media was
+withheld.
+
+**Exhaustive raw versus retained result:** all 331,395 source audio/video media
+tags match retained tags one for one, in the same order, with identical FLV
+type and payload SHA-256 and exactly expected per-part timestamp rebasing.
+There are zero unmatched retained media tags, omitted source media tags, or
+timestamp mismatches. All 34 AVC configuration events match the raw order and
+payloads; the two distinct configurations alternate with 640x1280 and
+720x1280 High/3.1 video. The 640 configuration payload and avcC are byte-for-byte
+identical to Moe's sole configuration (`19749999...` and `870a4f92...`). The
+original AAC configuration on each connection is copied at each part start;
+only the initial pre-part script metadata tag of each connection is omitted.
+All 4,151 marked video keyframes contain actual IDRs, all IDRs are marked,
+and no in-band SPS/PPS or NAL-length anomaly was found. Source NAL types are
+1, 5, and 6. The largest positive video DTS step is 0.997 s on connection 1
+and 3.400 s on connection 2, unlike Moe's 387.980 s jump.
+
+Retained-session validation reports complete session evidence but **fails media
+integrity** on H.264 decode errors in ten parts. Standard MP4 validation passes.
+Deep MP4 validation and a separate single-thread full MP4 decode both pass
+without decoder messages: mixed AVC configurations caused normal finalization to
+decode and re-encode all 34 parts into one 720x1280 MP4, so the output bitstream
+is decodable while preserving already damaged imagery. Full independent decodes
+of both untouched raw files log 43 + 58 = **101 H.264 errors** in the same
+normalized sequence as all matching retained parts. Raw-source and MP4 stills
+near 36.6 s show the same severe vertical-column/smearing image. MP4 deep
+validation therefore cannot certify visual integrity in this re-encoded case.
+
+Raw-source error clusters (source PTS seconds; grouping gap 2.5 s):
+
+| Connection | First–last logged PTS | Messages | Following AVC change / IDR |
+| --- | --- | ---: | ---: |
+| 1 | 3898.701–3899.297 | 12 | 3899.432 |
+| 1 | 3925.089–3925.757 | 12 | 3925.888 |
+| 1 | 5100.594–5101.236 | 10 | 5101.437 |
+| 1 | 5777.006–5777.611 | 9 | 5777.812 |
+| 2 | 7233.558 | 1 | 7233.696 |
+| 2 | 7944.947–7944.957 | 3 | 7945.666 |
+| 2 | 9154.117–9154.895 | 16 | 9155.030 |
+| 2 | 9567.483–9568.187 | 14 | 9568.320 |
+| 2 | 10426.330–10427.060 | 13 | 10427.194 |
+| 2 | 10983.514–10984.085 | 11 | 10984.219 |
+
+These short clusters occur in the 640x1280 source rendition shortly before
+source switches to the 720x1280 configuration and a real IDR. The next source
+configuration/IDR recovers; TikREC already starts a new part there. Arbitrarily
+discarding the preceding damaged source frames would conceal lost media and is
+not an accepted mitigation. No deterministic, lossless improvement is proven.
+
+Disposable contact sheets show clear two-person split-screen and occasional
+four-person compositions, including samples around MP4 03:00–10:00,
+30:00–50:00, and 65:00–90:00. The FLV lacks a visible battle score/timer or
+other decisive battle UI in these samples; multi-guest composition alone cannot
+establish that a TikTok battle occurred. Treat Kayla as a **corrupt raw-backed
+baseline, not confirmed battle acceptance evidence**. Precise battle entry,
+duration, and exit cannot be assigned; the earliest visible corruption sample
+is about MP4 00:36.6 and recovery follows the next source configuration/IDR.
+
+**Kayla causal classification:** the public raw source itself delivered the
+malformed H.264 and matching visible columns; TikREC did not introduce Kayla's
+corruption or alter any decodable source media. This is strong supporting
+evidence for, but does not prove, source origin in Moe because Moe has no raw
+copy. Kayla's short switch-adjacent clusters differ from Moe's long error
+regions, single AVC configuration, and large DTS gap. No product-code fix or
+v0.9.1 corrective release is implicated by Kayla. Keep #27 open and v0.10
+paused pending raw-backed Moe attribution or an explicitly approved source
+limitation policy. Issues #8 and #13 remain separate.
+
+Two later Phoebe automatic sessions superseded Kayla in the latest-per-slot
+`/recordings` view: `315cb0a9-9c19-44ef-b2f8-d44ef64747e9` in slot 2
+(`phoebelightt-20260922-222123`) and
+`06803a96-1c26-4117-ba53-a0ade345d327` in slot 1
+(`phoebelightt-20260923-030231`). Their own manifests show natural
+completion/finalization, their MP4s and parts exist, and standard MP4
+validation passes; no deep or simultaneous-readiness claim is made.
+Read-only health showed capacity 2, active 0, available 2 on 2026-09-23.
+`/recordings` is an operational snapshot, not a durable recording history API;
+retained `session.json` and `connections.jsonl` remain the historical evidence.
 
 ### Moe findings
 

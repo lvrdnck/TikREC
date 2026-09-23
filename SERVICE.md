@@ -211,9 +211,12 @@ and redact HTTP URLs. This service version adds no library history or persistent
 job database.
 
 `GET /recordings` wraps one such snapshot per stable slot with aggregate capacity
-facts. `GET /recording` returns the sole current owner, or the latest settled
-result when none is current; it refuses ambiguity rather than hiding a second
-current job. Empty stop follows the same rule. Explicit session stop considers
+facts. A later job in a reused slot replaces the earlier snapshot even though
+the earlier output, `session.json`, and `connections.jsonl` remain on disk;
+this endpoint is not a history catalog. `GET /recording` returns the sole
+current owner, or the latest settled result when none is current; it refuses
+ambiguity rather than hiding a second current job. Empty stop follows the same
+rule. Explicit session stop considers
 only current active/recovery/finalization ownership and never signals another slot.
 
 During outages snapshots add retry_attempt, next_retry_in_seconds,
