@@ -7,8 +7,28 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active v0.10 task: restored/learned ownership fallback corrected;
-  independent review pending (2026-09-23).** Independent review of `2e1002c`
+- **Active v0.10 task: first-read unknown ownership corrected; independent
+  review pending (2026-09-23).** Fresh independent review of `4dbcf45` found
+  that an unreadable rich status and narrow ownership snapshot, with no cached
+  owner, could leave slot 2 available when health reported `ambiguous_state` or
+  health itself failed. Offline real-controller active and blocked-recovery
+  regressions failed on `4dbcf45`. The manager now treats this state as unknown
+  and suppresses all new allocation until a healthy read proves availability or
+  identifies the owner. A reliable narrow `current=false` still lets a truly
+  empty corrupt slot remain isolated, and capacity recovers after transient
+  reads heal or the owner settles. Three new manager tests and four cache tests
+  cover the boundary, including invalid current snapshots after an earlier
+  available-health or settled-status read; 166 focused tests and 1,151 isolated
+  pytest tests plus 19 subtests pass. Unittest discovery passes 223; compilation,
+  24 CLI help/version paths, and all 78 package sources under 300 lines pass.
+  No LIVE, media, schema,
+  expected-room persistence, or #29 recovery behavior changed. The deployed
+  Eliss/Sinaloan distinct-LIVE gate remains valid. v0.9.0 is the current release;
+  v0.10.0 preparation remains blocked pending fresh independent review of this
+  correction and final readiness. #8, #13, and #28 remain separate non-blocking
+  evidence work.
+- **Previous restored/learned ownership correction: independent review found a
+  first-read unknown-owner gap (2026-09-23).** Independent review of `2e1002c`
   found that a restored current controller was absent from the new manager's
   `_owners` cache, and a manual job's later proven room was not added to its
   fallback. If rich status became unreadable at allocation, either case could
@@ -16,9 +36,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   automation regression failed on `2e1002c`. Each controller now exposes only
   current session/page/proven room under its lock; the manager refreshes a
   session-bound in-memory cache under its allocation lock. Partial reads retain
-  known facts, settlement and session replacement release old claims, and
-  allocation fails closed with bounded `RecordingBusy` when current ownership
-  cannot be established. The automatic expected-room reservation stays
+  known facts, and settlement and session replacement release old claims. Its
+  intended bounded `RecordingBusy` fallback missed the first-read condition
+  corrected above. The automatic expected-room reservation stays
   memory-only; no unproven room or cache is persisted. Focused tests pass 133;
   the isolated full suite passes 1,144 plus 19 subtests. Unittest discovery
   passes 223; compilation, 24 CLI help/version paths, all 78 package sources

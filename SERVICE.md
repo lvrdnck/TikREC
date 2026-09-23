@@ -110,7 +110,14 @@ Each controller exposes only current session/page/proven-room facts under its
 lock. The manager refreshes those facts within allocation so restored owners and
 manual jobs that later prove a room remain protected if rich status fails. A
 partial read cannot erase a known claim; if current ownership is still unknown,
-new allocation fails with a bounded 409 busy response.
+new allocation fails with a bounded 409 busy response. If both rich status and
+narrow ownership are unreadable on the first observation, `ambiguous_state`
+health or a failed health read cannot prove the slot empty; allocation stays
+closed. An invalid narrow `current=true` identity also stays unknown even if an
+earlier health read showed availability. A reliable narrow `current=false` can
+prove a corrupt slot has no current session, leaving a healthy other slot
+available. Later healthy reads
+restore ordinary capacity without retaining an unknown-owner marker.
 For automatic starts it also reserves the expected canonical room in memory for
 the accepted session, closing the interval before its worker publishes proven
 room identity. Another current slot cannot claim that room. Settlement or slot

@@ -611,6 +611,116 @@ def test_unknown_restored_owner_fails_allocation_closed(tmp_path, monkeypatch):
         manager.shutdown()
 
 
+def test_first_unreadable_active_owner_cannot_allocate_second_slot(tmp_path, monkeypatch):
+    harness = CaptureHarness()
+    first_controller = RecordingController(capture=harness.capture)
+    first = first_controller.start(MIXED_PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    manager = RecordingManager((first_controller,
+                                RecordingController(capture=harness.capture)))
+    original_reads = (first_controller.status, first_controller.health,
+                      first_controller.ownership)
+    def unreadable():
+        raise OSError("controller read failed")
+    for method in ("status", "health", "ownership"):
+        monkeypatch.setattr(first_controller, method, unreadable)
+    try:
+        assert manager.health()["available_slots"] == 0
+        assert manager.recordings()["available_slots"] == 0
+        with pytest.raises(RecordingBusy) as error:
+            manager.start("https://www.tiktok.com/@alpha/live",
+                          str(tmp_path / "duplicate.mp4"))
+        assert type(error.value) is RecordingBusy
+        assert "duplicate" not in harness.entered
+        assert first_controller._job["session_id"] == first["session_id"]
+        assert not harness.stop_events["first"].is_set()
+
+        for method, original in zip(("status", "health", "ownership"), original_reads):
+            monkeypatch.setattr(first_controller, method, original)
+        assert manager.health()["available_slots"] == 1
+        with pytest.raises(RecordingDuplicate):
+            manager.start("https://www.tiktok.com/@alpha/live",
+                          str(tmp_path / "still-duplicate.mp4"))
+        harness.complete["first"].set()
+        first_controller._worker.join(2)
+        assert manager.health()["available_slots"] == 2
+        later = manager.start(PAGE_BETA, str(tmp_path / "later.mp4"))
+        harness.wait("later")
+        assert later["slot_id"] == "slot-1"
+    finally:
+        manager.shutdown()
+
+
+def test_ambiguous_blocked_owner_unreadable_on_first_observation(
+    tmp_path, monkeypatch,
+):
+    job = JobState(
+        "00000000-0000-0000-0000-000000000001", MIXED_PAGE,
+        str(tmp_path / "restored.mp4"), str(tmp_path / "restored.parts"),
+        1.0, state="recording", room_id="123",
+    )
+    store = JobStateStore(tmp_path / "job.json")
+    store.save(job)
+    original_job = store.path.read_bytes()
+    class Reconciler:
+        def reconcile(self, **kwargs):
+            return SimpleNamespace(job=job, blocked=True, outcome="failed",
+                                   reason="ambiguous_state", error="startup recovery failed")
+    blocked = RecordingController(store=store, reconciler=Reconciler())
+    blocked._worker.join(2)
+    harness = CaptureHarness()
+    manager = RecordingManager((blocked, RecordingController(capture=harness.capture)))
+    assert blocked.health()["recovery_reason"] == "ambiguous_state"
+    original_status, original_ownership = blocked.status, blocked.ownership
+    def unreadable():
+        raise OSError("controller read failed")
+    monkeypatch.setattr(blocked, "status", unreadable)
+    monkeypatch.setattr(blocked, "ownership", unreadable)
+    try:
+        assert manager.health()["available_slots"] == 0
+        for candidate, options in (
+            ("https://www.tiktok.com/@alpha/live", {}),
+            (PAGE_BETA, {"expected_room_id": "123"}),
+        ):
+            with pytest.raises(RecordingBusy):
+                manager.start(candidate, str(tmp_path / "duplicate.mp4"), **options)
+        assert "duplicate" not in harness.entered
+        assert store.path.read_bytes() == original_job
+
+        monkeypatch.setattr(blocked, "status", original_status)
+        monkeypatch.setattr(blocked, "ownership", original_ownership)
+        assert manager.health()["available_slots"] == 1
+        with pytest.raises(RecordingDuplicate):
+            manager.start(PAGE_BETA, str(tmp_path / "same-room.mp4"),
+                          expected_room_id="123")
+        distinct = manager.start(PAGE_BETA, str(tmp_path / "distinct.mp4"),
+                                 expected_room_id="456")
+        harness.wait("distinct")
+        assert distinct["slot_id"] == "slot-2"
+    finally:
+        manager.shutdown()
+
+
+def test_proven_empty_corrupt_slot_still_allows_healthy_slot(
+    tmp_path, monkeypatch,
+):
+    corrupt = tmp_path / "job.json"
+    corrupt.write_text('{"invalid":"durable state"}', encoding="utf-8")
+    harness = CaptureHarness()
+    manager = _manager(harness, stores=(JobStateStore(corrupt), None))
+    first = manager.controllers[0]
+    assert first.health()["recovery_reason"] == "ambiguous_state"
+    assert first.ownership()["current"] is False
+    monkeypatch.setattr(first, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+    try:
+        assert manager.health()["available_slots"] == 1
+        started = manager.start(PAGE_BETA, str(tmp_path / "healthy.mp4"))
+        harness.wait("healthy")
+        assert started["slot_id"] == "slot-2"
+    finally:
+        manager.shutdown()
+
+
 def test_page_only_cache_fails_closed_when_both_reads_fail(tmp_path, monkeypatch):
     harness = CaptureHarness()
     manager = _manager(harness)

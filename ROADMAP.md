@@ -1097,11 +1097,27 @@ regressions and an allocation-time automation regression failed on that baseline
 Controllers now expose a narrow current-ownership snapshot under their locks;
 the manager refreshes session-bound page/proven-room facts within its allocation
 lock, retains facts through partial reads, releases them on settlement/reuse,
-and fails allocation closed when current ownership is unknowable. The automatic
-expected-room reservation remains memory-only, with no schema or #29 recovery
+and intended to fail allocation closed when current ownership was unknowable;
+the first-read exception is corrected below. The automatic expected-room
+reservation remains memory-only, with no schema or #29 recovery
 change. The deployed distinct-LIVE isolation gate remains valid. Fresh
 independent review of this correction and final v0.10 readiness is next before
 release preparation; #8/#13/#28 remain separate non-blocking evidence work.
+
+**First-read unknown-owner review and correction (2026-09-23):** Independent
+review of `4dbcf45` found that an unreadable status and ownership snapshot on a
+manager's first observation could leave the second slot available when health
+reported `ambiguous_state` or failed and synthesized that reason. Real-controller
+active-capture and blocked-restoration regressions failed on that baseline. The
+manager now treats unresolved ownership as unknown regardless of recovery reason;
+only affirmative availability or a reliable `current=false` snapshot proves an
+empty slot. Previously known owners remain protected, and recovered reads or
+settlement restore capacity without stale claims. The proven-empty corrupt-slot
+isolation remains usable. Focused tests pass 166; isolated pytest passes 1,151
+plus 19 subtests; unittest discovery passes 223. The deployed distinct-LIVE gate
+is unchanged. Fresh independent review of this correction and final v0.10
+readiness is required before release preparation; #8/#13/#28 remain separate
+non-blocking evidence work.
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
@@ -1334,10 +1350,10 @@ guided recovery, configuration/defaults, and creator automation through v0.9.0
 are released. v0.10.0 multiple simultaneous creator recordings is the current
 development target. Its bounded two-slot manager slice and deployed
 concurrency/isolation/idle-restart gate are complete on `main`. Subsequent
-independent reviews found duplicate-start, mixed-case, and restored/learned
-owner fallback gaps. Their bounded corrections need fresh independent review
-before release preparation. #27 and #29 are
-closed; #8, #13, and #28 remain separate non-blocking evidence work.
+independent reviews found duplicate-start, mixed-case, restored/learned-owner,
+and first-read unknown-owner gaps. Their bounded corrections need fresh
+independent review before release preparation. #27 and #29 are closed; #8,
+#13, and #28 remain separate non-blocking evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

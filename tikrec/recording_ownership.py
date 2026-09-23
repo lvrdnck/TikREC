@@ -62,22 +62,22 @@ class OwnerCache:
             else:
                 return True
 
+        if incomplete:
+            # A later current read with invalid identity cannot prove the old
+            # session still owns this slot or that a readable idle state won.
+            return True
         if readable and not status_current:
             self._owners.pop(slot_id, None)
             return False
         owner = self._owners.get(slot_id)
         if readable:
-            return uncertain or (status_current and (
-                owner is None or (incomplete and owner.room_id is None)
-            ))
+            return uncertain or (status_current and owner is None)
         if owner is not None:
             # A page-only claim cannot rule out a room learned during failed reads.
             return owner.room_id is None
-        return health.get("active") is True or (
-            health.get("available") is False
-            and health.get("recovery_reason") != "ambiguous_state"
-            and health.get("shutting_down") is not True
-        )
+        # Only affirmative availability proves emptiness when both identity
+        # reads fail; ambiguous recovery and failed health reads do not.
+        return health.get("active") is True or health.get("available") is not True
 
     def _merge(self, slot_id: str, facts: CurrentOwner) -> bool:
         prior = self._owners.get(slot_id)

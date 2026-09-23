@@ -55,3 +55,56 @@ def test_partial_new_session_cannot_inherit_old_room_claim():
                          {"state": "unavailable"},
                          {"active": True, "available": False}, True) is True
     assert cache.get("slot-1").session_id == SESSION_ONE
+
+
+def test_first_unreadable_ambiguous_slot_has_unknown_ownership():
+    cache = OwnerCache()
+    for snapshot in (None, {"current": "unknown"}, {"current": True}):
+        controller = SimpleNamespace(ownership=lambda value=snapshot: value)
+        assert cache.refresh(
+            "slot-1", controller, {"state": "unavailable"},
+            {"active": False, "available": False,
+             "recovery_reason": "ambiguous_state"}, True,
+        ) is True
+        assert cache.get("slot-1") is None
+
+
+def test_explicitly_empty_ambiguous_slot_is_not_an_unknown_owner():
+    cache = OwnerCache()
+    controller = SimpleNamespace(ownership=lambda: {"current": False})
+    assert cache.refresh(
+        "slot-1", controller, {"state": "unavailable"},
+        {"active": False, "available": False,
+         "recovery_reason": "ambiguous_state"}, True,
+    ) is False
+
+
+def test_invalid_current_snapshot_overrides_earlier_available_health():
+    cache = OwnerCache()
+    controller = SimpleNamespace(ownership=lambda: {
+        "current": True, "session_id": "invalid", "source_url": PAGE_ONE,
+        "room_id": "123",
+    })
+    assert cache.refresh(
+        "slot-1", controller, {"state": "unavailable"},
+        {"active": False, "available": True}, False,
+    ) is True
+
+
+def test_invalid_current_snapshot_cannot_clear_or_reuse_prior_owner():
+    cache = OwnerCache()
+    cache.claim("slot-1", SESSION_ONE, page_identity(PAGE_ONE), "123")
+    controller = SimpleNamespace(ownership=lambda: {
+        "current": True, "session_id": None, "source_url": "invalid",
+        "room_id": None,
+    })
+    assert cache.refresh(
+        "slot-1", controller, {"state": "unavailable"},
+        {"active": True, "available": False}, True,
+    ) is True
+    assert cache.get("slot-1").session_id == SESSION_ONE
+    assert cache.refresh(
+        "slot-1", controller, {"state": "idle", "active": False},
+        {"active": False, "available": True}, False,
+    ) is True
+    assert cache.get("slot-1").session_id == SESSION_ONE

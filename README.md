@@ -10,9 +10,9 @@ livestream recording platform. Current `main` contains an untagged v0.10
 development slice: the persistent service can own up to two independent public
 LIVE recordings and automatically fill available capacity. A deployed pair
 passed two-slot isolation, targeted stops, media validation, and idle restart.
-Independent reviews found duplicate-start, mixed-case, and restored/learned
-ownership fallback gaps. The bounded corrections await fresh independent review
-before release preparation.
+Independent reviews found duplicate-start, mixed-case, restored/learned, and
+first-read unknown-ownership gaps. The bounded corrections await fresh
+independent review before release preparation.
 A library, playback, retention, notifications, and web workflows remain future
 work. Historical Moe media attribution remains non-blocking [#28](https://github.com/lvrdnck/TikREC/issues/28);
 the [forensic report](ISSUE_27_FORENSICS.md) preserves the evidence.
@@ -502,7 +502,7 @@ manage retention, or provide a library/Web UI/playback.
 
 **Release state and future product:** v0.9.0 is still the current published
 release. The untagged v0.10 development slice passed real simultaneous deployed
-validation; the restored/learned ownership correction still requires an
+validation; the first-read unknown-owner correction still requires an
 independent fresh-context review before release preparation. Library/history/
 playback, a web interface, notifications, and retention remain future work.
 

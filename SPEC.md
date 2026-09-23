@@ -586,8 +586,14 @@ their spelling. Each controller provides a locked snapshot of only current
 session/page/proven-room facts. The manager refreshes its session-bound cache
 within allocation, including restored owners and manual rooms proven later;
 partial reads retain known facts. If a current owner's identity remains unknown,
-allocation fails closed. An automatic expected room is also reserved in memory
-for the current session before its worker publishes proven room identity; another
+allocation fails closed. On an unreadable first observation, ambiguous recovery
+health and a failed health read do not prove emptiness. An invalid current
+snapshot stays unknown even after an earlier available-health read. A narrow
+`current=false` snapshot can prove an isolated corrupt slot has no current
+session, so the other
+slot remains usable; recovered reads restore ordinary capacity. An automatic
+expected room is also reserved in memory for the current session before its
+worker publishes proven room identity; another
 current slot cannot claim the same room. A settled or reused session releases its
 reservation, and an unreadable status cannot prove release. Neither an unproven
 room nor the manager cache is persisted.
