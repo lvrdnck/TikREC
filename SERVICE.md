@@ -395,6 +395,16 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
 | Patient recovery window exhausted | Terminal failed/outage_timeout; retain parts without finalizing, release service slot, never auto-relaunch on restart. |
 | Malformed public data/programming/storage failure | Preserve evidence/media and expose fixed failure diagnostics. Remain blocked with `recovery_state=failed`; never treat this as offline. |
 
+The deployed 2026-09-23 Eliss recovery exercised the malformed-tail branch
+after an unexpected Windows shutdown. The original 31,380,072-byte writer
+partial was preserved byte-for-byte as deterministic crash evidence; only its
+31,247,682-byte parser-proven prefix was published after structure, full
+decoder, and DTS validation. The 132,390 discarded bytes were all zero and
+were recorded in the manifest. The same saved room and session resumed with a
+new connection and part; the service did not invent media for the downtime.
+This observation supports an interrupted buffered/filesystem write but does
+not establish a defect in normal writer operation.
+
 Automatic resume applies only to the explicitly-started prior LIVE; that recovery
 path never monitors a username for the next LIVE. The independent read-only
 monitor cannot resume or start recordings. Username/output path prove no identity.

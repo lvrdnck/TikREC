@@ -7,8 +7,40 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue #29: bounded recovery fix implemented, deployed acceptance
-  pending; v0.10 gate paused.** Two independent public checks at 08:17:53 and
+- **Issue #29 deployed acceptance completed on 2026-09-23; v0.10 two-slot
+  gate is next.** Immediately before the one authorized restart, public
+  resolution found `eliss4r.n` trustworthy LIVE in the original room
+  `7688598578159274765` (status 2, `hd1`/`flv_pull_url` at 08:37:04 UTC).
+  All 11 fingerprinted originals matched their earlier SHA-256 values,
+  including the 31,380,072-byte seventh writer partial
+  (`976633b298c1527301a4846b9ba5a337d70ce331bbfe4544c738c4caaa11391e`).
+  The unchanged `TikREC Service` task was restarted once; its definition hash
+  remained `CF57505AA9BB57CFEB089D476098F8ECB31C5950EBCC2F4069A92B49F3E8A40C`.
+  Running code came from editable `main` at `d6cf214` (package version 0.9.0).
+  Startup preserved the exact original partial as
+  `.tikrec-writer-crash-349adec0-b203-499b-bb05-444e3a99240d-part-0007.evidence`
+  with the same size/hash, and published only the parser-proven 31,247,682-byte
+  `part-0007.flv` (SHA-256 `D964C5BFA28F4AB53168AAF65C59C7BC80D2EADDD0CF94C2E55A72DFB551C77C`).
+  Its bytes match exactly the evidence prefix; the excluded 132,390 bytes are
+  all zero. The manifest records source hash/bytes, recovered bytes, and
+  discarded bytes; prior parts 1--6 retained their hashes. Part 7 passes
+  TikREC structure, full decoder/DTS validation without findings, and H.264/AAC
+  media inspection (640x1280, 230.567 seconds). Durable `job.json` and manifest
+  still bind session `349adec0-b203-499b-bb05-444e3a99240d` to the same room
+  and output, with `resume_count=1`, `connection_count=2`, and the next fresh
+  `.part-0008.flv.partial`. Its observed size grew from 7,060,143 to
+  20,413,648 bytes; service progress grew from 229,700,846 to 240,051,227
+  bytes. `connections.jsonl` has two service-recovery boundaries and one
+  `capture_resume` for connection 2/part 8, without a synthetic downtime
+  connection. Health is capacity 2, active 1, available 1; slot 2's completed
+  Phoebe job and hash remain unchanged. Monitoring lists exactly Phoebe and
+  Eliss; the consumed same-room automation state suppresses duplicates.
+  Eliss remains actively recording, so terminal finalization and final MP4
+  validation were not part of this bounded recovery acceptance. No second
+  restart or stop was performed. The all-zero tail after the unexpected reboot
+  most strongly fits interrupted buffered/filesystem writing; a normal writer
+  defect is unproven.
+- **Historical #29 pre-deployment checkpoint:** Two independent public checks at 08:17:53 and
   08:18:12 UTC on 2026-09-23 resolved `eliss4r.n` as LIVE, status 2, room
   `7688598578159274765`, `hd1` via `flv_pull_url`. This is the exact interrupted
   session's room: the same LIVE survived the unexpected reboot while TikREC
@@ -636,17 +668,15 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** Authorize a separate controlled deployment/restart
-  acceptance for issue #29 if the original Eliss session is to be resumed on
-  the live service. The current task did not authorize that restart.
-- **Next queued task:** Review the issue #29 change and, with separate deployment
-  authorization, recheck Eliss's room, original hashes, and service state before
-  one controlled restart of the unchanged Scheduled Task. Verify exact crash
-  evidence preservation, 31,247,682-byte recovered part, same-session/room
-  continuation into a new part if still LIVE, and coherent durable automation.
-  If the room has ended, verify safe finalization without inventing downtime.
-  Only after #29 deployed acceptance should the v0.10 two-slot gate resume; do
-  not treat a lone Tom start as that gate, begin v0.11, or prepare/publish v0.10.
+- **Pending owner action:** None for #29. Existing authorization permits an
+  explicit `tomwhoasmr` start in free slot 2 as real two-slot isolation evidence
+  only while Eliss remains actively recording; the next task must recheck live
+  identity, capacity, and current durable state before acting.
+- **Next queued task:** Resume the v0.10 two-slot deployed isolation gate.
+  Verify genuine simultaneous independent sessions, targeted-stop/finalization
+  isolation, both retained/final outputs, and idle restart persistence. Do not
+  restart or stop the active Eliss session merely to set up the gate; do not
+  begin v0.11 or prepare/publish v0.10 in this task.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

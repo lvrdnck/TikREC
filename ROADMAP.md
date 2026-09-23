@@ -994,6 +994,23 @@ issue #29 stays open pending a separately authorized deployed recovery check.
 The v0.10 simultaneous gate remains paused, and release preparation is out of
 scope.
 
+**Issue #29 deployed acceptance (2026-09-23):** Fresh public resolution
+confirmed Eliss still LIVE in the original room `7688598578159274765`.
+After all 11 originals matched their recorded hashes, the unchanged Scheduled
+Task restarted once from editable `main` at `d6cf214`. It preserved the exact
+31,380,072-byte malformed writer partial under deterministic crash evidence,
+published only the validated 31,247,682-byte prefix as part 7, and durably
+recorded 132,390 discarded zero bytes. Parts 1--6 were unchanged; part 7 passed
+structure, full decode, DTS, and media inspection. The original session
+`349adec0-b203-499b-bb05-444e3a99240d` resumed in slot 1 with the same room,
+`resume_count=1`, connection 2, and a new part 8 that grew past 20 MB. Capacity
+remains 2 with slot 2 available; same-room automation suppression prevented a
+duplicate. The unexpected shutdown's all-zero tail supports an interrupted
+buffered/filesystem write, without proving a normal writer defect. Issue #29 is
+resolved. Eliss was still recording at handoff, so its eventual finalization is
+ordinary follow-up. Resume the v0.10 deployed two-slot isolation gate as the
+next task; do not begin release preparation.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
