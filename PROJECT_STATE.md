@@ -7,11 +7,31 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active v0.10 task: pending output/parts ownership corrected; independent
-  review pending (2026-09-23).** Independent review of `0759e6f` found that a
-  current pending or restored session could lose its output/parts collision
-  guard when rich status failed, while narrow LIVE ownership still allowed
-  slot 2 allocation. Five offline manager/API regressions failed on that
+- **Active v0.10 task: untagged release candidate prepared (2026-09-23).** The
+  owner-provided final fresh-context review of `a9c172f` concluded READY for
+  v0.10 release preparation. The candidate package and checkout now report
+  0.10.0; its immutable tag and GitHub Release do not yet exist. The v0.9.0 to
+  v0.10.0 delta adds two independent durable recording slots, aggregate status,
+  targeted stop, capacity-aware automation, case-equivalent page/room arbitration,
+  restored and later-proven owner fallback, and fail-closed ownership of pending
+  output/parts paths. #29 adds bounded crash-part recovery and #27 preserves
+  truthful retained-input decode health. The deployed Eliss/Sinaloan manual
+  second start proved real distinct-LIVE isolation; automatic second-slot
+  selection has deterministic offline coverage. Verification passes 280 focused
+  and 1,164 isolated pytest tests plus 19 subtests, 223 unittest tests,
+  compilation, 24 local CLI
+  help paths plus version, and all 78 package sources under 300 lines. An
+  isolated build/install smoke passed for `tikrec-0.10.0-py3-none-any.whl`
+  (SHA-256 `C5C1E3706381B3CD4A67806B9417FF0A0BD5918FE806AD9D91172000D54898E9`),
+  with no dependencies. v0.9.0 remains the current released/tagged/published
+  version. Next: independent review of the exact candidate commit before any
+  separate tag or GitHub Release authorization; #8, #13, and #28 remain open,
+  separate, and non-blocking. No LIVE, deployment, tag, or publication occurred.
+- **Previous v0.10 task: pending output/parts ownership corrected; independent
+  review subsequently passed (2026-09-23).** Independent review of `0759e6f`
+  found that a current pending or restored session could lose its output/parts
+  collision guard when rich status failed, while narrow LIVE ownership still
+  allowed slot 2 allocation. Five offline manager/API regressions failed on that
   baseline, including real controllers, durable slots, first-read restored
   ownership, and HTTP. Current controller ownership and the manager's
   session-bound cache now include accepted absolute output and parts paths.
@@ -880,12 +900,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None for the completed deployed gate. Do not treat
-  its completion as authorization to bump, tag, or publish v0.10.
-- **Next queued task:** Fresh independent review of session-bound output/parts
-  ownership and final v0.10 readiness on corrected `main`.
-  Keep #8, #13, and #28 separate and non-blocking; do not begin v0.11 or
-  release preparation before that review.
+- **Pending owner action:** None for preparation. Tag and GitHub Release
+  publication require separate authorization after exact-candidate review.
+- **Next queued task:** Independent review of the exact v0.10.0 release-candidate
+  commit, package artifact, full v0.9.0-to-v0.10.0 delta, and release notes.
+  Keep #8, #13, and #28 separate and non-blocking; do not begin v0.11.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -893,7 +912,8 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.9.0, from `tikrec.__version__` and packaging metadata.
+- **Package version:** v0.10.0, from `tikrec.__version__` and packaging metadata;
+  this release candidate is untagged and unpublished.
 - **Tagged version:** annotated `v0.9.0`, whose tag object is
   `3e26f06903aad9fffa4f1be2e560d5fba30139fa` and which peels to release commit
   `9786961d1ecaaed8fddc4c7d10eda85a27b5c968`.
@@ -902,12 +922,12 @@ new work; calendar entries are reminders only.
 - **Current released version:** v0.9.0; its release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
-- **Development target:** v0.10.0 multiple simultaneous creator recordings has
-  passed the deployed two-slot recording/isolation and idle-restart gate on
-  current `main`. Independent review found pending output/parts ownership
-  could be lost when rich status failed; its bounded correction requires fresh
-  independent review before release preparation. Conditional
-  v0.6.5 redundant capture is not selected.
+- **Development target:** v0.10.0 multiple simultaneous creator recordings is
+  implemented as an untagged, unpublished release candidate. The deployed
+  two-slot isolation and idle-restart gate and implementation readiness review
+  passed; the exact candidate commit requires independent review before
+  separately authorized publication. Conditional v0.6.5 redundant capture is
+  not selected.
 
 ## Issue #13 rendition investigation
 

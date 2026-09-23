@@ -6,8 +6,8 @@ Two bounded workers record independently of HTTP clients and of each other.
 Launch the service independently of SSH so disconnecting the remote shell does
 not end capture.
 
-This document describes current `main`, whose first v0.10 development slice
-extends the published v0.9.0 service. Per-user
+This document describes the untagged, unpublished v0.10.0 release candidate on
+current `main`, which extends the published v0.9.0 service. Per-user
 recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can own and automatically fill a fixed capacity of two independent recordings.
@@ -350,7 +350,8 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
-CLI/routes stay unchanged and package version is 0.9.0.
+That recovery change did not alter CLI/routes. The current candidate package
+version is 0.10.0.
 
 ## Durable automatic-start state - v0.9.0
 
@@ -632,7 +633,7 @@ That restart exposed and fixed one status-only accounting defect: an inactive
 controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
-atomically replace it on Windows. Package version is 0.9.0.
+atomically replace it on Windows. The current candidate package version is 0.10.0.
 
 The 2026-09-23 v0.10 deployed two-slot gate used an existing automatically
 started, #29-recovered Eliss session in slot 1 and an owner-manually-started
@@ -649,5 +650,5 @@ After both jobs completed, one idle restart reloaded both durable slots without
 relaunch, preserved all 18 settled media/evidence file hashes, and retained
 the monitored pair and bearer-authentication boundary. The manual second start
 demonstrates deployed concurrency and isolation, not automatic second-slot
-selection. A separate independent review remains required before v0.10 release
-preparation.
+selection. At that gate, separate independent review remained required before
+release preparation; it subsequently passed on corrected `a9c172f`.

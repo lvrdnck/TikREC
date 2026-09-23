@@ -30,7 +30,7 @@ class SessionManifestTests(unittest.TestCase):
 
             self.assertEqual(values["schema_version"], SCHEMA_VERSION)
             self.assertEqual(values["session_id"], "session-123")
-            self.assertEqual(values["tikrec_version"], "0.9.0")
+            self.assertEqual(values["tikrec_version"], "0.10.0")
             self.assertEqual(values["source_type"], "tiktok_live")
             self.assertEqual(values["started_at"], 100.25)
             self.assertEqual(values["status"], "recording")

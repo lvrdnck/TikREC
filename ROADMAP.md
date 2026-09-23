@@ -1133,6 +1133,28 @@ distinct-LIVE gate remains valid. Fresh independent review of this correction
 and final v0.10 readiness is required before release preparation; #8/#13/#28
 remain separate non-blocking evidence work.
 
+**Release candidate prepared (2026-09-23):** The owner-provided final
+fresh-context review of `a9c172f` concluded READY for v0.10 release
+preparation. Package metadata now reports 0.10.0. The v0.9.0-to-v0.10.0 delta
+includes two independent controller/session lifecycles and durable slots
+(`job.json`/`job-2.json`), aggregate `/recordings`, legacy singular-operation
+ambiguity guards, UUID-targeted stop, and capacity-aware automatic starts.
+Allocation arbitrates case-equivalent creator pages and canonical rooms, hydrates
+restored/later-proven owners, fails closed on unknown ownership, and protects
+accepted output/parts paths even before the targets exist. #29 added bounded
+malformed crash-part prefix recovery; #27 preserved truthful retained-input
+decode health alongside clean-final-output reporting. The deployed
+Eliss/Sinaloan gate proved simultaneous distinct-LIVE isolation
+with an owner-manual second start; automatic second-slot selection is covered
+offline. Verification passes 280 focused and 1,164 full isolated pytest tests
+plus 19 subtests, 223 unittest tests, compilation, 24 CLI help paths plus
+version, strict source-size/diff checks, and isolated wheel build/install. The
+`tikrec-0.10.0-py3-none-any.whl` SHA-256 is
+`C5C1E3706381B3CD4A67806B9417FF0A0BD5918FE806AD9D91172000D54898E9`.
+This candidate is untagged and unpublished; v0.9.0 remains the current release.
+Independent review of the exact candidate commit is next before separate
+publication authorization. #8/#13/#28 remain open and non-blocking.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1362,13 +1384,13 @@ Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, configuration/defaults, and creator automation through v0.9.0
 are released. v0.10.0 multiple simultaneous creator recordings is the current
-development target. Its bounded two-slot manager slice and deployed
-concurrency/isolation/idle-restart gate are complete on `main`. Subsequent
+untagged, unpublished release candidate. Its bounded two-slot manager and
+deployed concurrency/isolation/idle-restart gate are complete on `main`. Subsequent
 independent reviews found duplicate-start, mixed-case, restored/learned-owner,
 first-read unknown-owner, and pending output/parts ownership gaps. Their
-bounded corrections need fresh independent review of current `main` before
-release preparation. #27 and #29 are closed; #8,
-#13, and #28 remain separate non-blocking evidence work.
+bounded corrections passed a final implementation readiness review. The exact
+candidate commit requires independent review before publication. #27 and #29
+are closed; #8, #13, and #28 remain separate non-blocking evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

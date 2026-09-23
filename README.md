@@ -3,20 +3,21 @@
 A command-line recorder and small remote-control service for public TikTok LIVE streams.
 
 Point it at a LIVE page, it records until the stream ends or you stop it,
-reconnecting if the connection drops, and you get one MP4 out.
+reconnecting if the connection drops. Each recording produces one MP4.
 
 This reliability-first implementation is the foundation of a broader future
-livestream recording platform. Current `main` contains an untagged v0.10
-development slice: the persistent service can own up to two independent public
-LIVE recordings and automatically fill available capacity. A deployed pair
-passed two-slot isolation, targeted stops, media validation, and idle restart.
-Independent reviews found LIVE and pending output/parts ownership gaps. Their
-bounded corrections await fresh independent review before release preparation.
+livestream recording platform. Current `main` is an untagged, unpublished
+v0.10.0 release candidate: the persistent service can own up to two independent
+public LIVE recordings and automatically fill available capacity. The deployed
+Eliss/Sinaloan pair passed two-slot isolation, targeted stops, media validation,
+and idle restart; its second start was manual. Offline regressions cover
+automatic capacity and duplicate page, room, and pending-path ownership.
 A library, playback, retention, notifications, and web workflows remain future
 work. Historical Moe media attribution remains non-blocking [#28](https://github.com/lvrdnck/TikREC/issues/28);
 the [forensic report](ISSUE_27_FORENSICS.md) preserves the evidence.
 
-The current package, immutable tag, and published GitHub Release are v0.9.0.
+The current checkout/package is v0.10.0. The immutable tag, published GitHub
+Release, and current released version remain v0.9.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
 ## Usage
@@ -345,9 +346,12 @@ the environment-survival and resumability foundation documented below, v0.6.0
 adds the bounded reconnect-gap work described above, v0.7.0 adds the guided
 recovery commands, the v0.8.0 release adds the per-user configuration/default
 behavior documented above, and the v0.9.0 release adds opt-in creator
-monitoring and single-slot automatic recording. Current `main` develops v0.10 with
-bounded two-recording service ownership; this is not yet a v0.10 release. Current
-tag and GitHub Release records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
+monitoring and single-slot automatic recording. The untagged v0.10.0 candidate
+adds bounded two-recording service ownership, independent durable slots and
+targeted stop, aggregate status, capacity-aware automation, and fail-closed
+LIVE/path arbitration. It also includes bounded crash-part recovery and truthful
+retained-input decode health. Tag and GitHub Release records are maintained in
+[PROJECT_STATE.md](PROJECT_STATE.md).
 
 The service persists each slot's latest explicitly started job. After an unexpected
 process death and Task Scheduler restart, it checks each job against retained
@@ -500,10 +504,11 @@ same-room suppression. It does not authenticate to TikTok, notify the owner,
 manage retention, or provide a library/Web UI/playback.
 
 **Release state and future product:** v0.9.0 is still the current published
-release. The untagged v0.10 development slice passed real simultaneous deployed
-validation; the first-read unknown-owner correction still requires an
-independent fresh-context review before release preparation. Library/history/
-playback, a web interface, notifications, and retention remain future work.
+release. The untagged v0.10.0 candidate passed real simultaneous deployed
+validation, offline verification, and release preparation. Its exact commit
+requires independent review before separate tag and Release authorization.
+Library/history/playback, a web interface, notifications, and retention remain
+future work.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

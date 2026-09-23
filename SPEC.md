@@ -25,11 +25,13 @@ based reconnect-gap measurement while removing only the fixed healthy-close
 wait, v0.7.0 added guided interrupted-session recovery, and v0.8.0 added the
 per-user configuration/default behavior documented below. Package version
 v0.9.0 added opt-in creator monitoring and durable single-slot automatic starts.
-Current `main` contains an untagged v0.10 two-recording service slice. A deployed
-manual second start passed simultaneous isolation, targeted stops, dual media
-validation, and idle restart. Independent reviews found LIVE and pending
-output/parts ownership gaps; their bounded corrections await a fresh review
-before release preparation. Published release records are in PROJECT_STATE.md.
+Current `main` is an untagged, unpublished v0.10.0 release candidate with a
+two-recording service. A deployed manual second start passed simultaneous
+isolation, targeted stops, dual media validation, and idle restart. Independent
+reviews found LIVE and pending
+output/parts ownership gaps; their corrections passed a final readiness review.
+The exact candidate commit awaits independent review before publication.
+Published release records are in PROJECT_STATE.md.
 Issue #27 closed after input decode health was preserved; historical Moe source
 attribution is non-blocking #28. See [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
 
@@ -636,8 +638,8 @@ legacy v0.9 state needs no migration. Each controller loads and reconciles only
 its store. A malformed store blocks only that slot and remains untouched; two
 interrupted stores claiming the same path fail the second closed before recovery.
 No state-path CLI option is added. Only the latest job per slot is stored, with
-one owning service process/account. Package version remains v0.9.0 until a later
-release-preparation task.
+one owning service process/account. The candidate package version is v0.10.0;
+v0.9.0 remains the current released version.
 
 ### Patient outage policy and transport classification
 
@@ -754,8 +756,8 @@ and completed finalization. All retained parts passed decoder/DTS checks; the
 output rather than represented as capture. After proxy retirement and an idle
 service restart, status also restores the completed manifest's reconnect count;
 active capture avoids reading the manifest while its atomic replacement may be
-in progress. All v0.5 real deployment-validation phases are complete. Package
-version is 0.9.0.
+in progress. All v0.5 real deployment-validation phases are complete. The
+current candidate package version is 0.10.0.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -1228,10 +1230,10 @@ investigation as a correctness blocker before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The architecture
-describes current `main` and preserves the published v0.9.0 boundaries where
-historical scope matters. Deployed idle/configuration/status checks pass;
-simultaneous recording/isolation validation and release readiness remain future
-v0.10 work.
+describes the untagged v0.10.0 candidate on current `main` and preserves the
+published v0.9.0 boundaries where historical scope matters. Deployed two-slot
+isolation and implementation readiness passed; the exact candidate commit still
+requires independent review before separate publication authorization.
 
 ## Design principles
 
