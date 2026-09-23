@@ -200,8 +200,8 @@ Nothing belongs at the repository root except configuration and documentation.
 ## Project constraints
 
 - The direct local CLI records one manually selected public TikTok LIVE per run.
-  The untagged, unpublished v0.10.0 release candidate on `main` can own two
-  independent recordings; v0.9.0 remains the current released version.
+  The released v0.10.0 service can own two independent recordings; v0.10.0 is
+  the current released version.
   Treat deferred product capabilities separately from permanent security/privacy
   boundaries; see SPEC.md and ROADMAP.md for authoritative scope and sequencing.
 - Python 3.11+. Use the standard library for FLV handling; ffmpeg and ffprobe

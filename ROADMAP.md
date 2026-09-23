@@ -1155,6 +1155,17 @@ This candidate is untagged and unpublished; v0.9.0 remains the current release.
 Independent review of the exact candidate commit is next before separate
 publication authorization. #8/#13/#28 remain open and non-blocking.
 
+**Release publication (2026-09-23):** v0.10.0 is the current released version.
+The immutable annotated `v0.10.0` tag object
+`014fa0b785f77c6b42ffe73a86ba28b00126a4ff` peels to the exact reviewed
+release commit `dfb81b683a89d01f55d70291fb5cdcfead654976`, and the
+published non-draft, non-prerelease
+[GitHub Release](https://github.com/lvrdnck/TikREC/releases/tag/v0.10.0)
+matches it. The tag was not moved to the later publication-record commit.
+No LIVE, deployment, or v0.11 work occurred. #8/#13/#28 remain open and
+non-blocking. The next planned version is v0.11.0 smart storage, retention,
+and disk protection, subject to project-management selection.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1382,15 +1393,11 @@ or desirable.
 The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
-guided recovery, configuration/defaults, and creator automation through v0.9.0
-are released. v0.10.0 multiple simultaneous creator recordings is the current
-untagged, unpublished release candidate. Its bounded two-slot manager and
-deployed concurrency/isolation/idle-restart gate are complete on `main`. Subsequent
-independent reviews found duplicate-start, mixed-case, restored/learned-owner,
-first-read unknown-owner, and pending output/parts ownership gaps. Their
-bounded corrections passed a final implementation readiness review. The exact
-candidate commit requires independent review before publication. #27 and #29
-are closed; #8, #13, and #28 remain separate non-blocking evidence work.
+guided recovery, configuration/defaults, creator automation, and simultaneous
+creator recording through v0.10.0 are released. v0.11.0 smart storage,
+retention, and disk protection is the next planned version, not active work.
+#27 and #29 are closed; #8, #13, and #28 remain separate non-blocking
+evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

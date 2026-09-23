@@ -7,7 +7,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active v0.10 task: untagged release candidate prepared (2026-09-23).** The
+- **v0.10.0 publication completed (2026-09-23).** The immutable annotated
+  `v0.10.0` tag object is `014fa0b785f77c6b42ffe73a86ba28b00126a4ff`
+  and peels to the exact independently reviewed candidate
+  `dfb81b683a89d01f55d70291fb5cdcfead654976`. The published, non-draft,
+  non-prerelease [GitHub Release](https://github.com/lvrdnck/TikREC/releases/tag/v0.10.0)
+  is `TikREC v0.10.0` (ID `RE_kwDOUTgsvs4XiIOd`). Its historically scoped
+  notes cover two-slot ownership, #27/#29 reliability, the manual Eliss/Sinaloan
+  deployed gate, and the offline automatic-selection limit. The tag was not
+  moved to this later documentation commit. Package, tag, and Release now make
+  v0.10.0 the current released version. #8, #13, and #28 remain open,
+  separate, and non-blocking. No LIVE, deployment, or v0.11 work occurred.
+- **Previous v0.10 task: untagged release candidate prepared (2026-09-23).** The
   owner-provided final fresh-context review of `a9c172f` concluded READY for
   v0.10 release preparation. The candidate package and checkout now report
   0.10.0; its immutable tag and GitHub Release do not yet exist. The v0.9.0 to
@@ -900,11 +911,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None for preparation. Tag and GitHub Release
-  publication require separate authorization after exact-candidate review.
-- **Next queued task:** Independent review of the exact v0.10.0 release-candidate
-  commit, package artifact, full v0.9.0-to-v0.10.0 delta, and release notes.
-  Keep #8, #13, and #28 separate and non-blocking; do not begin v0.11.
+- **Pending owner action:** None. Publication and synchronization are complete.
+- **Next queued task:** ChatGPT/project management selects the next bounded
+  roadmap task. The next planned version is v0.11.0 smart storage, retention,
+  and disk protection, but it has not started. #8, #13, and #28 remain separate
+  non-blocking evidence work.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -912,22 +923,20 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.10.0, from `tikrec.__version__` and packaging metadata;
-  this release candidate is untagged and unpublished.
-- **Tagged version:** annotated `v0.9.0`, whose tag object is
-  `3e26f06903aad9fffa4f1be2e560d5fba30139fa` and which peels to release commit
-  `9786961d1ecaaed8fddc4c7d10eda85a27b5c968`.
-- **GitHub Release:** published non-draft, non-prerelease `TikREC v0.9.0` for
-  `v0.9.0` on 2026-09-22.
-- **Current released version:** v0.9.0; its release-commit package metadata,
+- **Package version:** v0.10.0, from `tikrec.__version__` and packaging metadata.
+- **Tagged version:** immutable annotated `v0.10.0`, tag object
+  `014fa0b785f77c6b42ffe73a86ba28b00126a4ff`, peeled release commit
+  `dfb81b683a89d01f55d70291fb5cdcfead654976`.
+- **GitHub Release:** published non-draft, non-prerelease
+  [TikREC v0.10.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.10.0)
+  (ID `RE_kwDOUTgsvs4XiIOd`) on 2026-09-23.
+- **Current released version:** v0.10.0; release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
-  releases remain published from their existing tags.
-- **Development target:** v0.10.0 multiple simultaneous creator recordings is
-  implemented as an untagged, unpublished release candidate. The deployed
-  two-slot isolation and idle-restart gate and implementation readiness review
-  passed; the exact candidate commit requires independent review before
-  separately authorized publication. Conditional v0.6.5 redundant capture is
-  not selected.
+  releases, including v0.9.0, remain published from their existing tags.
+- **Development target:** No next release is active. v0.11.0 smart storage,
+  retention, and disk protection is the next planned roadmap version, subject
+  to ChatGPT/project-management selection. Conditional v0.6.5 redundant
+  capture is not selected.
 
 ## Issue #13 rendition investigation
 
