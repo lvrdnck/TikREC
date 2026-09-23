@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
+from threading import Event
 from types import SimpleNamespace
 
 from tikrec.admission import MINIMUM_FREE_BYTES, RecordingAdmission
@@ -12,6 +13,8 @@ from tikrec.automation_state import (
     PendingAutomaticStart,
 )
 from tikrec.recording_manager import RecordingManager
+from tikrec.recording import RecordingController
+from tikrec.capture import CaptureResult
 from tests.test_automation import _cycle
 
 
@@ -180,3 +183,86 @@ def test_simultaneous_names_are_distinct_and_create_no_reservations(tmp_path):
     assert outputs[0] != outputs[1]
     assert all(not output.exists() and not output.with_suffix(".parts").exists()
                for output in outputs)
+
+
+def _resolving_components(tmp_path):
+    """Hold real controller workers before they can publish a resolved room."""
+    entered = {name: Event() for name in (
+        "manual", "alpha-20260923-120000", "gamma-20260923-120000",
+        "zeta-20260923-120000",
+    )}
+    def capture(url, **kwargs):
+        name = kwargs["output_path"].stem
+        entered.setdefault(name, Event()).set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    manager = RecordingManager((RecordingController(capture=capture),
+                                RecordingController(capture=capture)))
+    admission = RecordingAdmission(
+        tmp_path, manager.health,
+        clock=lambda: datetime(2026, 9, 23, 12, 0, 0),
+        disk_usage=lambda _: SimpleNamespace(free=MINIMUM_FREE_BYTES),
+    )
+    store = AutomationStateStore(tmp_path / "automation.json")
+    return AutomationCoordinator(manager, admission, store), manager, entered, store
+
+
+def test_manual_resolving_same_page_is_suppressed_without_claim(tmp_path):
+    coordinator, manager, entered, store = _resolving_components(tmp_path)
+    manual = manager.start("https://www.tiktok.com/@alpha/live",
+                           str(tmp_path / "manual.mp4"))
+    assert entered["manual"].wait(2)
+    assert manager.status()["room_id"] is None
+    try:
+        cycle = _cycle(1, ("alpha", "live", "123"))
+        coordinator.cycle_completed(cycle)
+        assert manager.health()["active_count"] == 1
+        assert manager.status()["session_id"] == manual["session_id"]
+        assert manager.status()["stop_requested"] is False
+        assert store.load().pending_claim is None
+        assert store.load().consumed() == {}
+        assert coordinator.snapshot(cycle)["creators"][0]["automation"]["reason"] == "duplicate_live_owned"
+    finally:
+        manager.shutdown()
+
+
+def test_duplicate_candidate_does_not_starve_unrelated_creator(tmp_path):
+    coordinator, manager, entered, store = _resolving_components(tmp_path)
+    manual = manager.start("https://www.tiktok.com/@alpha/live",
+                           str(tmp_path / "manual.mp4"))
+    assert entered["manual"].wait(2)
+    try:
+        cycle = _cycle(1, ("zeta", "live", "456"), ("alpha", "live", "123"))
+        coordinator.cycle_completed(cycle)
+        assert entered["zeta-20260923-120000"].wait(2)
+        assert manager.health()["active_count"] == 2
+        assert manager.controllers[0].status()["session_id"] == manual["session_id"]
+        assert store.load().pending_claim is None
+        assert store.load().consumed() == {"zeta": "456"}
+        values = {item["creator"]: item["automation"] for item in coordinator.snapshot(cycle)["creators"]}
+        assert values["alpha"]["reason"] == "duplicate_live_owned"
+        assert values["zeta"]["state"] == "started"
+    finally:
+        manager.shutdown()
+
+
+def test_two_automatic_creators_in_same_room_use_only_one_slot(tmp_path):
+    coordinator, manager, entered, store = _resolving_components(tmp_path)
+    try:
+        cycle = _cycle(1, ("gamma", "live", "456"),
+                       ("beta", "live", "123"), ("alpha", "live", "123"))
+        coordinator.cycle_completed(cycle)
+        assert entered["alpha-20260923-120000"].wait(2)
+        assert entered["gamma-20260923-120000"].wait(2)
+        assert manager.health()["active_count"] == 2
+        assert [item["source_url"] for item in manager.recordings()["slots"]] == [
+            "https://www.tiktok.com/@alpha/live",
+            "https://www.tiktok.com/@gamma/live",
+        ]
+        assert store.load().pending_claim is None
+        assert store.load().consumed() == {"alpha": "123", "gamma": "456"}
+        values = {item["creator"]: item["automation"] for item in coordinator.snapshot(cycle)["creators"]}
+        assert values["beta"]["reason"] == "duplicate_live_owned"
+        assert values["gamma"]["state"] == "started"
+    finally:
+        manager.shutdown()

@@ -90,7 +90,7 @@ class RemoteClient:
             error.close()
             # Never echo an arbitrary remote error page that could contain a secret.
             if code == 409 and path == "/recording/start":
-                hint = "recording capacity is unavailable"
+                hint = "recording capacity unavailable or public LIVE already owned"
             elif code == 409:
                 hint = "multiple recordings active; use recordings or an explicit session ID"
             elif code == 404 and path == "/recording/stop":

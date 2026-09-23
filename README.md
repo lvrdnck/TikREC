@@ -6,20 +6,15 @@ Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops, and you get one MP4 out.
 
 This reliability-first implementation is the foundation of a broader future
-livestream recording platform. Current `main` contains the first v0.10 slice:
-the persistent service can own up to two independent public LIVE recordings and
-automatically fill available capacity after a complete observation cycle. A
-bounded main-pc deployment confirms two healthy slots and two-creator monitoring.
-One validation pair remained offline; a later pair automatically started one
-healthy recording while the second creator stayed unverifiable, so simultaneous
-recording and isolation validation remain outstanding. A library, playback,
-retention, notifications, and web workflows remain future work.
-
-**Known correctness blocker [#27](https://github.com/lvrdnck/TikREC/issues/27):**
-the completed Moe recording contains severe battle-linked H.264 corruption in
-both retained FLV and final MP4. v0.10 validation/readiness is paused. Standard
-structural validation can pass while deep decoding fails; no source-vs-capture
-attribution or safe fix is proven. See [the forensic report](ISSUE_27_FORENSICS.md).
+livestream recording platform. Current `main` contains an untagged v0.10
+development slice: the persistent service can own up to two independent public
+LIVE recordings and automatically fill available capacity. A deployed pair
+passed two-slot isolation, targeted stops, media validation, and idle restart.
+An independent review then found a duplicate-start race; its bounded ownership
+correction is awaiting fresh independent review before release preparation.
+A library, playback, retention, notifications, and web workflows remain future
+work. Historical Moe media attribution remains non-blocking [#28](https://github.com/lvrdnck/TikREC/issues/28);
+the [forensic report](ISSUE_27_FORENSICS.md) preserves the evidence.
 
 The current package, immutable tag, and published GitHub Release are v0.9.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
@@ -301,9 +296,11 @@ After each complete monitoring cycle, the service may start up to the number of
 currently available slots, with a built-in cap of two. Armed/ready creators are
 attempted sequentially in canonical-handle lexical order. Admission, the 10 GiB
 floor, and collision-safe naming are rechecked before every start; capacity-
-exhausted creators remain eligible for a later cycle. A synchronous failure
-conservatively ends that cycle's remaining attempts. A fresh resolution must
-prove the exact room ID observed by the monitor before the session directory or
+exhausted creators remain eligible for a later cycle. An already-owned LIVE is
+suppressed without consuming a new room claim, and selection continues to the
+next eligible creator. Other synchronous failures conservatively end the cycle.
+A fresh resolution must prove the exact room ID observed by the monitor before
+the session directory or
 media source opens. Manual HTTP starts remain authoritative and unbound.
 
 An accepted automatic start consumes that creator/room until monitoring proves
@@ -348,12 +345,12 @@ the environment-survival and resumability foundation documented below, v0.6.0
 adds the bounded reconnect-gap work described above, v0.7.0 adds the guided
 recovery commands, the v0.8.0 release adds the per-user configuration/default
 behavior documented above, and the v0.9.0 release adds opt-in creator
-monitoring and single-slot automatic recording. Current `main` begins v0.10 with
+monitoring and single-slot automatic recording. Current `main` develops v0.10 with
 bounded two-recording service ownership; this is not yet a v0.10 release. Current
 tag and GitHub Release records are maintained in [PROJECT_STATE.md](PROJECT_STATE.md).
 
-The service now persists its latest explicitly started job. After an unexpected
-process death and Task Scheduler restart, it checks that job against retained
+The service persists each slot's latest explicitly started job. After an unexpected
+process death and Task Scheduler restart, it checks each job against retained
 parts/session evidence before accepting new recordings. Automatic resume applies
 only to the explicitly-started prior LIVE, proven by the same canonical room ID.
 It preserves the job/session ID and old FLV files, increments resume_count, and
@@ -503,9 +500,9 @@ same-room suppression. It does not authenticate to TikTok, notify the owner,
 manage retention, or provide a library/Web UI/playback.
 
 **Release state and future product:** v0.9.0 is still the current published
-release after completed real-service validation. The bounded manager is the
-first untagged v0.10 development slice; real simultaneous deployed validation
-and the remaining v0.10 readiness work are still outstanding. Library/history/
+release. The untagged v0.10 development slice passed real simultaneous deployed
+validation; the duplicate-start correction still requires an independent
+fresh-context review before release preparation. Library/history/
 playback, a web interface, notifications, and retention remain future work.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,

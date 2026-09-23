@@ -1,4 +1,4 @@
-"""Coordinate one crash-safe automatic start after each monitoring cycle."""
+"""Coordinate crash-safe automatic starts after each monitoring cycle."""
 
 from __future__ import annotations
 
@@ -17,8 +17,9 @@ from .automation_jobs import (
     jobs_prove_no_claimed_start,
     prior_session_id_for_jobs,
 )
-from .automation_status import automation_snapshot
+from .automation_status import automation_snapshot, _result
 from .recording import RecordingBusy
+from .recording_manager import RecordingDuplicate
 from .tiktok_identity import canonical_room_id
 
 
@@ -218,6 +219,9 @@ class AutomationCoordinator:
             started = self._controller.start(
                 page, claim.output_path, expected_room_id=room_id
             )
+        except RecordingDuplicate:
+            # This candidate never owned the room; later creators may use free capacity.
+            return self._rejected(creator, "duplicate_live_owned", duplicate=True)
         except RecordingBusy:
             self._rejected(creator, "start_rejected_busy")
             return False
@@ -252,13 +256,15 @@ class AutomationCoordinator:
                 "not_selected", "prior_start_attempt_failed"
             )
 
-    def _rejected(self, creator: str, reason: str) -> None:
+    def _rejected(self, creator: str, reason: str, *, duplicate: bool = False) -> bool:
         cleared = self._replace_state(
             self._state.consumed(), None, "automation_state_ambiguous"
         )
         self._cycle_results[creator] = _result(
-            "failed", reason if cleared else "claim_clear_failed"
+            "suppressed" if duplicate and cleared else "failed",
+            reason if cleared else "claim_clear_failed",
         )
+        return duplicate and cleared
 
     def _replace_state(
         self, consumed: dict[str, str], claim: PendingAutomaticStart | None,
@@ -291,7 +297,3 @@ def _creator(snapshot: dict, creator: str) -> dict | None:
          if item.get("creator") == creator),
         None,
     )
-
-
-def _result(state: str, reason: str | None = None) -> dict:
-    return {"state": state, "reason": reason}

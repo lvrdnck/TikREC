@@ -215,7 +215,8 @@ def test_aggregate_routes_capacity_and_targeted_stop(tmp_path):
         assert code == 200 and health["active_count"] == 1
         assert health["available"] is True and health["available_slots"] == 1
         second = request(manager, "POST", "/recording/start", {
-            "url": PAGE, "output": str(tmp_path / "two.mp4"),
+            "url": "https://www.tiktok.com/@another/live",
+            "output": str(tmp_path / "two.mp4"),
         })
         assert first[0] == second[0] == 202
         assert entered["two"].wait(2)
@@ -238,6 +239,31 @@ def test_aggregate_routes_capacity_and_targeted_stop(tmp_path):
         assert request(manager, "POST", "/recording/stop", {
             "session_id": "00000000-0000-0000-0000-000000000099",
         })[0] == 404
+    finally:
+        manager.shutdown()
+
+
+def test_duplicate_manual_page_returns_conflict_without_new_session(tmp_path):
+    entered = Event()
+    def capture(url, **kwargs):
+        entered.set()
+        assert kwargs["stop_event"].wait(2)
+        return CaptureResult((), None, True)
+    manager = RecordingManager((RecordingController(capture=capture),
+                                RecordingController(capture=capture)))
+    try:
+        first_code, first = request(manager, "POST", "/recording/start", {
+            "url": PAGE, "output": str(tmp_path / "one.mp4"),
+        })
+        assert first_code == 202 and entered.wait(2)
+        code, response = request(manager, "POST", "/recording/start", {
+            "url": "http://tiktok.com/@creator/live/?share=1",
+            "output": str(tmp_path / "two.mp4"),
+        })
+        assert (code, response) == (409, {"error": "public LIVE already owned by another recording"})
+        assert manager.health()["active_count"] == 1
+        assert manager.status()["session_id"] == first["session_id"]
+        assert manager.status()["stop_requested"] is False
     finally:
         manager.shutdown()
 

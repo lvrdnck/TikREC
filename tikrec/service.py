@@ -14,7 +14,7 @@ from .automation import AutomationCoordinator
 from .automation_state import AutomationStateStore
 from .monitoring import CreatorMonitor
 from .recording import RecordingBusy, RecordingController
-from .recording_manager import (RecordingAmbiguous, RecordingManager,
+from .recording_manager import (RecordingAmbiguous, RecordingDuplicate, RecordingManager,
                                 RecordingNotFound)
 from .retry_policy import RetryPolicy
 from .job_state import JobStateStore
@@ -223,6 +223,8 @@ class RecordingHandler(BaseHTTPRequestHandler):
             else:
                 # Preserve the original call shape for ordinary/default starts.
                 status = self.server.controller.start(body["url"], body["output"])
+        except RecordingDuplicate:
+            self._json(409, {"error": "public LIVE already owned by another recording"})
         except RecordingBusy:
             self._json(409, {"error": "recording active, recovery unresolved, or service shutting down"})
         except (ValueError, OSError):

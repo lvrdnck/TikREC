@@ -1064,6 +1064,18 @@ required next task is an independent fresh-context review of the complete
 v0.9.0-to-v0.10 delta, including #29 recovery and these media findings, before
 any release preparation. No package bump, tag, or publication occurred.
 
+**Independent duplicate-start review and correction (2026-09-23):** The deployed
+gate above passed for distinct Eliss/Sinaloan LIVEs, but an independent review
+found a separate capacity-2 race: a resolving manual job lacks a published room
+ID, and two automatic candidates can reserve the same observed room before
+identity publication. Offline real-controller tests reproduced the manual race.
+The manager now guards current normalized pages and atomically reserves each
+automatic expected room for its current session. A duplicate candidate clears
+its pending claim and allows a later eligible creator to use remaining capacity.
+v0.10 release preparation stays blocked until an independent fresh-context
+review checks this correction and refreshed readiness on the new `main`. Issues
+#8, #13, and #28 remain separate non-blocking evidence work.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1294,9 +1306,10 @@ capabilities should no longer sit in an unversioned "someday" bucket. Reliabilit
 guided recovery, configuration/defaults, and creator automation through v0.9.0
 are released. v0.10.0 multiple simultaneous creator recordings is the current
 development target. Its bounded two-slot manager slice and deployed
-concurrency/isolation/idle-restart gate are complete on `main`; the required
-independent fresh-context review remains before release preparation. #27 and
-#29 are closed; #8, #13, and #28 remain separate non-blocking evidence work.
+concurrency/isolation/idle-restart gate are complete on `main`. A subsequent
+independent review found a duplicate-start ownership blocker; its correction
+needs a fresh independent review before release preparation. #27 and #29 are
+closed; #8, #13, and #28 remain separate non-blocking evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from threading import Event, Thread
+from threading import Barrier, Event, Thread
 from types import SimpleNamespace
 
 import pytest
@@ -10,11 +10,14 @@ import pytest
 from tikrec.capture import CaptureError, CaptureResult
 from tikrec.job_state import JobState, JobStateStore
 from tikrec.recording import RecordingBusy, RecordingController
-from tikrec.recording_manager import RecordingAmbiguous, RecordingManager
+from tikrec.recording_manager import (RecordingAmbiguous, RecordingDuplicate,
+                                      RecordingManager)
 from tikrec.service_job import independent_job_stores, second_job_state_path
 
 
 PAGE = "https://www.tiktok.com/@creator/live"
+PAGE_BETA = "https://www.tiktok.com/@beta/live"
+PAGE_GAMMA = "https://www.tiktok.com/@gamma/live"
 
 
 class CaptureHarness:
@@ -53,7 +56,7 @@ def test_two_jobs_run_with_distinct_sessions_then_reuse_only_freed_slot(tmp_path
     harness = CaptureHarness()
     manager = _manager(harness)
     first = manager.start(PAGE, str(tmp_path / "first.mp4"))
-    second = manager.start(PAGE, str(tmp_path / "second.mp4"))
+    second = manager.start(PAGE_BETA, str(tmp_path / "second.mp4"))
     harness.wait("first")
     harness.wait("second")
     try:
@@ -62,7 +65,7 @@ def test_two_jobs_run_with_distinct_sessions_then_reuse_only_freed_slot(tmp_path
         assert manager.health()["active_count"] == 2
         assert manager.health()["available_slots"] == 0
         with pytest.raises(RecordingBusy):
-            manager.start(PAGE, str(tmp_path / "third.mp4"))
+            manager.start(PAGE_GAMMA, str(tmp_path / "third.mp4"))
         with pytest.raises(RecordingAmbiguous):
             manager.status()
         with pytest.raises(RecordingAmbiguous):
@@ -72,7 +75,7 @@ def test_two_jobs_run_with_distinct_sessions_then_reuse_only_freed_slot(tmp_path
         manager.controllers[0]._worker.join(2)
         assert manager.controllers[1].status()["active"] is True
         assert manager.prior_session_id_for_start() == first["session_id"]
-        third = manager.start(PAGE, str(tmp_path / "third.mp4"))
+        third = manager.start(PAGE_GAMMA, str(tmp_path / "third.mp4"))
         harness.wait("third")
         assert third["slot_id"] == "slot-1"
         assert manager.controllers[1].status()["session_id"] == second["session_id"]
@@ -101,6 +104,148 @@ def test_cross_slot_output_and_parts_collision_is_rejected(tmp_path):
         manager.shutdown()
 
 
+def test_equivalent_manual_pages_cannot_own_two_slots(tmp_path):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    first = manager.start(PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    try:
+        with pytest.raises(RecordingDuplicate):
+            manager.start("http://tiktok.com/@creator/live/?share=1#fragment",
+                          str(tmp_path / "second.mp4"))
+        assert manager.health()["active_count"] == 1
+        assert manager.status()["session_id"] == first["session_id"]
+        assert not harness.stop_events["first"].is_set()
+    finally:
+        manager.shutdown()
+
+
+def test_expected_room_reservation_is_scoped_to_current_session(tmp_path):
+    harness = CaptureHarness()
+    first_store = JobStateStore(tmp_path / "job.json")
+    manager = _manager(harness, stores=(first_store, None))
+    first = manager.start("https://www.tiktok.com/@alpha/live",
+                          str(tmp_path / "first.mp4"), expected_room_id="123")
+    harness.wait("first")
+    try:
+        assert first_store.load().room_id is None
+        with pytest.raises(RecordingDuplicate):
+            manager.start("https://www.tiktok.com/@beta/live",
+                          str(tmp_path / "blocked.mp4"), expected_room_id="123")
+        harness.complete["first"].set()
+        manager.controllers[0]._worker.join(2)
+        assert manager.controllers[0].status()["session_id"] == first["session_id"]
+        second = manager.start("https://www.tiktok.com/@beta/live",
+                               str(tmp_path / "second.mp4"), expected_room_id="456")
+        harness.wait("second")
+        third = manager.start("https://www.tiktok.com/@gamma/live",
+                              str(tmp_path / "third.mp4"), expected_room_id="123")
+        harness.wait("third")
+        assert second["slot_id"] == "slot-1" and third["slot_id"] == "slot-2"
+        with pytest.raises(RecordingDuplicate):
+            manager.start("https://www.tiktok.com/@delta/live",
+                          str(tmp_path / "again.mp4"), expected_room_id="456")
+    finally:
+        manager.shutdown()
+
+
+def test_failed_expected_room_owner_releases_reservation(tmp_path):
+    entered = Event()
+    def capture(url, **kwargs):
+        entered.set()
+        raise CaptureError("offline", ())
+    manager = RecordingManager((RecordingController(capture=capture),
+                                RecordingController(capture=capture)))
+    try:
+        manager.start("https://www.tiktok.com/@alpha/live",
+                      str(tmp_path / "first.mp4"), expected_room_id="123")
+        assert entered.wait(2)
+        manager.controllers[0]._worker.join(2)
+        later = manager.start("https://www.tiktok.com/@beta/live",
+                              str(tmp_path / "later.mp4"), expected_room_id="123")
+        assert later["slot_id"] == "slot-1"
+    finally:
+        manager.shutdown()
+
+
+def test_unavailable_status_does_not_erase_unproven_room_owner(tmp_path, monkeypatch):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    manager.start("https://www.tiktok.com/@alpha/live",
+                  str(tmp_path / "first.mp4"), expected_room_id="123")
+    harness.wait("first")
+    controller = manager.controllers[0]
+    original_status = controller.status
+    failures = 0
+    def unavailable_twice():
+        nonlocal failures
+        failures += 1
+        if failures <= 2:
+            raise OSError("temporary status failure")
+        return original_status()
+    monkeypatch.setattr(controller, "status", unavailable_twice)
+    try:
+        assert manager.health()["available_slots"] == 1
+        with pytest.raises(RecordingDuplicate):
+            manager.start("https://www.tiktok.com/@beta/live",
+                          str(tmp_path / "second.mp4"), expected_room_id="123")
+        assert manager.health()["active_count"] == 1
+    finally:
+        manager.shutdown()
+
+
+def test_unavailable_status_does_not_erase_manual_page_owner(tmp_path, monkeypatch):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    first = manager.start(PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    controller = manager.controllers[0]
+    original_status = controller.status
+    failures = 0
+    def unavailable_twice():
+        nonlocal failures
+        failures += 1
+        if failures <= 2:
+            raise OSError("temporary status failure")
+        return original_status()
+    monkeypatch.setattr(controller, "status", unavailable_twice)
+    try:
+        assert manager.health()["available_slots"] == 1
+        with pytest.raises(RecordingDuplicate):
+            manager.start(PAGE, str(tmp_path / "second.mp4"))
+        assert manager.status()["session_id"] == first["session_id"]
+    finally:
+        manager.shutdown()
+
+
+def test_concurrent_same_room_claims_have_one_winner(tmp_path):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    gate = Barrier(3)
+    results = []
+    def start(name):
+        gate.wait()
+        try:
+            results.append(manager.start(f"https://www.tiktok.com/@{name}/live",
+                                         str(tmp_path / f"{name}.mp4"),
+                                         expected_room_id="123"))
+        except RecordingDuplicate:
+            results.append("duplicate")
+    threads = [Thread(target=start, args=(name,)) for name in ("alpha", "beta")]
+    try:
+        for worker in threads:
+            worker.start()
+        gate.wait()
+        for worker in threads:
+            worker.join(2)
+        assert len(results) == 2
+        assert sum(isinstance(item, dict) for item in results) == 1
+        assert results.count("duplicate") == 1
+        assert manager.health()["active_count"] == 1
+    finally:
+        manager.shutdown()
+
+
 def test_one_failure_retains_its_progress_without_mutating_other_slot(tmp_path):
     steady_stop = Event()
 
@@ -120,7 +265,7 @@ def test_one_failure_retains_its_progress_without_mutating_other_slot(tmp_path):
     manager = RecordingManager((RecordingController(capture=capture),
                                 RecordingController(capture=capture)))
     failed = manager.start(PAGE, str(tmp_path / "failed.mp4"))
-    steady = manager.start(PAGE, str(tmp_path / "steady.mp4"))
+    steady = manager.start(PAGE_BETA, str(tmp_path / "steady.mp4"))
     assert steady_stop.wait(2)
     manager.controllers[0]._worker.join(2)
     try:
@@ -140,7 +285,7 @@ def test_global_shutdown_signals_and_joins_both_workers(tmp_path):
     harness = CaptureHarness()
     manager = _manager(harness)
     manager.start(PAGE, str(tmp_path / "one.mp4"))
-    manager.start(PAGE, str(tmp_path / "two.mp4"))
+    manager.start(PAGE_BETA, str(tmp_path / "two.mp4"))
     harness.wait("one")
     harness.wait("two")
     done = Event()
@@ -163,7 +308,7 @@ def test_slots_persist_to_legacy_and_deterministic_second_paths(tmp_path):
         harness, stores=(JobStateStore(first_path), JobStateStore(second_path))
     )
     first = manager.start(PAGE, str(tmp_path / "one.mp4"))
-    second = manager.start(PAGE, str(tmp_path / "two.mp4"))
+    second = manager.start(PAGE_BETA, str(tmp_path / "two.mp4"))
     harness.wait("one")
     harness.wait("two")
     try:

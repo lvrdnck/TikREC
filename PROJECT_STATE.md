@@ -7,8 +7,27 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Active v0.10 task: duplicate-start correction implemented; independent review
+  pending (2026-09-23).** An independent fresh-context review of `94f3191`
+  found that capacity 2 could start a monitored LIVE in slot 2 while a manual
+  same-page job in slot 1 was still resolving with `room_id=null`; two monitored
+  handles observed in one canonical room could likewise fill both slots before
+  either worker published identity. Offline real-controller regressions reproduced
+  the manual race before correction. The manager now rejects duplicate current
+  normalized pages and atomically reserves an automatic expected room for its
+  current session. Automation clears a duplicate candidate's pending claim,
+  reports fixed suppression, and continues to another eligible creator. The
+  three new real-controller race regressions failed on the old code and passed
+  after correction. The isolated full suite passes 1,124 tests plus 19 subtests;
+  unittest discovery passes 223, compilation and 24 CLI help/version paths pass,
+  and all 77 package sources remain under 300 lines. No new LIVE or media change
+  was needed for this allocation/automation correction. The
+  deployed two-slot isolation gate below passed and remains valid; it did not
+  exercise this automatic-selection race. v0.10.0 release preparation remains
+  blocked until a fresh independent review of the corrected `main` and regression
+  impact. #8, #13, and #28 remain separate, non-blocking evidence work.
 - **v0.10 deployed two-slot isolation gate completed on 2026-09-23; independent
-  fresh-context review is next.** The owner manually started authorized
+  fresh-context review found the separate duplicate-start blocker.** The owner manually started authorized
   `sinaloanprincess` through the normal authenticated remote CLI, while the
   original automatically started and #29-recovered Eliss session kept recording.
   At 09:07:09--09:07:27 UTC the service reported capacity 2, `active_count=2`,
@@ -56,8 +75,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   tests pass 238,
   isolated pytest passes 1,114 plus 19 subtests, unittest discovery passes 223;
   compilation, 24 CLI help paths/version, under-300-line package sources,
-  and diff checks pass. Review of the v0.9.0-to-`main` delta found no demonstrated
-  v0.10 isolation, media-health, security, or scope blocker. The owner-manual
+  and diff checks pass. The implementation team's earlier review found no
+  demonstrated isolation, media-health, security, or scope blocker; the
+  independent ownership finding above supersedes its readiness conclusion. The owner-manual
   second start proves real concurrency/isolation, not automatic second-slot
   selection; deterministic offline capacity tests and earlier deployed
   automatic-start evidence cover that separately. No version bump, tag,
@@ -784,11 +804,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None for the completed deployed gate. Do not treat
   its completion as authorization to bump, tag, or publish v0.10.
-- **Next queued task:** Independent fresh-context v0.10 release-readiness
-  review of the complete v0.9.0-to-v0.10 development delta, including #29's
-  recovery semantics, this deployed two-slot evidence, and the pre-overlap
-  retained-media findings. Keep #8/#13/#28 separate and non-blocking; do not
-  begin v0.11 or release preparation before that review.
+- **Next queued task:** Independent fresh-context review of the duplicate-start
+  correction and refreshed v0.10 readiness on corrected `main`. Keep #8/#13/#28
+  separate and non-blocking; do not begin v0.11 or release preparation before
+  that review.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -807,8 +826,9 @@ new work; calendar entries are reminders only.
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings has
   passed the deployed two-slot recording/isolation and idle-restart gate on
-  current `main`. The required independent fresh-context readiness review is
-  outstanding before release preparation. Conditional v0.6.5 redundant capture
+  current `main`. Independent review found a duplicate-start ownership blocker;
+  its bounded correction requires fresh independent review before release
+  preparation. Conditional v0.6.5 redundant capture
   is not selected.
 
 ## Issue #13 rendition investigation

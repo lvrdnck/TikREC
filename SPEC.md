@@ -25,20 +25,13 @@ based reconnect-gap measurement while removing only the fixed healthy-close
 wait, v0.7.0 added guided interrupted-session recovery, and v0.8.0 added the
 per-user configuration/default behavior documented below. Package version
 v0.9.0 added opt-in creator monitoring and durable single-slot automatic starts.
-Current `main` contains the first untagged v0.10 slice: bounded two-recording
-service ownership and compatible automation. Its deployed idle/configuration/
-status checks pass, and a later authorized attempt automatically started one
-healthy recording while the other creator remained unverifiable. The creators
-have not naturally overlapped, so simultaneous recording and isolation
-validation remain outstanding. Published release records are maintained in
-PROJECT_STATE.md.
-
-**Current correctness limitation (#27):** the completed Moe battle-linked
-recording has severe visible corruption already in retained FLV, with matching
-deep MP4 errors despite passing standard structural validation. v0.10 readiness
-is paused. Raw-backed source comparison remains necessary; repeated-header and
-false-keyframe hypotheses do not fit this recording. This does not weaken the
-independently decodable-part requirement. See [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
+Current `main` contains an untagged v0.10 two-recording service slice. A deployed
+manual second start passed simultaneous isolation, targeted stops, dual media
+validation, and idle restart. Independent review found a duplicate-start race;
+the bounded ownership correction awaits a fresh independent review before
+release preparation. Published release records are in PROJECT_STATE.md.
+Issue #27 closed after input decode health was preserved; historical Moe source
+attribution is non-blocking #28. See [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md).
 
 ### Not implemented yet
 
@@ -135,9 +128,10 @@ usage, 130 interrupted capture.
 
 `serve` runs a loopback-by-default HTTP service. Explicit non-loopback IP binding
 requires a bearer secret; all configured-token endpoints check it. `remote`
-prints JSON from health/status/monitor-status/start/stop. Start/stop acknowledge asynchronously;
-responses reporting a failed job and request failures exit 1. There is one
-active recording; latest explicit intent is persisted for startup reconciliation. See
+prints JSON from health/status/recordings/monitor-status/start/stop. Start/stop
+acknowledge asynchronously; responses reporting a failed job and request
+failures exit 1. The service can own two active recordings, each with separate
+durable intent for startup reconciliation. See
 [SERVICE.md](SERVICE.md) for the exact API and independent Windows deployment.
 
 ## Modules
@@ -584,8 +578,13 @@ start schema cannot supply this value, and manual starts remain unchanged.
 
 `RecordingManager` owns the built-in capacity of two independent controllers.
 Its lock atomically selects a healthy slot for each API or automation start and
-rejects active cross-slot output/parts collisions. Workers, stop Events, durable
-stores, recovery, byte/reconnect progress, results, and finalization never cross
+rejects active cross-slot output/parts collisions and duplicate normalized LIVE
+pages. An automatic expected room is also reserved in memory for the current
+session before its worker publishes proven room identity; another current slot
+cannot claim the same room. A settled or reused session releases its reservation,
+and an unreadable status cannot prove release. No unproven room is persisted.
+Workers, stop Events, durable stores, recovery, byte/reconnect progress, results,
+and finalization never cross
 slot boundaries. A blocked or recovering slot is unavailable without hiding the
 other slot's capacity. Shutdown first closes the manager to new starts, signals
 both controllers concurrently, and joins both finalizers.
@@ -812,8 +811,10 @@ reaching status.
 sequentially attempts ready creators in canonical-handle lexical order until
 freshly checked capacity is exhausted, at the global bound of two. It reapplies
 admission, free-space checks, and collision-safe allocation immediately before
-every start. A synchronous rejection conservatively stops remaining attempts in
-that cycle. Manual, recovery, finalization, blocked, and shutdown ownership wins
+every start. A duplicate-current-LIVE rejection clears its pending claim without
+consuming the room and continues to later eligible creators in the same cycle.
+Other synchronous rejections conservatively stop remaining attempts.
+Manual, recovery, finalization, blocked, and shutdown ownership wins
 through the admission view and the manager/controller authoritative locks.
 
 The selected start carries the monitor's canonical room ID through the internal

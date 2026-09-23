@@ -85,7 +85,7 @@ one Content-Length, and 1–8192 bytes; transfer encoding is unsupported.
 | `GET /recording` | none | 200: compatible idle/current/latest snapshot when unambiguous; 409 directs multiple current jobs to `/recordings` |
 | `GET /recordings` | none | 200: capacity, active count, available slots, and one sanitized status per stable slot |
 | `GET /monitoring` | none | 200: sanitized observations, admission, and automatic-selection/re-arm status |
-| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: one free slot atomically accepted the job; 409 if both slots are unavailable |
+| `POST /recording/start` | `{"url":"https://www.tiktok.com/@username/live","output":"C:\\Users\\Leandro\\Videos\\name.mp4","raw_copy":true}` (`raw_copy` optional) | 202: one free slot atomically accepted the job; 409 if capacity is unavailable or another current slot owns the LIVE |
 | `POST /recording/stop` | `{}` or `{"session_id":"UUID"}` | 202: sole/targeted job stop requested; empty body is 409 when multiple current jobs are ambiguous; unknown/non-active session is 404 |
 
 Start accepts `url` and `output` string fields plus optional boolean `raw_copy`.
@@ -102,8 +102,15 @@ capture also rechecks to prevent accidental session reuse.
 The internal automatic expected-room guard is not an HTTP field; callers cannot
 choose or override it.
 
-The manager rejects cross-slot output or `.parts` path collisions before
-delegating to a controller. `session_id` is the per-recording control identity;
+The manager rejects cross-slot output or `.parts` path collisions and duplicate
+normalized public LIVE pages under one allocation lock. For automatic starts it
+also reserves the expected canonical room in memory for the accepted session,
+closing the interval before its worker publishes proven room identity. Another
+current slot cannot claim that room. Settlement or slot reuse releases the
+reservation; unreadable status cannot prove release. Expected room identity is
+not added to durable job state before resolution. A duplicate returns a fixed
+409 conflict without creating a new session. `session_id` is the per-recording
+control identity;
 `slot_id` is the stable `slot-1`/`slot-2` owner in aggregate status. A targeted
 stop validates a canonical UUID and signals only its owning controller.
 
@@ -169,8 +176,11 @@ in canonical-handle lexical order until current capacity, capped at two, is
 exhausted. Configured observation order is not priority. Admission and free space
 are refreshed before each claim. Remaining ready creators report
 `skipped/capacity_exhausted` and are reconsidered on a later completed cycle. A
-synchronous start failure conservatively stops further attempts in that cycle;
-at most one schema-1 pending claim exists at any instant.
+synchronous start failure conservatively stops further attempts in that cycle,
+except a duplicate-current-LIVE conflict: its pending claim is cleared without
+consuming a room, fixed `suppressed/duplicate_live_owned` status is reported,
+and later eligible creators are reconsidered against refreshed capacity in the
+same cycle. At most one schema-1 pending claim exists at any instant.
 
 The automatic worker passes the detected canonical room ID through an internal
 controller boundary. Before a session directory or first media connection, a

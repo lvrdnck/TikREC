@@ -7,6 +7,8 @@ from threading import Lock, Thread
 from uuid import UUID
 
 from .recording import RecordingBusy
+from .recording_safety import normalize_live_url
+from .tiktok_identity import canonical_room_id
 
 
 RECORDING_CAPACITY = 2
@@ -20,6 +22,10 @@ class RecordingNotFound(ValueError):
     """A requested session is not active in any service slot."""
 
 
+class RecordingDuplicate(RecordingBusy):
+    """Another current slot already owns this public LIVE page or room."""
+
+
 class RecordingManager:
     """Atomically allocate and control a fixed set of independent controllers."""
 
@@ -29,6 +35,8 @@ class RecordingManager:
         self._controllers = tuple(controllers)
         self._lock = Lock()
         self._closed = False
+        # Keep page/expected-room claims while a worker may not publish status yet.
+        self._owners: dict[str, tuple[str, str, str | None]] = {}
 
     @property
     def controllers(self) -> tuple[object, ...]:
@@ -104,26 +112,44 @@ class RecordingManager:
             return _with_slot(latest[0], latest[1])
 
     def start(self, url: str, output: str, **options) -> dict:
-        """Claim one free slot and prevent active cross-slot path collisions."""
+        """Atomically claim one free slot without duplicating a current LIVE."""
+        page = normalize_live_url(url)
+        expected_room = options.get("expected_room_id")
+        if expected_room is not None:
+            expected_room = canonical_room_id(expected_room)
+            options["expected_room_id"] = expected_room
         output_path = Path(output)
         parts_path = output_path.with_name(f"{output_path.stem}.parts")
         with self._lock:
             if self._closed:
                 raise RecordingBusy("service is shutting down")
             entries = self._entries()
-            for _, status, health, _ in entries:
+            for slot_id, status, health, _ in entries:
                 if _owns_current_work(status, health):
+                    owner = self._owners.get(slot_id)
                     if _same_path(status.get("output_path"), output_path):
                         raise ValueError("output is already owned by another recording")
                     if _same_path(status.get("parts_directory"), parts_path):
                         raise ValueError("retained parts are already owned by another recording")
+                    if _same_page(status.get("source_url"), page) or (
+                        owner is not None and owner[1] == page
+                    ):
+                        raise RecordingDuplicate("public LIVE page already owned")
+                    if expected_room is not None and (
+                        _same_room(status.get("room_id"), expected_room)
+                        or (owner is not None and owner[2] == expected_room)
+                    ):
+                        raise RecordingDuplicate("public LIVE room already owned")
             selected = next(
                 (entry for entry in entries if entry[2].get("available") is True), None
             )
             if selected is None:
                 raise RecordingBusy("recording capacity is unavailable")
             slot_id, _, _, controller = selected
-            started = controller.start(url, output, **options)
+            started = controller.start(page, output, **options)
+            # The lock keeps both claims atomic with the accepted session.
+            self._owners[slot_id] = (_session_id(started.get("session_id")),
+                                     page, expected_room)
             return _with_slot(slot_id, started)
 
     def stop(self, session_id: str | None = None) -> dict:
@@ -173,7 +199,15 @@ class RecordingManager:
             health = self._safe_health(controller)
             if status.get("state") == "unavailable":
                 health = {**health, "available": False}
-            entries.append((f"slot-{index}", status, health, controller))
+            slot_id = f"slot-{index}"
+            owner = self._owners.get(slot_id)
+            if owner is not None and status.get("state") != "unavailable" and (
+                status.get("session_id") != owner[0]
+                or not _owns_current_work(status, health)
+            ):
+                # Only an observable settlement/reuse can release a claim.
+                self._owners.pop(slot_id)
+            entries.append((slot_id, status, health, controller))
         return entries
 
     def _health(self, slot_id, value):
@@ -236,3 +270,17 @@ def _same_path(value: object, candidate: Path) -> bool:
     except OSError:
         # If parent inspection fails, retain the lexical native-path guard.
         return Path(value) == candidate
+
+
+def _same_page(value: object, page: str) -> bool:
+    try:
+        return normalize_live_url(value) == page
+    except (TypeError, ValueError):
+        return False
+
+
+def _same_room(value: object, room: str) -> bool:
+    try:
+        return canonical_room_id(value) == room
+    except ValueError:
+        return False
