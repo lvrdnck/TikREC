@@ -95,17 +95,13 @@ Practical model-and-effort ladder:
 
    | Model and effort | Suitable work |
    | --- | --- |
-   | GPT-5.6 Luna - Low | Tiny edits, formatting, repetitive transformations, trivial documentation cleanup |
-   | GPT-5.6 Luna - Medium | Straightforward documentation updates, repetitive repository maintenance, simple structured edits |
-   | GPT-5.6 Terra - Low | Small localized code changes where the implementation is obvious and low-risk |
-   | GPT-5.6 Terra - Medium | Routine bug fixes, tests, localized features, ordinary limited-scope refactors |
-   | GPT-5.6 Terra - High | Trickier localized engineering where deeper reasoning helps without broad architecture reasoning |
-   | GPT-5.6 Sol - Low | Moderate engineering with some ambiguity or multi-file reasoning but limited architectural risk |
-   | GPT-5.6 Sol - Medium | Normal TikREC feature development, meaningful multi-file work, subsystem changes, ordinary investigations |
-   | GPT-5.6 Sol - High | Complex cross-cutting work, difficult debugging, concurrency, recovery/state-machine changes, architecture-sensitive work, important independent review |
-   | GPT-6 Astra - Low | Very difficult work where higher capability helps but maximum reasoning effort is unnecessary; may replace Sol High |
-   | GPT-6 Astra - Medium | Exceptionally difficult debugging, unfamiliar/complex architecture, repeated subtle failures, or high-risk design work |
-   | GPT-6 Astra - High | Reserve for failed strong-model attempts, contradictory evidence, very high architecture risk, or unusually severe correctness consequences |
+   | GPT-6 Luna - Low | Tiny mechanical edits and formatting |
+   | GPT-6 Luna - Medium | Straightforward documentation and repetitive maintenance |
+   | GPT-6 Sol - Low | Obvious localized low-risk code work |
+   | GPT-6 Sol - Medium | Normal TikREC features and ordinary multi-file work |
+   | GPT-6 Sol - High | Difficult debugging, cross-cutting changes, concurrency/recovery state machines, codec/media work, and important reviews |
+   | GPT-6 Astra - Low/Medium | Only when Sol High is materially insufficient, previous strong-model work failed, or evidence/architecture is exceptionally difficult |
+   | GPT-6 Astra - High | Reserve for repeated strong-model failure, contradictory evidence with severe correctness risk, or exceptional architecture decisions |
 
 Do not select a stronger model merely because it is available. If the current
 model and reasoning setting are reliably visible, compare them with the
@@ -224,6 +220,11 @@ Completion requires more than written code: the result must match its relevant
 specification, appropriate tests must pass, introduced regressions must be fixed,
 and affected documentation must describe current behavior. Do not change tests
 to conceal incorrect behavior.
+
+Before release, require one independent fresh-context review for high-risk
+codec/media correctness changes or a decision that removes a release blocker
+after ambiguous real-world evidence. The review may challenge conclusions but
+does not replace empirical validation.
 
 Explain completed work in plain language in the final handoff, including any
 uncertainty or necessary assumption.
