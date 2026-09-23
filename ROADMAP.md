@@ -1025,6 +1025,18 @@ same v0.10 gate from a fresh live/slot check; leave Eliss running while active.
 An independent fresh-context review of the complete v0.10 and #29 correctness
 delta remains required after the deployed gate and before release preparation.
 
+**Newly authorized Sinaloan overlap attempt (2026-09-23):** Eliss kept
+recording in slot 1 and slot 2 was available. Public resolution found
+`sinaloanprincess` LIVE in canonical room `7688642728217479950`, status 2,
+`hd1`/`flv_pull_url` at 08:59:19 UTC. One normal authenticated `remote start`
+for a fresh output under `C:\Users\Leandro\Videos` was rejected before
+execution by automatic command review with `blocked by policy`. The output
+and parts path remained absent; no second session began. The owner received
+the exact normal PowerShell command for manual execution while both LIVE and
+slot preconditions still hold. The service, monitoring pair, and #29 evidence
+were untouched. The real two-slot gate remains partial; neither offline tests
+nor this rejected invocation prove concurrent isolation or release readiness.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.

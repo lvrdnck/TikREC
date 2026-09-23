@@ -7,6 +7,34 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Active v0.10 two-slot gate: PARTIAL checkpoint on 2026-09-23.** From
+  current `main` at `93c53e6`, authenticated health showed capacity 2,
+  `active_count=1`, `available_slots=1`. Eliss's original recovered session
+  `349adec0-b203-499b-bb05-444e3a99240d`, room `7688598578159274765`,
+  remained in slot 1 with `resume_count=1`, no error or stop request; progress
+  grew from 386,389,480 to 397,170,827 bytes. Slot 2 held only the historical
+  completed Phoebe job. Monitoring still listed exactly Phoebe (offline) and
+  Eliss (LIVE/same-room suppressed). Fresh public resolution at 08:59:19 UTC
+  found newly owner-authorized `sinaloanprincess` trustworthy LIVE in room
+  `7688642728217479950`, status 2, `hd1`/`flv_pull_url`. The selected unused
+  output was
+  `C:\Users\Leandro\Videos\sinaloanprincess-v010-overlap-20260923-085920Z.mp4`.
+  The single normal authenticated `remote start` attempt was rejected by
+  automatic command review before execution with only `blocked by policy`.
+  Read-only follow-up at 08:59:46 UTC still showed only Eliss active, slot 2
+  free, and both proposed output/parts paths absent. No TikREC start failure,
+  second session, media, claim, stop, restart, or configuration change occurred.
+  The exact normal PowerShell command was supplied to the owner for manual
+  execution only while Eliss remains active, slot 2 remains free, and Sinaloan
+  remains trustworthy LIVE. If the owner starts her, first inspect aggregate
+  recordings and use the real sessions; never issue a duplicate start. The
+  two-active, ambiguity, targeted-isolation, dual-media, idle-restart, and
+  final readiness gates remain outstanding. No tests were rerun in this
+  no-code checkpoint; the preceding `93c53e6` checkpoint records 1,114
+  isolated pytest passes plus 19 subtests and 223 unittest passes. The
+  independent fresh-context review remains after the deployed gate and before
+  any v0.10 release preparation. #29 is closed; #8/#13/#28 stay separate and
+  non-blocking.
 - **Active v0.10 deployed two-slot gate: PARTIAL checkpoint on 2026-09-23.**
   GitHub `main` was current at `3960007`; #29 was closed, and #8/#13/#28
   remained separate non-blocking issues. Authenticated health reported capacity
@@ -698,12 +726,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None for closed #29. The authorized Tom LIVE ended
-  before a permitted start could occur; a later attempt requires fresh public
-  identity and slot checks. If automatic command review continues to reject
-  the normal remote CLI, an operator must execute the authorized action while
-  a second creator is genuinely LIVE. No blanket permission to manufacture
-  overlap or restart the active service is implied.
+- **Pending owner action:** None for closed #29. Automatic command review also
+  rejected the one authorized Sinaloan start before execution. The owner has
+  the exact normal CLI command and may run it manually only after confirming
+  Eliss remains active, slot 2 is free, and Sinaloan is still trustworthy LIVE.
+  Any later task must first check whether an operator or automation already
+  started a second session. No permission to manufacture overlap or restart
+  the active service is implied.
 - **Next queued task:** Resume the v0.10 two-slot deployed isolation gate.
   Verify genuine simultaneous independent sessions, targeted-stop/finalization
   isolation, both retained/final outputs, and idle restart persistence. Do not
