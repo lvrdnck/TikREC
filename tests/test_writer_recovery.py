@@ -125,7 +125,9 @@ def test_trailing_torn_tag_preserves_original_and_recovers_only_safe_prefix(tmp_
 
 @pytest.mark.parametrize("kind", ["zero", "malformed"])
 def test_empty_or_malformed_partial_blocks_without_mutation(tmp_path, kind):
-    content = b"" if kind == "zero" else media_bytes(tmp_path)[:-4] + b"\0\0\0\0"
+    clean = media_bytes(tmp_path)
+    first_trailer = 24 + int.from_bytes(clean[14:17], "big")
+    content = b"" if kind == "zero" else clean[:first_trailer] + b"\0" * 4 + clean[first_trailer + 4:]
     store, job, manifest, partial = crashed_session(tmp_path, content=content)
     before = store.path.read_bytes(), manifest.path.read_bytes(), partial.read_bytes()
 

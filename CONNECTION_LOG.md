@@ -654,6 +654,10 @@ one after committed same-room resume carries the incremented counter. The ensuin
 capture_resume records the concrete connection/part allocation before media opens.
 Closed numbered connection records and existing room_status evidence then continue
 in order. In-process reconnects retain ordinary numbered connection evidence.
+If a crash writer partial has damaged framing, only its independently validated
+prefix may be published; the original and discarded-byte count are recorded in
+`session.json` writer recovery evidence. No synthetic closed connection or
+captured-downtime interval is added to this log.
 
 room_ended/live_changed record observed reconciliation decisions, not exact room
 end during downtime. New room ID and signed CDN URL are never written into these

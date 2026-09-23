@@ -363,10 +363,12 @@ decoding; cost grows with retained bytes and does not prove media health.
 prove active recording ownership, UUID/source/room/output/parts paths and counts
 agree, prior parts are contiguous, output/finalizer temp are absent, and no second,
 wrong-index, same-index, unowned, colliding, symlink, or nonregular artifact exists.
-It finds the last complete tag with the existing parser; malformed framing before
-a merely incomplete trailing tag blocks. Recovery intent is persisted before the
-exact original is atomically moved to a deterministic evidence-only name. A new
-copy contains either all bytes or only that complete prefix and must pass writer
+It stops at the first incomplete tag or framing error and accepts only the
+previous parser-proven complete-tag boundary; it never scans forward or repairs
+the bad tag. A first/early failure without valid media still blocks. Recovery
+intent is persisted before the exact original is atomically moved to a
+deterministic evidence-only name. A new copy contains either all bytes or only
+that complete prefix and must pass writer
 structure, FFprobe decoding/DTS, and recognizable-video inspection before atomic
 publication. Evidence bytes are never changed. Optional schema-1 manifest records
 make preservation/publication retryable and bind part/evidence names plus source

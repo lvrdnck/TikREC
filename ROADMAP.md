@@ -977,6 +977,23 @@ targeted finalization, dual validation, idle restart, and readiness review remai
 outstanding. Do not infer a writer defect or safe salvage from the malformed
 partial until #29 is investigated, and do not begin release preparation.
 
+**Issue #29 recovery implementation checkpoint (2026-09-23):** Two fresh public
+checks established that Eliss's same canonical room remained LIVE after the
+unexpected reboot. Its seventh partial has 11,164 valid tags through byte
+31,247,682, followed by 132,390 zero bytes. A copy of that exact prefix passes
+writer structure, full FFprobe decode, and DTS checks. The writer emits each
+encoded tag in one buffered `write`, without an active-part fsync; an interrupted
+write at reboot is the strongest explanation, not proof of a TikREC writer bug.
+The bounded #14 extension now retains only the preceding proven boundary at the
+first incomplete or malformed tag, never resynchronizes, and still requires
+existing ownership and media validation. A controlled Eliss copy preserved the
+source hash and recorded 31,247,682 recovered and 132,390 discarded bytes while
+reaching the same-session `resuming` decision without media capture. Focused and
+full offline suites pass. The running service and originals remain untouched;
+issue #29 stays open pending a separately authorized deployed recovery check.
+The v0.10 simultaneous gate remains paused, and release preparation is out of
+scope.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.

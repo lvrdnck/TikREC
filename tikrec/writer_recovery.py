@@ -205,10 +205,9 @@ def _complete_prefix(path: Path) -> int:
         while True:
             try:
                 tag = read_tag(handle)
-            except EOFError:
+            except (EOFError, FlvFormatError):
+                # Never resynchronize past a bad tag; only the prior boundary is proven.
                 return last_complete
-            except FlvFormatError as error:
-                raise ValueError("writer partial has malformed FLV framing") from error
             if tag is None:
                 return last_complete
             last_complete = handle.tell()

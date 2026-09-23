@@ -366,8 +366,10 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    `recovering/writer_partial_recovery` before moving bytes. Atomically preserve the
    original under `.tikrec-writer-crash-SESSION-part-NNNN.evidence`, copy only its
    parser-proven complete prefix, pass normal structure plus FFprobe decoder/DTS
-   checks, and atomically publish `part-NNNN.flv`. A torn final tag is excluded only
-   from the new copy. Manifest evidence records source SHA-256 and byte counts.
+   checks, and atomically publish `part-NNNN.flv`. On the first truncated or
+   malformed tag, exclude that tag and all following bytes from the new copy;
+   never resynchronize or repair framing. A prefix without valid media still
+   blocks. Manifest evidence records source SHA-256 and discarded byte counts.
    Recovery interrupted after preservation or publication is safely retryable.
 5. Existing requested output is never overwritten. Matching committed manifest
    completion plus a nonempty regular output and bounded matching codec/container/

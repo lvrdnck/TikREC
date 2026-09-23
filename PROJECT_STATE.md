@@ -7,9 +7,35 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active task: v0.10 deployed simultaneous gate, partial; recovery investigation
-  #29 queued.** At the next execution checkpoint on 2026-09-23, Eliss was no
-  longer active. Windows booted at 09:49:45 local after an unexpected shutdown
+- **Active issue #29: bounded recovery fix implemented, deployed acceptance
+  pending; v0.10 gate paused.** Two independent public checks at 08:17:53 and
+  08:18:12 UTC on 2026-09-23 resolved `eliss4r.n` as LIVE, status 2, room
+  `7688598578159274765`, `hd1` via `flv_pull_url`. This is the exact interrupted
+  session's room: the same LIVE survived the unexpected reboot while TikREC
+  failed to resume it. On a disposable copy, all 11,164 FLV tags through byte
+  31,247,682 parse correctly; the remaining 132,390 bytes are entirely zero,
+  so the next zero header/trailer is implausible and no later tag can be proven.
+  The prefix starts with its own AVC configuration and rebased video keyframe,
+  passes TikREC structure plus FFprobe full decode/DTS with no findings, and
+  probes as H.264/AAC, 640x1280, 230.567 seconds. The all-zero tail following
+  an unexpected reboot most strongly supports an interrupted buffered/filesystem
+  write, but raw source and low-level storage evidence are absent; a writer defect
+  is not proven. Issue #14's proven-prefix principle now also stops at the first
+  malformed tag, never scans forward, preserves the original, and still requires
+  existing ownership, structure, decoder, and DTS gates. A controlled copied
+  session with a fake same-room resolver preserved the original
+  31,380,072-byte SHA-256, published exactly 31,247,682 validated bytes,
+  recorded 132,390 discarded bytes, and reached `resuming` with the original
+  session/room; it opened no media. Focused recovery tests pass (83), isolated
+  pytest passes 1,114 plus 19 subtests, unittest discovery passes 223, and
+  compilation/changed-source-size checks pass. The live service was not
+  restarted or changed: slot 1 remains failed closed, all 11 existing original
+  job/automation/manifest/media files rehashed unchanged (the connection log
+  was absent before and after), and same-session deployed recovery is **not yet
+  proven**. Do not
+  resume the v0.10 two-slot gate inside issue #29.
+- **Previous #29 discovery checkpoint:** On 2026-09-23, Eliss was no longer
+  active. Windows booted at 09:49:45 local after an unexpected shutdown
   (System event 6008); the unchanged `TikREC Service` task ran at 09:51:02.
   Authenticated health showed capacity 2, `active_count=0`, `available_slots=1`:
   `slot-1` was unavailable with `recovering/failed/ambiguous_state`; `slot-2`
@@ -610,13 +636,17 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None.
-- **Next queued task:** Investigate issue #29 read-only first and decide whether
-  any bounded, validated recovery of Eliss is safe. Then resume the v0.10
-  deployed two-slot gate only with two legitimate active real recordings; an
-  owner-authorized manual Tom start may fill free slot 2 while Eliss is actively
-  recording. Do not treat a lone Tom start as the gate, begin v0.11, or prepare/
-  publish v0.10 in this task.
+- **Pending owner action:** Authorize a separate controlled deployment/restart
+  acceptance for issue #29 if the original Eliss session is to be resumed on
+  the live service. The current task did not authorize that restart.
+- **Next queued task:** Review the issue #29 change and, with separate deployment
+  authorization, recheck Eliss's room, original hashes, and service state before
+  one controlled restart of the unchanged Scheduled Task. Verify exact crash
+  evidence preservation, 31,247,682-byte recovered part, same-session/room
+  continuation into a new part if still LIVE, and coherent durable automation.
+  If the room has ended, verify safe finalization without inventing downtime.
+  Only after #29 deployed acceptance should the v0.10 two-slot gate resume; do
+  not treat a lone Tom start as that gate, begin v0.11, or prepare/publish v0.10.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing

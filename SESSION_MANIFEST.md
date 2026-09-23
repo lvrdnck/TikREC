@@ -171,10 +171,11 @@ attempts; elapsed wall time includes downtime without claiming missing media.
 An eligible active writer partial is first validated read-only through its last
 complete FLV tag. Durable job state records `writer_partial_recovery` before the
 original is atomically moved to a session/index evidence-only name. TikREC copies
-the complete file, or only the largest parser-proven prefix when the final tag is
-torn, into a separate staging file; normal writer structure and FFprobe decoder/
-DTS checks must pass before atomic part publication. The original evidence never
-changes. Optional `writer_recoveries` entries record timestamp, bare evidence/part
+the complete file, or only the parser-proven prefix before the first truncated
+or malformed tag, into a separate staging file. It does not resynchronize or
+repair the bad tag; normal writer structure and FFprobe decoder/DTS checks must
+pass before atomic part publication. The original evidence never changes.
+Optional `writer_recoveries` entries record timestamp, bare evidence/part
 names, source SHA-256, source/recovered bytes, and discarded trailing bytes. Counts
 include only
 published parts; the next resume boundary creates a fresh connection and next
