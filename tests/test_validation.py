@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import unittest
 
 from tikrec.validation import validate_target
+from tikrec.decode_diagnostics import input_decode_health
 
 
 class ProbeRunner:
@@ -118,6 +119,19 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(result.target_type, "output")
         self.assertEqual(result.media_integrity, "passed")
         self.assertEqual(result.output_availability, "present")
+        self.assertEqual(result.retained_media_checks, "not_checked")
+        self.assertEqual(result.final_output_inspection, "passed")
+        self.assertEqual(result.final_output_decode, "not_checked")
+        self.assertEqual(result.visual_integrity, "not_checked")
+
+    def test_deep_output_decode_passes_without_claiming_visual_integrity(self) -> None:
+        with TemporaryDirectory() as temporary:
+            output = Path(temporary) / "recording.mp4"
+            output.write_bytes(b"media")
+            result = validate_target(output, deep=True, runner=ProbeRunner())
+        self.assertTrue(result.passed)
+        self.assertEqual(result.final_output_decode, "passed")
+        self.assertEqual(result.visual_integrity, "not_checked")
 
     def test_broken_completed_output_fails_probe(self) -> None:
         class BrokenProbe:
@@ -155,6 +169,44 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(result.target_type, "session")
         self.assertEqual(result.session_completeness, "complete")
         self.assertEqual(result.parts_checked, 1)
+        self.assertEqual(result.recorded_finalization_input_decode, "unknown")
+
+    def test_bad_retained_input_remains_failed_when_final_output_decodes(self) -> None:
+        runner = ProbeRunner()
+        runner.decode_errors["part-0001.flv"] = "decode error"
+        with TemporaryDirectory() as temporary:
+            directory = Path(temporary) / "recording.parts"
+            output = Path(temporary) / "recording.mp4"
+            write_part(directory)
+            output.write_bytes(b"media")
+            values = manifest_values(directory, output, finalization={
+                "status": "completed", "error": None,
+                "input_decode": input_decode_health("degraded", 1, ("h264_macroblock",)),
+            })
+            (directory / "session.json").write_text(json.dumps(values), encoding="utf-8")
+            result = validate_target(directory, deep=True, runner=runner)
+        self.assertFalse(result.passed)
+        self.assertEqual(result.retained_media_checks, "failed")
+        self.assertEqual(result.recorded_finalization_input_decode, "degraded")
+        self.assertEqual(result.final_output_inspection, "passed")
+        self.assertEqual(result.final_output_decode, "passed")
+        self.assertEqual(result.visual_integrity, "not_checked")
+
+    def test_invalid_optional_decode_evidence_is_reported_without_echo(self) -> None:
+        with TemporaryDirectory() as temporary:
+            directory = Path(temporary) / "recording.parts"
+            output = Path(temporary) / "recording.mp4"
+            write_part(directory)
+            output.write_bytes(b"media")
+            values = manifest_values(directory, output, finalization={
+                "status": "completed", "error": None,
+                "input_decode": {"raw": "https://example.test/?token=secret"},
+            })
+            (directory / "session.json").write_text(json.dumps(values), encoding="utf-8")
+            result = validate_target(directory, runner=ProbeRunner())
+        self.assertFalse(result.passed)
+        self.assertIn("manifest_input_decode_invalid", [f.code for f in result.findings])
+        self.assertNotIn("secret", str(result.as_dict()))
 
     def test_manifest_inconsistencies_are_collected(self) -> None:
         with TemporaryDirectory() as temporary:

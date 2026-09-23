@@ -40,7 +40,11 @@ def test_probeable_encoder_partial_is_preserved_and_refinalized(tmp_path):
     assert evidence.read_bytes() == b"complete output"
     assert store.load().state == "completed" and store.load().finalization_completed
     facts = json.loads(manifest.path.read_text())
-    assert facts["finalization"] == {"status": "completed", "error": None}
+    assert facts["finalization"] == {
+        "status": "completed", "error": None,
+        "input_decode": {"status": "unknown", "diagnostic_count": 0,
+                         "diagnostic_codes": [], "count_capped": False},
+    }
     assert facts["recovery_performed"] and facts["interrupted"]
 
 

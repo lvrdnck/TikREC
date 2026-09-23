@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from contextlib import redirect_stdout
+from fractions import Fraction
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 import unittest
 
-from tikrec.capture import CaptureError, CaptureResult, capture_tags, capture_url
+from tikrec.capture import (CaptureError, CaptureResult, capture_tags, capture_url,
+                            finalize_capture_result)
 from tikrec.cli import main
 from tikrec.finalize import finalize_parts
 from tikrec.flv import FlvTag, read_tag
@@ -37,6 +40,39 @@ def part_tags(path: Path) -> list[FlvTag]:
 
 
 class CaptureTests(unittest.TestCase):
+    def test_successful_reencode_keeps_completed_lifecycle_and_degraded_health(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            parts_dir = root / "recording.parts"
+            parts_dir.mkdir()
+            parts = []
+            for number, config in ((1, b"first"), (2, b"second")):
+                part = parts_dir / f"part-{number:04d}.flv"
+                part.write_bytes(b"FLV\x01\x05\x00\x00\x00\x09\x00\x00\x00\x00"
+                                 + FlvTag(9, 0, b"\x00\x00\x00",
+                                          b"\x17\x00\x00\x00\x00" + config).encoded())
+                parts.append(part)
+            output = root / "recording.mp4"
+            manifest = SessionManifest(parts_dir, output, "tag_stream")
+            manifest.start()
+
+            def ffmpeg(command, _runner, _progress, diagnostics):
+                Path(command[-1]).write_bytes(b"finished media")
+                diagnostics.observe("[h264 @ 0x123] error while decoding MB 0 3")
+                return subprocess.CompletedProcess(command, 0, stderr="")
+
+            with patch("tikrec.finalize.avc_configuration_dimensions",
+                       return_value=(720, 1280)), patch(
+                       "tikrec.finalize.nominal_frame_rate", return_value=Fraction(25)), patch(
+                       "tikrec.finalize._run_ffmpeg", side_effect=ffmpeg):
+                result = finalize_capture_result(parts, output, manifest=manifest)
+            saved = json.loads(manifest.path.read_text(encoding="utf-8"))
+        self.assertEqual(result.output_path, output)
+        self.assertEqual(saved["status"], "completed")
+        self.assertEqual(saved["finalization"]["status"], "completed")
+        self.assertEqual(saved["finalization"]["input_decode"]["status"], "degraded")
+        self.assertEqual(saved["finalization"]["input_decode"]["diagnostic_count"], 1)
+
     def test_successful_synthetic_capture_writes_all_retained_tags(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
@@ -79,6 +115,7 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(result.output_path, root / "final.mp4")
         self.assertEqual(manifest["elapsed_seconds"], 4.0)
         self.assertEqual(manifest["finalization"]["status"], "completed")
+        self.assertEqual(manifest["finalization"]["input_decode"]["status"], "unknown")
         self.assertEqual(manifest["media"]["video_codec"], "h264")
 
     def test_finalizer_failure_is_preserved_in_the_manifest(self) -> None:

@@ -6,6 +6,7 @@ from unittest.mock import patch
 from tests.test_reconciliation import saved_session
 from tikrec.service_job import (default_job_state_path, job_snapshot,
                                 persist_snapshot, progress_snapshot)
+from tikrec.decode_diagnostics import input_decode_health
 
 
 def test_snapshot_roundtrip_keeps_resume_stop_and_completed_output(tmp_path):
@@ -40,3 +41,26 @@ def test_progress_restores_manifest_reconnects_after_service_restart(tmp_path):
 
     assert restarted["reconnect_count"] == 7
     assert active["reconnect_count"] == 9
+
+
+def test_status_exposes_only_bounded_finalization_decode_health(tmp_path):
+    parts = tmp_path / "out.parts"
+    parts.mkdir()
+    (parts / "part-0001.flv").write_bytes(b"media")
+    health = input_decode_health("degraded", 2, ("h264_macroblock",))
+    (parts / "session.json").write_text(json.dumps({
+        "finalization": {"status": "completed", "input_decode": health},
+    }))
+    job = {"state": "completed", "started_at": 1000, "ended_at": 1100}
+    snapshot = progress_snapshot(job, parts=parts, active=False, current_part=None,
+                                 current_bytes=0, resolutions=0, clock=lambda: 1200)
+    assert snapshot["input_decode_health"] == health
+
+    health["diagnostic_codes"] = ["https://example.test/?token=secret"]
+    (parts / "session.json").write_text(json.dumps({
+        "finalization": {"status": "completed", "input_decode": health},
+    }))
+    snapshot = progress_snapshot(job, parts=parts, active=False, current_part=None,
+                                 current_bytes=0, resolutions=0, clock=lambda: 1200)
+    assert snapshot["input_decode_health"] == input_decode_health("unknown")
+    assert "secret" not in json.dumps(snapshot)

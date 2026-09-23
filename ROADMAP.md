@@ -930,23 +930,19 @@ Issues #8 and #13 remain open as non-blocking, opportunistic evidence work.
 
 ### v0.10.0 — Multiple simultaneous creator recordings
 
-**Paused by correctness blocker #27 (2026-09-22; updated 2026-09-23).** Do not
-resume simultaneous validation/readiness or begin release work until #27 is
-resolved. [The forensic report](ISSUE_27_FORENSICS.md) documents Moe's severe,
-long retained-FLV corruption with no raw source. After a policy-blocked Codex
-launch attempt, the owner started Kayla's authorized raw-backed capture. All
-331,395 raw media tags match retained media byte-for-byte and in order; Kayla's
-untouched source and retained parts share 101 H.264 decoder errors and visible
-vertical smearing. Its final MP4 deep-decodes cleanly only after re-encoding
-already corrupted imagery. Thus TikREC did not introduce Kayla's corruption;
-Moe's source origin remains unproven. Kayla shows multi-guest split screens but
-no decisive battle UI, so it is a raw-backed baseline, not battle acceptance.
-No safe mitigation or product-code fix is proven; Kayla does not implicate a
-v0.9.1 release. Keep #27 active, #8/#13 separate, and seek raw-backed Moe
-attribution or an explicit source-limitation decision before the v0.10 gate.
-Moe remains temporarily excluded from monitoring pending raw-backed capture;
-current `/recordings` shows later Phoebe jobs because it keeps only the latest
-job per slot. The following gate entries are historical.
+**Issue #27 finite blocker completed (2026-09-23).** Kayla's untouched raw
+source and retained parts share 101 H.264 decoder errors. Mixed-resolution
+re-encoding can produce a decoder-clean MP4 from that damaged imagery. TikREC
+now persists a bounded input-decoder health result for successful finalization
+and validation reports retained, output, and unproven visual health separately.
+A disposable two-part Kayla reproduction yielded `completed` finalization,
+`degraded` input health (21 classified messages), passing final-output deep
+decode, and failing retained-part checks; source hashes remained unchanged.
+Historical Moe attribution is non-blocking opportunity #28. Issues #8 and #13
+remain separate; no v0.9.1 correction is warranted. The next task is the normal
+deployed simultaneous-recording/isolation gate, which has not yet run. Current
+`/recordings` keeps only each slot's latest job; the original Kayla evidence
+remains preserved on disk. The following gate entries are historical.
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps

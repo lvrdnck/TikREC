@@ -14,6 +14,8 @@ from typing import Any
 
 from . import __version__
 from .media import MediaInfo, inspect_media
+from .decode_diagnostics import safe_input_decode_health
+from .manifest_media import media_values as _media_values
 
 
 SCHEMA_VERSION = 1
@@ -136,6 +138,7 @@ class SessionManifest:
         interrupted: bool = False,
         finalization_status: str | None = None,
         error: BaseException | str | None = None,
+        input_decode: dict | None = None,
     ) -> None:
         """Finalize lifecycle, result, output, and optional media information."""
         values = self._require_values()
@@ -157,6 +160,8 @@ class SessionManifest:
                 "status": finalization_status,
                 "error": finalization_error,
             }
+            if finalization_status == "completed" and input_decode is not None:
+                values["finalization"]["input_decode"] = safe_input_decode_health(input_decode)
         self._inspect_output(output_path)
         self._write()
 
@@ -168,6 +173,7 @@ class SessionManifest:
         interrupted: bool = False,
         finalization_status: str | None = None,
         error: BaseException | str | None = None,
+        input_decode: dict | None = None,
     ) -> None:
         """Finish a successful or interrupted capture with consistent status."""
         self.finish(
@@ -177,6 +183,7 @@ class SessionManifest:
             interrupted=interrupted,
             finalization_status=finalization_status,
             error=error,
+            input_decode=input_decode,
         )
 
     def fail(
@@ -210,6 +217,7 @@ class SessionManifest:
         *,
         output_path: Path | None = None,
         error: BaseException | str | None = None,
+        input_decode: dict | None = None,
     ) -> None:
         """Finish manual finalization without rewriting the capture timeline."""
         values = self._require_values()
@@ -225,6 +233,8 @@ class SessionManifest:
             "status": status,
             "error": _safe_reason(error) if status == "failed" else None,
         }
+        if status == "completed" and input_decode is not None:
+            values["finalization"]["input_decode"] = safe_input_decode_health(input_decode)
         self._inspect_output(output_path)
         self._write()
 
@@ -283,16 +293,6 @@ class SessionManifest:
         except BaseException:
             temporary.unlink(missing_ok=True)
             raise
-
-
-def _media_values(info: MediaInfo | None) -> dict[str, str | int | None]:
-    info = info or MediaInfo()
-    return {
-        "video_codec": info.video_codec,
-        "audio_codec": info.audio_codec,
-        "width": info.width,
-        "height": info.height,
-    }
 
 
 def _safe_reason(error: BaseException | str | None) -> str | None:

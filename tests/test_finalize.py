@@ -97,6 +97,52 @@ class FinalizeTests(unittest.TestCase):
                 progress,
             )
 
+    def test_successful_reencode_preserves_decoder_health_evidence(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            first, second = root / "part-0001.flv", root / "part-0002.flv"
+            write_part(first, b"first")
+            write_part(second, b"second")
+            stderr = ("[h264 @ 0x123] error while decoding MB 0 3, bytestream -14\n"
+                      "https://cdn.test/live.flv?token=secret\n")
+            evidence = []
+            with patch("tikrec.finalize.avc_configuration_dimensions", return_value=(720, 1280)):
+                result = finalize_parts(
+                    [first, second], root / "final.mp4", runner=_Runner(stderr=stderr),
+                    frame_rate_inspector=lambda _: Fraction(25),
+                    on_input_decode=evidence.append,
+                )
+            self.assertTrue(result.is_file())
+            self.assertEqual(evidence[0]["status"], "degraded")
+            self.assertEqual(evidence[0]["diagnostic_codes"], ["h264_macroblock"])
+            self.assertNotIn("secret", str(evidence))
+
+    def test_healthy_reencode_and_benign_sei_are_clean(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            first, second = root / "part-0001.flv", root / "part-0002.flv"
+            write_part(first, b"first")
+            write_part(second, b"second")
+            evidence = []
+            with patch("tikrec.finalize.avc_configuration_dimensions", return_value=(720, 1280)):
+                finalize_parts(
+                    [first, second], root / "final.mp4",
+                    runner=_Runner(stderr="[h264 @ 0x1] Late SEI is not implemented.\n"),
+                    frame_rate_inspector=lambda _: Fraction(25),
+                    on_input_decode=evidence.append,
+                )
+            self.assertEqual(evidence[0]["status"], "clean")
+
+    def test_stream_copy_does_not_claim_input_was_decoded(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            part = root / "part-0001.flv"
+            write_part(part, b"same")
+            evidence = []
+            finalize_parts([part], root / "final.mp4", runner=_Runner(),
+                           on_input_decode=evidence.append)
+            self.assertEqual(evidence[0]["status"], "not_checked")
+
     def test_failed_ffmpeg_includes_stderr_and_deletes_partial_output(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)

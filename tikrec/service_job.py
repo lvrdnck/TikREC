@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 
+from .decode_diagnostics import input_decode_health, safe_input_decode_health
 from .job_state import JobState, JobStateError
 
 
@@ -98,22 +99,28 @@ def progress_snapshot(job, *, parts, active, current_part, current_bytes, resolu
     # Never hold the manifest open against its Windows atomic replacement.
     # Once capture is inactive, it keeps allocation counts across restarts.
     reconnects = max(0, resolutions - 1)
-    if not active:
-        reconnects = max(reconnects, _manifest_reconnect_count(parts))
+    manifest = _manifest_facts(parts) if not active else None
+    if manifest is not None:
+        count = manifest.get("reconnect_count")
+        if type(count) is int and count >= 0:
+            reconnects = max(reconnects, count)
+    finalization = manifest.get("finalization") if isinstance(manifest, dict) else None
+    decode = (safe_input_decode_health(finalization.get("input_decode"))
+              if isinstance(finalization, dict) else input_decode_health("unknown"))
     snapshot.update(active=active, part_count=len(sizes),
                     reconnect_count=reconnects,
+                    input_decode_health=decode,
                     bytes_written=sum(sizes.values()) + extra,
                     elapsed_seconds=max(0, end - snapshot["started_at"]))
     return snapshot
 
 
-def _manifest_reconnect_count(parts):
+def _manifest_facts(parts):
     try:
         document = json.loads((parts / "session.json").read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
-        return 0
-    value = document.get("reconnect_count") if isinstance(document, dict) else None
-    return value if type(value) is int and value >= 0 else 0
+        return None
+    return document if isinstance(document, dict) else None
 
 
 def update_network_status(job, status, *, clock):

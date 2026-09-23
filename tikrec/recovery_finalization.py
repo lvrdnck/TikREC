@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .finalize import _temporary_output_path, finalize_parts
+from .decode_diagnostics import input_decode_health
 from .manifest import SessionManifest
 from .recovery_discovery import RecoveryCandidate
 from .recovery_validation import RecoveryValidation, validate_recovery_candidates
@@ -101,11 +102,15 @@ def guided_finalize(
             validation_before=validation.status,
         )
 
+    decode_health = input_decode_health("unknown")
+    def record_decode(health: dict) -> None:
+        nonlocal decode_health
+        decode_health = health
     try:
         if progress is not None:
             progress(f"finalizing {len(retained)} retained part(s)")
         produced = (
-            finalizer(retained, output, progress=progress)
+            finalizer(retained, output, progress=progress, on_input_decode=record_decode)
             if finalizer is finalize_parts else finalizer(retained, output)
         )
         _verify_produced_output(output, produced)
@@ -127,7 +132,8 @@ def guided_finalize(
         )
 
     try:
-        manifest.finish_recovery(retained, "completed", output_path=output)
+        manifest.finish_recovery(retained, "completed", output_path=output,
+                                 input_decode=decode_health)
         result = validator(Path(candidate.parts_directory), deep=False)
         _require_post_validation(candidate, result, len(retained))
     except Exception as error:

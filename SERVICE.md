@@ -284,6 +284,12 @@ Reasons are `process_restart`, `user_stop`, `room_ended`, `live_changed`,
 `network_recovered`, `outage_timeout`, and `writer_partial_recovery`. Process restart does
 not by itself prove a Windows reboot. No arbitrary error strings, service
 tokens, cookies, authentication data, or signed CDN URLs belong in this record.
+When a job has a parts directory, `/recording` and each `/recordings` slot
+derive `input_decode_health` from its session manifest after capture stops.
+The fixed summary contains status, capped diagnostic count, allowlisted codes,
+and the cap flag; missing or malformed evidence appears as `unknown`. Active
+jobs also report `unknown` until finalization finishes. The job schema is
+unchanged, and no raw FFmpeg messages enter status or durable job intent.
 
 Writes flush/fsync complete JSON in a unique sibling temporary, close for Windows
 rename, and atomically replace committed state; POSIX fsyncs the parent directory.

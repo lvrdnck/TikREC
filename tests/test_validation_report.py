@@ -19,7 +19,8 @@ class ValidationReportTests(unittest.TestCase):
         report = render_validation(result)
 
         self.assertIn("Validation failed", report)
-        self.assertIn("Media integrity: failed", report)
+        self.assertIn("Checked media: failed", report)
+        self.assertIn("Visual integrity: not_checked", report)
         self.assertIn("Validation mode: deep", report)
         self.assertIn("Session completeness: interrupted", report)
         self.assertIn("Errors:\n- [part_decode]", report)
@@ -37,6 +38,7 @@ class ValidationReportTests(unittest.TestCase):
         self.assertTrue(values["passed"])
         self.assertEqual(values["findings"][0]["code"], "output_audio_missing")
         self.assertIn("path", values["findings"][0])
+        self.assertEqual(values["final_output_decode"], "not_checked")
 
 
 if __name__ == "__main__":

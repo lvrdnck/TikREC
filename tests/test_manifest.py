@@ -8,6 +8,7 @@ import unittest
 
 from tikrec.manifest import SCHEMA_VERSION, SessionManifest
 from tikrec.media import MediaInfo
+from tikrec.decode_diagnostics import input_decode_health
 
 
 def read_manifest(path: Path) -> dict[str, object]:
@@ -72,6 +73,24 @@ class SessionManifestTests(unittest.TestCase):
         self.assertEqual(values["media"], {
             "video_codec": "h264", "audio_codec": "aac", "width": 720, "height": 1280,
         })
+
+    def test_completed_manifest_keeps_separate_bounded_input_decode_health(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            parts = root / "recording.parts"
+            parts.mkdir()
+            output = root / "recording.mp4"
+            output.write_bytes(b"media")
+            manifest = SessionManifest(parts, output, "tiktok_live", clock=lambda: 1.0)
+            manifest.start()
+            manifest.complete([], output_path=output, finalization_status="completed",
+                              input_decode=input_decode_health(
+                                  "degraded", 1, ("h264_macroblock",)))
+            values = read_manifest(parts / "session.json")
+        self.assertEqual(values["status"], "completed")
+        self.assertEqual(values["finalization"]["status"], "completed")
+        self.assertEqual(values["finalization"]["input_decode"]["status"], "degraded")
+        self.assertEqual(values["finalization"]["input_decode"]["diagnostic_count"], 1)
 
     def test_failure_keeps_optional_media_null_and_redacts_urls(self) -> None:
         times = iter((20.0, 21.0))

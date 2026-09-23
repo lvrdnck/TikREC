@@ -1,11 +1,35 @@
 # Issue #27: battle-linked H.264 corruption
 
 2026-09-22 Moe investigation, extended 2026-09-23 with the owner-started Kayla
-raw-backed session. **PARTIAL; blocker remains open.** v0.10 simultaneous
+raw-backed session. **Historical forensic record; finite product blocker #27 closed.** v0.10 simultaneous
 validation/readiness is paused. No product code, release, tag, original media,
 or durable job/automation evidence was changed by this investigation.
 
+## 2026-09-23 product decision and bounded acceptance
+
+Independent fresh-context review removed raw-backed Moe reproduction from the
+v0.10 prerequisite. Historical Moe attribution remains unresolved and is now
+non-blocking issue #28. Issue #27 was narrowed to preserving successful
+finalization input-decoder health and making validation scope explicit. No
+speculative media dropping/reset policy or v0.9.1 corrective release was chosen.
+
+A disposable finalization of copies of Kayla `part-0001.flv` (640x1280) and
+`part-0002.flv` (720x1280) reproduced the mixed-configuration path. It
+completed and produced a 7,334,499-byte MP4 whose full output decode passed.
+The manifest retained `completed` lifecycle and finalization while recording
+`degraded` input decode with 21 classified H.264 messages: concealment, intra
+prediction, macroblock, and reference. Session validation still fails on the
+damaged retained part; automated checks do not prove visual integrity. SHA-256
+of both original FLVs was unchanged: part 1
+`f7cd07c802ade7afa0bba1c93c6a794ab8b2657d857c49ae68d4f1d2780bd835`,
+part 2 `6ab4c090fda7065cdffb44d7e9d87f8766566221b474230968fac8571ec1e13b`.
+Disposable output and summary are in the existing diagnostic directory under
+`product-check-20260923`.
+
 ## Conclusion and limitations
+
+The investigation-state statements below describe the pre-decision forensic
+handoff. The product decision and current issue status are recorded above.
 
 ### Kayla raw-backed session (owner started after the blocked Codex attempt)
 

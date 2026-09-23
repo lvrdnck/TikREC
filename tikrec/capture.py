@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .finalize import finalize_parts
+from .decode_diagnostics import input_decode_health
 from .connection_observation import ConnectionObservation
 from .flv import FlvTag
 from .manifest import SessionManifest, _safe_reason
@@ -114,6 +115,10 @@ def finalize_capture_result(
         if manifest is not None:
             manifest.complete(completed_parts, interrupted=interrupted)
         return CaptureResult(completed_parts, None, interrupted, connections)
+    decode_health = input_decode_health("unknown")
+    def record_decode(health: dict) -> None:
+        nonlocal decode_health
+        decode_health = health
     try:
         if manifest is not None:
             manifest.mark_finalizing(completed_parts)
@@ -121,7 +126,8 @@ def finalize_capture_result(
             end = "capture stopped by interrupt" if interrupted else "capture ended"
             progress(f"{end}; finalizing {len(completed_parts)} retained part(s)")
         if finalizer is finalize_parts:
-            final_output = finalizer(completed_parts, output_path, progress=progress)
+            final_output = finalizer(completed_parts, output_path, progress=progress,
+                                     on_input_decode=record_decode)
         else:
             final_output = finalizer(completed_parts, output_path)
     except KeyboardInterrupt:
@@ -142,7 +148,8 @@ def finalize_capture_result(
         progress(f"output written: {final_output} ({final_output.stat().st_size} bytes)")
     if manifest is not None:
         manifest.complete(completed_parts, output_path=final_output,
-                          interrupted=interrupted, finalization_status="completed")
+                          interrupted=interrupted, finalization_status="completed",
+                          input_decode=decode_health)
     return CaptureResult(completed_parts, final_output, interrupted, connections)
 
 

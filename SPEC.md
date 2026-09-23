@@ -236,6 +236,13 @@ Before FFmpeg starts, progress states whether finalization will stream-copy or
 re-encode. Re-encoding warns that it may take several minutes or longer.
 Structured FFmpeg output time is reported as encoding progress; other progress
 fields are suppressed, while real diagnostics remain available for failures.
+Successful re-encoding also classifies recognized H.264 input-decoder errors
+into a bounded allowlist of codes and count (capped at 10,000), without saving
+stderr, addresses, URLs, or message text. This evidence is `clean` when no
+recognized error occurs and `degraded` otherwise, without changing successful
+capture/finalization lifecycle. Stream copy records `not_checked`; custom
+finalizers without diagnostics record `unknown`. Late-SEI metadata notices
+alone do not degrade the result.
 
 ### tikrec/tiktok.py — resolution
 `resolve_live(url, *, opener, timeout) -> LiveResolution` for a public LIVE page.
@@ -442,9 +449,14 @@ non-null codec/resolution facts must agree with FFprobe, part counts must agree
 with disk, and completed finalization requires an existing output. Missing
 optional manifest media fields do not fail.
 
-The validator reports media integrity, session completeness, and output
-availability separately. Therefore an interrupted/failed/recording session can
-pass when its retained parts are healthy even though no completed output exists.
+The validator reports retained-part media checks, recorded finalization input decode,
+final-output inspection, deep output decode, and unproven visual integrity as
+separate fields. `not_checked` means that check did not run; old schema-1
+manifests without input-decoder evidence report `unknown`. The legacy
+`media_integrity` JSON field remains an aggregate checked-media result. A clean
+final output cannot override retained-part failure. Therefore an interrupted,
+failed, or recording session can pass when its retained parts are healthy even
+though no completed output exists.
 It never mutates a manifest or recording. The standalone validation script is a
 compatibility wrapper over this shared implementation.
 
@@ -1100,7 +1112,8 @@ skipped SEI may contain ancillary metadata, so investigate only if it coincides
 with a decoder failure or missing required metadata. By itself, it does not
 invalidate otherwise cleanly decoded TikTok media. During finalization TikREC
 shows the notice once and suppresses repeats from terminal progress while
-retaining FFmpeg's original stderr for a finalization failure. See
+retaining a bounded stderr excerpt only for a finalization failure. It does not
+enter successful-finalization degraded-health evidence. See
 [FFmpeg change `f7dd408d`](https://ffmpeg.org/pipermail/ffmpeg-cvslog/2022-July/133020.html),
 “avcodec/h264dec: Skip late SEI.”
 

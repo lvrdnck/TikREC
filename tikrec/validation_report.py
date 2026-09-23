@@ -29,6 +29,11 @@ class ValidationResult:
     output_availability: str
     parts_checked: int
     findings: tuple[ValidationFinding, ...]
+    retained_media_checks: str = "not_checked"
+    recorded_finalization_input_decode: str = "unknown"
+    final_output_inspection: str = "not_checked"
+    final_output_decode: str = "not_checked"
+    visual_integrity: str = "not_checked"
 
     def as_dict(self) -> dict[str, Any]:
         """Return the stable JSON representation used by ``--json``."""
@@ -43,7 +48,12 @@ def render_validation(result: ValidationResult) -> str:
         f"Validation {'passed' if result.passed else 'failed'}: {result.target}",
         f"Target: {result.target_type}",
         f"Validation mode: {'deep' if result.deep else 'standard'}",
-        f"Media integrity: {result.media_integrity}",
+        f"Checked media: {result.media_integrity}",
+        f"Retained media checks: {result.retained_media_checks}",
+        f"Finalization input decode: {result.recorded_finalization_input_decode}",
+        f"Final output inspection: {result.final_output_inspection}",
+        f"Final output deep decode: {result.final_output_decode}",
+        f"Visual integrity: {result.visual_integrity} (not established by automated checks)",
         f"Session completeness: {result.session_completeness}",
         f"Output availability: {result.output_availability}",
         f"Parts checked: {result.parts_checked}",

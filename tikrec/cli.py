@@ -15,8 +15,9 @@ from .config_cli import add_config_command, run_config_command
 from .control_cli import add_control_commands, run_control_command
 from .diagnostics import add_debug_arguments, parse_arguments, print_unexpected_traceback
 from .finalize import finalize_parts
+from .decode_diagnostics import input_decode_health
 from .live import capture_live
-from .manifest import SessionManifest
+from .cli_manifest import _load_manifest, _finish_recovery
 from .monitor_cli import add_monitor_command, run_monitor_command
 from .output_naming import local_recording_paths
 from .progress import LiveProgress
@@ -181,10 +182,15 @@ def _finalize_directory(
         except (OSError, ValueError) as error:
             progress(f"warning: session manifest could not be updated: {error}")
             manifest = None
+    decode_health = input_decode_health("unknown")
+    def record_decode(health: dict) -> None:
+        nonlocal decode_health
+        decode_health = health
     try:
         progress("finalizing")
         if finalizer is finalize_parts:
-            output = finalizer(parts, output_path, progress=progress)
+            output = finalizer(parts, output_path, progress=progress,
+                               on_input_decode=record_decode)
         else:
             output = finalizer(parts, output_path)
     except KeyboardInterrupt:
@@ -199,35 +205,10 @@ def _finalize_directory(
         raise CaptureError(f"finalization failed: {error}", parts) from error
     progress(f"output written: {output} ({output.stat().st_size} bytes)")
     if manifest is not None:
-        _finish_recovery(manifest, parts, "completed", progress, output_path=output)
+        _finish_recovery(manifest, parts, "completed", progress, output_path=output,
+                         input_decode=decode_health)
     return output
 
-def _load_manifest(
-    path: Path,
-    progress: Callable[[str], None],
-) -> SessionManifest | None:
-    """Load recovery metadata without making older or damaged sessions unusable."""
-    try:
-        return SessionManifest.load(path)
-    except (OSError, ValueError) as error:
-        progress(f"warning: session manifest could not be read: {error}")
-        return None
-
-
-def _finish_recovery(
-    manifest: SessionManifest,
-    parts: tuple[Path, ...],
-    status: str,
-    progress: Callable[[str], None],
-    *,
-    output_path: Path | None = None,
-    error: BaseException | str | None = None,
-) -> None:
-    """Keep a manifest write problem from hiding the finalization result."""
-    try:
-        manifest.finish_recovery(parts, status, output_path=output_path, error=error)
-    except (OSError, ValueError) as manifest_error:
-        progress(f"warning: session manifest could not be updated: {manifest_error}")
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tikrec",

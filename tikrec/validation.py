@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from .manifest import SCHEMA_VERSION
-from .media import MediaInfo, inspect_media
-from .part_validation import validate_decoding, validate_part
+from .decode_diagnostics import valid_input_decode_health
+from .part_validation import validate_part
+from .media import inspect_media
+from .validation_media import _validate_output, _readable_nonempty, _compare_media
 from .validation_report import ValidationFinding, ValidationResult
 
 class _ResultBuilder:
@@ -22,6 +24,10 @@ class _ResultBuilder:
         self.session_completeness = "not_applicable"
         self.output_availability = "not_applicable"
         self.parts_checked = 0
+        self.retained_media_checks = "not_checked"
+        self.recorded_finalization_input_decode = "unknown"
+        self.final_output_inspection = "not_checked"
+        self.final_output_decode = "not_checked"
         self.findings: list[ValidationFinding] = []
 
     def finding(self, level: str, code: str, message: str, path: Path | None = None) -> None:
@@ -35,6 +41,8 @@ class _ResultBuilder:
             str(self.target), self.target_type, self.deep, passed, self.media_integrity,
             self.session_completeness, self.output_availability,
             self.parts_checked, tuple(self.findings),
+            self.retained_media_checks, self.recorded_finalization_input_decode,
+            self.final_output_inspection, self.final_output_decode,
         )
 
 
@@ -105,6 +113,7 @@ def _validate_parts(
     parts = tuple(sorted(directory.glob("part-*.flv")))
     if not parts:
         result.media_integrity = "failed"
+        result.retained_media_checks = "failed"
         result.finding("error", "parts_missing", "no retained FLV parts were found", directory)
         return
     media_failed = False
@@ -131,6 +140,7 @@ def _validate_parts(
         elif info.audio_codec is None:
             result.finding("warning", "part_audio_missing", "no recognizable audio stream", part)
     result.media_integrity = "failed" if media_failed else "passed"
+    result.retained_media_checks = "failed" if media_failed else "passed"
 
 def _read_manifest(path: Path, result: _ResultBuilder) -> dict[str, Any] | None:
     try:
@@ -179,6 +189,13 @@ def _validate_manifest(
         finalization_status = None
     else:
         finalization_status = finalization["status"]
+        if "input_decode" in finalization:
+            health = finalization["input_decode"]
+            if valid_input_decode_health(health):
+                result.recorded_finalization_input_decode = health["status"]
+            else:
+                result.finding("error", "manifest_input_decode_invalid",
+                               "manifest input decode evidence is invalid")
         allowed_finalization = {
             "not_requested", "pending", "not_started", "running", "completed", "interrupted", "failed",
         }
@@ -234,66 +251,3 @@ def _manifest_output(
             # Recover the original relative-path base from the relocated session target.
             return Path(*actual[:-len(suffix)]) / output
     return output
-
-def _validate_output(
-    output: Path, result: _ResultBuilder, deep: bool, ffprobe: str, runner: Callable[..., Any]
-) -> MediaInfo | None:
-    if not _readable_nonempty(output, result, "output"):
-        result.media_integrity = "failed"
-        return None
-    info = inspect_media(output, ffprobe=ffprobe, runner=runner)
-    if info is None:
-        result.finding("error", "output_probe_failed", "FFprobe could not inspect the output", output)
-        result.media_integrity = "failed"
-        return None
-    failed = False
-    for code, value, message in (
-        ("output_video_missing", info.video_codec, "no recognizable video stream"),
-        ("output_format_missing", info.format_name, "container format was not recognized"),
-        ("output_duration_invalid", info.duration_seconds, "duration is missing or not positive"),
-    ):
-        if value is None:
-            result.finding("error", code, message, output)
-            failed = True
-    if info.audio_codec is None:
-        result.finding("warning", "output_audio_missing", "no recognizable audio stream", output)
-    if deep:
-        try:
-            decode_error = validate_decoding(output, ffprobe, runner)
-        except OSError as error:
-            decode_error = f"could not start FFprobe: {error}"
-        if decode_error is not None:
-            result.finding("error", "output_decode", decode_error, output)
-            failed = True
-    if result.media_integrity != "failed":
-        result.media_integrity = "failed" if failed else "passed"
-    return info
-
-def _readable_nonempty(path: Path, result: _ResultBuilder, prefix: str) -> bool:
-    try:
-        if not path.is_file() or path.stat().st_size == 0:
-            reason = "is not a non-empty regular file"
-            raise ValueError(reason)
-        with path.open("rb") as handle:
-            handle.read(1)
-    except (OSError, ValueError) as error:
-        result.finding("error", f"{prefix}_unreadable", str(error), path)
-        return False
-    return True
-
-def _compare_media(
-    declared: Any, actual: MediaInfo, result: _ResultBuilder, output: Path
-) -> None:
-    if declared is None:
-        return
-    if not isinstance(declared, dict):
-        result.finding("error", "manifest_media_invalid", "manifest media is not an object")
-        return
-    for key in ("video_codec", "audio_codec", "width", "height"):
-        expected = declared.get(key)
-        if expected is not None and expected != getattr(actual, key):
-            result.finding(
-                "error", "manifest_media_mismatch",
-                f"manifest {key} is {expected!r}, FFprobe reports {getattr(actual, key)!r}",
-                output,
-            )

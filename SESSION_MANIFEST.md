@@ -59,13 +59,23 @@ are strings in the same absolute or relative form supplied to TikREC.
 | `interrupted` | boolean | Whether capture or finalization was interrupted. |
 | `recovery_performed` | boolean | Whether writer salvage, manual finalize, or explicit resume performed recovery. |
 | `writer_recoveries` | array, optional | Fixed evidence for service-recovered active writer parts. |
-| `finalization` | object | Finalization `status` and optional `error`. |
+| `finalization` | object | Finalization `status`, optional `error`, and optional `input_decode`. |
 | `media` | object | Optional final-output codec and resolution facts. |
 | `error` | string or null | Redacted reason for an abnormal session result. |
 
 `finalization.status` is one of `not_requested`, `pending`, `not_started`,
 `running`, `completed`, `interrupted`, or `failed`. The pending/running values
 are useful evidence when a process stops before its next atomic update.
+
+`finalization.input_decode`, when present after successful finalization, is a
+fixed object with `status` (`clean`, `degraded`, `not_checked`, or `unknown`),
+`diagnostic_count` (0–10,000), sorted allowlisted `diagnostic_codes`, and
+`count_capped` (boolean). Mixed-configuration re-encoding decodes the inputs:
+recognized H.264 errors yield `degraded` while completion remains `completed`;
+no recognized errors yield `clean`. Stream copy does not decode input and uses
+`not_checked`. A custom finalizer without diagnostic evidence uses `unknown`.
+This optional schema-1 field contains no stderr text, URL, address, or secret.
+Older schema-1 manifests without it remain valid and their evidence is unknown.
 
 `media` always contains `video_codec`, `audio_codec`, `width`, and `height`.
 Each value is null unless FFprobe can reliably read it from a completed final
@@ -249,8 +259,10 @@ FFprobe results. Null optional media fields do not fail validation. With
 `--deep`, it also fully decodes an existing completed output after validating
 the retained parts.
 
-Validation never updates `session.json`. Its report separates media integrity,
-session completeness, and final-output availability, so an interrupted, failed,
+Validation never updates `session.json`. Its report distinguishes retained
+input media checks, recorded finalization input decoding, final-output inspection,
+optional deep output decoding, and unproven visual integrity. It also separates
+session completeness and final-output availability, so an interrupted, failed,
 or still-recording session can have healthy retained parts without being
 misreported as corrupt. Persisting health history or recovering an incomplete
 session is outside v0.3.0.

@@ -7,33 +7,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task: correctness blocker #27.** v0.10 simultaneous validation
-  and readiness are paused, superseding the historical gate status below.
-  The prior Codex Kayla launch was policy-blocked, but the owner then started
-  session `40173c3c-24f6-47d7-aa49-e054bc999b69` with raw copy. Its own
-  manifest proves natural completion and successful finalization: 34 parts,
-  two media connections plus an offline confirmation attempt. Exhaustive audit
-  matches all 331,395 raw and retained media tags by type, payload, order, and
-  timestamp rebase. Both untouched raw streams and retained parts log the same
-  101 H.264 errors; matching raw/MP4 stills show severe vertical columns.
-  Standard and deep MP4 validation pass because mixed-resolution finalization
-  re-encodes the already damaged frames. Kayla proves source-origin corruption
-  in this session and implicates no TikREC code fix or v0.9.1; it supports but
-  does not prove the same origin for Moe. Split-screen/multi-guest composition
-  is visible, but no decisive battle UI is available, so Kayla is a corrupt
-  raw-backed baseline rather than confirmed battle acceptance evidence.
-  Moe's long retained-FLV/MP4 error clusters remain unattributed without raw
-  source. The full comparison and preserved hashes are in
-  [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md). Next action: raw-backed Moe
-  reproduction or project-manager decision on an evidenced source limitation;
-  no speculative frame dropping. Keep #27 blocking and #8/#13 separate.
-  **Current deployment:** monitoring remains `phoebelightt` only after the
-  earlier idle CLI change; do not re-enable Moe automation before raw-backed
-  capture. Read-only 2026-09-23 health reports capacity 2, active 0, available
-  2. Both slots now show completed Phoebe jobs, whose media exists and passes
-  standard MP4 validation. `/recordings` retains only the latest job per slot;
-  Kayla remains on disk despite its absence from this operational snapshot.
-  The paused v0.10 dual-recording gate must not resume yet.
+- **Active issue/task: none.** Issue #27's finite product blocker is implemented
+  and verified: successful mixed-configuration finalization now preserves bounded
+  classified H.264 input-decoder health separately from `completed` lifecycle.
+  Session validation keeps failed retained-media checks distinct from a clean
+  final-output deep decode; visual integrity remains unproven. A disposable
+  two-part Kayla re-encode completed and produced a deep-decodable MP4 while
+  durably recording 21 input decoder diagnostics as `degraded`; original hashes
+  match before and after. Historical Moe source attribution is opportunistic,
+  non-blocking issue #28, not a release prerequisite. Issues #8 and #13 remain
+  separate. No v0.9.1 corrective release is indicated. The next task is the
+  ordinary v0.10 deployed simultaneous-recording/isolation gate. It has not
+  been run as part of #27. Current deployed configuration and media were not
+  changed by this implementation.
 - **Historical v0.10 gate (superseded by #27):** The first bounded v0.10.0
   multiple-recording slice is
   implemented and deployed from `dd00400`; its natural simultaneous-LIVE gate
@@ -582,15 +568,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Continue #27 at the next owner-authorized Moe battle
-  using the existing opt-in authenticated `remote start --raw-copy` command in
-  [ISSUE_27_FORENSICS.md](ISSUE_27_FORENSICS.md#deployed-state-and-exact-next-raw-backed-opportunity).
-  Keep Moe temporarily excluded from automation until diagnostic capture is
-  secured; preserve phoebe, existing recordings, output storage, and durable
-  evidence. Compare raw/retained transitions before choosing a fix. Any fix
-  requires clean real battle/retained/deep-final acceptance. If a shared v0.9
-  defect is proven, recommend v0.9.1 before v0.10; no release work is authorized.
-  Do not wait indefinitely. Issues #8 and #13 remain opportunistic.
+- **Pending owner action:** None.
+- **Next queued task:** Resume the v0.10 deployed simultaneous-recording and
+  isolation gate, using the already authorized project workflow. Do not treat
+  #28's opportunistic Moe attribution as a blocker. No release action is
+  authorized by completing #27.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -608,7 +590,7 @@ new work; calendar entries are reminders only.
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings is
-  paused behind correctness blocker #27. Its first bounded two-slot
+  awaiting the deployed simultaneous-recording gate. Its first bounded two-slot
   service/automation slice is complete on
   `main` and its deployed idle/configuration/status checks pass; simultaneous
   recording/isolation and remaining completion/readiness review are outstanding.

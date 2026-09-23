@@ -434,6 +434,10 @@ paths, part and connection counts, interruption/finalization state, and optional
 codec and resolution information. It complements the lower-level
 `connections.jsonl`; see [SESSION_MANIFEST.md](SESSION_MANIFEST.md) for the
 schema and lifecycle.
+Successful mixed-configuration finalization also records bounded input-decoder
+health in `finalization.input_decode`. Decoder warnings can mark that health
+`degraded` while capture and finalization remain `completed`. Stream copy is
+`not_checked`; an injected finalizer without diagnostics is `unknown`.
 
 ## Validating a recording
 
@@ -467,8 +471,14 @@ to standard mode because they are recovery safety checks, not a convenience
 preference. TikREC does not automatically validate after recording.
 
 An interrupted, failed, or still-recording session is not corrupt merely
-because it is incomplete or has no final MP4. The report presents media
-integrity, session completeness, and output availability separately. Validation
+because it is incomplete or has no final MP4. Human and JSON reports distinguish
+retained-part media checks, recorded finalization input-decoder health, final
+output inspection, and deep output decode. Each can be `not_checked` when its
+evidence is unavailable or that check was not run. Visual integrity is always
+`not_checked`: a decodable re-encoded MP4 can still contain damaged source
+pictures. Session completeness and output availability remain separate, and a
+clean output never overrides retained-part errors. The legacy `media_integrity`
+JSON field is the aggregate checked-media result for compatibility. Validation
 is read-only: it never finalizes, repairs, renames, deletes, or rewrites media or
 session metadata. It is a structural health check, not exhaustive media
 forensics.

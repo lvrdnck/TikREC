@@ -120,7 +120,11 @@ def test_validated_interrupted_session_finalizes_and_records_result(tmp_path: Pa
     assert manifest["recovery_performed"] is True
     assert manifest["part_count"] == 1
     assert manifest["output_path"] == str(output)
-    assert manifest["finalization"] == {"error": None, "status": "completed"}
+    assert manifest["finalization"] == {
+        "error": None, "status": "completed",
+        "input_decode": {"status": "unknown", "diagnostic_count": 0,
+                         "diagnostic_codes": [], "count_capped": False},
+    }
 
 
 def test_validation_failure_prevents_any_finalization_mutation(tmp_path: Path) -> None:

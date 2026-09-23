@@ -9,6 +9,7 @@ from .capture import CaptureResult
 from .finalization_recovery import (plan_finalization_partial,
                                        preserve_finalization_partial)
 from .finalize import finalize_parts
+from .decode_diagnostics import input_decode_health
 from .job_state import JobState, JobStateStore
 from .media import inspect_media
 from .recovery_evidence import append_recovery_record
@@ -235,6 +236,10 @@ class StartupReconciler:
         return ReconciliationResult("settled", job, reason)
 
     def _finalize(self, job, session, reason, observe, *, partial=None):
+        decode_health = input_decode_health("unknown")
+        def record_decode(health: dict) -> None:
+            nonlocal decode_health
+            decode_health = health
         job = replace(job, state="finalizing", recovery_reason=reason)
         job = self.save_job(job)
         observe(job)
@@ -244,7 +249,11 @@ class StartupReconciler:
         try:
             if partial is not None:
                 preserve_finalization_partial(partial)
-            self.finalizer(session.retained.parts, Path(job.output_path))
+            if self.finalizer is finalize_parts:
+                self.finalizer(session.retained.parts, Path(job.output_path),
+                               on_input_decode=record_decode)
+            else:
+                self.finalizer(session.retained.parts, Path(job.output_path))
         except Exception:
             # Close the observed recovery attempt so a later retry has a valid end boundary.
             session.manifest.fail(session.retained.parts, "recovery finalization failed",
@@ -253,5 +262,6 @@ class StartupReconciler:
                                         error="recovery finalization failed; retained parts preserved")
         # This is the observed reconciliation end, never an invented process-death time.
         session.manifest.complete(session.retained.parts, output_path=Path(job.output_path),
-                                  interrupted=True, finalization_status="completed")
+                                  interrupted=True, finalization_status="completed",
+                                  input_decode=decode_health)
         return self._completed(job, session, reason)
