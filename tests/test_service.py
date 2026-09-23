@@ -268,6 +268,33 @@ def test_duplicate_manual_page_returns_conflict_without_new_session(tmp_path):
         manager.shutdown()
 
 
+def test_mixed_case_duplicate_page_returns_sanitized_conflict(tmp_path):
+    entered = Event()
+    def capture(url, **kwargs):
+        entered.set()
+        assert kwargs["stop_event"].wait(2)
+        return CaptureResult((), None, True)
+    manager = RecordingManager((RecordingController(capture=capture),
+                                RecordingController(capture=capture)))
+    try:
+        first_code, first = request(manager, "POST", "/recording/start", {
+            "url": "https://www.tiktok.com/@Alpha/live",
+            "output": str(tmp_path / "one.mp4"),
+        })
+        assert first_code == 202 and entered.wait(2)
+        code, response = request(manager, "POST", "/recording/start", {
+            "url": "http://tiktok.com/@alpha/live/?share=1#fragment",
+            "output": str(tmp_path / "two.mp4"),
+        })
+        assert (code, response) == (409, {"error": "public LIVE already owned by another recording"})
+        assert manager.health()["active_count"] == 1
+        assert manager.status()["session_id"] == first["session_id"]
+        assert manager.status()["source_url"].endswith("/@Alpha/live")
+        assert manager.status()["stop_requested"] is False
+    finally:
+        manager.shutdown()
+
+
 @pytest.mark.parametrize(
     "path", ["/health", "/recording", "/recordings", "/monitoring",
              "/recording/start", "/recording/stop"]

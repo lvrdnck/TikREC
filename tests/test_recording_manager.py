@@ -16,6 +16,7 @@ from tikrec.service_job import independent_job_stores, second_job_state_path
 
 
 PAGE = "https://www.tiktok.com/@creator/live"
+MIXED_PAGE = "https://www.tiktok.com/@Alpha/live"
 PAGE_BETA = "https://www.tiktok.com/@beta/live"
 PAGE_GAMMA = "https://www.tiktok.com/@gamma/live"
 
@@ -120,6 +121,26 @@ def test_equivalent_manual_pages_cannot_own_two_slots(tmp_path):
         manager.shutdown()
 
 
+@pytest.mark.parametrize("candidate", [
+    "https://www.tiktok.com/@alpha/live",
+    "http://tiktok.com/@aLpHa/live/?share=1#fragment",
+])
+def test_case_equivalent_manual_pages_cannot_own_two_slots(tmp_path, candidate):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    first = manager.start(MIXED_PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    try:
+        with pytest.raises(RecordingDuplicate):
+            manager.start(candidate, str(tmp_path / "second.mp4"))
+        assert manager.health()["active_count"] == 1
+        assert manager.status()["session_id"] == first["session_id"]
+        assert manager.status()["source_url"] == MIXED_PAGE
+        assert not harness.stop_events["first"].is_set()
+    finally:
+        manager.shutdown()
+
+
 def test_expected_room_reservation_is_scoped_to_current_session(tmp_path):
     harness = CaptureHarness()
     first_store = JobStateStore(tmp_path / "job.json")
@@ -213,6 +234,31 @@ def test_unavailable_status_does_not_erase_manual_page_owner(tmp_path, monkeypat
         assert manager.health()["available_slots"] == 1
         with pytest.raises(RecordingDuplicate):
             manager.start(PAGE, str(tmp_path / "second.mp4"))
+        assert manager.status()["session_id"] == first["session_id"]
+    finally:
+        manager.shutdown()
+
+
+def test_unavailable_status_preserves_mixed_case_page_owner(tmp_path, monkeypatch):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    first = manager.start(MIXED_PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    controller = manager.controllers[0]
+    original_status = controller.status
+    failures = 0
+    def unavailable_twice():
+        nonlocal failures
+        failures += 1
+        if failures <= 2:
+            raise OSError("temporary status failure")
+        return original_status()
+    monkeypatch.setattr(controller, "status", unavailable_twice)
+    try:
+        assert manager.health()["available_slots"] == 1
+        with pytest.raises(RecordingDuplicate):
+            manager.start("https://www.tiktok.com/@alpha/live",
+                          str(tmp_path / "second.mp4"))
         assert manager.status()["session_id"] == first["session_id"]
     finally:
         manager.shutdown()
@@ -453,5 +499,35 @@ def test_two_startup_reconcilers_run_independently(tmp_path):
             "00000000-0000-0000-0000-000000000002",
         ]
         assert all(item["recovery_state"] == "deferred" for item in statuses)
+    finally:
+        manager.shutdown()
+
+
+def test_loaded_mixed_case_durable_job_owns_equivalent_page(tmp_path):
+    path = tmp_path / "job.json"
+    output = tmp_path / "old.mp4"
+    job = JobState(
+        "00000000-0000-0000-0000-000000000001", MIXED_PAGE, str(output),
+        str(tmp_path / "old.parts"), 1.0, room_id="123",
+    )
+    store = JobStateStore(path)
+    store.save(job)
+    original = path.read_bytes()
+    reconciler = SimpleNamespace(reconcile=lambda **_: SimpleNamespace(
+        job=job, blocked=True, outcome="deferred", reason="identity_unavailable",
+        error=None,
+    ))
+    controller = RecordingController(store=store, reconciler=reconciler)
+    controller._worker.join(2)
+    harness = CaptureHarness()
+    manager = RecordingManager((controller, RecordingController(capture=harness.capture)))
+    try:
+        assert manager.controllers[0].status()["source_url"] == MIXED_PAGE
+        assert manager.health()["available_slots"] == 1
+        with pytest.raises(RecordingDuplicate):
+            manager.start("https://www.tiktok.com/@alpha/live",
+                          str(tmp_path / "second.mp4"))
+        assert path.read_bytes() == original
+        assert store.load().source_url == MIXED_PAGE
     finally:
         manager.shutdown()

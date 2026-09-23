@@ -103,11 +103,13 @@ The internal automatic expected-room guard is not an HTTP field; callers cannot
 choose or override it.
 
 The manager rejects cross-slot output or `.parts` path collisions and duplicate
-normalized public LIVE pages under one allocation lock. For automatic starts it
-also reserves the expected canonical room in memory for the accepted session,
-closing the interval before its worker publishes proven room identity. Another
-current slot cannot claim that room. Settlement or slot reuse releases the
-reservation; unreadable status cannot prove release. Expected room identity is
+normalized public LIVE pages under one allocation lock. Creator handle spelling
+is case-equivalent for page ownership, including existing mixed-case durable jobs
+and temporary unreadable status; accepted source URLs retain their spelling.
+For automatic starts it also reserves the expected canonical room in memory for
+the accepted session, closing the interval before its worker publishes proven
+room identity. Another current slot cannot claim that room. Settlement or slot
+reuse releases the reservation; unreadable status cannot prove release. Expected room identity is
 not added to durable job state before resolution. A duplicate returns a fixed
 409 conflict without creating a new session. `session_id` is the per-recording
 control identity;

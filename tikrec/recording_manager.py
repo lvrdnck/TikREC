@@ -114,6 +114,7 @@ class RecordingManager:
     def start(self, url: str, output: str, **options) -> dict:
         """Atomically claim one free slot without duplicating a current LIVE."""
         page = normalize_live_url(url)
+        page_identity = _page_identity(page)
         expected_room = options.get("expected_room_id")
         if expected_room is not None:
             expected_room = canonical_room_id(expected_room)
@@ -131,8 +132,8 @@ class RecordingManager:
                         raise ValueError("output is already owned by another recording")
                     if _same_path(status.get("parts_directory"), parts_path):
                         raise ValueError("retained parts are already owned by another recording")
-                    if _same_page(status.get("source_url"), page) or (
-                        owner is not None and owner[1] == page
+                    if _same_page(status.get("source_url"), page_identity) or (
+                        owner is not None and owner[1] == page_identity
                     ):
                         raise RecordingDuplicate("public LIVE page already owned")
                     if expected_room is not None and (
@@ -149,7 +150,7 @@ class RecordingManager:
             started = controller.start(page, output, **options)
             # The lock keeps both claims atomic with the accepted session.
             self._owners[slot_id] = (_session_id(started.get("session_id")),
-                                     page, expected_room)
+                                     page_identity, expected_room)
             return _with_slot(slot_id, started)
 
     def stop(self, session_id: str | None = None) -> dict:
@@ -272,9 +273,14 @@ def _same_path(value: object, candidate: Path) -> bool:
         return Path(value) == candidate
 
 
-def _same_page(value: object, page: str) -> bool:
+def _page_identity(normalized_page: str) -> str:
+    # Normalization fixes the host and suffix; only creator spelling can vary.
+    return normalized_page.lower()
+
+
+def _same_page(value: object, page_identity: str) -> bool:
     try:
-        return normalize_live_url(value) == page
+        return _page_identity(normalize_live_url(value)) == page_identity
     except (TypeError, ValueError):
         return False
 

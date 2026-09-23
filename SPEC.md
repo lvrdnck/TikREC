@@ -579,10 +579,14 @@ start schema cannot supply this value, and manual starts remain unchanged.
 `RecordingManager` owns the built-in capacity of two independent controllers.
 Its lock atomically selects a healthy slot for each API or automation start and
 rejects active cross-slot output/parts collisions and duplicate normalized LIVE
-pages. An automatic expected room is also reserved in memory for the current
-session before its worker publishes proven room identity; another current slot
-cannot claim the same room. A settled or reused session releases its reservation,
-and an unreadable status cannot prove release. No unproven room is persisted.
+pages. Page ownership compares creator handle spelling case-insensitively for
+both readable current status and session-bound in-memory fallback, including
+mixed-case source URLs loaded from durable jobs. Accepted source URLs retain
+their spelling. An automatic expected room is also reserved in memory for the
+current session before its worker publishes proven room identity; another
+current slot cannot claim the same room. A settled or reused session releases its
+reservation, and an unreadable status cannot prove release. No unproven room is
+persisted.
 Workers, stop Events, durable stores, recovery, byte/reconnect progress, results,
 and finalization never cross
 slot boundaries. A blocked or recovering slot is unavailable without hiding the

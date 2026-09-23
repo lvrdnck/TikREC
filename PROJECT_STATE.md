@@ -7,8 +7,28 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active v0.10 task: duplicate-start correction implemented; independent review
-  pending (2026-09-23).** An independent fresh-context review of `94f3191`
+- **Active v0.10 task: mixed-case page ownership correction implemented;
+  independent review pending (2026-09-23).** Fresh review of `b309135` found
+  that a resolving manual `@Alpha/live` job could coexist with an automatic
+  `@alpha/live` job because both readable status and the manager's in-memory
+  owner fallback compared page spelling case-sensitively. Seven focused offline
+  regressions failed on `b309135`, including real-controller automation,
+  direct/API starts, unreadable status, and a loaded mixed-case durable job.
+  The manager now compares a lowercase identity derived only from an already
+  accepted normalized public page; controller and durable source URLs retain
+  their original spelling. The previous atomic expected-room reservation and
+  duplicate-claim cleanup remain unchanged. An unproven expected room need not
+  be persisted and is not a release blocker. All 120 focused tests and the
+  isolated full suite (1,131 tests plus 19 subtests) pass; unittest discovery
+  passes 223, compilation and 24 CLI help/version paths pass, all 77 package
+  sources remain under 300 lines, and diff checks pass. No LIVE or media changed.
+  The deployed two-slot isolation gate passed for distinct LIVEs. v0.10 release
+  preparation remains blocked until fresh independent review of this correction
+  and final refreshed readiness on current `main`. #8, #13, and #28 remain
+  separate, non-blocking evidence work.
+- **Previous duplicate-start correction: independent review found a further
+  case-equivalent bypass (2026-09-23).** An independent fresh-context review of
+  `94f3191`
   found that capacity 2 could start a monitored LIVE in slot 2 while a manual
   same-page job in slot 1 was still resolving with `room_id=null`; two monitored
   handles observed in one canonical room could likewise fill both slots before
@@ -804,8 +824,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None for the completed deployed gate. Do not treat
   its completion as authorization to bump, tag, or publish v0.10.
-- **Next queued task:** Independent fresh-context review of the duplicate-start
-  correction and refreshed v0.10 readiness on corrected `main`. Keep #8/#13/#28
+- **Next queued task:** Fresh independent review of the mixed-case ownership
+  correction and final refreshed v0.10 readiness on corrected `main`. Keep #8/#13/#28
   separate and non-blocking; do not begin v0.11 or release preparation before
   that review.
 
@@ -826,10 +846,10 @@ new work; calendar entries are reminders only.
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings has
   passed the deployed two-slot recording/isolation and idle-restart gate on
-  current `main`. Independent review found a duplicate-start ownership blocker;
-  its bounded correction requires fresh independent review before release
-  preparation. Conditional v0.6.5 redundant capture
-  is not selected.
+  current `main`. Independent review found a remaining case-equivalent page
+  ownership bypass after the atomic duplicate-start fix; its bounded correction
+  requires fresh independent review before release preparation. Conditional
+  v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 

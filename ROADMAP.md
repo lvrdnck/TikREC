@@ -1076,6 +1076,19 @@ v0.10 release preparation stays blocked until an independent fresh-context
 review checks this correction and refreshed readiness on the new `main`. Issues
 #8, #13, and #28 remain separate non-blocking evidence work.
 
+**Mixed-case ownership review and correction (2026-09-23):** Independent review
+of `b309135` found that accepted `@Alpha/live` and monitored `@alpha/live`
+could still claim both slots while the manual job was resolving. Seven focused
+offline regressions failed on that baseline. Page ownership now compares a
+case-equivalent identity for both readable status and the session-bound
+fallback, including existing mixed-case durable jobs; accepted and persisted
+source URLs keep their spelling. The earlier expected-room reservation remains
+memory-only and is not a blocker. Duplicate claim cleanup and selection of a
+later distinct creator remain covered. The deployed distinct-LIVE isolation
+gate remains valid. A fresh independent review of this correction and final
+v0.10 readiness is required before release preparation; #8/#13/#28 remain
+separate non-blocking evidence work.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1308,7 +1321,8 @@ are released. v0.10.0 multiple simultaneous creator recordings is the current
 development target. Its bounded two-slot manager slice and deployed
 concurrency/isolation/idle-restart gate are complete on `main`. A subsequent
 independent review found a duplicate-start ownership blocker; its correction
-needs a fresh independent review before release preparation. #27 and #29 are
+had a mixed-case page bypass; the bounded follow-up needs fresh independent
+review before release preparation. #27 and #29 are
 closed; #8, #13, and #28 remain separate non-blocking evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and

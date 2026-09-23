@@ -226,6 +226,29 @@ def test_manual_resolving_same_page_is_suppressed_without_claim(tmp_path):
         manager.shutdown()
 
 
+def test_mixed_case_manual_resolving_page_is_suppressed(tmp_path):
+    coordinator, manager, entered, store = _resolving_components(tmp_path)
+    manual = manager.start("https://www.tiktok.com/@Alpha/live",
+                           str(tmp_path / "manual.mp4"))
+    assert entered["manual"].wait(2)
+    assert manager.status()["room_id"] is None
+    try:
+        cycle = _cycle(1, ("alpha", "live", "123"))
+        coordinator.cycle_completed(cycle)
+        assert manager.health()["active_count"] == 1
+        assert manager.status()["session_id"] == manual["session_id"]
+        assert manager.status()["source_url"].endswith("/@Alpha/live")
+        assert manager.status()["stop_requested"] is False
+        assert store.load().pending_claim is None
+        assert store.load().consumed() == {}
+        result = coordinator.snapshot(cycle)["creators"][0]["automation"]
+        assert result["state"] == "suppressed"
+        assert result["reason"] == "duplicate_live_owned"
+        assert result["consumed_room_id"] is None
+    finally:
+        manager.shutdown()
+
+
 def test_duplicate_candidate_does_not_starve_unrelated_creator(tmp_path):
     coordinator, manager, entered, store = _resolving_components(tmp_path)
     manual = manager.start("https://www.tiktok.com/@alpha/live",
@@ -241,6 +264,33 @@ def test_duplicate_candidate_does_not_starve_unrelated_creator(tmp_path):
         assert store.load().consumed() == {"zeta": "456"}
         values = {item["creator"]: item["automation"] for item in coordinator.snapshot(cycle)["creators"]}
         assert values["alpha"]["reason"] == "duplicate_live_owned"
+        assert values["zeta"]["state"] == "started"
+    finally:
+        manager.shutdown()
+
+
+def test_mixed_case_duplicate_allows_later_creator_in_same_cycle(tmp_path):
+    coordinator, manager, entered, store = _resolving_components(tmp_path)
+    manual = manager.start("https://www.tiktok.com/@Alpha/live",
+                           str(tmp_path / "manual.mp4"))
+    assert entered["manual"].wait(2)
+    try:
+        cycle = _cycle(1, ("zeta", "live", "456"), ("alpha", "live", "123"))
+        coordinator.cycle_completed(cycle)
+        assert entered["zeta-20260923-120000"].wait(2)
+        assert manager.health()["active_count"] == 2
+        assert manager.controllers[0].status()["session_id"] == manual["session_id"]
+        assert [item["source_url"] for item in manager.recordings()["slots"]] == [
+            "https://www.tiktok.com/@Alpha/live",
+            "https://www.tiktok.com/@zeta/live",
+        ]
+        assert store.load().pending_claim is None
+        assert store.load().consumed() == {"zeta": "456"}
+        values = {item["creator"]: item["automation"]
+                  for item in coordinator.snapshot(cycle)["creators"]}
+        assert values["alpha"]["state"] == "suppressed"
+        assert values["alpha"]["reason"] == "duplicate_live_owned"
+        assert values["alpha"]["consumed_room_id"] is None
         assert values["zeta"]["state"] == "started"
     finally:
         manager.shutdown()
