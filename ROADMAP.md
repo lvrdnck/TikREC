@@ -962,6 +962,21 @@ media validation, and final idle restart remain outstanding. Leave Eliss
 recording and resume only from a natural overlap or later safe idle state;
 release preparation remains out of scope.
 
+**Interrupted Eliss gate checkpoint (2026-09-23):** Before the new authorized
+Tom overlap attempt, Windows rebooted after an unexpected shutdown and the
+service's restart could not recover Eliss's malformed seventh writer partial.
+Slot 1 is fail-closed (`recovering/failed/ambiguous_state`), slot 2 is free, and
+no recording is active. Six completed Eliss parts and the original partial are
+preserved; no final MP4 or dual-session gate exists. A fresh public resolver
+found owner-authorized `tomwhoasmr` LIVE, but he was not started alone. Issue
+#29 tracks read-only recovery investigation. The owner accepts an explicit Tom
+start as two-slot deployed isolation evidence if Eliss is actively recording
+and slot 2 is free; automatic second-slot capacity remains covered by offline
+tests and the existing automatic-start evidence. The two-slot isolation,
+targeted finalization, dual validation, idle restart, and readiness review remain
+outstanding. Do not infer a writer defect or safe salvage from the malformed
+partial until #29 is investigated, and do not begin release preparation.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.

@@ -7,7 +7,35 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active task: v0.10 deployed simultaneous gate, partial.** On 2026-09-23,
+- **Active task: v0.10 deployed simultaneous gate, partial; recovery investigation
+  #29 queued.** At the next execution checkpoint on 2026-09-23, Eliss was no
+  longer active. Windows booted at 09:49:45 local after an unexpected shutdown
+  (System event 6008); the unchanged `TikREC Service` task ran at 09:51:02.
+  Authenticated health showed capacity 2, `active_count=0`, `available_slots=1`:
+  `slot-1` was unavailable with `recovering/failed/ambiguous_state`; `slot-2`
+  retained its historical completed Phoebe job. Durable `job.json` and the Eliss
+  manifest still identify session `349adec0-b203-499b-bb05-444e3a99240d`, room
+  `7688598578159274765`, as recording/pending finalization; `job-2.json` and
+  automation's consumed Eliss room/no pending claim remain coherent. Six
+  completed Eliss FLV parts and a 31,380,072-byte `.part-0007.flv.partial` are
+  retained; no final MP4 exists. Read-only startup inspection rejected the
+  partial's FLV framing: 11,164 valid tags end at byte 31,247,682, where
+  `PreviousTagSize` mismatches, with 132,390 bytes remaining. Its SHA-256 is
+  `976633b298c1527301a4846b9ba5a337d70ce331bbfe4544c738c4caaa11391e`.
+  The cause of the malformed bytes is unproven; the fail-closed recovery policy
+  preserved all artifacts. The task definition hash stayed
+  `CF57505AA9BB57CFEB089D476098F8ECB31C5950EBCC2F4069A92B49F3E8A40C`;
+  the task-visible configuration still monitors exactly Eliss/Phoebe with
+  `C:\Users\Leandro\Videos` as output. A fresh public resolver found newly
+  owner-authorized `tomwhoasmr` LIVE in room `7688596234675800849`, status 2,
+  `hd1` FLV, but Tom was **not** started because Eliss was not active and no
+  second live recording existed. No targeted stop, dual validation, or idle
+  persistence test was possible. Issue #29 records the recovery investigation;
+  preserve all original media/job evidence and do not restart or reconfigure the
+  service to force this session to resume. The owner now permits an explicit
+  manual Tom start as real two-slot isolation evidence only when Eliss is active
+  and slot 2 is free; do not claim this proves automatic second-slot selection.
+- **Previous v0.10 natural-overlap checkpoint:** On 2026-09-23,
   two public resolver checks found `eliss4r.n` LIVE in room
   `7688598578159274765`, while `phoebelightt` and `moealkaf` were explicitly
   offline. Eliss and Phoebe were selected: Phoebe had two recent natural
@@ -583,12 +611,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Next queued task:** Resume the same v0.10 gate on a later natural overlap
-  of the selected pair. First inspect the active Eliss session and the task-
-  visible configuration/service snapshot; do not restart while either slot is
-  active. Only a genuine two-slot automatic start authorizes the targeted-stop,
-  dual validation, idle-restart, and release-readiness checks. Do not begin
-  v0.11 or prepare/publish v0.10 in this task.
+- **Next queued task:** Investigate issue #29 read-only first and decide whether
+  any bounded, validated recovery of Eliss is safe. Then resume the v0.10
+  deployed two-slot gate only with two legitimate active real recordings; an
+  owner-authorized manual Tom start may fill free slot 2 while Eliss is actively
+  recording. Do not treat a lone Tom start as the gate, begin v0.11, or prepare/
+  publish v0.10 in this task.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
