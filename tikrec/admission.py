@@ -9,9 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from .output_naming import OutputNameUnavailableError, monitored_recording_paths
+from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, GIB, StorageStatus
 
 
-MINIMUM_FREE_BYTES = 10 * 1024**3
+MINIMUM_FREE_BYTES = DEFAULT_MINIMUM_FREE_SPACE_GIB * GIB
 
 
 class RecordingAdmission:
@@ -25,11 +26,12 @@ class RecordingAdmission:
         clock: Callable[[], datetime] = datetime.now,
         disk_usage: Callable[[Path], Any] = shutil.disk_usage,
         allocator: Callable[..., tuple[Path, Path]] = monitored_recording_paths,
+        storage_status: StorageStatus | None = None,
     ) -> None:
         self._output_directory = output_directory
         self._controller_health = controller_health
         self._clock = clock
-        self._disk_usage = disk_usage
+        self.storage_status = storage_status or StorageStatus(output_directory, disk_usage=disk_usage)
         self._allocator = allocator
 
     def evaluate(self, monitoring: dict) -> dict:
@@ -37,15 +39,13 @@ class RecordingAdmission:
         observations = [dict(item) for item in monitoring.get("creators", [])]
         live = any(item.get("state") == "live" for item in observations)
         slot_available = self._slot_available() if live else False
-        free_bytes: int | None = None
-        storage_available = False
-        if live and slot_available and self._output_directory is not None:
-            free_bytes = self._free_bytes()
-            storage_available = free_bytes is not None
+        storage = (self.storage_status.snapshot() if live and slot_available else None)
+        free_bytes = storage["free_bytes"] if storage is not None else None
+        storage_available = storage is not None and storage["state"] in {"ok", "warning", "blocked"}
         moment = (
             self._moment()
-            if (storage_available and free_bytes is not None
-                and free_bytes >= MINIMUM_FREE_BYTES)
+            if storage_available and free_bytes is not None
+            and free_bytes >= self.storage_status.minimum_free_bytes
             else None
         )
         for item in observations:
@@ -53,7 +53,7 @@ class RecordingAdmission:
                 item, slot_available, storage_available, free_bytes, moment
             )
         snapshot = dict(monitoring)
-        snapshot["minimum_free_bytes"] = MINIMUM_FREE_BYTES
+        snapshot["minimum_free_bytes"] = self.storage_status.minimum_free_bytes
         snapshot["creators"] = observations
         return snapshot
 
@@ -73,7 +73,7 @@ class RecordingAdmission:
             return _result("blocked", "output_directory_unconfigured")
         if not storage_available or free_bytes is None:
             return _result("blocked", "storage_unavailable")
-        if free_bytes < MINIMUM_FREE_BYTES:
+        if free_bytes < self.storage_status.minimum_free_bytes:
             return _result("blocked", "low_free_space", free_bytes=free_bytes)
         if moment is None:
             return _result(
@@ -101,40 +101,12 @@ class RecordingAdmission:
             return False
         return isinstance(health, dict) and health.get("available") is True
 
-    def _free_bytes(self) -> int | None:
-        try:
-            parent = _nearest_existing_directory(self._output_directory)
-            free = self._disk_usage(parent).free
-        except Exception:
-            return None
-        return free if type(free) is int and free >= 0 else None
-
     def _moment(self) -> datetime | None:
         try:
             moment = self._clock()
         except Exception:
             return None
         return moment if isinstance(moment, datetime) else None
-
-
-def _nearest_existing_directory(directory: Path | None) -> Path:
-    if directory is None:
-        raise OSError("output directory is unconfigured")
-    candidate = directory
-    while True:
-        try:
-            candidate.lstat()
-        except FileNotFoundError:
-            parent = candidate.parent
-            if parent == candidate:
-                raise OSError("no existing storage parent")
-            candidate = parent
-            continue
-        except OSError:
-            raise OSError("storage parent is unavailable") from None
-        if not candidate.is_dir():
-            raise OSError("storage parent is not a directory")
-        return candidate
 
 
 def _result(

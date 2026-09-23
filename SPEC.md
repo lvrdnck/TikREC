@@ -806,9 +806,14 @@ Missing `output_directory` produces `blocked/output_directory_unconfigured` but
 does not prevent service startup or read-only monitoring. Admission checks free
 space at the configured directory or its nearest existing parent without
 creating directories. Failure to inspect storage is
-`blocked/storage_unavailable`; fewer than `10 * 1024**3` free bytes is
-`blocked/low_free_space`. This built-in floor applies only to future unattended
+`blocked/storage_unavailable`; fewer than the configured reserve (10 GiB by
+default) is `blocked/low_free_space`. This floor applies only to future unattended
 recording, never manual local/remote starts, recovery, or finalization.
+The read-only storage policy also supplies authenticated `/health` with free,
+minimum, and warning byte thresholds and one of `ok`, `warning`, `blocked`,
+`unconfigured`, or `unavailable`. Warning starts below the greater of 20 GiB
+and twice the minimum; it does not block automatic admission. The minimum is
+an optional strict schema-1 integer `minimum_free_space_gib` from 1 to 1024.
 
 With storage available, admission reuses the creator/local-time
 `creator-YYYYMMDD-HHMMSS.mp4` convention and bounded `-2` through `-1000`
@@ -919,11 +924,13 @@ when placed before the subcommand, selects one deterministic explicit file.
 TikREC never scans for alternatives. The schema permits integer
 `schema_version: 1`, optional absolute string `output_directory`, and optional
 integer `recovery_window_seconds` from 60 through 3600 inclusive, and optional
-string `validation_mode` equal to `standard` or `deep`, and optional ordered
-string list `monitored_creators`; duplicate,
+string `validation_mode` equal to `standard` or `deep`, optional ordered
+string list `monitored_creators`, and optional integer
+`minimum_free_space_gib` from 1 through 1024. Duplicate fields,
 missing-version, unknown, incorrectly typed, malformed, or unsupported data is an
 error. The optional boolean `debug_tracebacks` controls unexpected CLI traceback
-output. Explicitly supplying null for `validation_mode` or `debug_tracebacks` is
+output. Explicitly supplying null for `validation_mode`, `debug_tracebacks`, or
+`minimum_free_space_gib` is
 invalid. Writes use a flushed same-directory temporary and atomic replacement,
 with a parent-directory sync on POSIX. Unsetting all optional settings retains a valid
 versioned document. This store must never contain TikTok cookies, credentials,

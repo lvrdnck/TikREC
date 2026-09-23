@@ -7,6 +7,14 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Active v0.11.0 development (2026-09-23):** The first smart-storage slice
+  adds a strict configurable automatic reserve (default 10 GiB), a shared
+  read-only storage policy, and a sanitized authenticated `/health` summary.
+  Warning starts below `max(20 GiB, 2 × minimum)`; blocked starts below the
+  minimum. Manual capture, media, and retention remain unchanged. This is
+  untagged development on `main`; v0.10.0 remains the current release. Next
+  v0.11 work is safe retention policy design and implementation, with any
+  destructive action requiring its own bounded safeguards and review.
 - **v0.10.0 publication completed (2026-09-23).** The immutable annotated
   `v0.10.0` tag object is `014fa0b785f77c6b42ffe73a86ba28b00126a4ff`
   and peels to the exact independently reviewed candidate

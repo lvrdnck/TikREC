@@ -34,6 +34,8 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec config unset output-directory
     tikrec config set recovery-window-seconds SECONDS
     tikrec config unset recovery-window-seconds
+    tikrec config set minimum-free-space-gib GIB
+    tikrec config unset minimum-free-space-gib
     tikrec config set validation-mode standard|deep
     tikrec config unset validation-mode
     tikrec config set debug-tracebacks true|false
@@ -185,7 +187,8 @@ absent removals fail clearly. Listing an absent configuration reports no
 creators, and adding a creator does not require `output_directory`.
 
 These configuration commands do not contact TikTok or start recording. The
-persistent service snapshots the ordered list and `output_directory` at startup,
+persistent service snapshots the ordered list, `output_directory`, and the
+automatic minimum free-space reserve (1–1024 GiB, default 10) at startup,
 polls each creator in that order immediately and then 30 seconds after each
 completed cycle, and keeps sanitized observations in memory. Restart the service
 after configuration changes. Observation order is not scheduling priority, and
@@ -286,9 +289,9 @@ Each observation also has a current admission result. Non-LIVE creators are
 the two service slots can safely accept work because of recording, recovery,
 finalization, blocked state, or shutdown. It is
 `blocked` when output storage is unconfigured or unavailable, free space is below
-the built-in 10 GiB unattended floor, or the bounded name search is exhausted;
+the configured unattended reserve (10 GiB by default), or the bounded name search is exhausted;
 otherwise it is `ready`. Ready status exposes only the local candidate MP4 and
-matching `.parts` paths, observed free bytes, and the fixed threshold. Admission
+matching `.parts` paths, observed free bytes, and the current threshold. Admission
 uses the nearest existing parent for a not-yet-created output directory and never
 creates or reserves anything. It is recalculated on each status request and does
 not affect manual starts, recovery, or the existing recording pipeline.
@@ -499,7 +502,7 @@ validation notes in SPEC.md for why.
 invocation. The persistent service owns a fixed pool of two independent jobs,
 each with its own worker, stop event, durable intent, recovery, retained media,
 finalization, and result. Creator automation can fill both slots while retaining
-the 10 GiB per-start floor, room binding, collision-safe naming, and durable
+the configurable per-start reserve (10 GiB by default), room binding, collision-safe naming, and durable
 same-room suppression. It does not authenticate to TikTok, notify the owner,
 manage retention, or provide a library/Web UI/playback.
 

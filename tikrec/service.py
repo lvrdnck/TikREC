@@ -20,6 +20,7 @@ from .retry_policy import RetryPolicy
 from .job_state import JobStateStore
 from .service_job import (default_job_state_path, independent_job_stores,
                           second_job_state_path)
+from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, StorageStatus
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -54,6 +55,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                  automation_store: AutomationStateStore | None = None,
                  monitored_creators: tuple[str, ...] = (),
                  output_directory: Path | None = None,
+                 minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB,
+                 storage_status: StorageStatus | None = None,
                  token: str | None = None, retry_policy: RetryPolicy = RetryPolicy(),
                  bind_and_activate: bool = True) -> None:
         host = validate_bind(host, token)
@@ -85,8 +88,11 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                         retry_policy=retry_policy,
                     ),
                 ))
+            self.storage_status = storage_status or StorageStatus(
+                output_directory, minimum_free_space_gib
+            )
             self.admission = admission if admission is not None else RecordingAdmission(
-                output_directory, self.controller.health
+                output_directory, self.controller.health, storage_status=self.storage_status
             )
             state_store = automation_store or AutomationStateStore(
                 job_store.path.with_name("automation.json")
@@ -145,7 +151,9 @@ class RecordingHandler(BaseHTTPRequestHandler):
         if not self._authorized():
             return
         if self.path == "/health":
-            self._json(200, self.server.controller.health())
+            health = dict(self.server.controller.health())
+            health["storage"] = self.server.storage_status.snapshot()
+            self._json(200, health)
         elif self.path == "/recording":
             try:
                 self._json(200, self.server.controller.status())
@@ -267,6 +275,7 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           retry_policy: RetryPolicy = RetryPolicy(),
           monitored_creators: tuple[str, ...] = (),
           output_directory: Path | None = None,
+          minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB,
           monitor: CreatorMonitor | None = None,
           admission: RecordingAdmission | None = None,
           automation: AutomationCoordinator | None = None,
@@ -278,7 +287,8 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
                              admission=admission, automation=automation,
                              automation_store=automation_store,
                              monitored_creators=monitored_creators,
-                             output_directory=output_directory) as server:
+                             output_directory=output_directory,
+                             minimum_free_space_gib=minimum_free_space_gib) as server:
         try:
             server.serve_forever()
         except KeyboardInterrupt:

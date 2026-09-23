@@ -13,6 +13,7 @@ from .configuration import (
     configured_debug_tracebacks,
     configured_recovery_window_seconds,
     configured_output_directory,
+    configured_minimum_free_space_gib,
     configured_validation_mode,
     default_config_path,
 )
@@ -28,7 +29,7 @@ def add_config_command(subcommands) -> argparse.ArgumentParser:
     set_command = actions.add_parser("set", help="set one persisted default")
     settings = [
         "output-directory", "recovery-window-seconds", "validation-mode",
-        "debug-tracebacks",
+        "debug-tracebacks", "minimum-free-space-gib",
     ]
     set_command.add_argument("setting", choices=settings)
     set_command.add_argument("value", metavar="VALUE")
@@ -80,6 +81,12 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 if configuration.debug_tracebacks is not None
                 else "built_in_default"
             ),
+            "minimum_free_space_gib": configuration.minimum_free_space_gib,
+            "effective_minimum_free_space_gib": configuration.effective_minimum_free_space_gib,
+            "minimum_free_space_source": (
+                "configuration" if configuration.minimum_free_space_gib is not None
+                else "built_in_default"
+            ),
             "monitored_creators": list(configuration.monitored_creators),
         }
         if arguments.json:
@@ -120,6 +127,13 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 file=stdout,
             )
             print(f"Debug tracebacks source: {result['debug_tracebacks_source']}", file=stdout)
+            print(
+                "Configured minimum free space: "
+                f"{result['minimum_free_space_gib'] if result['minimum_free_space_gib'] is not None else '(not set)'}",
+                file=stdout,
+            )
+            print(f"Effective minimum free space: {result['effective_minimum_free_space_gib']} GiB", file=stdout)
+            print(f"Minimum free space source: {result['minimum_free_space_source']}", file=stdout)
             creators = ", ".join(f"@{item}" for item in configuration.monitored_creators)
             print(f"Monitored creators: {creators or '(none)'}", file=stdout)
         return 0
@@ -136,6 +150,10 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
             value = configured_validation_mode(arguments.value)
             store.save(replace(configuration, validation_mode=value))
             print(f"Set validation mode: {value}", file=stdout)
+        elif arguments.setting == "minimum-free-space-gib":
+            value = configured_minimum_free_space_gib(arguments.value)
+            store.save(replace(configuration, minimum_free_space_gib=value))
+            print(f"Set minimum free space: {value} GiB", file=stdout)
         else:
             value = configured_debug_tracebacks(arguments.value)
             store.save(replace(configuration, debug_tracebacks=value))
@@ -150,6 +168,9 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
     elif arguments.setting == "validation-mode":
         store.save(replace(configuration, validation_mode=None))
         print("Unset validation mode", file=stdout)
+    elif arguments.setting == "minimum-free-space-gib":
+        store.save(replace(configuration, minimum_free_space_gib=None))
+        print("Unset minimum free space", file=stdout)
     else:
         store.save(replace(configuration, debug_tracebacks=None))
         print("Unset debug tracebacks", file=stdout)

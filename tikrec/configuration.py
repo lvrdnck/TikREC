@@ -11,15 +11,15 @@ from tempfile import NamedTemporaryFile
 
 from .creator_identity import validate_monitored_creators
 from .retry_policy import DEFAULT_RECOVERY_WINDOW_SECONDS
+from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, MAX_MINIMUM_FREE_SPACE_GIB
 
 CONFIG_SCHEMA_VERSION = 1
 MIN_RECOVERY_WINDOW_SECONDS = 60
 MAX_RECOVERY_WINDOW_SECONDS = 3600
 DEFAULT_VALIDATION_MODE = "standard"
 VALIDATION_MODES = frozenset({"standard", "deep"})
-_FIELDS = {
-    "schema_version", "output_directory", "recovery_window_seconds", "validation_mode",
-    "debug_tracebacks", "monitored_creators"}
+_FIELDS = {"schema_version", "output_directory", "recovery_window_seconds", "validation_mode",
+           "debug_tracebacks", "monitored_creators", "minimum_free_space_gib"}
 
 
 class ConfigurationError(ValueError):
@@ -34,6 +34,7 @@ class Configuration:
     recovery_window_seconds: int | None = None
     validation_mode: str | None = None
     debug_tracebacks: bool | None = None
+    minimum_free_space_gib: int | None = None
     monitored_creators: tuple[str, ...] = ()
     schema_version: int = CONFIG_SCHEMA_VERSION
 
@@ -51,6 +52,8 @@ class Configuration:
             validate_validation_mode(self.validation_mode)
         if self.debug_tracebacks is not None:
             validate_debug_tracebacks(self.debug_tracebacks)
+        if self.minimum_free_space_gib is not None:
+            validate_minimum_free_space_gib(self.minimum_free_space_gib)
         validate_monitored_creators(self.monitored_creators)
 
     @property
@@ -69,6 +72,11 @@ class Configuration:
     def effective_debug_tracebacks(self) -> bool:
         """Return the configured traceback preference or the safe built-in default."""
         return self.debug_tracebacks if self.debug_tracebacks is not None else False
+
+    @property
+    def effective_minimum_free_space_gib(self) -> int:
+        """Return the configured automatic reserve or its built-in default."""
+        return self.minimum_free_space_gib or DEFAULT_MINIMUM_FREE_SPACE_GIB
 
 
 def default_config_path(
@@ -120,6 +128,8 @@ class ConfigurationStore:
                 )
             if "debug_tracebacks" in document and document["debug_tracebacks"] is None:
                 raise ConfigurationError("debug_tracebacks must be a boolean")
+            if "minimum_free_space_gib" in document and document["minimum_free_space_gib"] is None:
+                raise ConfigurationError("minimum_free_space_gib must be an integer")
             raw_creators = document.get("monitored_creators", [])
             if type(raw_creators) is not list:
                 raise ConfigurationError("monitored_creators must be an ordered list")
@@ -132,6 +142,7 @@ class ConfigurationStore:
                 recovery_window_seconds=document.get("recovery_window_seconds"),
                 validation_mode=document.get("validation_mode"),
                 debug_tracebacks=document.get("debug_tracebacks"),
+                minimum_free_space_gib=document.get("minimum_free_space_gib"),
                 monitored_creators=tuple(raw_creators),
             )
             configuration.validate()
@@ -152,6 +163,8 @@ class ConfigurationStore:
             document["validation_mode"] = configuration.validation_mode
         if configuration.debug_tracebacks is not None:
             document["debug_tracebacks"] = configuration.debug_tracebacks
+        if configuration.minimum_free_space_gib is not None:
+            document["minimum_free_space_gib"] = configuration.minimum_free_space_gib
         if configuration.monitored_creators:
             document["monitored_creators"] = list(configuration.monitored_creators)
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -239,6 +252,18 @@ def configured_debug_tracebacks(value: str) -> bool:
     if value not in {"true", "false"}:
         raise ConfigurationError("debug tracebacks must be true or false")
     return value == "true"
+
+
+def validate_minimum_free_space_gib(value: object) -> int:
+    """Require a strict positive, bounded GiB reserve for automatic recording."""
+    if type(value) is not int or not 1 <= value <= MAX_MINIMUM_FREE_SPACE_GIB:
+        raise ConfigurationError(f"minimum_free_space_gib must be an integer from 1 to {MAX_MINIMUM_FREE_SPACE_GIB}")
+    return value
+
+
+def configured_minimum_free_space_gib(value: str) -> int:
+    """Parse a CLI GiB reserve with the same bounds as persisted configuration."""
+    return validate_minimum_free_space_gib(int(value) if value.isdecimal() else value)
 
 
 def resolve_recording_output(output: str | Path, configuration: Configuration) -> Path:

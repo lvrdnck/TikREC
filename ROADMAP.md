@@ -1293,6 +1293,13 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**First development slice complete (2026-09-23):** Configurable 1–1024 GiB
+automatic free-space reserve (10 GiB default), shared read-only admission and
+storage status, derived warning threshold, and sanitized authenticated
+`/health` summary. No deletion or retention action is implemented. v0.10.0
+remains the current release; v0.11.0 is unreleased. Next: bound retention rules
+and protected-creator behavior before implementing any cleanup.
+
 **Goal:** Make unattended recording libraries safe to operate without manual disk
 housekeeping. Add retention rules, low-disk warnings/protection, cleanup of
 eligible temporary/recovery artifacts after safe validation, and local/network/

@@ -50,8 +50,29 @@ def test_config_show_reports_missing_file_and_effective_cwd(
         "debug_tracebacks": None,
         "effective_debug_tracebacks": False,
         "debug_tracebacks_source": "built_in_default",
+        "minimum_free_space_gib": None,
+        "effective_minimum_free_space_gib": 10,
+        "minimum_free_space_source": "built_in_default",
         "monitored_creators": [],
     }
+
+
+def test_minimum_free_space_set_show_unset_and_strict_values(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    assert main(["--config", str(path), "config", "set", "minimum-free-space-gib", "15"],
+                stdout=StringIO()) == 0
+    shown = StringIO()
+    assert main(["--config", str(path), "config", "show", "--json"], stdout=shown) == 0
+    result = json.loads(shown.getvalue())
+    assert (result["minimum_free_space_gib"], result["effective_minimum_free_space_gib"],
+            result["minimum_free_space_source"]) == (15, 15, "configuration")
+    for invalid in ("0", "1025", "1.5", "true"):
+        assert main(["--config", str(path), "config", "set", "minimum-free-space-gib", invalid],
+                    stdout=StringIO(), stderr=StringIO()) == 1
+        assert json.loads(path.read_text())["minimum_free_space_gib"] == 15
+    assert main(["--config", str(path), "config", "unset", "minimum-free-space-gib"],
+                stdout=StringIO()) == 0
+    assert json.loads(path.read_text()) == {"schema_version": 1}
 
 
 def test_config_set_show_and_unset_preserve_valid_document(tmp_path: Path) -> None:

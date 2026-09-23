@@ -22,7 +22,7 @@ def test_serve_defaults_and_existing_commands(monkeypatch, tmp_path):
                 service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
     assert calls == [{"host": "127.0.0.1", "port": 8765, "token": None,
                       "retry_policy": RetryPolicy(), "monitored_creators": (),
-                      "output_directory": None}]
+                      "output_directory": None, "minimum_free_space_gib": 10}]
     parser = _parser()
     for command, args in [("live", ["page", "--output", "out.mp4"]),
                           ("record", ["flv", "--output", "out.mp4"]),

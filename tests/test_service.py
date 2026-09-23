@@ -13,6 +13,7 @@ from tikrec.recording import RecordingController
 from tikrec.recording_manager import RecordingManager
 from tikrec.service import DEFAULT_HOST, RecordingHandler, RecordingHTTPServer, serve, validate_bind
 from tikrec.retry_policy import RetryPolicy
+from tikrec.storage_status import StorageStatus
 
 
 TOKEN = "test-secret-0123456789"
@@ -20,7 +21,7 @@ PAGE = "https://www.tiktok.com/@creator/live"
 
 
 def request(controller, method, path, body=None, *, token=None, headers=None, raw=None,
-            monitor=None, admission=None, automation=None):
+            monitor=None, admission=None, automation=None, storage_status=None):
     data = json.dumps(body).encode() if raw is None and body is not None else (raw or b"")
     fields = {"Host": "localhost", "Content-Type": "application/json",
               "Content-Length": str(len(data)), **(headers or {})}
@@ -48,6 +49,7 @@ def request(controller, method, path, body=None, *, token=None, headers=None, ra
     server = SimpleNamespace(
         controller=controller, monitor=monitoring, admission=policy,
         automation=coordinator, token=token,
+        storage_status=storage_status or StorageStatus(None),
     )
     RecordingHandler(connection, ("127.0.0.1", 1), server)
     head, response = bytes(connection.output).split(b"\r\n\r\n", 1)
@@ -58,7 +60,24 @@ def test_health_and_idle_status():
     controller = RecordingController()
     code, health = request(controller, "GET", "/health")
     assert code == 200 and health["service"] == "tikrec" and health["available"]
+    assert health["storage"]["state"] == "unconfigured"
     assert request(controller, "GET", "/recording") == (200, {"state": "idle", "active": False})
+
+
+def test_health_storage_summary_is_sanitized_and_authenticated(tmp_path):
+    from types import SimpleNamespace
+    from tikrec.storage_status import GIB
+    policy = StorageStatus(tmp_path, 15, disk_usage=lambda _: SimpleNamespace(free=18 * GIB))
+    code, health = request(RecordingController(), "GET", "/health", token=TOKEN,
+                           headers={"Authorization": f"Bearer {TOKEN}"},
+                           storage_status=policy)
+    assert code == 200
+    assert health["storage"] == {"state": "warning", "free_bytes": 18 * GIB,
+                                 "minimum_free_bytes": 15 * GIB,
+                                 "warning_free_bytes": 30 * GIB}
+    assert str(tmp_path) not in json.dumps(health)
+    assert request(RecordingController(), "GET", "/health", token=TOKEN,
+                   storage_status=policy)[0] == 401
 
 
 def test_monitoring_status_comes_from_independent_component():

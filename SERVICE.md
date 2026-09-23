@@ -6,7 +6,7 @@ Two bounded workers record independently of HTTP clients and of each other.
 Launch the service independently of SSH so disconnecting the remote shell does
 not end capture.
 
-This document describes the released v0.10.0 service, which extends v0.9.0.
+This document describes the released v0.10.0 service plus unreleased v0.11.0 storage-status development.
 Per-user recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can own and automatically fill a fixed capacity of two independent recordings.
@@ -27,12 +27,13 @@ values are integers from 60 through 3600. Configuration is read once at startup;
 restart the service after changing it. This setting is not part of remote start
 or the HTTP API.
 
-The same startup snapshots `monitored_creators` and `output_directory`. An empty
+The same startup snapshots `monitored_creators`, `output_directory`, and
+`minimum_free_space_gib` (strict integer 1–1024, default 10). An empty
 creator list and a missing output directory are both valid; the former starts no
 polling worker, while the latter reports unattended admission as blocked. With no
 explicit recovery-window override, normal strict configuration validation applies
 to the whole document. With an explicit override, the service still validates
-JSON/schema/unknown fields plus the creator list and output directory, while
+JSON/schema/unknown fields plus the creator list, output directory, and reserve, while
 unrelated known validation/debug preferences remain lazy so they cannot
 needlessly defeat the override. Malformed fields needed by the running service
 fail startup explicitly. Configuration changes require a service restart.
@@ -170,7 +171,7 @@ returned; there is no queue.
 An available slot still requires startup-configured `output_directory`. Missing
 configuration is `blocked/output_directory_unconfigured`; failed stat/disk
 inspection is `blocked/storage_unavailable`; observed free space below the
-built-in 10 GiB (`10 * 1024**3`) floor is `blocked/low_free_space`; and exhausting
+configured reserve (10 GiB by default) is `blocked/low_free_space`; and exhausting
 the bounded output-name search is `blocked/output_name_unavailable`. Exact-floor
 space is sufficient. For an output directory not yet created, admission inspects
 its nearest existing parent and creates nothing. A ready result includes the
@@ -179,6 +180,13 @@ path, observed free bytes, and the response-level threshold.
 The response field is `minimum_free_bytes`; each admission object always has
 `state`, `reason`, `free_bytes`, `output_path`, and `parts_directory`, using null
 for facts that do not apply or could not be established safely.
+
+Authenticated `/health` includes a sanitized `storage` summary with `state`,
+`free_bytes`, `minimum_free_bytes`, and `warning_free_bytes`. States are `ok`,
+`warning`, `blocked`, `unconfigured`, and `unavailable`. Warning begins below
+`max(20 GiB, 2 × configured reserve)`; blocked begins below the reserve.
+The probe is read-only, uses the nearest existing output parent, and exposes
+neither local paths nor probe errors. This policy only gates automatic starts.
 
 Admission is advisory and non-mutating: it stores no decision, reserves no name,
 and never calls the controller by itself. The coordinator reruns allocation

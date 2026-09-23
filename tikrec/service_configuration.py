@@ -9,11 +9,12 @@ from pathlib import Path
 from .configuration import (CONFIG_SCHEMA_VERSION, Configuration,
                             ConfigurationError, ConfigurationStore)
 from .retry_policy import DEFAULT_RECOVERY_WINDOW_SECONDS
+from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB
 
 
 _FIELDS = {
     "schema_version", "output_directory", "recovery_window_seconds",
-    "validation_mode", "debug_tracebacks", "monitored_creators",
+    "validation_mode", "debug_tracebacks", "monitored_creators", "minimum_free_space_gib",
 }
 
 
@@ -24,6 +25,7 @@ class ServiceConfiguration:
     output_directory: Path | None = None
     monitored_creators: tuple[str, ...] = ()
     recovery_window_seconds: int = DEFAULT_RECOVERY_WINDOW_SECONDS
+    minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB
 
 
 def load_service_configuration(
@@ -37,6 +39,7 @@ def load_service_configuration(
             output_directory=configuration.output_directory,
             monitored_creators=configuration.monitored_creators,
             recovery_window_seconds=configuration.effective_recovery_window_seconds,
+            minimum_free_space_gib=configuration.effective_minimum_free_space_gib,
         )
     try:
         with path.open("r", encoding="utf-8") as handle:
@@ -65,11 +68,15 @@ def load_service_configuration(
             schema_version=version,
             output_directory=Path(raw_directory) if raw_directory is not None else None,
             monitored_creators=tuple(raw_creators),
+            minimum_free_space_gib=document.get("minimum_free_space_gib"),
         )
+        if "minimum_free_space_gib" in document and document["minimum_free_space_gib"] is None:
+            raise ConfigurationError("minimum_free_space_gib must be an integer")
         selected.validate()
         return ServiceConfiguration(
             output_directory=selected.output_directory,
             monitored_creators=selected.monitored_creators,
+            minimum_free_space_gib=selected.effective_minimum_free_space_gib,
         )
     except (OSError, TypeError, ValueError) as error:
         detail = str(error) or "invalid document"

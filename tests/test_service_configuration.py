@@ -31,11 +31,13 @@ def test_full_service_configuration_snapshots_all_needed_settings(tmp_path: Path
         "validation_mode": "deep",
         "debug_tracebacks": True,
         "monitored_creators": ["first", "second.creator"],
+        "minimum_free_space_gib": 15,
     }), encoding="utf-8")
     assert load_service_configuration(path, validate_all=True) == ServiceConfiguration(
         output_directory=directory,
         monitored_creators=("first", "second.creator"),
         recovery_window_seconds=600,
+        minimum_free_space_gib=15,
     )
 
 
@@ -67,6 +69,9 @@ def test_explicit_recovery_override_ignores_only_unneeded_preferences(tmp_path: 
     {"schema_version": 1, "monitored_creators": ["first", "first"]},
     {"schema_version": 1, "monitored_creators": "first"},
     {"schema_version": 1, "unknown": True},
+    {"schema_version": 1, "minimum_free_space_gib": True},
+    {"schema_version": 1, "minimum_free_space_gib": 0},
+    {"schema_version": 1, "minimum_free_space_gib": None},
 ])
 def test_selective_loader_keeps_schema_and_needed_fields_strict(
     tmp_path: Path, document: dict
@@ -101,4 +106,17 @@ def test_selective_loader_rejects_output_path_that_is_an_existing_file(
         "output_directory": str(occupied),
     }), encoding="utf-8")
     with pytest.raises(ConfigurationError, match="not a directory"):
+        load_service_configuration(path, validate_all=False)
+
+
+def test_storage_reserve_remains_required_with_recovery_override(tmp_path: Path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"schema_version": 1,
+                                "recovery_window_seconds": "overridden",
+                                "minimum_free_space_gib": 16}), encoding="utf-8")
+    assert load_service_configuration(path, validate_all=False).minimum_free_space_gib == 16
+    path.write_text(json.dumps({"schema_version": 1,
+                                "recovery_window_seconds": "overridden",
+                                "minimum_free_space_gib": "16"}), encoding="utf-8")
+    with pytest.raises(ConfigurationError, match="minimum_free_space_gib"):
         load_service_configuration(path, validate_all=False)
