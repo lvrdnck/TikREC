@@ -606,3 +606,21 @@ controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
 atomically replace it on Windows. Package version is 0.9.0.
+
+The 2026-09-23 v0.10 deployed two-slot gate used an existing automatically
+started, #29-recovered Eliss session in slot 1 and an owner-manually-started
+Sinaloan session in slot 2. Both retained bytes independently increased. Legacy
+singular status/empty stop returned HTTP 409 while both were active. A targeted
+Sinaloan stop finalized only slot 2 while Eliss remained recording and grew;
+Eliss was later stopped by its own UUID. Both final MP4s passed standard and
+deep validation. Sinaloan's retained session passed; Eliss's retained session
+reported H.264 errors in parts 3/5 and timestamp warnings in part 8, all
+captured before Sinaloan began. Its manifest and service expose the same
+`degraded` input health while the final MP4 deep-decodes. The #29 crash
+evidence and recovered part remained byte-identical through completion.
+After both jobs completed, one idle restart reloaded both durable slots without
+relaunch, preserved all 18 settled media/evidence file hashes, and retained
+the monitored pair and bearer-authentication boundary. The manual second start
+demonstrates deployed concurrency and isolation, not automatic second-slot
+selection. A separate independent review remains required before v0.10 release
+preparation.

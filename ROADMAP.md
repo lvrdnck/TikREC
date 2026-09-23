@@ -1037,6 +1037,33 @@ slot preconditions still hold. The service, monitoring pair, and #29 evidence
 were untouched. The real two-slot gate remains partial; neither offline tests
 nor this rejected invocation prove concurrent isolation or release readiness.
 
+**Deployed two-slot gate completed (2026-09-23):** The owner used the normal
+authenticated remote CLI to start authorized Sinaloan manually in free slot 2
+while #29-recovered Eliss recorded in slot 1. The distinct sessions/rooms/paths
+grew independently with `active_count=2` and `available_slots=0`. Aggregate
+status showed both; singular status and empty stop correctly refused ambiguity
+with HTTP 409. Targeted UUID stop finalized only Sinaloan while Eliss stayed
+recording and grew across finalization and beyond peer completion. Sinaloan's
+two retained parts and 262.900-second H.264/AAC MP4 pass retained, standard,
+and deep checks; recorded input-decode health is `clean`. Eliss then finalized
+under her own targeted UUID. Her nine retained parts carry H.264 errors in
+pre-overlap parts 3/5 and timestamp/DTS warnings in pre-overlap part 8; the
+overlap-era part 9 has no retained validation finding. Her input-decode health
+truthfully reports `degraded` (29 diagnostics), while standard and deep checks
+of the 3,735.707-second final MP4 pass. Original #29 crash evidence, recovered
+part 7, discarded-byte accounting, and session/room identity remained intact.
+Both completed slot jobs and automation state stayed separate. One unchanged
+idle Scheduled Task restart reloaded capacity 2 without relaunching either;
+all 18 settled media/evidence files retained their hashes, monitoring remained
+Phoebe/Eliss, and unauthenticated endpoints still returned 401. Focused and
+full isolated suites pass. This owner-manual second start proves real two-slot
+concurrency and isolation; automatic second-slot selection remains supported
+by deterministic offline capacity tests and earlier deployed automatic-start
+evidence. No v0.10 correctness blocker was demonstrated by this gate. The
+required next task is an independent fresh-context review of the complete
+v0.9.0-to-v0.10 delta, including #29 recovery and these media findings, before
+any release preparation. No package bump, tag, or publication occurred.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1265,11 +1292,11 @@ The releases above are directional slots rather than fixed promises or dates.
 Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, configuration/defaults, and creator automation through v0.9.0
-are released. v0.10.0 multiple simultaneous creator recordings is the paused
-development target behind correctness blocker #27; its first bounded two-slot
-manager slice is implemented on
-`main` and deployed idle/configuration/status checks pass, while simultaneous
-recording/isolation validation and later readiness work remain.
+are released. v0.10.0 multiple simultaneous creator recordings is the current
+development target. Its bounded two-slot manager slice and deployed
+concurrency/isolation/idle-restart gate are complete on `main`; the required
+independent fresh-context review remains before release preparation. #27 and
+#29 are closed; #8, #13, and #28 remain separate non-blocking evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and
 configuration, creator automation, simultaneous creator recording, storage

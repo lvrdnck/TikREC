@@ -7,6 +7,62 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **v0.10 deployed two-slot isolation gate completed on 2026-09-23; independent
+  fresh-context review is next.** The owner manually started authorized
+  `sinaloanprincess` through the normal authenticated remote CLI, while the
+  original automatically started and #29-recovered Eliss session kept recording.
+  At 09:07:09--09:07:27 UTC the service reported capacity 2, `active_count=2`,
+  `available_slots=0`, and stable distinct identities/paths: Eliss session
+  `349adec0-b203-499b-bb05-444e3a99240d`, room `7688598578159274765`,
+  slot 1, grew from 454,379,854 to 456,704,297 bytes; Sinaloan session
+  `a8738177-43cc-41d3-8986-aff79296d14d`, room `7688642728217479950`,
+  slot 2, grew from 27,309,223 to 29,775,146 bytes. Aggregate status exposed
+  both; singular `remote status` and empty `remote stop` each returned expected
+  HTTP 409 without stopping either. Sinaloan's explicit UUID stop alone set
+  her `stop_requested=true`. At 09:08:06 slot 2 was `finalizing` while Eliss
+  remained `recording`, `stop_requested=false`, with the same room/session/paths.
+  Eliss grew from 459,921,415 bytes before the targeted stop to 461,786,659
+  during Sinaloan finalization, 463,152,924 as Sinaloan completed, and
+  470,514,781 after that completion. No cross-slot state/path/progress leak was
+  observed. Sinaloan's completed job and intentionally interrupted-by-stop
+  manifest retained two parts (33,840,512 bytes), a 41,323,977-byte H.264/AAC
+  720x1280 MP4 (262.900 seconds), and `clean` input-decode health in manifest
+  and service. Retained-session, standard MP4, and deep MP4 checks all pass.
+  Eliss was then stopped by her explicit UUID; her job completed, with nine
+  retained parts (471,842,611 bytes), a 516,885,748-byte H.264/AAC 720x1280
+  MP4 (3,735.707 seconds), and `degraded` input-decode health (29 bounded H.264
+  diagnostics). Her retained-session check fails on H.264 errors in parts 3/5
+  and reports DTS warnings in part 8; these parts all predate Sinaloan's start.
+  Part 8's connection log records the timestamp replay before 08:52:58 UTC;
+  Sinaloan started at 09:03:35 UTC. No finding names overlap-era Eliss part 9.
+  Eliss standard and deep MP4 validation pass. These pre-overlap retained-media
+  findings remain honestly reported and are not evidence of a two-slot defect;
+  their exact source attribution is not established by this non-raw capture.
+  The #29 crash evidence remains 31,380,072 bytes with SHA-256
+  `976633B298C1527301A4846B9BA5A337D70CE331BBFE4544C738C4CAAA11391E`;
+  recovered part 7 remains 31,247,682 bytes with SHA-256
+  `D964C5BFA28F4AB53168AAF65C59C7BC80D2EADDD0CF94C2E55A72DFB551C77C`.
+  The manifest still records 132,390 discarded bytes, same session/room,
+  `resume_count=1`, and now three connections after finalization. Both durable
+  jobs remained completed in their own slots with distinct outputs/parts;
+  automation retained Eliss's consumed room and no pending claim from the
+  manual Sinaloan start. One authorized restart of the unchanged idle Scheduled
+  Task reloaded capacity 2, both completed jobs, and the exact Phoebe/Eliss
+  monitoring pair without relaunching either. The task-definition SHA-256
+  remained `CF57505AA9BB57CFEB089D476098F8ECB31C5950EBCC2F4069A92B49F3E8A40C`;
+  all 18 settled output/parts/evidence files matched pre-restart hashes;
+  unauthenticated health/recordings each returned 401, and authenticated
+  aggregate status exposed no bearer, cookie, or signed transport. Focused
+  tests pass 238,
+  isolated pytest passes 1,114 plus 19 subtests, unittest discovery passes 223;
+  compilation, 24 CLI help paths/version, under-300-line package sources,
+  and diff checks pass. Review of the v0.9.0-to-`main` delta found no demonstrated
+  v0.10 isolation, media-health, security, or scope blocker. The owner-manual
+  second start proves real concurrency/isolation, not automatic second-slot
+  selection; deterministic offline capacity tests and earlier deployed
+  automatic-start evidence cover that separately. No version bump, tag,
+  publication, or v0.11 work occurred. A separate independent fresh-context
+  review of the full v0.10 and #29 delta is required before release preparation.
 - **Active v0.10 two-slot gate: PARTIAL checkpoint on 2026-09-23.** From
   current `main` at `93c53e6`, authenticated health showed capacity 2,
   `active_count=1`, `available_slots=1`. Eliss's original recovered session
@@ -726,18 +782,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   source-origin non-replay defect, not TikREC-generated corruption. Across all
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
-- **Pending owner action:** None for closed #29. Automatic command review also
-  rejected the one authorized Sinaloan start before execution. The owner has
-  the exact normal CLI command and may run it manually only after confirming
-  Eliss remains active, slot 2 is free, and Sinaloan is still trustworthy LIVE.
-  Any later task must first check whether an operator or automation already
-  started a second session. No permission to manufacture overlap or restart
-  the active service is implied.
-- **Next queued task:** Resume the v0.10 two-slot deployed isolation gate.
-  Verify genuine simultaneous independent sessions, targeted-stop/finalization
-  isolation, both retained/final outputs, and idle restart persistence. Do not
-  restart or stop the active Eliss session merely to set up the gate; do not
-  begin v0.11 or prepare/publish v0.10 in this task.
+- **Pending owner action:** None for the completed deployed gate. Do not treat
+  its completion as authorization to bump, tag, or publish v0.10.
+- **Next queued task:** Independent fresh-context v0.10 release-readiness
+  review of the complete v0.9.0-to-v0.10 development delta, including #29's
+  recovery semantics, this deployed two-slot evidence, and the pre-overlap
+  retained-media findings. Keep #8/#13/#28 separate and non-blocking; do not
+  begin v0.11 or release preparation before that review.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -754,12 +805,11 @@ new work; calendar entries are reminders only.
 - **Current released version:** v0.9.0; its release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases remain published from their existing tags.
-- **Development target:** v0.10.0 multiple simultaneous creator recordings is
-  awaiting the deployed simultaneous-recording gate. Its first bounded two-slot
-  service/automation slice is complete on
-  `main` and its deployed idle/configuration/status checks pass; simultaneous
-  recording/isolation and remaining completion/readiness review are outstanding.
-  Conditional v0.6.5 redundant capture is not selected.
+- **Development target:** v0.10.0 multiple simultaneous creator recordings has
+  passed the deployed two-slot recording/isolation and idle-restart gate on
+  current `main`. The required independent fresh-context readiness review is
+  outstanding before release preparation. Conditional v0.6.5 redundant capture
+  is not selected.
 
 ## Issue #13 rendition investigation
 
