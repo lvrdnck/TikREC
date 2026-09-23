@@ -939,10 +939,28 @@ A disposable two-part Kayla reproduction yielded `completed` finalization,
 `degraded` input health (21 classified messages), passing final-output deep
 decode, and failing retained-part checks; source hashes remained unchanged.
 Historical Moe attribution is non-blocking opportunity #28. Issues #8 and #13
-remain separate; no v0.9.1 correction is warranted. The next task is the normal
-deployed simultaneous-recording/isolation gate, which has not yet run. Current
+remain separate; no v0.9.1 correction is warranted. The next development gate
+is deployed simultaneous-recording/isolation validation. Current
 `/recordings` keeps only each slot's latest job; the original Kayla evidence
 remains preserved on disk. The following gate entries are historical.
+
+**Bounded natural-overlap checkpoint (2026-09-23):** Public checks found only
+`eliss4r.n` LIVE; `phoebelightt` and `moealkaf` were explicitly offline.
+Eliss and Phoebe were selected because Phoebe has two recent natural automatic
+sessions and a fresh offline monitoring baseline. Using TikREC's documented
+task-visible UNC `--config` CLI path resolved desktop `%APPDATA%` redirection;
+the unchanged task restarted only while both slots were idle and now monitors
+exactly Eliss and Phoebe with `C:\Users\Leandro\Videos` preserved. Eliss was
+automatically started in `slot-1` as session
+`349adec0-b203-499b-bb05-444e3a99240d`, room `7688598578159274765`.
+Through cycle 11, it grew from 936,181 to 46,843,763 retained bytes while
+Phoebe stayed offline and `slot-2` stayed available with its historical
+completed job. No manual start, targeted stop, or manufactured overlap was
+used. Authentication, sanitized status, durable claim, and task-definition
+checks passed. The two-slot overlap, targeted finalization isolation, dual
+media validation, and final idle restart remain outstanding. Leave Eliss
+recording and resume only from a natural overlap or later safe idle state;
+release preparation remains out of scope.
 
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps

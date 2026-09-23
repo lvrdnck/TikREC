@@ -7,19 +7,34 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active issue/task: none.** Issue #27's finite product blocker is implemented
-  and verified: successful mixed-configuration finalization now preserves bounded
-  classified H.264 input-decoder health separately from `completed` lifecycle.
-  Session validation keeps failed retained-media checks distinct from a clean
-  final-output deep decode; visual integrity remains unproven. A disposable
-  two-part Kayla re-encode completed and produced a deep-decodable MP4 while
-  durably recording 21 input decoder diagnostics as `degraded`; original hashes
-  match before and after. Historical Moe source attribution is opportunistic,
-  non-blocking issue #28, not a release prerequisite. Issues #8 and #13 remain
-  separate. No v0.9.1 corrective release is indicated. The next task is the
-  ordinary v0.10 deployed simultaneous-recording/isolation gate. It has not
-  been run as part of #27. Current deployed configuration and media were not
-  changed by this implementation.
+- **Active task: v0.10 deployed simultaneous gate, partial.** On 2026-09-23,
+  two public resolver checks found `eliss4r.n` LIVE in room
+  `7688598578159274765`, while `phoebelightt` and `moealkaf` were explicitly
+  offline. Eliss and Phoebe were selected: Phoebe had two recent natural
+  automatic sessions and a fresh trustworthy offline monitor baseline. The
+  task-visible configuration now contains exactly those two creators and keeps
+  `C:\Users\Leandro\Videos` as output storage. Desktop `%APPDATA%` writes were
+  redirected: two safe idle restarts initially loaded only Phoebe despite the
+  interactive CLI listing both. The documented normal CLI `--config` path
+  `\\127.0.0.1\C$\Users\Leandro\AppData\Roaming\TikREC\config.json`
+  exposed the task-visible Phoebe-only file; adding Eliss there and restarting
+  the unchanged task while both slots were idle loaded the exact pair. The task
+  definition SHA-256 stayed
+  `CF57505AA9BB57CFEB089D476098F8ECB31C5950EBCC2F4069A92B49F3E8A40C`.
+  The first ordinary cycle automatically started Eliss session
+  `349adec0-b203-499b-bb05-444e3a99240d` in `slot-1` without manual start.
+  Through completed cycle 11, Phoebe remained offline, Eliss remained LIVE,
+  and its retained-byte progress grew from 936,181 to 46,843,763. Capacity is
+  2 with `active_count=1` and `available_slots=1`; `slot-2` still holds its
+  historical completed Phoebe job. Durable `job.json` binds the Eliss room,
+  session, and unique output/parts paths; `job-2.json` remains unchanged;
+  `automation.json` has the consumed Eliss room and no pending claim. Missing
+  bearer authentication returns 401, status exposes no unsafe marker, and the
+  task definition is unchanged. No genuine overlap occurred, so targeted stop,
+  dual-media validation, and final idle-restart readiness remain untested.
+  **Do not restart or stop the active Eliss recording.** Issue #27 is closed;
+  #28, #8, and #13 remain non-blocking. No v0.9.1 or v0.10 release action is
+  warranted by this partial gate.
 - **Historical v0.10 gate (superseded by #27):** The first bounded v0.10.0
   multiple-recording slice is
   implemented and deployed from `dd00400`; its natural simultaneous-LIVE gate
@@ -568,11 +583,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None.
-- **Pending owner action:** None.
-- **Next queued task:** Resume the v0.10 deployed simultaneous-recording and
-  isolation gate, using the already authorized project workflow. Do not treat
-  #28's opportunistic Moe attribution as a blocker. No release action is
-  authorized by completing #27.
+- **Next queued task:** Resume the same v0.10 gate on a later natural overlap
+  of the selected pair. First inspect the active Eliss session and the task-
+  visible configuration/service snapshot; do not restart while either slot is
+  active. Only a genuine two-slot automatic start authorizes the targeted-stop,
+  dual validation, idle-restart, and release-readiness checks. Do not begin
+  v0.11 or prepare/publish v0.10 in this task.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
