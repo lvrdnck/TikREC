@@ -949,6 +949,19 @@ unprotected creator can be `eligible`. Unknown, changing, extra, symlinked,
 recoverable, and conflicting evidence is not eligible. No deletion executor or
 automatic cleanup exists.
 
+Retention planning first discovers safely readable immediate UUID/output claims,
+including claims from protected, incomplete, or otherwise rejected sessions.
+Unreadable or ambiguous immediate claims prevent a uniqueness proof for the
+selected root. Eligibility additionally requires coherent completed capture and
+finalization fields, finite consistent elapsed time, and no durable connection,
+room-status, resume, service/network, or writer-recovery activity after the
+terminal timestamp. `recovery_performed=true` alone is not a contradiction.
+The selected local root, `.parts` child, and final output must contain no
+symlink or Windows reparse redirection. A saved optional LIVE creator is checked
+again at fresh resume preflight before any write; legacy absence stays absent.
+Planner output is advisory and may become stale. Any future destructive action
+needs immediate revalidation and separate approval.
+
 Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
 24 ASCII letters, digits, underscores, or internal periods. List order is
 preserved deterministically but does not define scheduling priority. TikREC

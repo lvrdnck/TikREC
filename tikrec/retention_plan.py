@@ -6,6 +6,7 @@ import math
 import os
 import re
 import time
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 
@@ -14,6 +15,8 @@ from .creator_identity import validate_creator_handle
 from .media import MediaInfo, inspect_media
 from .recovery_discovery import discover_recovery_candidates, _read_manifest
 from .writer_recovery_evidence import recovery_records
+from .retention_paths import local_path
+from .retention_terminal import terminal_success
 
 
 def plan_retention(root: Path, configuration: Configuration, *,
@@ -21,19 +24,23 @@ def plan_retention(root: Path, configuration: Configuration, *,
                    media_inspector: Callable[[Path], MediaInfo | None] = inspect_media) -> dict:
     """Classify immediate TikREC session directories without modifying artifacts."""
     configuration.validate()
-    scope = Path(root)
-    if (str(scope).startswith("\\\\") or any(path.is_symlink() for path in (scope, *scope.parents))
-            or not scope.is_dir()):
-        raise ValueError("retention root must be a regular local directory")
-    scope = scope.resolve(strict=True)
+    scope = local_path(Path(root), directory=True)
     now = clock()
     if type(now) not in {int, float} or not math.isfinite(now):
         raise ValueError("retention clock must be finite")
     children = sorted((path for path in scope.iterdir()
                        if path.name.lower().endswith(".parts")),
                       key=lambda path: (path.name.casefold(), path.name))
-    sessions = [_inspect(path, scope, configuration, now, media_inspector)
-                for path in children]
+    sessions, unknown = [], False
+    for path in children:
+        identity, output, uncertain = _claims(path, scope)
+        item = _inspect(path, scope, configuration, now, media_inspector)
+        if ((item["session_id"] is not None and item["session_id"] != identity)
+                or (item["output_path"] is not None and item["output_path"] != output)):
+            uncertain = True
+        item["session_id"], item["output_path"] = identity, output
+        sessions.append(item)
+        unknown |= uncertain
     # A second session claiming one output makes both claims unsafe, even if one is incomplete.
     claims: dict[str, list[dict]] = {}
     identities: dict[str, list[dict]] = {}
@@ -41,13 +48,18 @@ def plan_retention(root: Path, configuration: Configuration, *,
         if session["session_id"] is not None:
             identities.setdefault(session["session_id"], []).append(session)
         if session["output_path"] is not None:
-            key = os.path.normcase(str(Path(session["output_path"]).resolve()))
+            key = os.path.normcase(os.path.normpath(session["output_path"]))
             claims.setdefault(key, []).append(session)
     for owners in (*claims.values(), *identities.values()):
         if len(owners) > 1:
             for session in owners:
                 session["classification"] = "needs_attention"
                 session["reason"] = "evidence_conflict"
+    # An unreadable immediate claimant could alias any output or UUID in this root.
+    if unknown:
+        for session in sessions:
+            session["classification"] = "needs_attention"
+            session["reason"] = "evidence_conflict"
     return {"root": str(scope), "retention_max_age_days": configuration.retention_max_age_days,
             "sessions": sessions}
 
@@ -57,12 +69,10 @@ def _inspect(directory, root, config, now, media_inspector):
             "creator": None, "ended_at": None, "output_path": None,
             "classification": "needs_attention", "reason": "evidence_conflict",
             "protected": None}
-    if directory.is_symlink() or not directory.is_dir():
-        return item
     try:
+        local_path(directory, directory=True)
         manifest_path = directory / "session.json"
-        if manifest_path.is_symlink() or not manifest_path.is_file():
-            return item
+        local_path(manifest_path, directory=False)
         before = _evidence_stamp(directory)
         values = _read_manifest(manifest_path)
         declared = values.get("output_path")
@@ -70,6 +80,10 @@ def _inspect(directory, root, config, now, media_inspector):
         if (type(declared) is not str or not Path(declared).is_absolute()
                 or Path(declared) != directory.with_suffix(".mp4")):
             return item
+        # Recovery inspection may open the final output; reject redirects first.
+        output = directory.with_suffix(".mp4")
+        if output.exists() or output.is_symlink():
+            local_path(output, directory=False)
         candidates = discover_recovery_candidates(directory, media_inspector=media_inspector)
         if len(candidates) != 1:
             return item
@@ -95,20 +109,48 @@ def _inspect(directory, root, config, now, media_inspector):
         item["protected"] = creator in config.retention_protected_creators
         if item["protected"]:
             return _mark(item, "protected", "protected_creator")
-        if candidate.classification != "complete" or values["status"] != "completed":
+        if candidate.classification != "complete" or not terminal_success(directory, values):
             return _mark(item, "ineligible", "session_incomplete")
         output = Path(candidate.output_path)
         # Restrict proof to one regular final output directly inside the selected root.
-        if (output.is_symlink() or output.resolve().parent != root
-                or output.resolve() != directory.with_suffix(".mp4").resolve()):
+        if (local_path(output, directory=False).parent != root
+                or output != directory.with_suffix(".mp4")):
             return _mark(item, "needs_attention", "evidence_conflict")
         if config.retention_max_age_days is None:
             return _mark(item, "retained", "retention_disabled")
         if values["ended_at"] <= now - config.retention_max_age_days * 86400:
+            if _evidence_stamp(directory) != after or _read_manifest(manifest_path) != values:
+                return _mark(item, "needs_attention", "evidence_conflict")
             return _mark(item, "eligible", "age_threshold_reached")
         return _mark(item, "retained", "not_old_enough")
     except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
         return _mark(item, "needs_attention", "evidence_conflict")
+
+
+def _claims(directory: Path, root: Path) -> tuple[str | None, str | None, bool]:
+    """Read bounded immediate claims before candidate eligibility can discard them."""
+    try:
+        local_path(directory, directory=True)
+        manifest = directory / "session.json"
+        local_path(manifest, directory=False)
+        values = _read_manifest(manifest)
+        identity = values["session_id"]
+        if (type(identity) is not str or str(uuid.UUID(identity)) != identity):
+            raise ValueError("invalid retention claimant identity")
+        declared = values.get("output_path")
+        if declared is None:
+            return identity, None, False
+        if type(declared) is not str or not Path(declared).is_absolute():
+            raise ValueError("invalid retention output claim")
+        output = Path(os.path.abspath(declared))
+        # Keep claim discovery lexical: never open a claimant's arbitrary output.
+        if (output.parent != root or output.suffix.lower() != ".mp4"
+                or Path(declared) != output):
+            raise ValueError("unsafe retention output claim")
+        return identity, str(output), False
+    except (OSError, UnicodeError, ValueError, TypeError, KeyError, AttributeError,
+            OverflowError):
+        return None, None, True
 
 
 def _evidence_stamp(directory: Path) -> tuple:

@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from .live import capture_live
 from .live_support import LiveChangedError
+from .creator_identity import require_matching_creator
 from .session_resume import begin_resume, prepare_resume
 from .tiktok import (LiveResolution, _ResolvedLiveUrl,
                      resolve_live, same_live)
@@ -20,7 +21,9 @@ def capture_live_resume(url, *, parts_directory, output_path, session_id, resolu
                              source_type="tiktok_live", clock=options.get("manifest_clock", time.time),
                              **({"media_inspector": options["media_inspector"]}
                                 if "media_inspector" in options else {}))
-    if not same_live(session.manifest.snapshot().get("room_id"), resolution):
+    saved = session.manifest.snapshot()
+    require_matching_creator(saved, url)
+    if not same_live(saved.get("room_id"), resolution):
         raise ValueError("resume resolution conflicts with saved session identity")
     first = resolution
 

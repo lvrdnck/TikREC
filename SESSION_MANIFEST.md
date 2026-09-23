@@ -69,6 +69,12 @@ first manifest write. It is preserved through reconnect, resume, recovery, and
 finalization. Existing schema-1 manifests without it remain valid and are never
 rewritten merely to fill this field. When a service job and manifest both exist,
 recovery rejects a mismatch between the job page and stored creator.
+Fresh LIVE resume repeats that optional creator check after reloading storage
+and before writing a resume boundary. Legacy creator absence stays valid and
+is not inferred. Unreleased v0.11 retention planning applies stricter terminal
+proof than ordinary schema-1 loading: completed capture/finalization fields,
+finite coherent elapsed time, and durable event/recovery chronology must agree.
+This does not change the manifest schema or historical recovery compatibility.
 
 `finalization.status` is one of `not_requested`, `pending`, `not_started`,
 `running`, `completed`, `interrupted`, or `failed`. The pending/running values

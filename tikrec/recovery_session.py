@@ -8,7 +8,7 @@ from .manifest import SessionManifest
 from .session_resume import (_read_connections, _unique_values, _validate_manifest,
                              ResumeSession)
 from .writer_recovery import inspect_writer_storage
-from .creator_identity import normalize_creator
+from .creator_identity import require_matching_creator
 
 
 def inspect_recovery_session(job, *, clock, media_inspector):
@@ -22,8 +22,7 @@ def inspect_recovery_session(job, *, clock, media_inspector):
     retained = storage.retained
     _validate_manifest(values, directory, retained, job.session_id, "tiktok_live",
                        finalization_recovery=True)
-    if values.get("creator") is not None and values["creator"] != normalize_creator(job.source_url):
-        raise ValueError("conflicting saved creator identity")
+    require_matching_creator(values, job.source_url)
     # A service job always requests an output; null/different declarations are contradictions.
     if (not isinstance(values.get("output_path"), str)
             or Path(values["output_path"]).resolve() != output.resolve()):

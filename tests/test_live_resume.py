@@ -91,6 +91,43 @@ def test_same_room_check_is_repeated_before_resume(tmp_path):
     assert not (tmp_path / "out.parts/connections.jsonl").exists()
 
 
+def test_fresh_resume_preflight_rejects_changed_creator_without_mutation(tmp_path):
+    store, job, _ = saved_session(tmp_path)
+    assert reconciler(store, resolver=lambda _: LiveResolution("123", SIGNED)).reconcile().outcome == "resume"
+    path = tmp_path / "out.parts/session.json"
+    values = json.loads(path.read_text())
+    values["creator"] = "beta"
+    path.write_text(json.dumps(values))
+    before = {str(p): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    with pytest.raises(ValueError, match="creator|identity"):
+        capture_live_resume(job.source_url, parts_directory=tmp_path / "out.parts",
+                            output_path=tmp_path / "out.mp4", session_id=job.session_id,
+                            resolution=LiveResolution("123", SIGNED),
+                            tag_source=lambda _: pytest.fail("source must not open"),
+                            media_inspector=lambda _: None)
+    assert before == {str(p): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+
+
+@pytest.mark.parametrize("saved_creator", ["creator", None])
+def test_fresh_resume_accepts_equivalent_or_legacy_absent_creator(tmp_path, saved_creator):
+    _, job, _ = saved_session(tmp_path)
+    path = tmp_path / "out.parts/session.json"
+    if saved_creator is not None:
+        values = json.loads(path.read_text())
+        values["creator"] = saved_creator
+        path.write_text(json.dumps(values))
+    stop = Event()
+    stop.set()
+    recorded = capture_live_resume(
+        "https://www.tiktok.com/@Creator/live", parts_directory=tmp_path / "out.parts",
+        output_path=tmp_path / "out.mp4", session_id=job.session_id,
+        resolution=LiveResolution("123", SIGNED), stop_event=stop,
+        tag_source=lambda _: pytest.fail("stopped resume must not open source"),
+        finalizer=lambda parts, output: output, media_inspector=lambda _: None)
+    assert recorded.resumed
+    assert json.loads(path.read_text()).get("creator") == saved_creator
+
+
 def test_repeated_crash_reserves_new_connection_and_increments_resume_count(tmp_path):
     store, job, _ = saved_session(tmp_path)
     first = reconciler(store, resolver=lambda _: LiveResolution("123", SIGNED)).reconcile()

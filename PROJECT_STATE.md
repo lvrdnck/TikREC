@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Active v0.11.0 retention safety correction complete (2026-09-23):** Fresh
+  independent review of `82f3363` found five blockers: rejected competing
+  UUID/output claims could disappear; terminal time could predate durable
+  activity; contradictory completed fields could pass; fresh LIVE resume did
+  not recheck creator; and Windows junctions could redirect `.parts` outside
+  the selected root. The read-only planner now discovers bounded claims before
+  eligibility, requires coherent terminal chronology/lifecycle, and rejects
+  reparse/symlink redirects. Fresh resume rechecks optional creator before
+  writing. Native Windows junction tests ran. No deletion executor or artifact
+  mutation was added. Focused tests pass 195 and the final isolated suite passes
+  1,238 plus 19 subtests; unittest discovery passes 228, with compilation, 29
+  CLI help paths/version, source-size, and diff checks passing. A stale plan is
+  never deletion authorization; any future
+  executor needs immediate revalidation and separate approval. v0.10.0 remains
+  released; v0.11.0 is unreleased. Next: fresh independent review of the
+  corrected retention foundation before any destructive design is authorized.
 - **Active v0.11.0 retention foundation complete (2026-09-23):** New LIVE
   manifests persist canonical page-derived creator identity; recovery checks it
   against current durable job intent without filling legacy manifests. Strict

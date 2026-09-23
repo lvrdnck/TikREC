@@ -67,6 +67,13 @@ def creator_from_live_url(url: str) -> str:
     return normalize_creator(normalize_live_url(url))
 
 
+def require_matching_creator(values: dict, url: str) -> None:
+    """Reject a saved optional creator that disagrees with its accepted LIVE page."""
+    creator = validate_manifest_creator(values)
+    if creator is not None and creator != creator_from_live_url(url):
+        raise ValueError("conflicting saved creator identity")
+
+
 def _handle_from_live_url(value: str) -> str:
     try:
         parsed = urlsplit(value)

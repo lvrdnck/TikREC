@@ -529,6 +529,9 @@ session end time, validates completed output and retained evidence, and reports
 `eligible`, `retained`, `protected`, `ineligible`, or `needs_attention` with a
 reason. Legacy sessions without a proven creator and uncertain evidence never
 become eligible. This is an advisory plan only; automatic deletion does not exist.
+The planner checks competing session/output claims even for rejected candidates,
+terminal chronology, and local path redirection. A saved plan is never permission
+to delete; future cleanup would require fresh validation and separate approval.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

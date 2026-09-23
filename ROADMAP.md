@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Retention safety correction complete (2026-09-23):** Independent review of
+`82f3363` identified five fail-open paths: rejected competing claims, newer
+durable activity than terminal time, contradictory completed fields, stale
+creator identity at fresh resume, and Windows junction escape. The planner now
+discovers bounded UUID/output claims before eligibility, demands coherent
+terminal evidence, and rejects local path redirection. Fresh LIVE resume
+rechecks creator before mutation. Native Windows junction regressions passed.
+The plan remains read-only and is never authorization to delete; any future
+executor requires immediate revalidation and separate approval. Next: fresh
+independent review of this correction before destructive retention design.
+v0.10.0 remains released and v0.11.0 remains unreleased; #8/#13/#28 stay
+separate and non-blocking.
+
 **Second development slice complete (2026-09-23):** New public LIVE session
 manifests retain validated canonical creator identity. Independent protected
 creators and an opt-in 1–3650-day rule drive a strictly read-only planner.
