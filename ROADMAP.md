@@ -1089,6 +1089,20 @@ gate remains valid. A fresh independent review of this correction and final
 v0.10 readiness is required before release preparation; #8/#13/#28 remain
 separate non-blocking evidence work.
 
+**Restored/learned owner fallback review and correction (2026-09-23):** Independent
+review of `2e1002c` found that a restored current controller had no manager
+cache entry, and a manual job's newly proven room did not refresh its cached
+owner. An unreadable rich status could therefore admit a duplicate. Five manager
+regressions and an allocation-time automation regression failed on that baseline.
+Controllers now expose a narrow current-ownership snapshot under their locks;
+the manager refreshes session-bound page/proven-room facts within its allocation
+lock, retains facts through partial reads, releases them on settlement/reuse,
+and fails allocation closed when current ownership is unknowable. The automatic
+expected-room reservation remains memory-only, with no schema or #29 recovery
+change. The deployed distinct-LIVE isolation gate remains valid. Fresh
+independent review of this correction and final v0.10 readiness is next before
+release preparation; #8/#13/#28 remain separate non-blocking evidence work.
+
 **Goal:** Record independent LIVEs for multiple configured creators at the same
 time with bounded CPU, disk, network, and service ownership. Each session keeps
 its own lifecycle, recovery evidence, status, output, and errors.
@@ -1319,10 +1333,10 @@ capabilities should no longer sit in an unversioned "someday" bucket. Reliabilit
 guided recovery, configuration/defaults, and creator automation through v0.9.0
 are released. v0.10.0 multiple simultaneous creator recordings is the current
 development target. Its bounded two-slot manager slice and deployed
-concurrency/isolation/idle-restart gate are complete on `main`. A subsequent
-independent review found a duplicate-start ownership blocker; its correction
-had a mixed-case page bypass; the bounded follow-up needs fresh independent
-review before release preparation. #27 and #29 are
+concurrency/isolation/idle-restart gate are complete on `main`. Subsequent
+independent reviews found duplicate-start, mixed-case, and restored/learned
+owner fallback gaps. Their bounded corrections need fresh independent review
+before release preparation. #27 and #29 are
 closed; #8, #13, and #28 remain separate non-blocking evidence work.
 
 The sequence intentionally grows from trustworthy capture into: recovery and

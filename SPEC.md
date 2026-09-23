@@ -582,11 +582,15 @@ rejects active cross-slot output/parts collisions and duplicate normalized LIVE
 pages. Page ownership compares creator handle spelling case-insensitively for
 both readable current status and session-bound in-memory fallback, including
 mixed-case source URLs loaded from durable jobs. Accepted source URLs retain
-their spelling. An automatic expected room is also reserved in memory for the
-current session before its worker publishes proven room identity; another
+their spelling. Each controller provides a locked snapshot of only current
+session/page/proven-room facts. The manager refreshes its session-bound cache
+within allocation, including restored owners and manual rooms proven later;
+partial reads retain known facts. If a current owner's identity remains unknown,
+allocation fails closed. An automatic expected room is also reserved in memory
+for the current session before its worker publishes proven room identity; another
 current slot cannot claim the same room. A settled or reused session releases its
-reservation, and an unreadable status cannot prove release. No unproven room is
-persisted.
+reservation, and an unreadable status cannot prove release. Neither an unproven
+room nor the manager cache is persisted.
 Workers, stop Events, durable stores, recovery, byte/reconnect progress, results,
 and finalization never cross
 slot boundaries. A blocked or recovering slot is unavailable without hiding the

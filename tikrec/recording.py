@@ -95,6 +95,13 @@ class RecordingController:
         with self._lock:
             return self._snapshot()
 
+    def ownership(self) -> dict:
+        """Return current session/page/proven room under the controller lock."""
+        with self._lock:
+            return {"current": bool((self._active or self._blocked) and self._job.get("session_id")),
+                    "session_id": self._job.get("session_id"), "source_url": self._job.get("source_url"),
+                    "room_id": self._job.get("room_id")}
+
     def start(self, url: str, output: str, *, raw_copy: bool = False,
               expected_room_id: str | None = None) -> dict:
         """Accept one job and launch it independently of the requesting connection."""

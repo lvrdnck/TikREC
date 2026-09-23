@@ -7,8 +7,28 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Active v0.10 task: mixed-case page ownership correction implemented;
-  independent review pending (2026-09-23).** Fresh review of `b309135` found
+- **Active v0.10 task: restored/learned ownership fallback corrected;
+  independent review pending (2026-09-23).** Independent review of `2e1002c`
+  found that a restored current controller was absent from the new manager's
+  `_owners` cache, and a manual job's later proven room was not added to its
+  fallback. If rich status became unreadable at allocation, either case could
+  accept a duplicate in slot 2. Five manager regressions and one end-to-end
+  automation regression failed on `2e1002c`. Each controller now exposes only
+  current session/page/proven room under its lock; the manager refreshes a
+  session-bound in-memory cache under its allocation lock. Partial reads retain
+  known facts, settlement and session replacement release old claims, and
+  allocation fails closed with bounded `RecordingBusy` when current ownership
+  cannot be established. The automatic expected-room reservation stays
+  memory-only; no unproven room or cache is persisted. Focused tests pass 133;
+  the isolated full suite passes 1,144 plus 19 subtests. Unittest discovery
+  passes 223; compilation, 24 CLI help/version paths, all 78 package sources
+  under 300 lines, and diff checks pass. No LIVE or media was touched. The deployed
+  Eliss/Sinaloan isolation gate remains valid for distinct LIVEs. Release
+  preparation remains blocked until fresh independent review of this correction
+  and final v0.10 readiness. #8, #13, and #28 remain separate non-blocking
+  evidence work.
+- **Previous mixed-case page ownership correction: independent review found a
+  restored/learned fallback gap (2026-09-23).** Fresh review of `b309135` found
   that a resolving manual `@Alpha/live` job could coexist with an automatic
   `@alpha/live` job because both readable status and the manager's in-memory
   owner fallback compared page spelling case-sensitively. Seven focused offline
@@ -824,10 +844,10 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None for the completed deployed gate. Do not treat
   its completion as authorization to bump, tag, or publish v0.10.
-- **Next queued task:** Fresh independent review of the mixed-case ownership
-  correction and final refreshed v0.10 readiness on corrected `main`. Keep #8/#13/#28
-  separate and non-blocking; do not begin v0.11 or release preparation before
-  that review.
+- **Next queued task:** Fresh independent review of the restored/learned
+  ownership fallback correction and final v0.10 readiness on corrected `main`.
+  Keep #8, #13, and #28 separate and non-blocking; do not begin v0.11 or
+  release preparation before that review.
 
 GitHub issues and this file are authoritative for active/pending work. Reconcile
 this file, ROADMAP.md, relevant open issues, and repository state before choosing
@@ -846,9 +866,9 @@ new work; calendar entries are reminders only.
   releases remain published from their existing tags.
 - **Development target:** v0.10.0 multiple simultaneous creator recordings has
   passed the deployed two-slot recording/isolation and idle-restart gate on
-  current `main`. Independent review found a remaining case-equivalent page
-  ownership bypass after the atomic duplicate-start fix; its bounded correction
-  requires fresh independent review before release preparation. Conditional
+  current `main`. Independent review found restored/learned ownership fallback
+  gaps after the atomic and mixed-case fixes; their bounded correction requires
+  fresh independent review before release preparation. Conditional
   v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation

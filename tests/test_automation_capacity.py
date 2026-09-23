@@ -16,6 +16,7 @@ from tikrec.recording_manager import RecordingManager
 from tikrec.recording import RecordingController
 from tikrec.capture import CaptureResult
 from tests.test_automation import _cycle
+from tests.test_recording_manager import MIXED_PAGE, _resumed_manager
 
 
 class Slot:
@@ -314,5 +315,41 @@ def test_two_automatic_creators_in_same_room_use_only_one_slot(tmp_path):
         values = {item["creator"]: item["automation"] for item in coordinator.snapshot(cycle)["creators"]}
         assert values["beta"]["reason"] == "duplicate_live_owned"
         assert values["gamma"]["state"] == "started"
+    finally:
+        manager.shutdown()
+
+
+def test_restored_owner_status_fails_only_at_automation_allocation(tmp_path, monkeypatch):
+    manager, restored, _, harness = _resumed_manager(tmp_path)
+    admission = RecordingAdmission(
+        tmp_path, manager.health,
+        clock=lambda: datetime(2026, 9, 23, 12, 0, 0),
+        disk_usage=lambda _: SimpleNamespace(free=MINIMUM_FREE_BYTES),
+    )
+    store = AutomationStateStore(tmp_path / "automation.json")
+    coordinator = AutomationCoordinator(manager, admission, store)
+    original_start = manager.start
+    readable_status = restored.status
+    def fail_status_during_allocation(*args, **kwargs):
+        monkeypatch.setattr(restored, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+        try:
+            return original_start(*args, **kwargs)
+        finally:
+            monkeypatch.setattr(restored, "status", readable_status)
+    monkeypatch.setattr(manager, "start", fail_status_during_allocation)
+    try:
+        cycle = _cycle(1, ("zeta", "live", "456"), ("alpha", "live", "123"))
+        coordinator.cycle_completed(cycle)
+        harness.wait("zeta-20260923-120000")
+        assert manager.health()["active_count"] == 2
+        assert [item["source_url"] for item in manager.recordings()["slots"]] == [
+            MIXED_PAGE, "https://www.tiktok.com/@zeta/live",
+        ]
+        assert store.load().pending_claim is None
+        assert store.load().consumed() == {"zeta": "456"}
+        values = {item["creator"]: item["automation"]
+                  for item in coordinator.snapshot(cycle)["creators"]}
+        assert values["alpha"]["reason"] == "duplicate_live_owned"
+        assert values["zeta"]["state"] == "started"
     finally:
         manager.shutdown()

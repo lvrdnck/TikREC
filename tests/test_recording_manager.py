@@ -531,3 +531,181 @@ def test_loaded_mixed_case_durable_job_owns_equivalent_page(tmp_path):
         assert store.load().source_url == MIXED_PAGE
     finally:
         manager.shutdown()
+
+
+def _resumed_manager(tmp_path):
+    """Resume a durable room into a real active controller without network use."""
+    output = tmp_path / "restored.mp4"
+    job = JobState(
+        "00000000-0000-0000-0000-000000000001", MIXED_PAGE, str(output),
+        str(tmp_path / "restored.parts"), 1.0, state="recording", room_id="123",
+    )
+    store = JobStateStore(tmp_path / "job.json")
+    store.save(job)
+    entered = Event()
+    class Reconciler:
+        def reconcile(self, **kwargs):
+            return SimpleNamespace(job=job, blocked=False, outcome="resume",
+                                   reason=None, error=None)
+        def resume(self, recovery, **kwargs):
+            entered.set()
+            assert kwargs["stop_event"].wait(3)
+            return CaptureResult((), None, True)
+    restored = RecordingController(store=store, reconciler=Reconciler())
+    assert entered.wait(2)
+    harness = CaptureHarness()
+    manager = RecordingManager((restored, RecordingController(capture=harness.capture)))
+    return manager, restored, store, harness
+
+
+@pytest.mark.parametrize("candidate,room", [
+    ("https://www.tiktok.com/@alpha/live", None),
+    ("https://www.tiktok.com/@beta/live", "123"),
+])
+def test_restored_owner_survives_later_rich_status_failure(
+    tmp_path, monkeypatch, candidate, room,
+):
+    manager, restored, store, harness = _resumed_manager(tmp_path)
+    session = restored.status()["session_id"]
+    assert manager.health()["active_count"] == 1
+    monkeypatch.setattr(restored, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+    try:
+        with pytest.raises(RecordingDuplicate):
+            manager.start(candidate, str(tmp_path / "second.mp4"),
+                          **({} if room is None else {"expected_room_id": room}))
+        assert manager.health()["active_count"] == 1
+        assert restored._job["session_id"] == session
+        assert restored.health()["active"] is True
+        assert not restored._stop.is_set()
+        assert store.load().source_url == MIXED_PAGE
+        assert "second" not in harness.entered
+    finally:
+        manager.shutdown()
+
+
+def test_restored_owner_is_protected_on_first_unreadable_status(tmp_path, monkeypatch):
+    manager, restored, _, harness = _resumed_manager(tmp_path)
+    monkeypatch.setattr(restored, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+    try:
+        with pytest.raises(RecordingDuplicate):
+            manager.start("https://www.tiktok.com/@alpha/live",
+                          str(tmp_path / "second.mp4"))
+        assert "second" not in harness.entered
+    finally:
+        manager.shutdown()
+
+
+def test_unknown_restored_owner_fails_allocation_closed(tmp_path, monkeypatch):
+    manager, restored, _, harness = _resumed_manager(tmp_path)
+    monkeypatch.setattr(restored, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+    monkeypatch.setattr(restored, "ownership", lambda: (_ for _ in ()).throw(OSError("owner")),
+                        raising=False)
+    try:
+        assert manager.health()["available_slots"] == 0
+        with pytest.raises(RecordingBusy) as error:
+            manager.start("https://www.tiktok.com/@beta/live",
+                          str(tmp_path / "second.mp4"), expected_room_id="456")
+        assert type(error.value) is RecordingBusy
+        assert "second" not in harness.entered
+    finally:
+        manager.shutdown()
+
+
+def test_page_only_cache_fails_closed_when_both_reads_fail(tmp_path, monkeypatch):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    first = manager.start(MIXED_PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    controller = manager.controllers[0]
+    monkeypatch.setattr(controller, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+    monkeypatch.setattr(controller, "ownership", lambda: (_ for _ in ()).throw(OSError("owner")))
+    try:
+        assert manager.health()["available_slots"] == 0
+        with pytest.raises(RecordingBusy) as error:
+            manager.start(PAGE_BETA, str(tmp_path / "second.mp4"), expected_room_id="456")
+        assert type(error.value) is RecordingBusy
+        assert controller._job["session_id"] == first["session_id"]
+        assert not harness.stop_events["first"].is_set()
+        assert "second" not in harness.entered
+    finally:
+        manager.shutdown()
+
+
+def test_manual_later_proven_room_survives_status_failure(tmp_path, monkeypatch):
+    proven = Event()
+    def capture(url, **kwargs):
+        kwargs["room_identity"]("123")
+        proven.set()
+        assert kwargs["stop_event"].wait(3)
+        return CaptureResult((), None, True)
+    manager = RecordingManager((RecordingController(capture=capture),
+                                RecordingController(capture=capture)))
+    first = manager.start(MIXED_PAGE, str(tmp_path / "first.mp4"))
+    assert proven.wait(2)
+    controller = manager.controllers[0]
+    assert controller.status()["room_id"] == "123"
+    assert manager.health()["active_count"] == 1
+    monkeypatch.setattr(controller, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+    try:
+        with pytest.raises(RecordingDuplicate):
+            manager.start(PAGE_BETA, str(tmp_path / "second.mp4"), expected_room_id="123")
+        assert manager.health()["active_count"] == 1
+        assert controller._job["session_id"] == first["session_id"]
+        assert controller._job["room_id"] == "123"
+    finally:
+        manager.shutdown()
+
+
+def test_known_owner_survives_partial_and_failed_snapshot_reads(tmp_path, monkeypatch):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    first = manager.start(MIXED_PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    controller = manager.controllers[0]
+    controller._identity("123")
+    assert manager.health()["active_count"] == 1
+    original_status = controller.status
+    original_ownership = controller.ownership
+    monkeypatch.setattr(controller, "status", lambda: (_ for _ in ()).throw(OSError("status")))
+    try:
+        monkeypatch.setattr(controller, "ownership", lambda: {
+            "current": True, "session_id": first["session_id"],
+            "source_url": MIXED_PAGE, "room_id": None,
+        })
+        with pytest.raises(RecordingDuplicate):
+            manager.start(PAGE_BETA, str(tmp_path / "partial.mp4"), expected_room_id="123")
+        monkeypatch.setattr(controller, "ownership",
+                            lambda: (_ for _ in ()).throw(OSError("owner")))
+        with pytest.raises(RecordingDuplicate):
+            manager.start(PAGE_BETA, str(tmp_path / "unreadable.mp4"), expected_room_id="123")
+        monkeypatch.setattr(controller, "status", original_status)
+        monkeypatch.setattr(controller, "ownership", original_ownership)
+        assert manager.status()["session_id"] == first["session_id"]
+        assert manager.status()["room_id"] == "123"
+        assert "partial" not in harness.entered and "unreadable" not in harness.entered
+    finally:
+        manager.shutdown()
+
+
+def test_learned_room_claim_releases_after_settlement_and_slot_reuse(tmp_path):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    first = manager.start(MIXED_PAGE, str(tmp_path / "first.mp4"))
+    harness.wait("first")
+    try:
+        manager.controllers[0]._identity("123")
+        assert manager.health()["active_count"] == 1
+        harness.complete["first"].set()
+        manager.controllers[0]._worker.join(2)
+        assert manager.controllers[0].status()["state"] == "completed"
+        second = manager.start(PAGE_BETA, str(tmp_path / "second.mp4"),
+                               expected_room_id="456")
+        harness.wait("second")
+        later = manager.start("https://www.tiktok.com/@alpha/live",
+                              str(tmp_path / "later.mp4"), expected_room_id="123")
+        harness.wait("later")
+        assert first["session_id"] != second["session_id"]
+        assert second["slot_id"] == "slot-1" and later["slot_id"] == "slot-2"
+        assert manager.health()["active_count"] == 2
+    finally:
+        manager.shutdown()

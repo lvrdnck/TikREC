@@ -106,14 +106,19 @@ The manager rejects cross-slot output or `.parts` path collisions and duplicate
 normalized public LIVE pages under one allocation lock. Creator handle spelling
 is case-equivalent for page ownership, including existing mixed-case durable jobs
 and temporary unreadable status; accepted source URLs retain their spelling.
+Each controller exposes only current session/page/proven-room facts under its
+lock. The manager refreshes those facts within allocation so restored owners and
+manual jobs that later prove a room remain protected if rich status fails. A
+partial read cannot erase a known claim; if current ownership is still unknown,
+new allocation fails with a bounded 409 busy response.
 For automatic starts it also reserves the expected canonical room in memory for
 the accepted session, closing the interval before its worker publishes proven
 room identity. Another current slot cannot claim that room. Settlement or slot
-reuse releases the reservation; unreadable status cannot prove release. Expected room identity is
-not added to durable job state before resolution. A duplicate returns a fixed
-409 conflict without creating a new session. `session_id` is the per-recording
-control identity;
-`slot_id` is the stable `slot-1`/`slot-2` owner in aggregate status. A targeted
+reuse releases the reservation; unreadable status cannot prove release. Expected
+room identity is not added to durable job state before resolution. A duplicate
+returns a fixed 409 conflict without creating a new session. `session_id` is the
+per-recording control identity; `slot_id` is the stable `slot-1`/`slot-2` owner
+in aggregate status. A targeted
 stop validates a canonical UUID and signals only its owning controller.
 
 Malformed input returns 400, missing authentication 401, browser-origin

@@ -17,6 +17,31 @@ def test_idle_and_health():
     controller = RecordingController()
     assert controller.status() == {"state": "idle", "active": False}
     assert controller.health()["available"]
+    assert controller.ownership() == {
+        "current": False, "session_id": None, "source_url": None, "room_id": None,
+    }
+
+
+def test_narrow_ownership_tracks_proven_room_without_progress(tmp_path):
+    entered = Event()
+    def capture(url, **kwargs):
+        entered.set()
+        assert kwargs["stop_event"].wait(2)
+        return CaptureResult((), None, True)
+    controller = RecordingController(capture=capture)
+    first = controller.start("https://www.tiktok.com/@Alpha/live",
+                             str(tmp_path / "first.mp4"))
+    assert entered.wait(2)
+    try:
+        assert controller.ownership() == {
+            "current": True, "session_id": first["session_id"],
+            "source_url": "https://www.tiktok.com/@Alpha/live", "room_id": None,
+        }
+        controller._identity("123")
+        assert controller.ownership()["room_id"] == "123"
+    finally:
+        controller.shutdown()
+    assert controller.ownership()["current"] is False
 
 
 def test_start_status_stop_and_completed_output(tmp_path):
