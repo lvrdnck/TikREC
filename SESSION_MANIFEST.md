@@ -47,6 +47,7 @@ are strings in the same absolute or relative form supplied to TikREC.
 | `tikrec_version` | string | TikREC version that created the session. |
 | `source_type` | string | `tiktok_live`, `direct_flv`, or `tag_stream`. |
 | `room_id` | optional string | Canonical public LIVE identity from structured resolution; absent for older/generic sessions. |
+| `creator` | optional string | Canonical lowercase public LIVE page handle for new TikTok sessions; absent for legacy and generic sessions. |
 | `started_at` | number | Time the recording session was initialized. |
 | `ended_at` | number or null | Time a handled capture/finalization path ended. |
 | `elapsed_seconds` | number or null | `ended_at - started_at`; not media duration. |
@@ -62,6 +63,12 @@ are strings in the same absolute or relative form supplied to TikREC.
 | `finalization` | object | Finalization `status`, optional `error`, and optional `input_decode`. |
 | `media` | object | Optional final-output codec and resolution facts. |
 | `error` | string or null | Redacted reason for an abnormal session result. |
+
+New LIVE sessions derive `creator` from the accepted public page before the
+first manifest write. It is preserved through reconnect, resume, recovery, and
+finalization. Existing schema-1 manifests without it remain valid and are never
+rewritten merely to fill this field. When a service job and manifest both exist,
+recovery rejects a mismatch between the job page and stored creator.
 
 `finalization.status` is one of `not_requested`, `pending`, `not_started`,
 `running`, `completed`, `interrupted`, or `failed`. The pending/running values

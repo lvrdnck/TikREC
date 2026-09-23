@@ -1293,6 +1293,13 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Second development slice complete (2026-09-23):** New public LIVE session
+manifests retain validated canonical creator identity. Independent protected
+creators and an opt-in 1–3650-day rule drive a strictly read-only planner.
+Legacy/unknown creator and uncertain evidence fail closed; no deletion exists.
+The next gate is a fresh independent review of identity, protection, and
+eligibility before any cleanup executor is authorized.
+
 **First development slice complete (2026-09-23):** Configurable 1–1024 GiB
 automatic free-space reserve (10 GiB default), shared read-only admission and
 storage status, derived warning threshold, and sanitized authenticated

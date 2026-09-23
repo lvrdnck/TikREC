@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .manifest import SCHEMA_VERSION
+from .creator_identity import validate_manifest_creator
 from .decode_diagnostics import valid_input_decode_health
 from .part_validation import validate_part
 from .media import inspect_media
@@ -168,6 +169,10 @@ def _validate_manifest(
     ffprobe: str,
     runner: Callable[..., Any],
 ) -> None:
+    try:
+        validate_manifest_creator(manifest)
+    except ValueError:
+        result.finding("error", "manifest_creator_invalid", "manifest creator is invalid")
     status = manifest.get("status")
     result.session_completeness = (
         "complete" if status == "completed"

@@ -16,6 +16,54 @@ def read_manifest(path: Path) -> dict[str, object]:
 
 
 class SessionManifestTests(unittest.TestCase):
+    def test_canonical_creator_is_durable_and_legacy_remains_valid(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            parts = root / "live.parts"
+            parts.mkdir()
+            manifest = SessionManifest(parts, root / "live.mp4", "tiktok_live",
+                                       creator="alpha", clock=lambda: 100)
+            manifest.start()
+            manifest.complete((), finalization_status="not_started")
+            assert SessionManifest.load(parts / "session.json").snapshot()["creator"] == "alpha"
+            values = read_manifest(parts / "session.json")
+            values.pop("creator")
+            (parts / "session.json").write_text(json.dumps(values), encoding="utf-8")
+            assert "creator" not in SessionManifest.load(parts / "session.json").snapshot()
+            assert "creator" not in read_manifest(parts / "session.json")
+
+    def test_creator_rejected_for_generic_and_malformed_live_manifest(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            parts = root / "live.parts"
+            parts.mkdir()
+            with self.assertRaises(ValueError):
+                SessionManifest(parts, None, "direct_flv", creator="alpha")
+            manifest = SessionManifest(parts, None, "tiktok_live", creator="alpha")
+            manifest.start()
+            values = read_manifest(parts / "session.json")
+            values["creator"] = "@Alpha"
+            (parts / "session.json").write_text(json.dumps(values), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                SessionManifest.load(parts / "session.json")
+
+    def test_creator_survives_resume_and_recovery_finalization(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            parts = root / "live.parts"
+            parts.mkdir()
+            output = root / "live.mp4"
+            manifest = SessionManifest(parts, output, "tiktok_live", creator="alpha",
+                                       clock=iter((100.0, 110.0)).__next__)
+            manifest.start()
+            manifest.complete((), interrupted=True, finalization_status="not_started")
+            loaded = SessionManifest.load(parts / "session.json", clock=lambda: 120)
+            loaded.resume_capture((), 1, output_path=output)
+            loaded.complete((), finalization_status="not_started")
+            loaded.mark_recovery(output, ())
+            loaded.finish_recovery((), "completed", output_path=output)
+            self.assertEqual(read_manifest(parts / "session.json")["creator"], "alpha")
+
     def test_start_creates_a_versioned_recording_state(self) -> None:
         with TemporaryDirectory() as directory:
             parts = Path(directory) / "recording.parts"

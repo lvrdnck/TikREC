@@ -10,6 +10,24 @@ from tikrec.media import MediaInfo
 from tikrec.recovery_session import completed_output_is_proven, inspect_recovery_session
 
 
+def test_manifest_creator_mismatch_blocks_recovery_without_touching_evidence(tmp_path):
+    _, job, _ = saved_session(tmp_path)
+    path = tmp_path / "out.parts/session.json"
+    values = json.loads(path.read_text())
+    values["creator"] = "someoneelse"
+    path.write_text(json.dumps(values), encoding="utf-8")
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="creator"):
+        inspect_recovery_session(job, clock=lambda: 2000, media_inspector=lambda _: None)
+    assert path.read_bytes() == before
+    values.pop("creator")
+    path.write_text(json.dumps(values), encoding="utf-8")
+    before = path.read_bytes()
+    session = inspect_recovery_session(job, clock=lambda: 2000, media_inspector=lambda _: None)
+    assert "creator" not in session.manifest.snapshot()
+    assert path.read_bytes() == before
+
+
 @pytest.mark.parametrize("info", [
     None, MediaInfo(), MediaInfo(video_codec="h264", format_name="mp4", duration_seconds=0),
     MediaInfo(video_codec="h264", format_name="mp4", duration_seconds=float("inf")),

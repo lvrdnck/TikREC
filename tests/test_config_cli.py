@@ -54,6 +54,10 @@ def test_config_show_reports_missing_file_and_effective_cwd(
         "effective_minimum_free_space_gib": 10,
         "minimum_free_space_source": "built_in_default",
         "monitored_creators": [],
+        "retention_protected_creators": [],
+        "retention_max_age_days": None,
+        "effective_retention_max_age_days": None,
+        "retention_max_age_source": "disabled",
     }
 
 

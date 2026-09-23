@@ -42,14 +42,29 @@ def validate_creator_handle(value: object) -> str:
     return value
 
 
-def validate_monitored_creators(value: object) -> tuple[str, ...]:
-    """Validate the ordered, duplicate-free creator tuple stored in configuration."""
+def validate_monitored_creators(value: object, *, field: str = "monitored_creators") -> tuple[str, ...]:
+    """Validate an ordered, duplicate-free creator tuple stored in configuration."""
     if type(value) is not tuple:
-        raise CreatorIdentityError("monitored_creators must be an ordered list")
+        raise CreatorIdentityError(f"{field} must be an ordered list")
     creators = tuple(validate_creator_handle(handle) for handle in value)
     if len(creators) != len(set(creators)):
-        raise CreatorIdentityError("monitored_creators must not contain duplicates")
+        raise CreatorIdentityError(f"{field} must not contain duplicates")
     return creators
+
+
+def validate_manifest_creator(values: dict) -> str | None:
+    """Validate optional canonical creator without inferring one for old sessions."""
+    if "creator" not in values:
+        return None
+    if values.get("source_type") != "tiktok_live":
+        raise CreatorIdentityError("creator is only valid for TikTok LIVE sessions")
+    return validate_creator_handle(values["creator"])
+
+
+def creator_from_live_url(url: str) -> str:
+    """Derive a canonical handle only from an accepted public LIVE page."""
+    from .recording_safety import normalize_live_url
+    return normalize_creator(normalize_live_url(url))
 
 
 def _handle_from_live_url(value: str) -> str:

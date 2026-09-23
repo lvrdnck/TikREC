@@ -14,6 +14,7 @@ from .configuration import (
     configured_recovery_window_seconds,
     configured_output_directory,
     configured_minimum_free_space_gib,
+    configured_retention_max_age_days,
     configured_validation_mode,
     default_config_path,
 )
@@ -29,7 +30,7 @@ def add_config_command(subcommands) -> argparse.ArgumentParser:
     set_command = actions.add_parser("set", help="set one persisted default")
     settings = [
         "output-directory", "recovery-window-seconds", "validation-mode",
-        "debug-tracebacks", "minimum-free-space-gib",
+        "debug-tracebacks", "minimum-free-space-gib", "retention-max-age-days",
     ]
     set_command.add_argument("setting", choices=settings)
     set_command.add_argument("value", metavar="VALUE")
@@ -88,6 +89,13 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 else "built_in_default"
             ),
             "monitored_creators": list(configuration.monitored_creators),
+            "retention_protected_creators": list(configuration.retention_protected_creators),
+            "retention_max_age_days": configuration.retention_max_age_days,
+            "effective_retention_max_age_days": configuration.retention_max_age_days,
+            "retention_max_age_source": (
+                "configuration" if configuration.retention_max_age_days is not None
+                else "disabled"
+            ),
         }
         if arguments.json:
             print(json.dumps(result, indent=2, sort_keys=True), file=stdout)
@@ -136,6 +144,10 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
             print(f"Minimum free space source: {result['minimum_free_space_source']}", file=stdout)
             creators = ", ".join(f"@{item}" for item in configuration.monitored_creators)
             print(f"Monitored creators: {creators or '(none)'}", file=stdout)
+            protected = ", ".join(f"@{item}" for item in configuration.retention_protected_creators)
+            print(f"Retention protected creators: {protected or '(none)'}", file=stdout)
+            age = configuration.retention_max_age_days
+            print(f"Retention maximum age: {age if age is not None else '(disabled)'}", file=stdout)
         return 0
     if arguments.config_action == "set":
         if arguments.setting == "output-directory":
@@ -154,6 +166,10 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
             value = configured_minimum_free_space_gib(arguments.value)
             store.save(replace(configuration, minimum_free_space_gib=value))
             print(f"Set minimum free space: {value} GiB", file=stdout)
+        elif arguments.setting == "retention-max-age-days":
+            value = configured_retention_max_age_days(arguments.value)
+            store.save(replace(configuration, retention_max_age_days=value))
+            print(f"Set retention maximum age: {value} days", file=stdout)
         else:
             value = configured_debug_tracebacks(arguments.value)
             store.save(replace(configuration, debug_tracebacks=value))
@@ -171,6 +187,9 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
     elif arguments.setting == "minimum-free-space-gib":
         store.save(replace(configuration, minimum_free_space_gib=None))
         print("Unset minimum free space", file=stdout)
+    elif arguments.setting == "retention-max-age-days":
+        store.save(replace(configuration, retention_max_age_days=None))
+        print("Disabled age retention", file=stdout)
     else:
         store.save(replace(configuration, debug_tracebacks=None))
         print("Unset debug tracebacks", file=stdout)

@@ -63,6 +63,19 @@ def manifest_values(directory: Path, output: Path | None, **changes: object) -> 
 
 
 class ValidationTests(unittest.TestCase):
+    def test_malformed_creator_is_reported_without_reflecting_value(self) -> None:
+        with TemporaryDirectory() as temporary:
+            directory = Path(temporary) / "recording.parts"
+            output = Path(temporary) / "recording.mp4"
+            write_part(directory)
+            output.write_bytes(b"media")
+            values = manifest_values(directory, output, source_type="tiktok_live",
+                                     creator="https://cdn.test/?token=secret")
+            (directory / "session.json").write_text(json.dumps(values), encoding="utf-8")
+            result = validate_target(directory, runner=ProbeRunner())
+        self.assertIn("manifest_creator_invalid", [f.code for f in result.findings])
+        self.assertNotIn("secret", str(result.as_dict()))
+
     def test_healthy_legacy_parts_pass_with_unknown_session_state(self) -> None:
         with TemporaryDirectory() as temporary:
             directory = Path(temporary) / "old.parts"

@@ -7,6 +7,15 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Active v0.11.0 retention foundation complete (2026-09-23):** New LIVE
+  manifests persist canonical page-derived creator identity; recovery checks it
+  against current durable job intent without filling legacy manifests. Strict
+  optional protected-creator and age-rule configuration feeds a read-only plan
+  over immediate session children. Only proven completed, unprotected sessions
+  at or beyond their durable `ended_at` threshold can be marked eligible;
+  unknown/conflicting evidence is retained. No artifact cleanup exists, and
+  v0.10.0 remains released. Next gate: fresh independent review of this
+  eligibility foundation before any deletion executor is authorized.
 - **Active v0.11.0 development (2026-09-23):** The first smart-storage slice
   adds a strict configurable automatic reserve (default 10 GiB), a shared
   read-only storage policy, and a sanitized authenticated `/health` summary.

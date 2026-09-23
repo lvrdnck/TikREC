@@ -15,6 +15,7 @@ from .manifest import SCHEMA_VERSION, SessionManifest
 from .media import MediaInfo, inspect_media
 from .session_parts import RetainedParts, discover_parts, part_index
 from .tiktok_identity import canonical_room_id
+from .creator_identity import validate_manifest_creator
 from .writer_recovery_evidence import (evidence_name, recovery_records,
                                        validate_record_schema, validate_recorded_evidence)
 from .writer_recovery import WriterPartialPlan
@@ -86,6 +87,7 @@ def _validate_manifest(values, directory, retained, expected_id, expected_type,
     source_type = values["source_type"]
     if source_type not in {"tag_stream", "direct_flv", "tiktok_live"}:
         raise ValueError("unsupported session source type")
+    validate_manifest_creator(values)
     if expected_type is not None and source_type != expected_type:
         raise ValueError("conflicting requested source type")
     statuses = {"recording", "interrupted", "failed"}

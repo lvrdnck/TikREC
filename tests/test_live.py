@@ -27,6 +27,24 @@ def stream() -> list[FlvTag]:
 
 
 class LiveCaptureTests(unittest.TestCase):
+    def test_mixed_case_public_page_persists_canonical_creator(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            actions = iter(("https://cdn.test/live.flv", TikTokOfflineError("offline")))
+            def resolver(_):
+                item = next(actions)
+                if isinstance(item, Exception):
+                    raise item
+                return item
+            capture_live("https://www.tiktok.com/@Alpha/live?share=1",
+                         parts_directory=root / "alpha.parts", output_path=root / "alpha.mp4",
+                         resolver=resolver, tag_source=lambda _: iter(stream()),
+                         finalizer=_finalizer, sleeper=lambda _: None,
+                         offline_confirmation_checks=1)
+            values = json.loads((root / "alpha.parts/session.json").read_text())
+            self.assertEqual(values["creator"], "alpha")
+            self.assertNotIn("share", str(values))
+
     def test_reports_the_live_lifecycle_without_a_signed_cdn_url(self) -> None:
         actions: list[object] = [
             "https://cdn.test/live.flv?token=secret",

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from copy import deepcopy
 import os
-import re
 import time
 import uuid
 from collections.abc import Callable, Iterable
@@ -15,11 +14,12 @@ from typing import Any
 from . import __version__
 from .media import MediaInfo, inspect_media
 from .decode_diagnostics import safe_input_decode_health
-from .manifest_media import media_values as _media_values
+from .manifest_media import media_values as _media_values, inspect_output
+from .manifest_safety import safe_reason as _safe_reason
+from .creator_identity import validate_creator_handle, validate_manifest_creator
 
 
 SCHEMA_VERSION = 1
-_URL_PATTERN = re.compile(r"https?://\S+")
 
 class SessionManifest:
     """Create and atomically update ``session.json`` for one capture."""
@@ -33,6 +33,7 @@ class SessionManifest:
         clock: Callable[[], float] = time.time,
         media_inspector: Callable[[Path], MediaInfo | None] = lambda path: inspect_media(path),
         session_id: str | None = None,
+        creator: str | None = None,
     ) -> None:
         self.path = Path(parts_directory) / "session.json"
         self._parts_directory = Path(parts_directory)
@@ -41,6 +42,9 @@ class SessionManifest:
         self._clock = clock
         self._media_inspector = media_inspector
         self._session_id = session_id
+        if creator is not None and source_type != "tiktok_live":
+            raise ValueError("creator requires a TikTok LIVE source")
+        self._creator = validate_creator_handle(creator) if creator is not None else None
         self._values: dict[str, Any] | None = None
 
     @property
@@ -51,6 +55,12 @@ class SessionManifest:
     def snapshot(self) -> dict[str, Any]:
         """Return independent manifest facts for read-only resume preflight."""
         return deepcopy(self._require_values())
+
+    def assign_creator(self, creator: str) -> None:
+        """Bind the accepted LIVE page before the first manifest is written."""
+        if self._source_type != "tiktok_live" or self.active:
+            raise ValueError("creator can only be assigned before a new LIVE session")
+        self._creator = validate_creator_handle(creator)
 
     def record_room_identity(self, room_id: str) -> None:
         """Retain the first public LIVE identity without signed transport data."""
@@ -102,6 +112,8 @@ class SessionManifest:
             "media": _media_values(None),
             "error": None,
         }
+        if self._creator is not None:
+            self._values["creator"] = self._creator
         self._write()
 
     def update_capture(
@@ -162,7 +174,7 @@ class SessionManifest:
             }
             if finalization_status == "completed" and input_decode is not None:
                 values["finalization"]["input_decode"] = safe_input_decode_health(input_decode)
-        self._inspect_output(output_path)
+        inspect_output(values, output_path, self._media_inspector)
         self._write()
 
     def complete(
@@ -235,7 +247,7 @@ class SessionManifest:
         }
         if status == "completed" and input_decode is not None:
             values["finalization"]["input_decode"] = safe_input_decode_health(input_decode)
-        self._inspect_output(output_path)
+        inspect_output(values, output_path, self._media_inspector)
         self._write()
 
     @classmethod
@@ -253,6 +265,7 @@ class SessionManifest:
         values = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(values, dict) or values.get("schema_version") != SCHEMA_VERSION:
             raise ValueError(f"unsupported session manifest: {path}")
+        validate_manifest_creator(values)
         output = values.get("output_path")
         manifest = cls(
             path.parent,
@@ -269,16 +282,6 @@ class SessionManifest:
             raise RuntimeError("session manifest has not started")
         return self._values
 
-    def _inspect_output(self, output_path: Path | None) -> None:
-        media_path = Path(output_path) if output_path is not None else None
-        if media_path is None or not media_path.is_file():
-            return
-        # Optional inspection evidence must never change capture success.
-        try:
-            self._require_values()["media"] = _media_values(self._media_inspector(media_path))
-        except Exception:
-            self._require_values()["media"] = _media_values(None)
-
     def _write(self) -> None:
         values = self._require_values()
         temporary = self.path.with_name(f".{self.path.name}.partial")
@@ -293,7 +296,3 @@ class SessionManifest:
         except BaseException:
             temporary.unlink(missing_ok=True)
             raise
-
-
-def _safe_reason(error: BaseException | str | None) -> str | None:
-    return None if error is None else _URL_PATTERN.sub("[URL redacted]", str(error))

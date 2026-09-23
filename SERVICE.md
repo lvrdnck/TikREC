@@ -393,7 +393,8 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
 2. Missing intent is idle; completed/failed/finalization-completed intent is settled
    and never relaunches capture. A stopped and successfully finalized job stays done.
 3. A non-terminal job occupies the slot in `reconciling`. Validate session UUID,
-   source, room/output/parts paths, contiguous completed FLV parts, and connection
+   source, optional manifest creator against the durable source page,
+   room/output/parts paths, contiguous completed FLV parts, and connection
    evidence. Missing storage or identities and arbitrary partials block recovery.
 4. The exact canonical next writer partial is eligible only for an active recording
    job/manifest with matching identity, paths/counts, absent output/finalizer temp,

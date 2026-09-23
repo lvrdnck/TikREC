@@ -926,15 +926,28 @@ TikREC never scans for alternatives. The schema permits integer
 integer `recovery_window_seconds` from 60 through 3600 inclusive, and optional
 string `validation_mode` equal to `standard` or `deep`, optional ordered
 string list `monitored_creators`, and optional integer
-`minimum_free_space_gib` from 1 through 1024. Duplicate fields,
+`minimum_free_space_gib` from 1 through 1024, optional ordered
+`retention_protected_creators` with canonical unique handles, and optional
+integer `retention_max_age_days` from 1 through 3650. Duplicate fields,
 missing-version, unknown, incorrectly typed, malformed, or unsupported data is an
 error. The optional boolean `debug_tracebacks` controls unexpected CLI traceback
 output. Explicitly supplying null for `validation_mode`, `debug_tracebacks`, or
-`minimum_free_space_gib` is
+`minimum_free_space_gib`, or `retention_max_age_days` is
 invalid. Writes use a flushed same-directory temporary and atomic replacement,
 with a parent-directory sync on POSIX. Unsetting all optional settings retains a valid
 versioned document. This store must never contain TikTok cookies, credentials,
 bearer tokens, or signed media URLs.
+
+In unreleased v0.11 development, `retention protect/unprotect/protected` manages
+the independent ordered protection list. `retention plan [ROOT] [--json]` inspects
+only immediate `.parts` children of an explicit or configured output directory.
+It is read-only and uses durable `ended_at`, never file mtime, for the optional
+age threshold (`ended_at <= now - days * 86400`). Only a supported completed
+TikTok session with canonical creator, completed finalization, proven regular
+output directly beside its `.parts` directory, stable known evidence, and an
+unprotected creator can be `eligible`. Unknown, changing, extra, symlinked,
+recoverable, and conflicting evidence is not eligible. No deletion executor or
+automatic cleanup exists.
 
 Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
 24 ASCII letters, digits, underscores, or internal periods. List order is

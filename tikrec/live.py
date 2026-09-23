@@ -16,6 +16,7 @@ from .finalize import finalize_parts
 from .connection_observation import ConnectionObservation
 from .flv import FlvTag
 from .manifest import SessionManifest
+from .creator_identity import creator_from_live_url
 from .media import MediaInfo, inspect_media
 from .source import RawCopy, SourceStallError, iter_url_tags
 from .tiktok import (TikTokOfflineError, TikTokResolutionError,
@@ -72,8 +73,7 @@ def capture_live(
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
     manifest = SessionManifest(parts_directory, output_path, "tiktok_live",
-                               clock=manifest_clock, media_inspector=media_inspector,
-                               session_id=session_id)
+                               clock=manifest_clock, media_inspector=media_inspector, session_id=session_id)
     control = CaptureControl(stop_event, sleeper, waiter=recovery_waiter)
     if bound_resolver is None and resolver is resolve_live_url:
         bound_resolver = resolve_live_url_bound
@@ -186,6 +186,7 @@ def capture_live(
                 # Durable identity is committed before opening the first media connection.
                 room_identity(resolved_room)
             if not session_started:
+                manifest.assign_creator(creator_from_live_url(url))
                 _prepare_session(parts_directory, output_path)
                 session_started = True
                 manifest.start(connection_count=connection_number)

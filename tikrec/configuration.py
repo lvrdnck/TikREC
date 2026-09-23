@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from .creator_identity import validate_monitored_creators
 from .retry_policy import DEFAULT_RECOVERY_WINDOW_SECONDS
 from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, MAX_MINIMUM_FREE_SPACE_GIB
+from .configuration_path import default_config_path
+from .configuration_json import unique_fields as _unique_fields
 
 CONFIG_SCHEMA_VERSION = 1
 MIN_RECOVERY_WINDOW_SECONDS = 60
@@ -19,7 +20,8 @@ MAX_RECOVERY_WINDOW_SECONDS = 3600
 DEFAULT_VALIDATION_MODE = "standard"
 VALIDATION_MODES = frozenset({"standard", "deep"})
 _FIELDS = {"schema_version", "output_directory", "recovery_window_seconds", "validation_mode",
-           "debug_tracebacks", "monitored_creators", "minimum_free_space_gib"}
+           "debug_tracebacks", "monitored_creators", "minimum_free_space_gib",
+           "retention_protected_creators", "retention_max_age_days"}
 
 
 class ConfigurationError(ValueError):
@@ -36,6 +38,8 @@ class Configuration:
     debug_tracebacks: bool | None = None
     minimum_free_space_gib: int | None = None
     monitored_creators: tuple[str, ...] = ()
+    retention_protected_creators: tuple[str, ...] = ()
+    retention_max_age_days: int | None = None
     schema_version: int = CONFIG_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -55,6 +59,11 @@ class Configuration:
         if self.minimum_free_space_gib is not None:
             validate_minimum_free_space_gib(self.minimum_free_space_gib)
         validate_monitored_creators(self.monitored_creators)
+        validate_monitored_creators(
+            self.retention_protected_creators, field="retention_protected_creators"
+        )
+        if self.retention_max_age_days is not None:
+            validate_retention_max_age_days(self.retention_max_age_days)
 
     @property
     def effective_recovery_window_seconds(self) -> int:
@@ -77,29 +86,6 @@ class Configuration:
     def effective_minimum_free_space_gib(self) -> int:
         """Return the configured automatic reserve or its built-in default."""
         return self.minimum_free_space_gib or DEFAULT_MINIMUM_FREE_SPACE_GIB
-
-
-def default_config_path(
-    *,
-    os_name: str | None = None,
-    environ: Mapping[str, str] | None = None,
-    home: Path | None = None,
-) -> Path:
-    """Return the deterministic platform configuration path for the current user."""
-    platform = os.name if os_name is None else os_name
-    variables = os.environ if environ is None else environ
-    user_home = Path.home() if home is None else Path(home)
-    if platform == "nt":
-        base = Path(variables.get("APPDATA") or user_home / "AppData" / "Roaming")
-    else:
-        configured_base = variables.get("XDG_CONFIG_HOME")
-        # The XDG specification requires an absolute value; ignore invalid overrides.
-        base = (
-            Path(configured_base)
-            if configured_base and PurePosixPath(configured_base).is_absolute()
-            else user_home / ".config"
-        )
-    return base / "TikREC" / "config.json"
 
 
 class ConfigurationStore:
@@ -133,6 +119,11 @@ class ConfigurationStore:
             raw_creators = document.get("monitored_creators", [])
             if type(raw_creators) is not list:
                 raise ConfigurationError("monitored_creators must be an ordered list")
+            raw_protected = document.get("retention_protected_creators", [])
+            if type(raw_protected) is not list:
+                raise ConfigurationError("retention_protected_creators must be an ordered list")
+            if "retention_max_age_days" in document and document["retention_max_age_days"] is None:
+                raise ConfigurationError("retention_max_age_days must be an integer")
             raw_directory = document.get("output_directory")
             if raw_directory is not None and not isinstance(raw_directory, str):
                 raise ConfigurationError("output_directory must be an absolute path string")
@@ -144,6 +135,8 @@ class ConfigurationStore:
                 debug_tracebacks=document.get("debug_tracebacks"),
                 minimum_free_space_gib=document.get("minimum_free_space_gib"),
                 monitored_creators=tuple(raw_creators),
+                retention_protected_creators=tuple(raw_protected),
+                retention_max_age_days=document.get("retention_max_age_days"),
             )
             configuration.validate()
             return configuration
@@ -167,6 +160,10 @@ class ConfigurationStore:
             document["minimum_free_space_gib"] = configuration.minimum_free_space_gib
         if configuration.monitored_creators:
             document["monitored_creators"] = list(configuration.monitored_creators)
+        if configuration.retention_protected_creators:
+            document["retention_protected_creators"] = list(configuration.retention_protected_creators)
+        if configuration.retention_max_age_days is not None:
+            document["retention_max_age_days"] = configuration.retention_max_age_days
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary: Path | None = None
         try:
@@ -266,6 +263,18 @@ def configured_minimum_free_space_gib(value: str) -> int:
     return validate_minimum_free_space_gib(int(value) if value.isdecimal() else value)
 
 
+def validate_retention_max_age_days(value: object) -> int:
+    """Require an explicitly configured age from one day through ten years."""
+    if type(value) is not int or not 1 <= value <= 3650:
+        raise ConfigurationError("retention_max_age_days must be an integer from 1 to 3650")
+    return value
+
+
+def configured_retention_max_age_days(value: str) -> int:
+    """Parse the CLI age with the same strict bounds as persisted configuration."""
+    return validate_retention_max_age_days(int(value) if value.isdecimal() else value)
+
+
 def resolve_recording_output(output: str | Path, configuration: Configuration) -> Path:
     """Apply the configured base only to relative local recording output paths."""
     path = Path(output)
@@ -288,12 +297,3 @@ def _validate_output_directory(directory: Path) -> None:
         raise ConfigurationError("output_directory must be a non-empty absolute local path")
     if directory.exists() and not directory.is_dir():
         raise ConfigurationError("output_directory exists but is not a directory")
-
-
-def _unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
-    values: dict[str, object] = {}
-    for name, value in pairs:
-        if name in values:
-            raise ValueError(f"duplicate field: {name}")
-        values[name] = value
-    return values

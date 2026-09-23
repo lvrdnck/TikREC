@@ -12,7 +12,7 @@ fill available capacity. The deployed
 Eliss/Sinaloan pair passed two-slot isolation, targeted stops, media validation,
 and idle restart; its second start was manual. Offline regressions cover
 automatic capacity and duplicate page, room, and pending-path ownership.
-A library, playback, retention, notifications, and web workflows remain future
+A library, playback, automatic cleanup, notifications, and web workflows remain future
 work. Historical Moe media attribution remains non-blocking [#28](https://github.com/lvrdnck/TikREC/issues/28);
 the [forensic report](ISSUE_27_FORENSICS.md) preserves the evidence.
 
@@ -36,6 +36,8 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec config unset recovery-window-seconds
     tikrec config set minimum-free-space-gib GIB
     tikrec config unset minimum-free-space-gib
+    tikrec config set retention-max-age-days DAYS
+    tikrec config unset retention-max-age-days
     tikrec config set validation-mode standard|deep
     tikrec config unset validation-mode
     tikrec config set debug-tracebacks true|false
@@ -43,6 +45,10 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec monitor add CREATOR
     tikrec monitor remove CREATOR
     tikrec monitor list
+    tikrec retention protect CREATOR
+    tikrec retention unprotect CREATOR
+    tikrec retention protected
+    tikrec retention plan [ROOT] [--json]
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -504,13 +510,25 @@ each with its own worker, stop event, durable intent, recovery, retained media,
 finalization, and result. Creator automation can fill both slots while retaining
 the configurable per-start reserve (10 GiB by default), room binding, collision-safe naming, and durable
 same-room suppression. It does not authenticate to TikTok, notify the owner,
-manage retention, or provide a library/Web UI/playback.
+automatically delete media, or provide a library/Web UI/playback. Unreleased
+v0.11 development adds a read-only age-retention plan and explicit creator
+protection; it does not delete, move, or rename any artifact.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,
 offline verification, and package build/install checks.
-Library/history/playback, a web interface, notifications, and retention remain
+Library/history/playback, a web interface, notifications, and retention execution remain
 future work.
+
+`tikrec retention protect CREATOR` keeps a canonical creator on an independent
+protected list; removing monitoring does not remove this protection. Optional
+`retention-max-age-days` accepts 1–3650 days and is disabled when unset.
+`retention plan [ROOT]` reads only immediate `.parts` session children of the
+selected directory (or configured output directory). It uses the durable
+session end time, validates completed output and retained evidence, and reports
+`eligible`, `retained`, `protected`, `ineligible`, or `needs_attention` with a
+reason. Legacy sessions without a proven creator and uncertain evidence never
+become eligible. This is an advisory plan only; automatic deletion does not exist.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

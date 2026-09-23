@@ -19,6 +19,7 @@ from .decode_diagnostics import input_decode_health
 from .live import capture_live
 from .cli_manifest import _load_manifest, _finish_recovery
 from .monitor_cli import add_monitor_command, run_monitor_command
+from .retention_cli import add_retention_command, run_retention_command
 from .output_naming import local_recording_paths
 from .progress import LiveProgress
 from .recovery_cli import add_recovery_command, run_recovery_command
@@ -64,6 +65,8 @@ def main(
             return run_config_command(arguments, stdout)
         if arguments.command == "monitor":
             return run_monitor_command(arguments, stdout)
+        if arguments.command == "retention":
+            return run_retention_command(arguments, stdout)
         if arguments.command == "resolve":
             direct_url = resolver(arguments.url)
             print(direct_url, file=stdout)
@@ -230,6 +233,7 @@ def _parser() -> argparse.ArgumentParser:
     add_control_commands(subcommands)
     config = add_config_command(subcommands)
     monitor = add_monitor_command(subcommands)
+    retention = add_retention_command(subcommands)
     record = subcommands.add_parser(
         "record",
         help="advanced: record a direct FLV/media URL, not a TikTok page",
@@ -270,7 +274,7 @@ def _parser() -> argparse.ArgumentParser:
                       metavar="SECONDS", help="override the 60-3600 second recovery window")
     validate = add_validation_command(subcommands)
     recover = add_recovery_command(subcommands)
-    for command in (record, finalize, resolve, live, validate, recover, config, monitor):
+    for command in (record, finalize, resolve, live, validate, recover, config, monitor, retention):
         # Accept the global diagnostic flag after a subcommand as well.
         add_debug_arguments(command, suppress_default=True)
     return parser

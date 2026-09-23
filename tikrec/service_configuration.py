@@ -15,6 +15,7 @@ from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB
 _FIELDS = {
     "schema_version", "output_directory", "recovery_window_seconds",
     "validation_mode", "debug_tracebacks", "monitored_creators", "minimum_free_space_gib",
+    "retention_protected_creators", "retention_max_age_days",
 }
 
 
