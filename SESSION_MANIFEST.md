@@ -75,6 +75,11 @@ is not inferred. Unreleased v0.11 retention planning applies stricter terminal
 proof than ordinary schema-1 loading: completed capture/finalization fields,
 finite coherent elapsed time, and durable event/recovery chronology must agree.
 This does not change the manifest schema or historical recovery compatibility.
+Startup reconciliation also repeats the optional creator/page check immediately
+after its own fresh resume preflight, before appending recovery evidence,
+resolving the room, or saving new job state. Read-only retention requires a
+stable whole-root claim snapshot and stricter event chronology; no manifest
+field is added for that advisory proof.
 
 `finalization.status` is one of `not_requested`, `pending`, `not_started`,
 `running`, `completed`, `interrupted`, or `failed`. The pending/running values

@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Second retention-safety correction complete (2026-09-24):** Independent
+review of `99495eb` still found fail-open claim changes, whole-root races,
+weak chronology, stale creator at startup's fresh preflight, and output
+alias/locality gaps. Bounded immutable claimant and root snapshots now bind
+inspection to stable control/evidence identity, including small control hashes
+and output physical identity. Case-folded output names, hard-link ambiguity,
+no-follow aliases, and platform mount/drive evidence fail closed. Retention-only
+event/connection/outage chronology is stricter, and startup rechecks creator
+before mutation. No deletion exists; old plans never authorize deletion, and
+future execution needs immediate revalidation and separate approval. A fresh
+independent review of this correction is the next gate before destructive
+retention design. v0.10.0 remains released; v0.11.0 is unreleased.
+
 **Retention safety correction complete (2026-09-23):** Independent review of
 `82f3363` identified five fail-open paths: rejected competing claims, newer
 durable activity than terminal time, contradictory completed fields, stale

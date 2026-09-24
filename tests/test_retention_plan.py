@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import uuid
@@ -320,3 +321,248 @@ def test_native_junction_root_is_rejected(tmp_path):
             plan(junction)
     finally:
         junction.rmdir()
+
+
+@pytest.mark.parametrize("change_kind", ["output", "uuid"])
+@pytest.mark.parametrize("rejected", ["protected", "unrecognized"])
+def test_changed_rejected_claim_cannot_leave_alpha_eligible(tmp_path, monkeypatch,
+                                                            change_kind, rejected):
+    import tikrec.retention_plan as module
+    alpha = session(tmp_path, "alpha")
+    beta = session(tmp_path, "beta", creator="beta")
+    original = module._claims
+    def changing(directory, root):
+        claim = original(directory, root)
+        if directory == beta:
+            if change_kind == "output":
+                change(beta, output_path=str(tmp_path / "alpha.mp4"))
+            else:
+                change(beta, session_id=json.loads((alpha / "session.json").read_text())["session_id"])
+            if rejected == "unrecognized":
+                (beta / "unknown.bin").write_bytes(b"preserve")
+        return claim
+    monkeypatch.setattr(module, "_claims", changing)
+    records = plan(tmp_path, protected=("beta",) if rejected == "protected" else ())
+    assert all(item["classification"] != "eligible" for item in records)
+
+
+def test_missing_output_field_does_not_prove_claim_absent(tmp_path):
+    session(tmp_path, "alpha")
+    beta = session(tmp_path, "beta", creator="beta")
+    path = beta / "session.json"
+    values = json.loads(path.read_text())
+    values.pop("output_path")
+    path.write_text(json.dumps(values))
+    assert all(item["classification"] != "eligible" for item in plan(tmp_path))
+
+
+def test_explicit_null_output_is_supported_claim_state(tmp_path):
+    from tikrec.retention_snapshot import capture_claim
+    directory = session(tmp_path, "alpha", output=False)
+    change(directory, output_path=None)
+    claim = capture_claim(directory, tmp_path)
+    assert claim.output_state == "null" and not claim.uncertain
+    assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+def test_new_claimant_appearing_mid_plan_blocks_earlier_eligible(tmp_path):
+    session(tmp_path, "alpha")
+    def inspecting(path):
+        if path.name == "alpha.mp4":
+            beta = session(tmp_path, "beta", creator="beta")
+            change(beta, output_path=str(tmp_path / "alpha.mp4"))
+        return MEDIA
+    result = plan_retention(tmp_path, Configuration(retention_max_age_days=1,
+                             retention_protected_creators=("beta",)), clock=lambda: NOW,
+                            media_inspector=inspecting)["sessions"]
+    assert all(item["classification"] != "eligible" for item in result)
+
+
+@pytest.mark.parametrize("mutation", ["creator", "uuid", "output", "extra"])
+def test_earlier_candidate_change_during_later_inspection_blocks_eligibility(tmp_path, mutation):
+    alpha = session(tmp_path, "alpha")
+    session(tmp_path, "beta", creator="beta")
+    def inspecting(path):
+        if path.name == "beta.mp4":
+            if mutation == "creator":
+                change(alpha, creator="beta")
+            elif mutation == "uuid":
+                change(alpha, session_id=str(uuid.uuid4()))
+            elif mutation == "output":
+                (tmp_path / "alpha.mp4").write_bytes(b"replaced output")
+            else:
+                (alpha / "unexpected.bin").write_bytes(b"preserve")
+        return MEDIA
+    result = plan_retention(tmp_path, Configuration(retention_max_age_days=1,
+                             retention_protected_creators=("beta",)), clock=lambda: NOW,
+                            media_inspector=inspecting)["sessions"]
+    assert all(item["classification"] != "eligible" for item in result)
+
+
+@pytest.mark.parametrize("record", [
+    {"event": "room_status", "timestamp": 900, "status": 2,
+     "confirmation_reached": True},
+    {"event": "service_recovery", "timestamp": 900,
+     "reason": "process_restart", "resume_count": 1},
+    {"event": "capture_resume", "timestamp": 900, "connection": 2,
+     "reason": "explicit_resume", "previous_status": "interrupted", "next_part_index": 2},
+    {"event": "network_recovery", "timestamp": 900, "phase": "entered",
+     "retry_attempt": 1, "outage_elapsed_seconds": 0, "failure_kind": "timeout"},
+    {"connection": 1, "started_at": 900, "ended_at": 1005},
+    {"connection": 1, "started_at": 1008, "ended_at": 1005},
+    {"connection": 1, "started_at": 1001, "ended_at": 1005, "resolved_at": 900},
+    {"connection": 1, "started_at": 1001, "ended_at": 1005,
+     "first_retained_media_at": 1004, "last_retained_media_at": 1003},
+])
+def test_retention_chronology_rejects_impossible_single_record(tmp_path, record):
+    directory = session(tmp_path, "alpha")
+    if record.get("event") == "capture_resume":
+        change(directory, connection_count=2, reconnect_count=1)
+    if record.get("event") in {"service_recovery", "capture_resume", "network_recovery"}:
+        record["session_id"] = json.loads((directory / "session.json").read_text())["session_id"]
+    (directory / "connections.jsonl").write_text(json.dumps(record) + "\n")
+    assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+@pytest.mark.parametrize("records", [
+    [{"connection": 1, "started_at": 1005, "ended_at": 1006},
+     {"connection": 2, "started_at": 1002, "ended_at": 1003}],
+    [{"event": "network_recovery", "timestamp": 1005, "phase": "entered",
+      "retry_attempt": 1, "outage_elapsed_seconds": 0, "failure_kind": "timeout"},
+     {"event": "network_recovery", "timestamp": 1004, "phase": "recovered",
+      "retry_attempt": 2, "outage_elapsed_seconds": 1, "failure_kind": "timeout"}],
+])
+def test_retention_chronology_rejects_backwards_sequence(tmp_path, records):
+    directory = session(tmp_path, "alpha")
+    if "connection" in records[0]:
+        change(directory, connection_count=2, reconnect_count=1)
+    else:
+        identity = json.loads((directory / "session.json").read_text())["session_id"]
+        for record in records:
+            record["session_id"] = identity
+    (directory / "connections.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
+    assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+def test_protected_hardlink_claim_cannot_leave_owner_eligible(tmp_path):
+    session(tmp_path, "alpha")
+    beta = session(tmp_path, "beta", creator="beta")
+    alias = tmp_path / "alias.mp4"
+    os.link(tmp_path / "alpha.mp4", alias)
+    change(beta, output_path=str(alias))
+    assert all(item["classification"] != "eligible" for item in plan(tmp_path, protected=("beta",)))
+
+
+def test_protected_symlink_claim_cannot_leave_owner_eligible(tmp_path):
+    session(tmp_path, "alpha")
+    beta = session(tmp_path, "beta", creator="beta")
+    alias = tmp_path / "alias.mp4"
+    try:
+        alias.symlink_to(tmp_path / "alpha.mp4")
+    except OSError:
+        pytest.skip("native file symlink unavailable")
+    change(beta, output_path=str(alias))
+    assert all(item["classification"] != "eligible" for item in plan(tmp_path, protected=("beta",)))
+
+
+def test_case_equivalent_output_claims_conflict(tmp_path):
+    session(tmp_path, "alpha")
+    beta = session(tmp_path, "beta", creator="beta")
+    change(beta, output_path=str(tmp_path / "ALPHA.mp4"))
+    assert all(item["classification"] != "eligible" for item in plan(tmp_path))
+
+
+@pytest.mark.parametrize("mutation", ["claim", "restored", "replaced_output", "removed_child"])
+def test_whole_root_change_during_later_candidate_blocks_earlier(tmp_path, mutation):
+    alpha = session(tmp_path, "alpha")
+    beta = session(tmp_path, "beta", creator="beta")
+    def inspecting(path):
+        if path.name == "beta.mp4":
+            if mutation == "claim":
+                change(alpha, output_path=str(tmp_path / "beta.mp4"))
+            elif mutation == "restored":
+                manifest = alpha / "session.json"
+                original = manifest.read_bytes()
+                change(alpha, creator="beta")
+                manifest.write_bytes(original)
+            elif mutation == "replaced_output":
+                output = tmp_path / "alpha.mp4"
+                original = output.read_bytes()
+                output.unlink()
+                output.write_bytes(original)
+            else:
+                beta.rename(tmp_path / "removed.beta")
+        return MEDIA
+    result = plan_retention(tmp_path, Configuration(retention_max_age_days=1),
+                            clock=lambda: NOW, media_inspector=inspecting)["sessions"]
+    assert all(item["classification"] != "eligible" for item in result)
+
+
+def test_unknown_locality_rejects_root(tmp_path, monkeypatch):
+    import tikrec.retention_plan as module
+    session(tmp_path, "alpha")
+    monkeypatch.setattr(module, "proven_local", lambda _: False)
+    with pytest.raises(ValueError, match="locality"):
+        plan(tmp_path)
+
+
+def test_terminal_end_event_and_repeated_service_recovery_are_coherent(tmp_path):
+    directory = session(tmp_path, "alpha")
+    identity = json.loads((directory / "session.json").read_text())["session_id"]
+    records = [
+        {"event": "service_recovery", "timestamp": 1002, "session_id": identity,
+         "reason": "process_restart", "resume_count": 1},
+        {"event": "service_recovery", "timestamp": 1003, "session_id": identity,
+         "reason": "process_restart", "resume_count": 1},
+        {"event": "room_status", "timestamp": 1010, "status": 4,
+         "confirmation_reached": True},
+    ]
+    (directory / "connections.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
+    assert plan(tmp_path)[0]["classification"] == "eligible"
+
+
+def test_valid_resumed_completed_connection_is_eligible(tmp_path):
+    directory = session(tmp_path, "alpha")
+    identity = json.loads((directory / "session.json").read_text())["session_id"]
+    change(directory, connection_count=2, reconnect_count=1, recovery_performed=True)
+    records = [
+        {"connection": 1, "started_at": 1000, "ended_at": 1002,
+         "resolved_at": 1000.5, "http_opened_at": 1001},
+        {"event": "capture_resume", "timestamp": 1003, "session_id": identity,
+         "connection": 2, "reason": "explicit_resume", "previous_status": "interrupted",
+         "next_part_index": 2},
+        {"connection": 2, "started_at": 1004, "ended_at": 1006,
+         "resolved_at": 1004.5, "http_opened_at": 1005},
+    ]
+    (directory / "connections.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
+    assert plan(tmp_path)[0]["classification"] == "eligible"
+
+
+def test_network_outage_elapsed_cannot_move_backwards(tmp_path):
+    directory = session(tmp_path, "alpha")
+    identity = json.loads((directory / "session.json").read_text())["session_id"]
+    records = [
+        {"event": "network_recovery", "timestamp": 1002, "session_id": identity,
+         "phase": "entered", "retry_attempt": 1, "outage_elapsed_seconds": 5,
+         "failure_kind": "timeout"},
+        {"event": "network_recovery", "timestamp": 1003, "session_id": identity,
+         "phase": "recovered", "retry_attempt": 2, "outage_elapsed_seconds": 1,
+         "failure_kind": "timeout"},
+    ]
+    (directory / "connections.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
+    assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+def test_network_outage_elapsed_cannot_exceed_observed_session_time(tmp_path):
+    directory = session(tmp_path, "alpha")
+    identity = json.loads((directory / "session.json").read_text())["session_id"]
+    records = [
+        {"event": "network_recovery", "timestamp": 1002, "session_id": identity,
+         "phase": "entered", "retry_attempt": 1, "outage_elapsed_seconds": 100,
+         "failure_kind": "timeout"},
+        {"event": "network_recovery", "timestamp": 1003, "session_id": identity,
+         "phase": "recovered", "retry_attempt": 2, "outage_elapsed_seconds": 101,
+         "failure_kind": "timeout"},
+    ]
+    (directory / "connections.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
+    assert plan(tmp_path)[0]["classification"] != "eligible"

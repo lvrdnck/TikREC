@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import math
-import os
 import re
 import time
-import uuid
 from collections.abc import Callable
 from pathlib import Path
 
@@ -16,6 +14,8 @@ from .media import MediaInfo, inspect_media
 from .recovery_discovery import discover_recovery_candidates, _read_manifest
 from .writer_recovery_evidence import recovery_records
 from .retention_paths import local_path
+from .retention_locality import proven_local
+from .retention_snapshot import capture_claim, capture_root
 from .retention_terminal import terminal_success
 
 
@@ -25,36 +25,36 @@ def plan_retention(root: Path, configuration: Configuration, *,
     """Classify immediate TikREC session directories without modifying artifacts."""
     configuration.validate()
     scope = local_path(Path(root), directory=True)
+    if not proven_local(scope):
+        raise ValueError("retention root locality could not be proven")
     now = clock()
     if type(now) not in {int, float} or not math.isfinite(now):
         raise ValueError("retention clock must be finite")
-    children = sorted((path for path in scope.iterdir()
-                       if path.name.lower().endswith(".parts")),
-                      key=lambda path: (path.name.casefold(), path.name))
-    sessions, unknown = [], False
-    for path in children:
-        identity, output, uncertain = _claims(path, scope)
-        item = _inspect(path, scope, configuration, now, media_inspector)
-        if ((item["session_id"] is not None and item["session_id"] != identity)
-                or (item["output_path"] is not None and item["output_path"] != output)):
-            uncertain = True
-        item["session_id"], item["output_path"] = identity, output
+    initial = capture_root(scope, _claims)
+    sessions, unknown = [], any(claim.uncertain for claim in initial.claims)
+    for claim in initial.claims:
+        item = _inspect(Path(claim.directory), scope, configuration, now, media_inspector)
+        if ((item["session_id"] is not None and item["session_id"] != claim.session_id)
+                or (item["output_path"] is not None and item["output_path"] != claim.output_path)):
+            unknown = True
+        item["session_id"], item["output_path"] = claim.session_id, claim.output_path
         sessions.append(item)
-        unknown |= uncertain
-    # A second session claiming one output makes both claims unsafe, even if one is incomplete.
-    claims: dict[str, list[dict]] = {}
-    identities: dict[str, list[dict]] = {}
-    for session in sessions:
-        if session["session_id"] is not None:
-            identities.setdefault(session["session_id"], []).append(session)
-        if session["output_path"] is not None:
-            key = os.path.normcase(os.path.normpath(session["output_path"]))
-            claims.setdefault(key, []).append(session)
-    for owners in (*claims.values(), *identities.values()):
+    # A late child, replacement, or changed control claim invalidates the whole plan.
+    try:
+        unknown |= capture_root(scope, _claims) != initial
+    except (OSError, ValueError, TypeError):
+        unknown = True
+    claims: dict[tuple, list[int]] = {}
+    for index, claim in enumerate(initial.claims):
+        for kind, value in (("session", claim.session_id), ("lexical", claim.output_key),
+                            ("physical", claim.physical_output)):
+            if value is not None:
+                claims.setdefault((kind, value), []).append(index)
+    for owners in claims.values():
         if len(owners) > 1:
-            for session in owners:
-                session["classification"] = "needs_attention"
-                session["reason"] = "evidence_conflict"
+            for index in owners:
+                sessions[index]["classification"] = "needs_attention"
+                sessions[index]["reason"] = "evidence_conflict"
     # An unreadable immediate claimant could alias any output or UUID in this root.
     if unknown:
         for session in sessions:
@@ -127,30 +127,9 @@ def _inspect(directory, root, config, now, media_inspector):
         return _mark(item, "needs_attention", "evidence_conflict")
 
 
-def _claims(directory: Path, root: Path) -> tuple[str | None, str | None, bool]:
-    """Read bounded immediate claims before candidate eligibility can discard them."""
-    try:
-        local_path(directory, directory=True)
-        manifest = directory / "session.json"
-        local_path(manifest, directory=False)
-        values = _read_manifest(manifest)
-        identity = values["session_id"]
-        if (type(identity) is not str or str(uuid.UUID(identity)) != identity):
-            raise ValueError("invalid retention claimant identity")
-        declared = values.get("output_path")
-        if declared is None:
-            return identity, None, False
-        if type(declared) is not str or not Path(declared).is_absolute():
-            raise ValueError("invalid retention output claim")
-        output = Path(os.path.abspath(declared))
-        # Keep claim discovery lexical: never open a claimant's arbitrary output.
-        if (output.parent != root or output.suffix.lower() != ".mp4"
-                or Path(declared) != output):
-            raise ValueError("unsafe retention output claim")
-        return identity, str(output), False
-    except (OSError, UnicodeError, ValueError, TypeError, KeyError, AttributeError,
-            OverflowError):
-        return None, None, True
+def _claims(directory: Path, root: Path):
+    """Return an immutable bounded claim independent of eligibility."""
+    return capture_claim(directory, root)
 
 
 def _evidence_stamp(directory: Path) -> tuple:

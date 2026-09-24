@@ -530,7 +530,8 @@ session end time, validates completed output and retained evidence, and reports
 reason. Legacy sessions without a proven creator and uncertain evidence never
 become eligible. This is an advisory plan only; automatic deletion does not exist.
 The planner checks competing session/output claims even for rejected candidates,
-terminal chronology, and local path redirection. A saved plan is never permission
+whole-root stability, terminal chronology, output aliases, and proven local-only
+storage. A saved plan is never permission
 to delete; future cleanup would require fresh validation and separate approval.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,

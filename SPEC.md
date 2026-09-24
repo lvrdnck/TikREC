@@ -962,6 +962,21 @@ again at fresh resume preflight before any write; legacy absence stays absent.
 Planner output is advisory and may become stale. Any future destructive action
 needs immediate revalidation and separate approval.
 
+The planner binds each candidate to an immutable claim snapshot, distinguishing
+an explicit null output declaration from a missing or unreadable field. It
+compares whole-root snapshots before and after inspection: immediate child
+membership, small control-file content identity, artifact metadata, output
+identity, and creator/lifecycle changes must remain stable. A changing root
+cannot yield eligible sessions. Output claims use case-folded in-root names and
+available device/inode facts; symlink/reparse aliases, multiply linked outputs,
+and unprovable physical ownership fail closed. Roots require local storage
+evidence (Windows fixed drive type or known local Linux/macOS filesystem type);
+remote, unsupported, and unknown mounts are refused. Retention-only chronology
+checks session, numbered-connection, media-milestone, resume, room-status,
+service-recovery, network-outage, and writer-recovery timing. The narrow
+pre-manifest first-LIVE-resolution exception requires explicit resolution
+evidence. These checks do not tighten ordinary schema-1 loading/recovery.
+
 Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
 24 ASCII letters, digits, underscores, or internal periods. List order is
 preserved deterministically but does not define scheduling priority. TikREC

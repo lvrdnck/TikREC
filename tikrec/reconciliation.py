@@ -15,6 +15,7 @@ from .media import inspect_media
 from .recovery_evidence import append_recovery_record
 from .recovery_session import completed_output_is_proven, inspect_recovery_session
 from .session_resume import prepare_resume
+from .creator_identity import require_matching_creator
 from .capture_control import CaptureControl, CaptureStopped
 from .network_evidence import append_network_record
 from .retry_policy import RecoveryExhausted
@@ -137,7 +138,9 @@ class StartupReconciler:
             prepared = self.resume_preflight(
                 Path(job.parts_directory), output_path=output, session_id=job.session_id,
                 source_type="tiktok_live", clock=self.clock, media_inspector=self.media_inspector)
-            if prepared.manifest.snapshot().get("room_id") != job.room_id:
+            prepared_values = prepared.manifest.snapshot()
+            require_matching_creator(prepared_values, job.source_url)
+            if prepared_values.get("room_id") != job.room_id:
                 raise ValueError("manifest cannot prove saved LIVE identity")
             evidence_ready = True
             self._event(job, session, "process_restart")

@@ -416,8 +416,10 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    resolve public identity with the bounded patient policy below, in the worker.
    Resolution is bound to the saved canonical room ID, so a username LIVE-page
    404 can be checked against direct room status and current-account identity
-   without inventing an offline result. Storage preflight is performed once
-   before that loop. Decide using the table.
+   without inventing an offline result. Fresh storage preflight rechecks the
+   optional manifest creator against the accepted public page and the proven
+   room before recovery evidence, resolution, or durable resume-state writes.
+   Decide using the table.
 8. Persist `resuming`, process_restart reason, and incremented resume_count before
    media continuation. Preserve session/job ID, paths, saved room ID and start time.
    Finalization also commits its phase before starting the encoder.

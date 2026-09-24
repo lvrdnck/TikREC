@@ -7,6 +7,25 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Second v0.11.0 retention-safety correction complete (2026-09-24):** Fresh
+  independent review of `99495eb` remained NOT READY. It found changed or
+  incomplete claims, whole-root planning races, under-constrained event time,
+  a fresh startup-reconciliation creator gap, and output alias/locality gaps.
+  The read-only planner now captures immutable bounded claims and a whole-root
+  evidence snapshot before inspection, then compares a fresh snapshot before
+  publishing eligibility. Missing claims, instability, aliases, ambiguous
+  physical identity, and unproven local storage fail closed. Retention-only
+  connection/event/outage chronology is stricter; startup reconciliation
+  rechecks creator before evidence or job writes. No deletion executor exists;
+  stale plans authorize nothing. v0.10.0 remains released, v0.11.0 unreleased,
+  and #8/#13/#28 separate/non-blocking. Verification: 1,291 isolated pytest
+  tests plus 19 subtests, 228 unittest tests, compilation, 29 CLI help paths
+  and version, 89 package sources under 300 lines, and diff checks passed.
+  Both native Windows junction tests passed; native file symlink creation
+  skipped for unavailable privilege. Mapped-drive and POSIX mount classifications
+  passed injected offline tests; no genuine mapped drive was available.
+  Next gate: fresh independent review
+  of this correction before any destructive retention design.
 - **Active v0.11.0 retention safety correction complete (2026-09-23):** Fresh
   independent review of `82f3363` found five blockers: rejected competing
   UUID/output claims could disappear; terminal time could predate durable

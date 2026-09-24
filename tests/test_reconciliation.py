@@ -93,6 +93,43 @@ def test_same_room_commits_resume_before_capture_and_preserves_identity(tmp_path
     assert records[-1]["reason"] == "process_restart" and records[-1]["resume_count"] == 1
 
 
+def test_fresh_reconciliation_preflight_rejects_changed_creator_without_mutation(tmp_path):
+    from tikrec.session_resume import prepare_resume
+    store, job, _ = saved_session(tmp_path)
+    path = tmp_path / "out.parts/session.json"
+    change = json.loads(path.read_text())
+    change["creator"] = "creator"
+    path.write_text(json.dumps(change))
+    def changed_preflight(*args, **kwargs):
+        values = json.loads(path.read_text())
+        values["creator"] = "beta"
+        path.write_text(json.dumps(values))
+        return prepare_resume(*args, **kwargs)
+    before_job = store.path.read_bytes()
+    parts = {str(p): p.read_bytes() for p in (tmp_path / "out.parts").glob("*.flv")}
+    result = reconciler(store, resolver=no_call, resume_preflight=changed_preflight).reconcile()
+    assert result.outcome == "failed"
+    assert store.path.read_bytes() == before_job
+    assert json.loads(path.read_text())["creator"] == "beta"
+    assert parts == {str(p): p.read_bytes() for p in (tmp_path / "out.parts").glob("*.flv")}
+    assert not (tmp_path / "out.parts/connections.jsonl").exists()
+    assert not (tmp_path / "out.mp4").exists()
+
+
+@pytest.mark.parametrize("saved_creator", ["creator", None])
+def test_fresh_reconciliation_accepts_equivalent_or_absent_creator(tmp_path, saved_creator):
+    store, job, _ = saved_session(tmp_path)
+    store.save(replace(job, source_url="https://www.tiktok.com/@Creator/live"))
+    path = tmp_path / "out.parts/session.json"
+    if saved_creator is not None:
+        values = json.loads(path.read_text())
+        values["creator"] = saved_creator
+        path.write_text(json.dumps(values))
+    result = reconciler(store, resolver=lambda _: LiveResolution("123", SIGNED)).reconcile()
+    assert result.outcome == "resume"
+    assert json.loads(path.read_text()).get("creator") == saved_creator
+
+
 def test_startup_recovery_uses_bound_room_resolver_for_saved_identity(tmp_path):
     store, _, _ = saved_session(tmp_path)
     calls = []
