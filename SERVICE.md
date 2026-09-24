@@ -411,10 +411,12 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    malformed tag, exclude that tag and all following bytes from the new copy;
    never resynchronize or repair framing. A prefix without valid media still
    blocks. Immediately before appending manifest recovery evidence, recheck its
-   unchanged ownership fingerprint and the actual recovered source/prefix,
-   requiring every byte of the recorded prefix rather than accepting equal EOF,
-   including after slow hashing/prefix comparison. The manifest promotion itself
-   conditionally checks its original bytes and current job/media ownership.
+   unchanged ownership fingerprint and one coherent source/recovered byte proof.
+   It hashes the full source while comparing its exact recovered prefix from the
+   same read, and checks opened artifact identity and metadata around that proof.
+   The job and manifest are rechecked after the slow byte proof. Manifest
+   promotion itself conditionally checks its original bytes and current
+   job/media ownership.
    Manifest evidence records source SHA-256 and discarded byte counts.
    Recovery interrupted after preservation or publication is safely retryable.
 5. Existing requested output is never overwritten. Matching committed manifest

@@ -7,6 +7,27 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Sixth v0.11.0 retention-safety correction complete (2026-09-24):** Fresh
+  independent review of `9feafa1` passed the targeted planner/root checks but
+  remained NOT READY on one writer-recovery byte-proof coherence blocker.
+  Separate source hashing and recovered-prefix comparison could accept a
+  same-length mutation between observations and publish a stale source hash.
+  Final conditional manifest authorization and persisted-evidence validation
+  now share one bounded proof: opened regular artifacts retain their identity
+  and metadata while the exact compared source prefix and full source SHA-256
+  come from the same source read. Same-length prefix/tail mutations fail before
+  manifest publication; the previous manifest remains intact. The planner is
+  read-only and advisory; deletion remains unimplemented. v0.10.0 remains the
+  released/package version, v0.11.0 unreleased, and #8/#13/#28 remain separate
+  non-blocking evidence work. Next gate: another fresh independent safety
+  review of the retention foundation and recovery byte proof before any
+  destructive retention design. Focused recovery/manifest/retention tests passed
+  359 (three skips); the isolated full suite passed 1,378 plus 19 subtests
+  (three skips). Unittest discovery passed 228; compilation, 29 CLI help
+  paths/version, all 91 package sources under 300 lines, and diff checks passed.
+  Native Windows junctions and injected identity/reparse/locality checks passed.
+  Native file symlink creation and two POSIX open-file replacement tests skipped
+  on this Windows host; native POSIX mounts and a real mapped drive were not run.
 - **Fifth v0.11.0 retention-safety correction complete (2026-09-24):** The latest
   fresh independent review of `32de6ed` remained NOT READY on exactly two
   observation-completeness blockers. R1: a claimant created inside a closing

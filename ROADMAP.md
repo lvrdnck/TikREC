@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Sixth retention-safety correction complete (2026-09-24):** Fresh independent
+review of `9feafa1` passed the targeted planner/root checks and found one
+remaining writer-recovery byte-proof coherence blocker. The final manifest
+guard and persisted-evidence validator now use one bounded proof over opened
+regular artifacts: the compared source prefix and complete source SHA-256 come
+from the same read, with path/handle identity and metadata checked before and
+after. Same-length prefix or tail mutation cannot publish a stale recovery
+record. Planner results remain read-only and advisory; no deletion executor
+exists. A fresh independent safety review of the corrected foundation and
+byte proof is required before deletion design. v0.10.0 remains released,
+v0.11.0 unreleased, and #8/#13/#28 separate non-blocking evidence work.
+
 **Fifth retention-safety correction complete (2026-09-24):** Fresh independent
 review of `32de6ed` remained NOT READY on exactly R1 and R2. The closing root
 stamp now follows the complete closing child enumeration and identity scan, so

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .recovery_session import inspect_recovery_session
-from .writer_recovery_evidence import file_sha256, same_prefix
+from .writer_recovery_evidence import file_sha256, prove_recovery_bytes
 
 
 @dataclass(frozen=True)
@@ -51,12 +51,8 @@ def verify_writer_commit(token: WriterRecoveryOwnership, job, store) -> None:
     plan = token.plan
     if store.load() != job or _manifest_digest(token) != token.manifest_digest:
         raise ValueError("writer recovery ownership changed before manifest commit")
-    if (not plan.evidence.is_file() or plan.evidence.is_symlink()
-            or not plan.recovered.is_file() or plan.recovered.is_symlink()
-            or plan.evidence.stat().st_size != plan.source_bytes
-            or file_sha256(plan.evidence) != plan.source_sha256
-            or plan.recovered.stat().st_size != plan.recovered_bytes
-            or not same_prefix(plan.evidence, plan.recovered, plan.recovered_bytes)):
+    if not prove_recovery_bytes(plan.evidence, plan.recovered, plan.source_bytes,
+                                plan.recovered_bytes, plan.source_sha256):
         raise ValueError("recovered writer media differs from authorized partial")
     if store.load() != job or _manifest_digest(token) != token.manifest_digest:
         raise ValueError("writer recovery ownership changed before manifest commit")

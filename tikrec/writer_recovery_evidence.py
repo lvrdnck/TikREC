@@ -2,7 +2,9 @@
 
 from copy import deepcopy
 import hashlib
+import os
 from pathlib import Path
+import stat
 
 from .session_parts import part_index
 
@@ -87,10 +89,8 @@ def validate_recorded_evidence(directory, retained, records, evidence) -> set[in
                 or not isinstance(source_sha256, str) or len(source_sha256) != 64
                 or any(character not in "0123456789abcdef" for character in source_sha256)
                 or recovered_bytes <= 0 or recovered_bytes + discarded != source_bytes
-                or discarded < 0 or path.stat().st_size != source_bytes
-                or file_sha256(path) != source_sha256
-                or part.stat().st_size != recovered_bytes
-                or not same_prefix(path, part, recovered_bytes)):
+                or discarded < 0 or not prove_recovery_bytes(
+                    path, part, source_bytes, recovered_bytes, source_sha256)):
             raise ValueError("writer recovery byte evidence is inconsistent")
         recorded.add(index)
     return recorded
@@ -124,6 +124,56 @@ def same_prefix(source: Path, recovered: Path, count: int) -> bool:
                 return False
             remaining -= size
     return True
+
+
+def prove_recovery_bytes(source: Path, recovered: Path, source_bytes: int,
+                         recovered_bytes: int, source_sha256: str) -> bool:
+    """Bind the complete source hash and exact recovered prefix to one file observation."""
+    if (source_bytes <= 0 or recovered_bytes <= 0 or recovered_bytes > source_bytes):
+        return False
+    opening = (_artifact_identity(source), _artifact_identity(recovered))
+    if any(identity is None for identity in opening):
+        return False
+    with source.open("rb") as left, recovered.open("rb") as right:
+        handles = (_artifact_identity(left), _artifact_identity(right))
+        if handles != opening or handles[0][1] != source_bytes or handles[1][1] != recovered_bytes:
+            return False
+        digest = hashlib.sha256()
+        prefix_remaining = recovered_bytes
+        while prefix_remaining:
+            size = min(64 * 1024, prefix_remaining)
+            source_chunk, recovered_chunk = left.read(size), right.read(size)
+            if (len(source_chunk) != size or len(recovered_chunk) != size
+                    or source_chunk != recovered_chunk):
+                return False
+            digest.update(source_chunk)
+            prefix_remaining -= size
+        source_remaining = source_bytes - recovered_bytes
+        while source_remaining:
+            size = min(64 * 1024, source_remaining)
+            chunk = left.read(size)
+            if len(chunk) != size:
+                return False
+            digest.update(chunk)
+            source_remaining -= size
+        if (left.read(1) or right.read(1)
+                or (_artifact_identity(left), _artifact_identity(right)) != opening
+                or (_artifact_identity(source), _artifact_identity(recovered)) != opening):
+            return False
+        return digest.hexdigest() == source_sha256
+
+
+def _artifact_identity(artifact) -> tuple | None:
+    """Identify one regular, nonredirected path or its already-opened handle."""
+    details = (os.fstat(artifact.fileno()) if hasattr(artifact, "fileno")
+               else artifact.lstat())
+    # Windows reparse artifacts can still appear regular through st_mode.
+    if (not stat.S_ISREG(details.st_mode)
+            or getattr(details, "st_file_attributes", 0) & 0x400):
+        return None
+    return (details.st_mode, details.st_size, details.st_dev, details.st_ino,
+            details.st_mtime_ns, details.st_ctime_ns, details.st_nlink,
+            getattr(details, "st_file_attributes", 0))
 
 
 def file_sha256(path: Path) -> str:

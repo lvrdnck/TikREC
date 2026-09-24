@@ -437,32 +437,19 @@ def test_writer_mutation_boundary_rechecks_current_job(tmp_path, monkeypatch, ph
     assert b'"writer_recoveries"' not in manifest.path.read_bytes()
 
 
-@pytest.mark.parametrize("slow_check", ["hash", "prefix"])
-def test_writer_commit_rechecks_job_after_slow_media_proof(tmp_path, monkeypatch, slow_check):
-    """A job replacement inside final hashing or prefix proof cannot append."""
+def test_writer_commit_rechecks_job_after_slow_media_proof(tmp_path, monkeypatch):
+    """A job replacement after coherent media proof cannot append."""
     import tikrec.writer_recovery_ownership as ownership
 
     store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
-    if slow_check == "prefix":
-        original = ownership.same_prefix
+    original = ownership.prove_recovery_bytes
 
-        def changing(left, right, count):
-            result = original(left, right, count)
-            store.save(replace(store.load(), state="reconnecting"))
-            return result
+    def changing(*args):
+        result = original(*args)
+        store.save(replace(store.load(), state="reconnecting"))
+        return result
 
-        monkeypatch.setattr(ownership, "same_prefix", changing)
-    else:
-        original = ownership.file_sha256
-
-        def changing(path):
-            result = original(path)
-            if (path == evidence_path(partial.parent)
-                    and (partial.parent / "part-0001.flv").exists()):
-                store.save(replace(store.load(), state="reconnecting"))
-            return result
-
-        monkeypatch.setattr(ownership, "file_sha256", changing)
+    monkeypatch.setattr(ownership, "prove_recovery_bytes", changing)
     result = reconciler(store, resolver=no_call).reconcile()
     assert result.outcome == "failed"
     assert (partial.parent / "part-0001.flv").exists()
@@ -545,20 +532,20 @@ def test_final_manifest_guard_rejects_equal_eof_after_earlier_checks(
     store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
     committed = manifest.path.read_bytes()
     temporary = manifest.path.with_name(f".{manifest.path.name}.partial")
-    original = ownership.same_prefix
+    original = ownership.prove_recovery_bytes
     changed = False
     inventory_at_guard = None
 
-    def shorten_during_final_proof(left, right, count):
+    def shorten_during_final_proof(left, right, source_bytes, recovered_bytes, digest):
         nonlocal changed, inventory_at_guard
         if temporary.exists() and not changed:
             changed = True
             inventory_at_guard = {path.name for path in partial.parent.iterdir()}
             left.write_bytes(b"")
             right.write_bytes(b"")
-        return original(left, right, count)
+        return original(left, right, source_bytes, recovered_bytes, digest)
 
-    monkeypatch.setattr(ownership, "same_prefix", shorten_during_final_proof)
+    monkeypatch.setattr(ownership, "prove_recovery_bytes", shorten_during_final_proof)
     result = reconciler(store, resolver=no_call).reconcile()
     assert changed and result.outcome == "failed"
     assert manifest.path.read_bytes() == committed
