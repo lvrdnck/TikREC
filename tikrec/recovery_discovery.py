@@ -9,6 +9,8 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from .retention_snapshot import ObservedInstability
+
 from .finalize import _temporary_output_path
 from .media import MediaInfo, inspect_media
 from .session_parts import discover_parts
@@ -16,9 +18,7 @@ from .session_resume import _read_connections, _unique_values, _validate_manifes
 from .tiktok_identity import canonical_room_id
 from .writer_recovery_evidence import recovery_records
 
-
 _PART_NAME = re.compile(r"part-[0-9]+\.flv")
-
 
 @dataclass(frozen=True)
 class RecoveryCandidate:
@@ -44,7 +44,6 @@ class RecoveryCandidate:
         """Return stable JSON-ready recovery facts."""
         return asdict(self)
 
-
 def discover_recovery_candidates(
     scope: Path,
     *,
@@ -59,7 +58,6 @@ def discover_recovery_candidates(
     return tuple(_inspect_candidate(path, media_inspector, control_reader)
                  for path in directories)
 
-
 def _is_candidate(path: Path) -> bool:
     return (
         path.name.lower().endswith(".parts")
@@ -67,7 +65,6 @@ def _is_candidate(path: Path) -> bool:
         or (path / "session.json").is_symlink()
         or any(_PART_NAME.fullmatch(child.name) for child in path.iterdir())
     )
-
 
 def _child_candidates(root: Path) -> tuple[Path, ...]:
     children = (path for path in root.iterdir() if path.name.lower().endswith(".parts"))
@@ -103,6 +100,8 @@ def _inspect_candidate(
         if read_manifest() != values:
             raise ValueError("session evidence changed during inspection")
         output = _declared_output(directory, values)
+    except ObservedInstability:
+        raise
     except (OSError, UnicodeError, ValueError, TypeError, KeyError, AttributeError,
             OverflowError, json.JSONDecodeError) as error:
         return _unsafe(directory, apparent_parts, str(error))

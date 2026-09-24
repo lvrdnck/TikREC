@@ -67,6 +67,17 @@ def test_age_boundary_protection_and_deterministic_order(tmp_path: Path) -> None
     assert all(item["reason"] == "not_old_enough" for item in newer)
 
 
+def test_stable_eligible_plan_does_not_mutate_artifacts(tmp_path: Path) -> None:
+    """An advisory eligibility result leaves every retained byte untouched."""
+    session(tmp_path, "alpha")
+    before = {str(path.relative_to(tmp_path)): path.read_bytes()
+              for path in tmp_path.rglob("*") if path.is_file()}
+    assert plan(tmp_path)[0]["classification"] == "eligible"
+    after = {str(path.relative_to(tmp_path)): path.read_bytes()
+             for path in tmp_path.rglob("*") if path.is_file()}
+    assert after == before
+
+
 def test_disabled_and_unknown_creator_never_eligible(tmp_path: Path) -> None:
     directory = session(tmp_path, "alpha", creator="alpha")
     assert plan(tmp_path, days=None)[0]["reason"] == "retention_disabled"
@@ -709,3 +720,136 @@ def test_nested_unproven_artifact_volume_blocks_eligibility(tmp_path, monkeypatc
     monkeypatch.setattr(module, "local_volume",
                         lambda candidate: None if Path(candidate) == path else local(candidate))
     assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+def test_conflicting_claim_added_during_final_root_scan_blocks_alpha(tmp_path, monkeypatch):
+    """The final scan must bracket its own child inventory and claim reads."""
+    import tikrec.retention_plan as module
+
+    alpha = session(tmp_path, "alpha")
+    original = module._claims
+    calls = 0
+
+    def late(directory, root):
+        nonlocal calls
+        claim = original(directory, root)
+        calls += 1
+        if directory == alpha and calls == 2:
+            added = session(root, "late", creator="bravo")
+            change(added, output_path=str(root / "alpha.mp4"))
+        return claim
+
+    monkeypatch.setattr(module, "_claims", late)
+    assert plan(tmp_path, protected=("bravo",))[0]["classification"] != "eligible"
+
+
+def test_conflicting_claim_added_during_initial_root_scan_blocks_all(tmp_path, monkeypatch):
+    """The initial scan also must prove stable membership before eligibility."""
+    import tikrec.retention_plan as module
+
+    alpha = session(tmp_path, "alpha")
+    original = module._claims
+    added = False
+
+    def late(directory, root):
+        nonlocal added
+        claim = original(directory, root)
+        if directory == alpha and not added:
+            added = True
+            other = session(root, "late", creator="bravo")
+            change(other, output_path=str(root / "alpha.mp4"))
+        return claim
+
+    monkeypatch.setattr(module, "_claims", late)
+    assert added is False
+    assert all(item["classification"] != "eligible"
+               for item in plan(tmp_path, protected=("bravo",)))
+
+
+@pytest.mark.parametrize("control_name,read_number", [
+    ("session.json", 4), ("connections.jsonl", 2),
+])
+def test_control_divergence_inside_discovery_poison_root(
+        tmp_path, monkeypatch, control_name, read_number):
+    """Candidate recovery readers cannot hide an observed version change."""
+    import tikrec.retention_snapshot as snapshot
+
+    alpha = session(tmp_path, "alpha")
+    session(tmp_path, "beta", creator="beta")
+    target = alpha / control_name
+    if control_name == "connections.jsonl":
+        target.write_text(json.dumps({"connection": 1, "started_at": 1000,
+                                      "ended_at": 1005}) + "\n")
+    read = snapshot._control
+    reads = 0
+
+    def divergent(path):
+        nonlocal reads
+        content = read(path)
+        if path == target:
+            reads += 1
+            if reads == read_number:
+                return content + b"\n"
+        return content
+
+    monkeypatch.setattr(snapshot, "_control", divergent)
+    results = plan(tmp_path)
+    assert reads >= read_number
+    assert all(item["classification"] != "eligible" for item in results)
+
+
+def test_newly_appearing_checked_log_poison_root(tmp_path, monkeypatch):
+    """An observed new control invalidates other candidates even if later absent."""
+    import tikrec.retention_plan as module
+
+    alpha = session(tmp_path, "alpha")
+    session(tmp_path, "beta", creator="beta")
+    target = alpha / "connections.jsonl"
+    checked = module.checked_control
+    exists = Path.exists
+    observed = False
+
+    def appearing(claim, path):
+        nonlocal observed
+        if path == target and not observed:
+            observed = True
+            with monkeypatch.context() as context:
+                context.setattr(Path, "exists",
+                                lambda current: True if current == target else exists(current))
+                return checked(claim, path)
+        return checked(claim, path)
+
+    monkeypatch.setattr(module, "checked_control", appearing)
+    result = plan(tmp_path)
+    assert observed and not target.exists()
+    assert all(item["classification"] != "eligible" for item in result)
+
+
+def test_observed_control_mismatch_poison_whole_root_after_restore(tmp_path, monkeypatch):
+    """A later stable candidate cannot remain eligible after alpha diverges."""
+    import tikrec.retention_snapshot as snapshot
+
+    alpha = session(tmp_path, "alpha")
+    session(tmp_path, "beta", creator="beta")
+    manifest = alpha / "session.json"
+    original_bytes = manifest.read_bytes()
+    alternate = original_bytes.replace(b'"creator": "alpha"', b'"creator": "bravo"')
+    assert alternate != original_bytes
+    read = snapshot._control
+    reads = 0
+    observed = False
+
+    def changed_then_restored(path):
+        nonlocal observed, reads
+        content = read(path)
+        if path == manifest:
+            reads += 1
+        if path == manifest and reads == 3:
+            observed = True
+            return alternate
+        return content
+
+    monkeypatch.setattr(snapshot, "_control", changed_then_restored)
+    result = plan(tmp_path, protected=("bravo",))
+    assert observed
+    assert all(item["classification"] != "eligible" for item in result)

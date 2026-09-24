@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-import os
 import time
 import uuid
 from collections.abc import Callable, Iterable
@@ -15,11 +14,13 @@ from . import __version__
 from .media import MediaInfo, inspect_media
 from .decode_diagnostics import safe_input_decode_health
 from .manifest_media import media_values as _media_values, inspect_output
+from .manifest_io import write_manifest
 from .manifest_safety import safe_reason as _safe_reason
 from .creator_identity import validate_creator_handle, validate_manifest_creator
 
 
 SCHEMA_VERSION = 1
+
 
 class SessionManifest:
     """Create and atomically update ``session.json`` for one capture."""
@@ -130,10 +131,13 @@ class SessionManifest:
             values["reconnect_count"] = max(0, connection_count - 1)
         self._write()
 
-    def record_writer_recovery(self, recovery: dict, parts: Iterable[Path]) -> None:
+    def record_writer_recovery(self, recovery: dict, parts: Iterable[Path],
+                               *, expected_digest: str | None = None,
+                               guard: Callable[[], None] | None = None) -> None:
         """Commit fixed crash-part evidence without changing the capture timeline."""
         from .writer_recovery_evidence import commit_manifest_recovery
-        commit_manifest_recovery(self, recovery, parts)
+        commit_manifest_recovery(self, recovery, parts, expected_digest=expected_digest,
+                                 guard=guard)
 
     def mark_finalizing(self, parts: Iterable[Path]) -> None:
         """Record that capture ended and requested finalization has started."""
@@ -221,7 +225,6 @@ class SessionManifest:
         values["part_count"] = len(tuple(parts))
         values["finalization"] = {"status": "running", "error": None}
         self._write()
-
     def finish_recovery(
         self,
         parts: Iterable[Path],
@@ -282,17 +285,7 @@ class SessionManifest:
             raise RuntimeError("session manifest has not started")
         return self._values
 
-    def _write(self) -> None:
-        values = self._require_values()
-        temporary = self.path.with_name(f".{self.path.name}.partial")
-        try:
-            with temporary.open("w", encoding="utf-8") as handle:
-                json.dump(values, handle, indent=2, sort_keys=True)
-                handle.write("\n")
-                handle.flush()
-                # Flush complete JSON before the atomic replacement exposes it.
-                os.fsync(handle.fileno())
-            os.replace(temporary, self.path)
-        except BaseException:
-            temporary.unlink(missing_ok=True)
-            raise
+    def _write(self, *, expected_digest: str | None = None,
+               guard: Callable[[], None] | None = None) -> None:
+        write_manifest(self.path, self._require_values(), expected_digest=expected_digest,
+                       guard=guard)

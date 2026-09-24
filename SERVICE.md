@@ -400,8 +400,10 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    job/manifest with matching identity, paths/counts, absent output/finalizer temp,
    one regular artifact, and valid writer FLV structure. Fresh read-only
    writer-compatible preflight rechecks current job, manifest bytes,
-   creator/room/paths, and exact partial ownership immediately before the first
-   job or media mutation. Persist
+   creator/room/paths, and exact partial ownership. Recheck the job after slow
+   inspection, condition the recovery-state transition on its old durable
+   value, and verify job/manifest/source again at each preservation, staging,
+   and publication boundary. Persist
    `recovering/writer_partial_recovery` before moving bytes. Atomically preserve the
    original under `.tikrec-writer-crash-SESSION-part-NNNN.evidence`, copy only its
    parser-proven complete prefix, pass normal structure plus FFprobe decoder/DTS
@@ -409,7 +411,9 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    malformed tag, exclude that tag and all following bytes from the new copy;
    never resynchronize or repair framing. A prefix without valid media still
    blocks. Immediately before appending manifest recovery evidence, recheck its
-   unchanged ownership fingerprint and the actual recovered source/prefix.
+   unchanged ownership fingerprint and the actual recovered source/prefix,
+   including after slow hashing/prefix comparison. The manifest promotion itself
+   conditionally checks its original bytes and current job/media ownership.
    Manifest evidence records source SHA-256 and discarded byte counts.
    Recovery interrupted after preservation or publication is safely retryable.
 5. Existing requested output is never overwritten. Matching committed manifest

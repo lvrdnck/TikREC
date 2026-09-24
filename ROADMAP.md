@@ -1293,6 +1293,22 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fourth retention-safety correction complete (2026-09-24):** Independent review of
+`0089a6d` remained NOT READY: a claimant could appear inside one root scan;
+observed control divergence could affect only one candidate; post-start
+`resolver_error` could claim media; lexical Linux mount selection could choose
+a hidden local descendant; and writer recovery could lose ownership between
+slow checks and mutation. Bounded root scans now bracket membership and child
+identity; observed divergence irreversibly blocks eligibility for the whole
+planning call. Resolver failures require resolver-only evidence. Linux mount
+ancestry and actual device identity are checked where supported. Writer
+recovery rechecks job, manifest, and source across preservation, publication,
+hash validation, conditional job transition, and guarded manifest promotion.
+The planner remains advisory and read-only, with no deletion executor. A
+fresh independent safety review of this correction is required before
+destructive retention design. v0.10.0 remains released and v0.11.0 unreleased;
+#8/#13/#28 remain separate non-blocking evidence work.
+
 **Third retention-safety correction complete (2026-09-24):** Independent review
 of `ccdf9d3` remained NOT READY on five bounded proof gaps. Retention inspection
 now binds parsed manifest and connection evidence to the captured content

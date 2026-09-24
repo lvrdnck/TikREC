@@ -26,7 +26,8 @@ from .tiktok_bound import resolve_live_bound
 from .writer_recovery import recover_writer_partial
 from .writer_recovery_evidence import recovery_record
 from .writer_recovery_ownership import (capture_writer_ownership,
-                                        verify_writer_ownership, verify_writer_commit)
+                                        verify_writer_ownership, verify_writer_commit,
+                                        verify_writer_phase)
 
 
 @dataclass(frozen=True)
@@ -103,16 +104,23 @@ class StartupReconciler:
                                         clock=self.clock, media_inspector=self.media_inspector)
                 if not (job.state == "recovering"
                         and job.recovery_reason == "writer_partial_recovery"):
-                    job = self.save_job(replace(
-                        job, state="recovering", recovery_reason="writer_partial_recovery"
-                    ))
+                    next_job = replace(job, state="recovering",
+                                       recovery_reason="writer_partial_recovery")
+                    self.store.save_if_current(job, next_job)
+                    job = next_job
                     observe(job)
                 verify_writer_ownership(ownership, job, self.store,
                                         clock=self.clock, media_inspector=self.media_inspector)
-                recover_writer_partial(plan, validator=self.writer_validator)
+                def authorize_writer(phase):
+                    source = plan.partial if phase == "preserve" else plan.evidence
+                    verify_writer_phase(ownership, job, self.store, source)
+                recover_writer_partial(plan, validator=self.writer_validator,
+                                       authorize=authorize_writer)
                 verify_writer_commit(ownership, job, self.store)
                 session.manifest.record_writer_recovery(
-                    recovery_record(plan, self.clock()), session.retained.parts
+                    recovery_record(plan, self.clock()), session.retained.parts,
+                    expected_digest=ownership.manifest_digest,
+                    guard=lambda: verify_writer_commit(ownership, job, self.store)
                 )
                 session = self.inspector(
                     job, clock=self.clock, media_inspector=self.media_inspector

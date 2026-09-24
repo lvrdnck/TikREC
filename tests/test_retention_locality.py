@@ -61,3 +61,29 @@ def test_malformed_macos_mount_cannot_fall_back_to_local_parent():
     mounts = "/dev/disk1 on / (apfs, local)\ninvalid mount line\n"
     assert not proven_local(PurePosixPath("/recordings"), platform_name="darwin",
                             mac_mounts=mounts)
+
+
+def test_hidden_local_descendant_cannot_override_remote_ancestor():
+    mounts = ("1 0 8:1 / / rw - ext4 local rw\n"
+              "2 1 8:2 / /recordings/cache rw - ext4 local rw\n"
+              "3 1 0:9 / /recordings rw - nfs server:/export rw\n")
+    assert not proven_local(PurePosixPath("/recordings/cache/session.parts/session.json"),
+                            platform_name="linux", linux_mountinfo=mounts)
+
+
+def test_linux_nested_local_mount_requires_visible_parent_and_device():
+    mounts = ("1 0 8:1 / / rw - ext4 local rw\n"
+              "2 1 8:2 / /recordings rw - ext4 local rw\n"
+              "3 2 8:3 / /recordings/cache rw - ext4 local rw\n")
+    path = PurePosixPath("/recordings/cache/session.parts/session.json")
+    assert proven_local(path, platform_name="linux", linux_mountinfo=mounts,
+                        actual_device=(8, 3))
+    assert not proven_local(path, platform_name="linux", linux_mountinfo=mounts,
+                            actual_device=(8, 9))
+
+
+def test_linux_orphan_relevant_mount_is_not_local():
+    mounts = ("1 0 8:1 / / rw - ext4 local rw\n"
+              "3 99 8:3 / /recordings rw - ext4 local rw\n")
+    assert not proven_local(PurePosixPath("/recordings/session.parts"),
+                            platform_name="linux", linux_mountinfo=mounts)

@@ -15,6 +15,7 @@ from .tiktok_identity import canonical_room_id
 
 
 JOB_SCHEMA_VERSION = 1
+_UNCONDITIONAL = object()
 _CAPTURE_STATES = {"resolving", "recovering", "reconciling", "resuming",
                    "recording", "reconnecting", "recovering_network", "recovery_wait"}
 _TERMINAL_STATES = {"completed", "failed"}
@@ -127,7 +128,7 @@ class JobStateStore:
             raise JobStateError("invalid durable job state; preserve artifacts") from None
         return job
 
-    def save(self, job: JobState) -> None:
+    def save(self, job: JobState, *, expected=_UNCONDITIONAL) -> None:
         """Flush complete intent before replacement; propagate storage failure."""
         job.validate()
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -143,6 +144,8 @@ class JobStateStore:
                 handle.flush()
                 os.fsync(handle.fileno())
             # Close before promotion because Windows disallows renaming an open temp file.
+            if expected is not _UNCONDITIONAL and self.load() != expected:
+                raise JobStateError("durable job changed before conditional transition")
             os.replace(temporary, self.path)
             if os.name != "nt":
                 # POSIX requires syncing the directory to durably publish its new entry.
@@ -155,6 +158,10 @@ class JobStateStore:
             if temporary is not None:
                 # Only this attempt's temporary file is eligible for normal error cleanup.
                 temporary.unlink(missing_ok=True)
+
+    def save_if_current(self, expected: JobState, job: JobState) -> None:
+        """Publish one transition only while its inspected predecessor remains current."""
+        self.save(job, expected=expected)
 
 
 def _absolute_path(value: object) -> bool:

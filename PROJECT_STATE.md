@@ -1,12 +1,32 @@
 # TikREC current state
 
-Last reviewed: 2026-09-23. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-24. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
+- **Fourth v0.11.0 retention-safety correction complete (2026-09-24):** Independent
+  review of `0089a6d` remained NOT READY on five reproduced gaps. Root claims
+  now require an internally bracketed stable inventory; observed control or
+  evidence divergence poisons the entire planning call, including after a
+  later byte restoration. Every `resolver_error` connection must be
+  resolver-only. Linux locality now verifies covering mount ancestry and
+  device identity where available. Writer-partial recovery rechecks current
+  job, manifest, and source at preservation/publication boundaries, after
+  slow media proof, and at a conditional manifest commit. The planner is
+  read-only and saved plans never authorize deletion; no deletion executor
+  exists. v0.10.0 remains released, v0.11.0 unreleased, and #8/#13/#28 remain
+  separate non-blocking evidence work. Next gate: fresh independent safety
+  review of this correction before any destructive retention design. Focused
+  tests passed 242 (one skip); the isolated full suite passed 1,355 plus 19
+  subtests (one skip). Unittest discovery passed 228; compilation, 29 CLI help
+  paths/version, all 91 package sources under 300 lines, and diff checks pass.
+  Native Windows junctions pass; one native
+  file-symlink test skips for unavailable privilege. Linux/macOS mounts and
+  Windows drive types are exercised with injected offline evidence; native
+  POSIX mounts and a real mapped drive were not tested on this Windows host.
 - **Third v0.11.0 retention-safety correction complete (2026-09-24):** Fresh
   independent review of `ccdf9d3` remained NOT READY. Five reproduced blockers
   were unbound control reads after an immutable claim snapshot, impossible

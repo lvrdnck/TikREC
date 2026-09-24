@@ -7,6 +7,64 @@ from tests.test_retention_plan import session
 from tikrec.retention_snapshot import capture_claim, capture_root
 
 
+def test_root_capture_rejects_claimant_added_during_its_own_scan(tmp_path):
+    """A single returned snapshot must represent a stable membership interval."""
+    from tests.test_retention_plan import session
+
+    session(tmp_path, "alpha")
+
+    def changing(path, root):
+        claim = capture_claim(path, root)
+        session(root, "late", creator="bravo")
+        return claim
+
+    assert not capture_root(tmp_path, changing).stable
+
+
+def test_root_capture_rejects_claimant_removed_during_scan(tmp_path):
+    """An omitted former owner cannot be treated as a stable empty root."""
+    directory = session(tmp_path, "alpha")
+
+    def changing(path, root):
+        claim = capture_claim(path, root)
+        directory.rename(root / "removed")
+        return claim
+
+    assert not capture_root(tmp_path, changing).stable
+
+
+def test_root_capture_rejects_child_replacement_during_scan(tmp_path, monkeypatch):
+    """A same-name replacement must not inherit the former child's claim."""
+    import tikrec.retention_snapshot as snapshot
+
+    directory = session(tmp_path, "alpha")
+    stamp = snapshot._stamp
+    root_stamp = stamp(tmp_path)
+    monkeypatch.setattr(snapshot, "_stamp",
+                        lambda path: root_stamp if path == tmp_path else stamp(path))
+
+    def changing(path, root):
+        claim = capture_claim(path, root)
+        directory.rename(root / "old")
+        session(root, "alpha", creator="beta")
+        return claim
+
+    assert not capture_root(tmp_path, changing).stable
+
+
+def test_root_capture_rejects_root_metadata_change_during_scan(tmp_path):
+    """The root stamp brackets the entire claimant inspection."""
+    session(tmp_path, "alpha")
+
+    def changing(path, root):
+        claim = capture_claim(path, root)
+        before = root.stat()
+        os.utime(root, ns=(before.st_atime_ns, before.st_mtime_ns + 1_000_000_000))
+        return claim
+
+    assert not capture_root(tmp_path, changing).stable
+
+
 def test_same_size_manifest_change_with_restored_mtime_changes_root_snapshot(tmp_path):
     directory = session(tmp_path, "alpha")
     initial = capture_root(tmp_path, capture_claim)

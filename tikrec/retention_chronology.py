@@ -36,6 +36,8 @@ def coherent_chronology(directory: Path, started: float, ended: float,
                 event = record.get("event")
                 if event is None:
                     opened, closed = record["started_at"], record["ended_at"]
+                    if record.get("outcome") == "resolver_error" and not _resolver_only(record):
+                        return False
                     if (not _timestamp(opened) or not _timestamp(closed)
                             or opened > closed or closed > ended
                             or (previous_end is not None and opened < previous_end)
@@ -44,15 +46,8 @@ def coherent_chronology(directory: Path, started: float, ended: float,
                     if opened < started and not first_resolution:
                         # Resolver-only failures can precede the first real session.
                         resolved = record.get("resolved_at")
-                        media = any(record.get(field) is not None for field in
-                                    _MILESTONES[1:])
-                        if (resolved is None and not media and closed <= started
-                                and record.get("outcome") == "resolver_error"
-                                and record.get("part_start") is None
-                                and record.get("part_end") is None
-                                and not record.get("part_timings")
-                                and record.get("raw_copy") is None
-                                and record.get("raw_arrivals") is None):
+                        if (closed <= started and record.get("outcome") == "resolver_error"
+                                and _resolver_only(record)):
                             pass
                         elif (not _timestamp(resolved)
                               or not opened <= resolved <= started <= closed
@@ -115,3 +110,11 @@ def _milestones(record: dict, opened: float, closed: float) -> bool:
                 return False
             previous = timestamp
     return True
+
+
+def _resolver_only(record: dict) -> bool:
+    """A failed resolution cannot also claim transport or retained media."""
+    return (all(record.get(field) is None for field in
+                (*_MILESTONES, "rendition_label", "rendition_source", "part_start",
+                 "part_end", "raw_copy", "raw_arrivals"))
+            and not record.get("part_timings"))

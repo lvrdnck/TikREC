@@ -166,7 +166,7 @@ class SessionManifestTests(unittest.TestCase):
             manifest.start()
             original = read_manifest(parts / "session.json")
 
-            with patch("tikrec.manifest.os.replace", side_effect=OSError("disk failure")):
+            with patch("tikrec.manifest_io.os.replace", side_effect=OSError("disk failure")):
                 with self.assertRaisesRegex(OSError, "disk failure"):
                     manifest.update_capture([parts / "part-0001.flv"])
 

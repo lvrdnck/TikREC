@@ -18,7 +18,6 @@ from .writer import _FLV_HEADER
 from .writer_recovery_evidence import (evidence_name, file_sha256, recovery_records,
                                        validate_recorded_evidence)
 
-
 _PARTIAL = re.compile(r"\.part-([0-9]+)\.flv\.partial")
 _EVIDENCE = re.compile(
     r"\.tikrec-writer-crash-([0-9a-f-]+)-part-([0-9]+)\.evidence"
@@ -27,7 +26,6 @@ _STAGING = re.compile(
     r"\.tikrec-writer-recovery-([0-9a-f-]+)-part-([0-9]+)\.tmp"
 )
 _RECOVERY_REASON = "writer_partial_recovery"
-
 
 @dataclass(frozen=True)
 class WriterPartialPlan:
@@ -47,14 +45,12 @@ class WriterPartialPlan:
         """Return whether an incomplete trailing tag is excluded from recovery."""
         return self.recovered_bytes != self.source_bytes
 
-
 @dataclass(frozen=True)
 class WriterStorage:
     """Validated completed media plus an optional pending writer recovery."""
 
     retained: RetainedParts
     recovery: WriterPartialPlan | None = None
-
 
 def inspect_writer_storage(directory: Path, job, manifest: dict) -> WriterStorage:
     """Inspect writer artifacts without changing the original or derived bytes."""
@@ -136,11 +132,11 @@ def inspect_writer_storage(directory: Path, job, manifest: dict) -> WriterStorag
         raise ValueError("recovery requires completed or recoverable media")
     return WriterStorage(completed)
 
-
 def recover_writer_partial(
     plan: WriterPartialPlan,
     *,
     validator: Callable[[Path], None] | None = None,
+    authorize: Callable[[str], None] | None = None,
 ) -> Path:
     """Preserve the source, validate a separate copy, and atomically publish it."""
     validator = validator or _validate_media
@@ -148,6 +144,8 @@ def recover_writer_partial(
         _require_source(plan.partial, plan.source_bytes, plan.source_sha256)
         if plan.evidence.exists() or plan.evidence.is_symlink():
             raise ValueError("writer evidence destination already exists")
+        if authorize is not None:
+            authorize("preserve")
         os.replace(plan.partial, plan.evidence)
         _sync_directory(plan.evidence.parent)
     _require_source(plan.evidence, plan.source_bytes, plan.source_sha256)
@@ -164,19 +162,26 @@ def recover_writer_partial(
         if plan.staging.is_symlink() or not plan.staging.is_file():
             raise ValueError("writer recovery staging is not a regular file")
         # This exact path is owned only after durable recovery intent and preserved evidence.
+        if authorize is not None:
+            authorize("staging")
         plan.staging.unlink()
+    if authorize is not None:
+        authorize("staging")
     _copy_prefix(plan.evidence, plan.staging, plan.recovered_bytes)
     try:
         validator(plan.staging)
         if plan.recovered.exists() or plan.recovered.is_symlink():
             raise ValueError("recovered part destination changed during validation")
+        if authorize is not None:
+            authorize("publish")
         os.replace(plan.staging, plan.recovered)
         _sync_directory(plan.recovered.parent)
     except BaseException:
+        if authorize is not None:
+            authorize("cleanup")
         plan.staging.unlink(missing_ok=True)
         raise
     return plan.recovered
-
 
 def _plan(directory, session_id, prior, source, index, *, published=False):
     final = directory / f"part-{index:04d}.flv"

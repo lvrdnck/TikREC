@@ -80,6 +80,9 @@ after its own fresh resume preflight, before appending recovery evidence,
 resolving the room, or saving new job state. Read-only retention requires a
 stable whole-root claim snapshot and stricter event chronology; no manifest
 field is added for that advisory proof.
+Writer-partial recovery likewise adds no schema field: its existing recovery
+record is promoted only while the inspected manifest bytes and durable job
+remain current, with source/prefix checks before the guarded write.
 
 `finalization.status` is one of `not_requested`, `pending`, `not_started`,
 `running`, `completed`, `interrupted`, or `failed`. The pending/running values

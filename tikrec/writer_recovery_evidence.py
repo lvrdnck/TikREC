@@ -25,9 +25,13 @@ def recovery_record(plan, timestamp: float) -> dict:
     }
 
 
-def commit_manifest_recovery(manifest, recovery: dict, parts) -> None:
+def commit_manifest_recovery(manifest, recovery: dict, parts, *,
+                             expected_digest: str | None = None, guard=None) -> None:
     """Atomically append one idempotent writer-recovery record to a manifest."""
-    values = manifest._require_values()
+    if (expected_digest is not None and
+            hashlib.sha256(manifest.path.read_bytes()).hexdigest() != expected_digest):
+        raise ValueError("manifest changed before recovery commit")
+    values = deepcopy(manifest._require_values())
     records = values.setdefault("writer_recoveries", [])
     if not isinstance(records, list):
         raise ValueError("conflicting writer recovery evidence")
@@ -42,7 +46,13 @@ def commit_manifest_recovery(manifest, recovery: dict, parts) -> None:
     records.append(deepcopy(recovery))
     values["part_count"] = len(tuple(parts))
     values["recovery_performed"] = True
-    manifest._write()
+    previous = manifest._values
+    manifest._values = values
+    try:
+        manifest._write(expected_digest=expected_digest, guard=guard)
+    except BaseException:
+        manifest._values = previous
+        raise
 
 
 def recovery_records(manifest: dict) -> list[dict]:

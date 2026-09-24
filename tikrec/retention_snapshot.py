@@ -16,6 +16,10 @@ from .session_resume import _unique_values
 _CONTROL_LIMIT = 4 * 1024 * 1024
 
 
+class ObservedInstability(ValueError):
+    """A control or claimant changed during this retention observation."""
+
+
 @dataclass(frozen=True)
 class ClaimSnapshot:
     """One immediate claimant, including explicit absence and uncertainty."""
@@ -40,15 +44,39 @@ class RootSnapshot:
 
     root_stamp: tuple
     claims: tuple[ClaimSnapshot, ...]
+    stable: bool
 
 
 def capture_root(root: Path, claim_reader) -> RootSnapshot:
     """Observe the root and each immediate parts child in deterministic order."""
     local_path(root, directory=True)
-    children = sorted((path for path in root.iterdir()
-                       if path.name.lower().endswith(".parts")),
-                      key=lambda path: (path.name.casefold(), path.name))
-    return RootSnapshot(_stamp(root), tuple(claim_reader(path, root) for path in children))
+    before = _stamp(root)
+    children = _children(root)
+    membership = _membership(children)
+    claims = tuple(claim_reader(path, root) for path in children)
+    try:
+        stable = (all(stamp is not None for _, stamp in membership)
+                  and before == _stamp(root)
+                  and membership == _membership(_children(root)))
+    except (OSError, ValueError):
+        stable = False
+    return RootSnapshot(before, claims, stable)
+
+
+def _children(root: Path) -> list[Path]:
+    return sorted((path for path in root.iterdir() if path.name.lower().endswith(".parts")),
+                  key=lambda path: (path.name.casefold(), path.name))
+
+
+def _membership(children: list[Path]) -> tuple:
+    result = []
+    for path in children:
+        try:
+            stamp = _stamp(path)
+        except (OSError, ValueError):
+            stamp = None
+        result.append((path.name, stamp))
+    return tuple(result)
 
 
 def capture_claim(directory: Path, root: Path) -> ClaimSnapshot:
@@ -62,6 +90,10 @@ def capture_claim(directory: Path, root: Path) -> ClaimSnapshot:
         manifest = directory / "session.json"
         content = _control(manifest)
         digest = hashlib.sha256(content).hexdigest()
+        recorded = next((entry[2] for entry in evidence
+                         if len(entry) == 3 and entry[0] == "session.json"), None)
+        if recorded != digest:
+            raise ObservedInstability("claim control changed during observation")
         values = json.loads(content.decode("utf-8"), object_pairs_hook=_unique_values)
         identity = values["session_id"]
         if type(identity) is not str or str(uuid.UUID(identity)) != identity:
@@ -92,6 +124,8 @@ def capture_claim(directory: Path, root: Path) -> ClaimSnapshot:
                     raise ValueError("output physical ownership is ambiguous")
         return ClaimSnapshot(str(directory), evidence, digest, identity, state,
                              output_path, key, physical, output_stamp, source, creator, False)
+    except ObservedInstability:
+        raise
     except (OSError, UnicodeError, ValueError, TypeError, KeyError, AttributeError,
             OverflowError):
         return ClaimSnapshot(str(directory), evidence, digest, identity, "unknown",
@@ -122,11 +156,14 @@ def checked_control(claim: ClaimSnapshot, path: Path) -> bytes | None:
                      if len(entry) == 3 and entry[0] == path.name), None)
     if expected is None:
         if path.exists() or path.is_symlink():
-            raise ValueError("new control evidence appeared during retention inspection")
+            raise ObservedInstability("new control evidence appeared during retention inspection")
         return None
-    content = _control(path)
+    try:
+        content = _control(path)
+    except (OSError, ValueError) as error:
+        raise ObservedInstability("observed control became unreadable") from error
     if hashlib.sha256(content).hexdigest() != expected:
-        raise ValueError("control evidence changed during retention inspection")
+        raise ObservedInstability("control evidence changed during retention inspection")
     return content
 
 

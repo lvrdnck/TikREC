@@ -17,7 +17,8 @@ from .session_resume import _unique_values
 from .writer_recovery_evidence import recovery_records
 from .retention_paths import local_path
 from .retention_locality import LocalVolume, local_volume, proven_local
-from .retention_snapshot import capture_claim, capture_root, checked_control
+from .retention_snapshot import (ObservedInstability, capture_claim, capture_root,
+                                 checked_control)
 from .retention_terminal import terminal_success
 
 
@@ -36,9 +37,14 @@ def plan_retention(root: Path, configuration: Configuration, *,
     if type(now) not in {int, float} or not math.isfinite(now):
         raise ValueError("retention clock must be finite")
     initial = capture_root(scope, _claims)
-    sessions, unknown = [], any(claim.uncertain for claim in initial.claims)
+    sessions, unknown = [], not initial.stable or any(
+        claim.uncertain for claim in initial.claims)
     for claim in initial.claims:
-        item = _inspect(claim, scope, volume, configuration, now, media_inspector)
+        try:
+            item = _inspect(claim, scope, volume, configuration, now, media_inspector)
+        except ObservedInstability:
+            unknown = True
+            item = _empty_item(Path(claim.directory))
         if ((item["session_id"] is not None and item["session_id"] != claim.session_id)
                 or (item["output_path"] is not None and item["output_path"] != claim.output_path)):
             unknown = True
@@ -46,7 +52,8 @@ def plan_retention(root: Path, configuration: Configuration, *,
         sessions.append(item)
     # A late child, replacement, or changed control claim invalidates the whole plan.
     try:
-        unknown |= capture_root(scope, _claims) != initial
+        final = capture_root(scope, _claims)
+        unknown |= not final.stable or final != initial
     except (OSError, ValueError, TypeError):
         unknown = True
     claims: dict[tuple, list[int]] = {}
@@ -71,10 +78,7 @@ def plan_retention(root: Path, configuration: Configuration, *,
 
 def _inspect(claim, root, volume, config, now, media_inspector):
     directory = Path(claim.directory)
-    item = {"parts_directory": str(directory), "session_id": None,
-            "creator": None, "ended_at": None, "output_path": None,
-            "classification": "needs_attention", "reason": "evidence_conflict",
-            "protected": None}
+    item = _empty_item(directory)
     try:
         local_path(directory, directory=True)
         _artifact_scope(directory, volume)
@@ -105,9 +109,12 @@ def _inspect(claim, root, volume, config, now, media_inspector):
             return item
         if _unrecognized_evidence(directory, values):
             return item
-        after = _evidence_stamp(directory)
+        try:
+            after = _evidence_stamp(directory)
+        except (OSError, ValueError) as error:
+            raise ObservedInstability("observed candidate evidence became unreadable") from error
         if before != after:
-            return item
+            raise ObservedInstability("observed candidate evidence changed")
         item["session_id"] = candidate.session_id
         item["ended_at"] = values.get("ended_at")
         item["output_path"] = candidate.output_path
@@ -132,13 +139,23 @@ def _inspect(claim, root, volume, config, now, media_inspector):
         if config.retention_max_age_days is None:
             return _mark(item, "retained", "retention_disabled")
         if values["ended_at"] <= now - config.retention_max_age_days * 86400:
-            if (_evidence_stamp(directory) != after or control(manifest_path) != content
+            _checked_stamp(directory, after)
+            if (control(manifest_path) != content
                     or control(directory / "connections.jsonl") != log):
-                return _mark(item, "needs_attention", "evidence_conflict")
+                raise ObservedInstability("observed candidate evidence changed")
             return _mark(item, "eligible", "age_threshold_reached")
         return _mark(item, "retained", "not_old_enough")
+    except ObservedInstability:
+        raise
     except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
         return _mark(item, "needs_attention", "evidence_conflict")
+
+
+def _empty_item(directory: Path) -> dict:
+    return {"parts_directory": str(directory), "session_id": None,
+            "creator": None, "ended_at": None, "output_path": None,
+            "classification": "needs_attention", "reason": "evidence_conflict",
+            "protected": None}
 
 
 def _claims(directory: Path, root: Path):
@@ -168,6 +185,16 @@ def _evidence_stamp(directory: Path) -> tuple:
     return tuple(sorted((path.name, path.lstat().st_mode, path.lstat().st_size,
                          path.lstat().st_mtime_ns, path.lstat().st_ino)
                         for path in paths))
+
+
+def _checked_stamp(directory: Path, expected: tuple) -> None:
+    """Escalate an observed candidate identity loss beyond that one candidate."""
+    try:
+        current = _evidence_stamp(directory)
+    except (OSError, ValueError) as error:
+        raise ObservedInstability("observed candidate evidence became unreadable") from error
+    if current != expected:
+        raise ObservedInstability("observed candidate evidence changed")
 
 
 def _unrecognized_evidence(directory: Path, values: dict) -> bool:

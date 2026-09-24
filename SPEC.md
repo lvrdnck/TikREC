@@ -971,7 +971,14 @@ an explicit null output declaration from a missing or unreadable field. It
 compares whole-root snapshots before and after inspection: immediate child
 membership, small control-file content identity, artifact metadata, output
 identity, and creator/lifecycle changes must remain stable. A changing root
-cannot yield eligible sessions. Output claims use case-folded in-root names and
+cannot yield eligible sessions.
+Each individual root capture also brackets its claim reads with root/child
+identity and membership checks; an unstable capture cannot yield eligibility.
+An observed control or evidence mismatch invalidates every candidate in that
+planning call even if a later read sees the original bytes again.
+`resolver_error` at any connection position can carry only resolver-failure
+evidence, with no resolved identity, opened HTTP source, media, or part claim.
+Output claims use case-folded in-root names and
 available device/inode facts; symlink/reparse aliases, multiply linked outputs,
 and unprovable physical ownership fail closed. Roots require local storage
 evidence (Windows fixed drive type or known local Linux/macOS filesystem type);
@@ -984,6 +991,9 @@ first successful resolution may cross it, but HTTP opening and media milestones
 must follow session initialization. Malformed or stacked mount evidence and a
 nested remote/unknown artifact cannot establish eligibility. These checks do
 not tighten ordinary schema-1 loading/recovery.
+Linux locality additionally requires a coherent visible mount parent chain and
+matching artifact device identity where the platform provides it; a lexical
+local child hidden under a remote overmount is unproven.
 
 Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
 24 ASCII letters, digits, underscores, or internal periods. List order is

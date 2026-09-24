@@ -385,5 +385,153 @@ def test_writer_commit_rechecks_manifest_after_media_recovery(tmp_path):
     result = reconciler(store, validator=changing_validator, resolver=no_call).reconcile()
     assert result.outcome == "failed"
     assert evidence_path(partial.parent).read_bytes() == original
-    assert (partial.parent / "part-0001.flv").read_bytes() == original
+    assert not (partial.parent / "part-0001.flv").exists()
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+
+
+def test_job_changed_during_fresh_writer_inspection_blocks_authorization(tmp_path, monkeypatch):
+    """A slow read cannot authorize an intent that changed after its first check."""
+    import tikrec.writer_recovery_ownership as ownership
+    from tikrec.recovery_session import inspect_recovery_session
+
+    store, job, _, _ = crashed_session(tmp_path, creator="creator")
+    first = inspect_recovery_session(job, clock=lambda: 2000, media_inspector=lambda _: None)
+    token = ownership.capture_writer_ownership(first)
+
+    def changing(current, **options):
+        fresh = inspect_recovery_session(current, **options)
+        store.save(replace(current, state="reconnecting"))
+        return fresh
+
+    monkeypatch.setattr(ownership, "inspect_recovery_session", changing)
+    with pytest.raises(ValueError):
+        ownership.verify_writer_ownership(token, job, store,
+                                          clock=lambda: 2000, media_inspector=lambda _: None)
+
+
+@pytest.mark.parametrize("phase", ["preserve", "staging", "publish"])
+def test_writer_mutation_boundary_rechecks_current_job(tmp_path, monkeypatch, phase):
+    """A changed job cannot authorize the next preserve, copy, or publication."""
+    import tikrec.reconciliation as reconciliation
+
+    store, job, manifest, partial = crashed_session(tmp_path, creator="creator")
+    original = partial.read_bytes()
+    verify = reconciliation.verify_writer_phase
+    changed = False
+
+    def changing(token, current, durable, source):
+        nonlocal changed
+        observed = ("preserve" if source == partial else
+                    "publish" if (partial.parent / f".tikrec-writer-recovery-{ID}-part-0001.tmp").exists()
+                    else "staging")
+        if observed == phase and not changed:
+            changed = True
+            store.save(replace(current, state="reconnecting"))
+        return verify(token, current, durable, source)
+
+    monkeypatch.setattr(reconciliation, "verify_writer_phase", changing)
+    result = reconciler(store, resolver=no_call).reconcile()
+    assert changed and result.outcome == "failed"
+    assert not (partial.parent / "part-0001.flv").exists()
+    assert (partial if phase == "preserve" else evidence_path(partial.parent)).read_bytes() == original
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+
+
+@pytest.mark.parametrize("slow_check", ["hash", "prefix"])
+def test_writer_commit_rechecks_job_after_slow_media_proof(tmp_path, monkeypatch, slow_check):
+    """A job replacement inside final hashing or prefix proof cannot append."""
+    import tikrec.writer_recovery_ownership as ownership
+
+    store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
+    if slow_check == "prefix":
+        original = ownership.same_prefix
+
+        def changing(left, right, count):
+            result = original(left, right, count)
+            store.save(replace(store.load(), state="reconnecting"))
+            return result
+
+        monkeypatch.setattr(ownership, "same_prefix", changing)
+    else:
+        original = ownership.file_sha256
+
+        def changing(path):
+            result = original(path)
+            if (path == evidence_path(partial.parent)
+                    and (partial.parent / "part-0001.flv").exists()):
+                store.save(replace(store.load(), state="reconnecting"))
+            return result
+
+        monkeypatch.setattr(ownership, "file_sha256", changing)
+    result = reconciler(store, resolver=no_call).reconcile()
+    assert result.outcome == "failed"
+    assert (partial.parent / "part-0001.flv").exists()
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+
+
+def test_writer_manifest_commit_is_conditional_on_inspected_bytes(tmp_path):
+    """The append cannot overwrite a newer manifest at its write boundary."""
+    store, job, manifest, partial = crashed_session(tmp_path, creator="creator")
+    from tikrec.recovery_session import inspect_recovery_session
+    from tikrec.writer_recovery_evidence import recovery_record
+    from tikrec.writer_recovery_ownership import capture_writer_ownership
+
+    session = inspect_recovery_session(job, clock=lambda: 2000, media_inspector=lambda _: None)
+    token = capture_writer_ownership(session)
+    recover_writer_partial(session.writer_recovery, validator=lambda _: None)
+    newer = json.loads(manifest.path.read_text())
+    newer["creator"] = "beta"
+    manifest.path.write_text(json.dumps(newer))
+    with pytest.raises(ValueError):
+        manifest.record_writer_recovery(recovery_record(token.plan, 2000),
+                                        token.plan.retained.parts,
+                                        expected_digest=token.manifest_digest)
+    assert json.loads(manifest.path.read_text())["creator"] == "beta"
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+
+
+def test_writer_job_transition_cannot_replace_newer_intent(tmp_path, monkeypatch):
+    """A job changed while the replacement is prepared wins over stale recovery."""
+    import tikrec.job_state as job_state
+    from dataclasses import asdict
+
+    store, job, _, partial = crashed_session(tmp_path, creator="creator")
+    dump = job_state.json.dump
+    changed = False
+
+    def changing(values, handle, **options):
+        nonlocal changed
+        if not changed:
+            changed = True
+            store.path.write_text(json.dumps(asdict(replace(job, state="reconnecting"))))
+        return dump(values, handle, **options)
+
+    monkeypatch.setattr(job_state.json, "dump", changing)
+    result = reconciler(store, resolver=no_call).reconcile()
+    assert changed and result.outcome == "failed"
+    assert store.load().state == "reconnecting"
+    assert partial.exists() and not evidence_path(partial.parent).exists()
+
+
+def test_writer_manifest_promotion_rechecks_job_after_serialization(tmp_path, monkeypatch):
+    """The final manifest replace cannot use job ownership checked before JSON I/O."""
+    import tikrec.manifest_io as manifest_io
+    from dataclasses import asdict
+
+    store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
+    dump = manifest_io.json.dump
+    changed = False
+
+    def changing(values, handle, **options):
+        nonlocal changed
+        if values.get("writer_recoveries") and not changed:
+            changed = True
+            store.path.write_text(json.dumps(asdict(replace(store.load(),
+                                                             state="reconnecting"))))
+        return dump(values, handle, **options)
+
+    monkeypatch.setattr(manifest_io.json, "dump", changing)
+    result = reconciler(store, resolver=no_call).reconcile()
+    assert changed and result.outcome == "failed"
+    assert (partial.parent / "part-0001.flv").exists()
     assert b'"writer_recoveries"' not in manifest.path.read_bytes()

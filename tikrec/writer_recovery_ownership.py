@@ -41,7 +41,8 @@ def verify_writer_ownership(token: WriterRecoveryOwnership, job, store, *,
     fresh = inspect_recovery_session(job, clock=clock, media_inspector=media_inspector)
     if (fresh.manifest.snapshot() != token.values
             or fresh.writer_recovery != token.plan
-            or _manifest_digest(token) != token.manifest_digest):
+            or _manifest_digest(token) != token.manifest_digest
+            or store.load() != job):
         raise ValueError("writer recovery ownership changed")
 
 
@@ -57,6 +58,21 @@ def verify_writer_commit(token: WriterRecoveryOwnership, job, store) -> None:
             or plan.recovered.stat().st_size != plan.recovered_bytes
             or not same_prefix(plan.evidence, plan.recovered, plan.recovered_bytes)):
         raise ValueError("recovered writer media differs from authorized partial")
+    if store.load() != job or _manifest_digest(token) != token.manifest_digest:
+        raise ValueError("writer recovery ownership changed before manifest commit")
+
+
+def verify_writer_phase(token: WriterRecoveryOwnership, job, store, source: Path) -> None:
+    """Check current intent, manifest, and preserved bytes at a mutation boundary."""
+    if store.load() != job or _manifest_digest(token) != token.manifest_digest:
+        raise ValueError("writer recovery ownership changed")
+    plan = token.plan
+    if (source.is_symlink() or not source.is_file()
+            or source.stat().st_size != plan.source_bytes
+            or file_sha256(source) != plan.source_sha256):
+        raise ValueError("writer crash source changed")
+    if store.load() != job or _manifest_digest(token) != token.manifest_digest:
+        raise ValueError("writer recovery ownership changed")
 
 
 def _manifest_digest(token: WriterRecoveryOwnership) -> str:

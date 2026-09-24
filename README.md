@@ -531,7 +531,9 @@ reason. Legacy sessions without a proven creator and uncertain evidence never
 become eligible. This is an advisory plan only; automatic deletion does not exist.
 The planner checks competing session/output claims even for rejected candidates,
 exact inspected control evidence, whole-root stability, terminal chronology,
-output aliases, and per-artifact proven local/no-follow storage. A saved plan is never permission
+output aliases, and per-artifact proven local/no-follow storage. Each root scan
+checks its own membership and identity across claim reads; observed evidence
+changes prevent eligibility for that entire planning call. A saved plan is never permission
 to delete; future cleanup would require fresh validation and separate approval.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
