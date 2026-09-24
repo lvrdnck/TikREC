@@ -566,3 +566,146 @@ def test_network_outage_elapsed_cannot_exceed_observed_session_time(tmp_path):
     ]
     (directory / "connections.jsonl").write_text("".join(json.dumps(r) + "\n" for r in records))
     assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+def test_inspected_protected_creator_change_and_restore_cannot_be_eligible(tmp_path, monkeypatch):
+    """The inspected document must be the one captured by the initial claim."""
+    import tikrec.retention_plan as module
+
+    directory = session(tmp_path, "session", creator="bravo")
+    manifest = directory / "session.json"
+    original = manifest.read_bytes()
+    original_time = manifest.stat().st_mtime_ns
+    altered = original.replace(b'"creator": "bravo"', b'"creator": "alpha"')
+    assert altered != original and len(altered) == len(original)
+    checked = module.checked_control
+    observed = False
+
+    def transient(claim, path):
+        nonlocal observed
+        if path == manifest and not observed:
+            observed = True
+            manifest.write_bytes(altered)
+            try:
+                return checked(claim, path)
+            finally:
+                manifest.write_bytes(original)
+                os.utime(manifest, ns=(original_time, original_time))
+        return checked(claim, path)
+
+    monkeypatch.setattr(module, "checked_control", transient)
+    result = plan(tmp_path, protected=("bravo",))
+    assert observed
+    assert manifest.read_bytes() == original
+    assert result[0]["classification"] != "eligible"
+
+
+def test_nested_nonlocal_candidate_cannot_be_eligible(tmp_path, monkeypatch):
+    """A local root says nothing about a separately mounted child."""
+    import tikrec.retention_plan as module
+
+    directory = session(tmp_path, "alpha")
+    monkeypatch.setattr(module, "proven_local", lambda path: Path(path) != directory)
+    assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+@pytest.mark.parametrize("artifact", ["part-0001.flv", "recovery"])
+def test_reparse_retained_artifact_cannot_be_eligible(tmp_path, monkeypatch, artifact):
+    """A Windows reparse file can appear regular and readable to generic recovery."""
+    from types import SimpleNamespace
+    from tikrec.writer_recovery_evidence import evidence_name
+
+    directory = session(tmp_path, "alpha")
+    target = directory / "part-0001.flv"
+    if artifact == "recovery":
+        values = json.loads((directory / "session.json").read_text())
+        target = directory / evidence_name(values["session_id"], 1)
+        target.write_bytes((directory / "part-0001.flv").read_bytes())
+        values["writer_recoveries"] = [{
+            "timestamp": 1005, "part": "part-0001.flv", "evidence": target.name,
+            "source_sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+            "source_bytes": target.stat().st_size, "recovered_bytes": target.stat().st_size,
+            "discarded_trailing_bytes": 0,
+        }]
+        (directory / "part-0001.flv").write_bytes(target.read_bytes())
+        (directory / "session.json").write_text(json.dumps(values))
+    actual = Path.lstat
+
+    def reparse(path):
+        details = actual(path)
+        if path != target:
+            return details
+        return SimpleNamespace(**{name: getattr(details, name) for name in
+                                 ("st_mode", "st_size", "st_mtime_ns", "st_ctime_ns",
+                                  "st_dev", "st_ino", "st_nlink")}, st_file_attributes=0x400)
+
+    monkeypatch.setattr(Path, "lstat", reparse)
+    assert plan(tmp_path)[0]["classification"] != "eligible"
+
+
+@pytest.mark.parametrize("change_kind", ["creator", "source", "lifecycle", "uuid",
+                                         "output", "malformed", "connections"])
+def test_alternate_control_document_observed_then_restored_blocks_eligibility(
+        tmp_path, monkeypatch, change_kind):
+    """A matched final root cannot forgive a contradictory control read."""
+    import tikrec.retention_plan as module
+
+    directory = session(tmp_path, "alpha")
+    manifest = directory / "session.json"
+    log = directory / "connections.jsonl"
+    log.write_text(json.dumps({"connection": 1, "started_at": 1000,
+                               "ended_at": 1005}) + "\n")
+    target = log if change_kind == "connections" else manifest
+    original = target.read_bytes()
+    if change_kind == "connections":
+        altered = original.replace(b"1005", b"1006")
+    elif change_kind == "malformed":
+        altered = b"[" + original[1:]
+    else:
+        values = json.loads(original)
+        key, replacement = {
+            "creator": ("creator", "bravo"),
+            "source": ("source_type", "direct_flv"),
+            "lifecycle": ("status", "recording"),
+            "uuid": ("session_id", str(uuid.uuid4())),
+            "output": ("output_path", str(tmp_path / "other.mp4")),
+        }[change_kind]
+        values[key] = replacement
+        altered = json.dumps(values).encode()
+    assert altered != original
+    checked = module.checked_control
+    observed = False
+
+    def transient(claim, path):
+        nonlocal observed
+        if path == target and not observed:
+            observed = True
+            target.write_bytes(altered)
+            try:
+                return checked(claim, path)
+            finally:
+                target.write_bytes(original)
+        return checked(claim, path)
+
+    monkeypatch.setattr(module, "checked_control", transient)
+    assert plan(tmp_path)[0]["classification"] != "eligible"
+    assert observed and target.read_bytes() == original
+
+
+@pytest.mark.parametrize("artifact", ["candidate", "manifest", "connections",
+                                      "output", "part"])
+def test_nested_unproven_artifact_volume_blocks_eligibility(tmp_path, monkeypatch, artifact):
+    """Every artifact must share the root's proven local-volume identity."""
+    import tikrec.retention_plan as module
+
+    directory = session(tmp_path, "alpha")
+    log = directory / "connections.jsonl"
+    log.write_text(json.dumps({"connection": 1, "started_at": 1000,
+                               "ended_at": 1005}) + "\n")
+    path = {"candidate": directory, "manifest": directory / "session.json",
+            "connections": log, "output": tmp_path / "alpha.mp4",
+            "part": directory / "part-0001.flv"}[artifact]
+    local = module.local_volume
+    monkeypatch.setattr(module, "local_volume",
+                        lambda candidate: None if Path(candidate) == path else local(candidate))
+    assert plan(tmp_path)[0]["classification"] != "eligible"

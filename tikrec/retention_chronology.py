@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from io import StringIO
 from pathlib import Path
 
 from .session_resume import _timestamp, _unique_values
@@ -13,19 +14,23 @@ _MILESTONES = ("resolved_at", "http_opened_at", "first_media_tag_at",
 _OUTAGE_ENDS = {"recovered", "exhausted", "offline", "live_changed", "user_stop", "failed"}
 
 
-def coherent_chronology(directory: Path, started: float, ended: float) -> bool:
+def coherent_chronology(directory: Path, started: float, ended: float,
+                        *, connections_bytes: bytes | None = None) -> bool:
     """Require session, connection, resume, and outage order before retention."""
     path = directory / "connections.jsonl"
-    if not path.exists() and not path.is_symlink():
+    if connections_bytes is None and not path.exists() and not path.is_symlink():
         return True
-    if path.is_symlink() or not path.is_file():
+    if connections_bytes is None and (path.is_symlink() or not path.is_file()):
         return False
     try:
         previous_end = None
-        latest_recorded = started
+        latest_recorded = 0
         pending_resumes: dict[int, float] = {}
         outage = None
-        with path.open(encoding="utf-8") as handle:
+        handle = (StringIO(connections_bytes.decode("utf-8")) if connections_bytes is not None
+                  else path.open(encoding="utf-8"))
+        first_resolution = False
+        with handle:
             for line in handle:
                 record = json.loads(line, object_pairs_hook=_unique_values)
                 event = record.get("event")
@@ -36,13 +41,31 @@ def coherent_chronology(directory: Path, started: float, ended: float) -> bool:
                             or (previous_end is not None and opened < previous_end)
                             or closed < latest_recorded):
                         return False
-                    if opened < started:
-                        # First LIVE resolution can precede manifest creation; its
-                        # proven resolution must cross the first manifest write.
+                    if opened < started and not first_resolution:
+                        # Resolver-only failures can precede the first real session.
                         resolved = record.get("resolved_at")
-                        if (previous_end is not None or not _timestamp(resolved)
-                                or not opened <= resolved <= started <= closed):
+                        media = any(record.get(field) is not None for field in
+                                    _MILESTONES[1:])
+                        if (resolved is None and not media and closed <= started
+                                and record.get("outcome") == "resolver_error"
+                                and record.get("part_start") is None
+                                and record.get("part_end") is None
+                                and not record.get("part_timings")
+                                and record.get("raw_copy") is None
+                                and record.get("raw_arrivals") is None):
+                            pass
+                        elif (not _timestamp(resolved)
+                              or not opened <= resolved <= started <= closed
+                              or record.get("outcome") == "resolver_error"
+                              or any(record.get(field) is not None and
+                                     record[field] < started for field in _MILESTONES[1:])):
                             return False
+                        else:
+                            first_resolution = True
+                    elif opened < started:
+                        return False
+                    elif not first_resolution:
+                        first_resolution = True
                     if not _milestones(record, opened, closed):
                         return False
                     boundary = pending_resumes.pop(record["connection"], None)

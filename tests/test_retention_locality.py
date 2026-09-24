@@ -40,3 +40,24 @@ def test_macos_mount_classification_is_fail_closed(kind, expected):
 
 def test_unsupported_platform_cannot_prove_locality():
     assert not proven_local(PurePosixPath("/recordings"), platform_name="unknown")
+
+
+def test_malformed_deeper_mount_cannot_fall_back_to_local_parent():
+    mounts = ("1 0 0:1 / / rw - ext4 local rw\n"
+              "2 1 0:2 / /recordings rw -\n")
+    assert not proven_local(PurePosixPath("/recordings/session"), platform_name="linux",
+                            linux_mountinfo=mounts)
+
+
+def test_stacked_same_path_mount_is_ambiguous():
+    mounts = ("1 0 0:1 / / rw - ext4 local rw\n"
+              "2 1 0:2 / /recordings rw - ext4 local rw\n"
+              "3 2 0:3 / /recordings rw - nfs server rw\n")
+    assert not proven_local(PurePosixPath("/recordings/session"), platform_name="linux",
+                            linux_mountinfo=mounts)
+
+
+def test_malformed_macos_mount_cannot_fall_back_to_local_parent():
+    mounts = "/dev/disk1 on / (apfs, local)\ninvalid mount line\n"
+    assert not proven_local(PurePosixPath("/recordings"), platform_name="darwin",
+                            mac_mounts=mounts)

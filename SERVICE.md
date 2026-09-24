@@ -398,14 +398,19 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    evidence. Missing storage or identities and arbitrary partials block recovery.
 4. The exact canonical next writer partial is eligible only for an active recording
    job/manifest with matching identity, paths/counts, absent output/finalizer temp,
-   one regular artifact, and valid writer FLV structure. Persist
+   one regular artifact, and valid writer FLV structure. Fresh read-only
+   writer-compatible preflight rechecks current job, manifest bytes,
+   creator/room/paths, and exact partial ownership immediately before the first
+   job or media mutation. Persist
    `recovering/writer_partial_recovery` before moving bytes. Atomically preserve the
    original under `.tikrec-writer-crash-SESSION-part-NNNN.evidence`, copy only its
    parser-proven complete prefix, pass normal structure plus FFprobe decoder/DTS
    checks, and atomically publish `part-NNNN.flv`. On the first truncated or
    malformed tag, exclude that tag and all following bytes from the new copy;
    never resynchronize or repair framing. A prefix without valid media still
-   blocks. Manifest evidence records source SHA-256 and discarded byte counts.
+   blocks. Immediately before appending manifest recovery evidence, recheck its
+   unchanged ownership fingerprint and the actual recovered source/prefix.
+   Manifest evidence records source SHA-256 and discarded byte counts.
    Recovery interrupted after preservation or publication is safely retryable.
 5. Existing requested output is never overwritten. Matching committed manifest
    completion plus a nonempty regular output and bounded matching codec/container/

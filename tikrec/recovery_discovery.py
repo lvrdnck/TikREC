@@ -49,13 +49,15 @@ def discover_recovery_candidates(
     scope: Path,
     *,
     media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
+    control_reader: Callable[[Path], bytes | None] | None = None,
 ) -> tuple[RecoveryCandidate, ...]:
     """Inspect one parts directory or immediate ``*.parts`` children read-only."""
     root = Path(scope)
     if root.is_symlink() or not root.is_dir():
         raise ValueError(f"recovery scope must be a regular directory: {root}")
     directories = (root,) if _is_candidate(root) else _child_candidates(root)
-    return tuple(_inspect_candidate(path, media_inspector) for path in directories)
+    return tuple(_inspect_candidate(path, media_inspector, control_reader)
+                 for path in directories)
 
 
 def _is_candidate(path: Path) -> bool:
@@ -68,16 +70,13 @@ def _is_candidate(path: Path) -> bool:
 
 
 def _child_candidates(root: Path) -> tuple[Path, ...]:
-    children = (
-        path for path in root.iterdir()
-        if path.name.lower().endswith(".parts")
-    )
+    children = (path for path in root.iterdir() if path.name.lower().endswith(".parts"))
     return tuple(sorted(children, key=lambda path: (path.name.casefold(), path.name)))
-
 
 def _inspect_candidate(
     directory: Path,
     media_inspector: Callable[[Path], MediaInfo | None],
+    control_reader: Callable[[Path], bytes | None] | None = None,
 ) -> RecoveryCandidate:
     if directory.is_symlink() or not directory.is_dir():
         return _unsafe(directory, 0, "candidate is not a regular directory")
@@ -87,19 +86,21 @@ def _inspect_candidate(
         return _unsafe(directory, apparent_parts, "supported session.json is missing")
 
     try:
-        values = _read_manifest(manifest_path)
+        read_manifest = (lambda: _read_manifest(manifest_path) if control_reader is None
+                         else _read_manifest(manifest_path, content=control_reader(manifest_path)))
+        values = read_manifest()
         retained = discover_parts(directory)
-        _validate_manifest(
-            values, directory, retained, None, None, finalization_recovery=True
-        )
+        _validate_manifest(values, directory, retained, None, None,
+                           finalization_recovery=True)
         _check_recovery_artifacts(directory, values)
-        connection_count, _ = _read_connections(
-            directory, retained, values["session_id"]
-        )
+        log = ({} if control_reader is None else
+               {"content": control_reader(directory / "connections.jsonl")})
+        connection_count, _ = _read_connections(directory, retained, values["session_id"],
+                                                **log)
         if values["status"] != "recording" and connection_count > values["connection_count"]:
             raise ValueError("closed manifest predates newer connection evidence")
         # Refuse guidance when an active process changed evidence during inspection.
-        if _read_manifest(manifest_path) != values:
+        if read_manifest() != values:
             raise ValueError("session evidence changed during inspection")
         output = _declared_output(directory, values)
     except (OSError, UnicodeError, ValueError, TypeError, KeyError, AttributeError,
@@ -108,9 +109,9 @@ def _inspect_candidate(
 
     return _classify(directory, values, retained.parts, output, media_inspector)
 
-
-def _read_manifest(path: Path) -> dict:
-    values = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_values)
+def _read_manifest(path: Path, *, content: bytes | None = None) -> dict:
+    values = json.loads((path.read_text(encoding="utf-8") if content is None
+                         else content.decode("utf-8")), object_pairs_hook=_unique_values)
     if not isinstance(values, dict):
         raise ValueError("session manifest must be an object")
     return values

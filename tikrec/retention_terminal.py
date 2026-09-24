@@ -10,7 +10,8 @@ from .retention_chronology import coherent_chronology
 from .writer_recovery_evidence import recovery_records
 
 
-def terminal_success(directory: Path, values: dict) -> bool:
+def terminal_success(directory: Path, values: dict,
+                     *, connections_bytes: bytes | None = None) -> bool:
     """Require coherent completion and no durable activity after its terminal time."""
     try:
         start, end, elapsed = (values[key] for key in
@@ -26,7 +27,8 @@ def terminal_success(directory: Path, values: dict) -> bool:
         for record in recovery_records(values):
             if not _within_session(record["timestamp"], start, end):
                 return False
-        return coherent_chronology(directory, start, end)
+        return coherent_chronology(directory, start, end,
+                                   connections_bytes=connections_bytes)
     except (OSError, UnicodeError, ValueError, TypeError, KeyError, AttributeError):
         return False
 

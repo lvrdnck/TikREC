@@ -25,6 +25,8 @@ from .tiktok import (LiveResolution, TikTokOfflineError, TikTokResolutionTransie
 from .tiktok_bound import resolve_live_bound
 from .writer_recovery import recover_writer_partial
 from .writer_recovery_evidence import recovery_record
+from .writer_recovery_ownership import (capture_writer_ownership,
+                                        verify_writer_ownership, verify_writer_commit)
 
 
 @dataclass(frozen=True)
@@ -96,13 +98,19 @@ class StartupReconciler:
             session = self.inspector(job, clock=self.clock, media_inspector=self.media_inspector)
             if session.writer_recovery is not None:
                 plan = session.writer_recovery
+                ownership = capture_writer_ownership(session)
+                verify_writer_ownership(ownership, job, self.store,
+                                        clock=self.clock, media_inspector=self.media_inspector)
                 if not (job.state == "recovering"
                         and job.recovery_reason == "writer_partial_recovery"):
                     job = self.save_job(replace(
                         job, state="recovering", recovery_reason="writer_partial_recovery"
                     ))
                     observe(job)
+                verify_writer_ownership(ownership, job, self.store,
+                                        clock=self.clock, media_inspector=self.media_inspector)
                 recover_writer_partial(plan, validator=self.writer_validator)
+                verify_writer_commit(ownership, job, self.store)
                 session.manifest.record_writer_recovery(
                     recovery_record(plan, self.clock()), session.retained.parts
                 )

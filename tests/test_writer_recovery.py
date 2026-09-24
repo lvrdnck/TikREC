@@ -31,13 +31,14 @@ def media_bytes(tmp_path):
     return part.read_bytes()
 
 
-def crashed_session(tmp_path, *, prior=0, index=None, content=None, state="recording"):
+def crashed_session(tmp_path, *, prior=0, index=None, content=None, state="recording",
+                    creator=None):
     output = tmp_path / "out.mp4"
     directory = tmp_path / "out.parts"
     directory.mkdir()
     if prior:
         populate(directory, prior)
-    manifest = SessionManifest(directory, output, "tiktok_live", session_id=ID,
+    manifest = SessionManifest(directory, output, "tiktok_live", creator=creator, session_id=ID,
                                clock=lambda: 1000, media_inspector=lambda _: None)
     manifest.start(connection_count=1)
     manifest.update_capture(tuple(directory.glob("part-*.flv")), connection_count=1)
@@ -297,3 +298,92 @@ def test_later_crash_recovers_next_part_without_conflicting_prior_evidence(tmp_p
                               session_id=ID, source_type="tiktok_live",
                               media_inspector=lambda _: None)
     assert prepared.retained.next_index == 3 and prepared.next_connection == 3
+
+
+def test_creator_change_after_initial_inspection_blocks_writer_mutation(tmp_path):
+    """The first storage inspection cannot authorize later writer mutation."""
+    from tikrec.recovery_session import inspect_recovery_session
+
+    store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
+    job_before = store.path.read_bytes()
+    partial_before = partial.read_bytes()
+    manifest_before = manifest.path.read_bytes()
+
+    def changing_inspector(job, **options):
+        result = inspect_recovery_session(job, **options)
+        values = json.loads(manifest.path.read_text())
+        values["creator"] = "beta"
+        manifest.path.write_text(json.dumps(values))
+        return result
+
+    result = StartupReconciler(
+        store, resolver=no_call, finalizer=no_call, resume_capture=no_call,
+        clock=lambda: 2000, media_inspector=lambda _: None,
+        writer_validator=lambda _: None, inspector=changing_inspector,
+    ).reconcile()
+    assert result.outcome == "failed"
+    assert store.path.read_bytes() == job_before
+    assert partial.read_bytes() == partial_before
+    assert not evidence_path(partial.parent).exists()
+    assert not (partial.parent / "part-0001.flv").exists()
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+    assert manifest.path.read_bytes() != manifest_before
+
+
+@pytest.mark.parametrize("change_kind", ["room", "session", "output", "parts", "partial"])
+def test_fresh_writer_preflight_rejects_changed_ownership_without_mutation(
+        tmp_path, change_kind):
+    """An old initial inspection cannot commit a different current owner or partial."""
+    from tikrec.recovery_session import inspect_recovery_session
+
+    store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
+    original_job, original_partial = store.path.read_bytes(), partial.read_bytes()
+
+    def changing_inspector(job, **options):
+        result = inspect_recovery_session(job, **options)
+        if change_kind == "partial":
+            changed = bytearray(partial.read_bytes())
+            changed[-1] ^= 1
+            partial.write_bytes(changed)
+        else:
+            values = json.loads(manifest.path.read_text())
+            key, replacement = {
+                "room": ("room_id", "456"),
+                "session": ("session_id", "bd9f9372-7cb4-44f2-9a66-2db3e7b831c5"),
+                "output": ("output_path", str(tmp_path / "else.mp4")),
+                "parts": ("parts_directory", str(tmp_path / "else.parts")),
+            }[change_kind]
+            values[key] = replacement
+            manifest.path.write_text(json.dumps(values))
+        return result
+
+    result = StartupReconciler(
+        store, resolver=no_call, finalizer=no_call, resume_capture=no_call,
+        clock=lambda: 2000, media_inspector=lambda _: None,
+        writer_validator=lambda _: None, inspector=changing_inspector,
+    ).reconcile()
+    assert result.outcome == "failed"
+    assert store.path.read_bytes() == original_job
+    assert not evidence_path(partial.parent).exists()
+    assert not (partial.parent / "part-0001.flv").exists()
+    assert partial.exists()
+    if change_kind != "partial":
+        assert partial.read_bytes() == original_partial
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+
+
+def test_writer_commit_rechecks_manifest_after_media_recovery(tmp_path):
+    """A changed owner during repair cannot receive a committed recovery record."""
+    store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
+    original = partial.read_bytes()
+
+    def changing_validator(_):
+        values = json.loads(manifest.path.read_text())
+        values["creator"] = "beta"
+        manifest.path.write_text(json.dumps(values))
+
+    result = reconciler(store, validator=changing_validator, resolver=no_call).reconcile()
+    assert result.outcome == "failed"
+    assert evidence_path(partial.parent).read_bytes() == original
+    assert (partial.parent / "part-0001.flv").read_bytes() == original
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()

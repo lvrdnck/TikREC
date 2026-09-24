@@ -162,16 +162,23 @@ def _check_output(declared, requested):
         raise ValueError("requested output requires an existing parent and container suffix")
 
 
-def _read_connections(directory, retained, identity):
+_UNSET_CONNECTIONS = object()
+
+
+def _read_connections(directory, retained, identity, *, content=_UNSET_CONNECTIONS):
     path = directory / "connections.jsonl"
-    if not path.exists() and not path.is_symlink():
+    if content is None or (content is _UNSET_CONNECTIONS
+                           and not path.exists() and not path.is_symlink()):
         return 0, None
-    if not path.is_file() or path.is_symlink():
+    if content is _UNSET_CONNECTIONS and (not path.is_file() or path.is_symlink()):
         raise ValueError("connection evidence must be a regular file")
     logged = reserved = 0
     previous_end = None
     claimed_parts = set()
-    with path.open(encoding="utf-8") as handle:
+    from io import StringIO
+    handle = (path.open(encoding="utf-8") if content is _UNSET_CONNECTIONS
+              else StringIO(content.decode("utf-8")))
+    with handle:
         for line in handle:
             # Appending to a crash-truncated JSON line would destroy the evidence boundary.
             if not line.endswith("\n"):

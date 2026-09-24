@@ -116,6 +116,20 @@ def _control(path: Path) -> bytes:
     return content
 
 
+def checked_control(claim: ClaimSnapshot, path: Path) -> bytes | None:
+    """Read only the exact control document captured in this immutable claim."""
+    expected = next((entry[2] for entry in claim.evidence or ()
+                     if len(entry) == 3 and entry[0] == path.name), None)
+    if expected is None:
+        if path.exists() or path.is_symlink():
+            raise ValueError("new control evidence appeared during retention inspection")
+        return None
+    content = _control(path)
+    if hashlib.sha256(content).hexdigest() != expected:
+        raise ValueError("control evidence changed during retention inspection")
+    return content
+
+
 def _stamp(path: Path) -> tuple:
     details = path.lstat()
     return (details.st_mode, details.st_size, details.st_mtime_ns, details.st_ctime_ns,

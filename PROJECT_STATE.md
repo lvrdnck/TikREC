@@ -7,6 +7,30 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Third v0.11.0 retention-safety correction complete (2026-09-24):** Fresh
+  independent review of `ccdf9d3` remained NOT READY. Five reproduced blockers
+  were unbound control reads after an immutable claim snapshot, impossible
+  pre-manifest HTTP/media chronology, incomplete or stacked mount proof and
+  nested remote artifacts, retained FLV/writer-evidence reparse acceptance, and
+  stale ownership before writer-partial mutation. Inspection now verifies each
+  parsed manifest/log read against its exact captured content fingerprint;
+  any observed mismatch stays non-eligible even if restored. Retention chronology
+  permits only resolver-only failures or a proven first successful resolution
+  before manifest start; HTTP/media must follow session initialization. Every
+  candidate/output/control/retained artifact needs no-follow and same proven
+  local-volume evidence. Writer recovery performs a fresh read-only ownership
+  and partial preflight before job or media mutation, then rechecks the manifest
+  and recovered source before committing recovery evidence. Generic recovery
+  compatibility remains separate. No deletion executor exists, and stale plans
+  authorize nothing. v0.10.0 remains released; v0.11.0 is unreleased;
+  #8/#13/#28 remain separate and non-blocking. Next: fresh independent safety
+  review of this corrected foundation before destructive retention design.
+  Verification: 1,323 isolated pytest tests and 19 subtests passed, with one
+  native Windows file-symlink test skipped for missing privilege; 228 unittest
+  tests, compilation, 29 CLI help paths/version, all 90 package files under
+  300 lines, and diff checks passed. Native Windows junction tests passed.
+  Linux/macOS mount and Windows mapped-drive classifications passed injected
+  offline tests; native POSIX mounts and a real mapped drive were not run.
 - **Second v0.11.0 retention-safety correction complete (2026-09-24):** Fresh
   independent review of `99495eb` remained NOT READY. It found changed or
   incomplete claims, whole-root planning races, under-constrained event time,

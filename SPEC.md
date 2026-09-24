@@ -956,13 +956,17 @@ selected root. Eligibility additionally requires coherent completed capture and
 finalization fields, finite consistent elapsed time, and no durable connection,
 room-status, resume, service/network, or writer-recovery activity after the
 terminal timestamp. `recovery_performed=true` alone is not a contradiction.
-The selected local root, `.parts` child, and final output must contain no
-symlink or Windows reparse redirection. A saved optional LIVE creator is checked
+The selected local root, `.parts` child, controls, final output, every retained
+FLV and writer-recovery evidence must contain no symlink or Windows reparse
+redirection and must share a proven local volume. A saved optional LIVE creator is checked
 again at fresh resume preflight before any write; legacy absence stays absent.
 Planner output is advisory and may become stale. Any future destructive action
 needs immediate revalidation and separate approval.
 
-The planner binds each candidate to an immutable claim snapshot, distinguishing
+The planner binds each parsed manifest and connection-log read to the exact
+control-content fingerprint in an immutable claim snapshot; an observed mismatch
+fails closed even if the file later returns to its original contents. It
+distinguishes
 an explicit null output declaration from a missing or unreadable field. It
 compares whole-root snapshots before and after inspection: immediate child
 membership, small control-file content identity, artifact metadata, output
@@ -975,7 +979,11 @@ remote, unsupported, and unknown mounts are refused. Retention-only chronology
 checks session, numbered-connection, media-milestone, resume, room-status,
 service-recovery, network-outage, and writer-recovery timing. The narrow
 pre-manifest first-LIVE-resolution exception requires explicit resolution
-evidence. These checks do not tighten ordinary schema-1 loading/recovery.
+evidence. Earlier resolver-only failures may precede manifest creation, and the
+first successful resolution may cross it, but HTTP opening and media milestones
+must follow session initialization. Malformed or stacked mount evidence and a
+nested remote/unknown artifact cannot establish eligibility. These checks do
+not tighten ordinary schema-1 loading/recovery.
 
 Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
 24 ASCII letters, digits, underscores, or internal periods. List order is

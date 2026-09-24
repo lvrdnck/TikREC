@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import json
 import re
 import time
 from collections.abc import Callable
@@ -11,11 +12,12 @@ from pathlib import Path
 from .configuration import Configuration
 from .creator_identity import validate_creator_handle
 from .media import MediaInfo, inspect_media
-from .recovery_discovery import discover_recovery_candidates, _read_manifest
+from .recovery_discovery import discover_recovery_candidates
+from .session_resume import _unique_values
 from .writer_recovery_evidence import recovery_records
 from .retention_paths import local_path
-from .retention_locality import proven_local
-from .retention_snapshot import capture_claim, capture_root
+from .retention_locality import LocalVolume, local_volume, proven_local
+from .retention_snapshot import capture_claim, capture_root, checked_control
 from .retention_terminal import terminal_success
 
 
@@ -27,13 +29,16 @@ def plan_retention(root: Path, configuration: Configuration, *,
     scope = local_path(Path(root), directory=True)
     if not proven_local(scope):
         raise ValueError("retention root locality could not be proven")
+    volume = local_volume(scope)
+    if volume is None:
+        raise ValueError("retention root volume could not be proven")
     now = clock()
     if type(now) not in {int, float} or not math.isfinite(now):
         raise ValueError("retention clock must be finite")
     initial = capture_root(scope, _claims)
     sessions, unknown = [], any(claim.uncertain for claim in initial.claims)
     for claim in initial.claims:
-        item = _inspect(Path(claim.directory), scope, configuration, now, media_inspector)
+        item = _inspect(claim, scope, volume, configuration, now, media_inspector)
         if ((item["session_id"] is not None and item["session_id"] != claim.session_id)
                 or (item["output_path"] is not None and item["output_path"] != claim.output_path)):
             unknown = True
@@ -64,17 +69,22 @@ def plan_retention(root: Path, configuration: Configuration, *,
             "sessions": sessions}
 
 
-def _inspect(directory, root, config, now, media_inspector):
+def _inspect(claim, root, volume, config, now, media_inspector):
+    directory = Path(claim.directory)
     item = {"parts_directory": str(directory), "session_id": None,
             "creator": None, "ended_at": None, "output_path": None,
             "classification": "needs_attention", "reason": "evidence_conflict",
             "protected": None}
     try:
         local_path(directory, directory=True)
+        _artifact_scope(directory, volume)
         manifest_path = directory / "session.json"
-        local_path(manifest_path, directory=False)
+        control = lambda path: checked_control(claim, path)
         before = _evidence_stamp(directory)
-        values = _read_manifest(manifest_path)
+        content = control(manifest_path)
+        if content is None:
+            return item
+        values = json.loads(content.decode("utf-8"), object_pairs_hook=_unique_values)
         declared = values.get("output_path")
         # Reject outside/relative declarations before recovery inspection could open them.
         if (type(declared) is not str or not Path(declared).is_absolute()
@@ -84,13 +94,14 @@ def _inspect(directory, root, config, now, media_inspector):
         output = directory.with_suffix(".mp4")
         if output.exists() or output.is_symlink():
             local_path(output, directory=False)
-        candidates = discover_recovery_candidates(directory, media_inspector=media_inspector)
+        candidates = discover_recovery_candidates(
+            directory, media_inspector=media_inspector, control_reader=control)
         if len(candidates) != 1:
             return item
         candidate = candidates[0]
         if not candidate.evidence_consistent:
             return item
-        if _read_manifest(manifest_path) != values:
+        if control(manifest_path) != content:
             return item
         if _unrecognized_evidence(directory, values):
             return item
@@ -109,7 +120,9 @@ def _inspect(directory, root, config, now, media_inspector):
         item["protected"] = creator in config.retention_protected_creators
         if item["protected"]:
             return _mark(item, "protected", "protected_creator")
-        if candidate.classification != "complete" or not terminal_success(directory, values):
+        log = control(directory / "connections.jsonl")
+        if candidate.classification != "complete" or not terminal_success(
+                directory, values, connections_bytes=b"" if log is None else log):
             return _mark(item, "ineligible", "session_incomplete")
         output = Path(candidate.output_path)
         # Restrict proof to one regular final output directly inside the selected root.
@@ -119,7 +132,8 @@ def _inspect(directory, root, config, now, media_inspector):
         if config.retention_max_age_days is None:
             return _mark(item, "retained", "retention_disabled")
         if values["ended_at"] <= now - config.retention_max_age_days * 86400:
-            if _evidence_stamp(directory) != after or _read_manifest(manifest_path) != values:
+            if (_evidence_stamp(directory) != after or control(manifest_path) != content
+                    or control(directory / "connections.jsonl") != log):
                 return _mark(item, "needs_attention", "evidence_conflict")
             return _mark(item, "eligible", "age_threshold_reached")
         return _mark(item, "retained", "not_old_enough")
@@ -130,6 +144,19 @@ def _inspect(directory, root, config, now, media_inspector):
 def _claims(directory: Path, root: Path):
     """Return an immutable bounded claim independent of eligibility."""
     return capture_claim(directory, root)
+
+
+def _artifact_scope(directory: Path, volume: LocalVolume) -> None:
+    """Prove every immediate artifact is unredirected on the root's local volume."""
+    for path in (directory, *directory.iterdir()):
+        local_path(path, directory=path == directory)
+        if not proven_local(path) or local_volume(path) != volume:
+            raise ValueError("retention artifact is outside the proven local volume")
+    output = directory.with_suffix(".mp4")
+    if output.exists() or output.is_symlink():
+        local_path(output, directory=False)
+        if not proven_local(output) or local_volume(output) != volume:
+            raise ValueError("retention output is outside the proven local volume")
 
 
 def _evidence_stamp(directory: Path) -> tuple:

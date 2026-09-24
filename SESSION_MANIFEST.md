@@ -187,15 +187,19 @@ part. Service resume_count belongs only to the job. Manifest counts include prio
 attempts; elapsed wall time includes downtime without claiming missing media.
 
 An eligible active writer partial is first validated read-only through its last
-complete FLV tag. Durable job state records `writer_partial_recovery` before the
+complete FLV tag. A fresh writer-compatible read-only ownership check proves
+the current job, manifest, optional creator, room, paths, and exact partial
+before any `recovering` job-state write or media mutation. Durable job state
+records `writer_partial_recovery` before the
 original is atomically moved to a session/index evidence-only name. TikREC copies
 the complete file, or only the parser-proven prefix before the first truncated
 or malformed tag, into a separate staging file. It does not resynchronize or
 repair the bad tag; normal writer structure and FFprobe decoder/DTS checks must
 pass before atomic part publication. The original evidence never changes.
 Optional `writer_recoveries` entries record timestamp, bare evidence/part
-names, source SHA-256, source/recovered bytes, and discarded trailing bytes. Counts
-include only
+names, source SHA-256, source/recovered bytes, and discarded trailing bytes.
+The unchanged manifest ownership fingerprint and recovered source/prefix are
+rechecked immediately before recording that evidence. Counts include only
 published parts; the next resume boundary creates a fresh connection and next
 part, while wall elapsed time may include downtime without claiming media coverage.
 Missing/mutated evidence, duplicate indexes, collisions, incompatible lifecycle,

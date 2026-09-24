@@ -1293,6 +1293,21 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Third retention-safety correction complete (2026-09-24):** Independent review
+of `ccdf9d3` remained NOT READY on five bounded proof gaps. Retention inspection
+now binds parsed manifest and connection evidence to the captured content
+fingerprints, so an observed temporary change cannot become eligible after
+restoration. Pre-manifest chronology allows resolver-only failures and a proven
+first resolution, but never HTTP/media before session initialization. Strict
+mount parsing rejects malformed/stacked evidence; every candidate and artifact
+must share a proven local volume and pass no-follow/reparse validation. Startup
+writer recovery refreshes job, manifest, creator/room/path, and partial ownership
+before the first job/media write and rechecks the authorized source and manifest
+before recovery evidence is committed. No deletion exists, and a saved plan
+authorizes nothing. v0.10.0 is released, v0.11.0 remains unreleased, and
+#8/#13/#28 are separate non-blocking evidence work. Another independent safety
+review is required before any destructive retention design.
+
 **Second retention-safety correction complete (2026-09-24):** Independent
 review of `99495eb` still found fail-open claim changes, whole-root races,
 weak chronology, stale creator at startup's fresh preflight, and output
