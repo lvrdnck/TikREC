@@ -3,8 +3,91 @@
 import json
 import os
 
+import pytest
+
 from tests.test_retention_plan import session
 from tikrec.retention_snapshot import capture_claim, capture_root
+
+
+def change_during_closing_inventory(root, monkeypatch, *, scan, action):
+    """Run a mutation inside the selected root iterdir generator's final step."""
+    original = type(root).iterdir
+    scans = 0
+
+    def listing(path):
+        nonlocal scans
+        entries = original(path)
+        if path != root:
+            return entries
+        scans += 1
+        current = scans
+
+        def observed():
+            yield from entries
+            if current == scan:
+                action()
+
+        return observed()
+
+    monkeypatch.setattr(type(root), "iterdir", listing)
+    return lambda: scans
+
+
+@pytest.mark.parametrize("scan", [2, 4])
+def test_claimant_created_inside_closing_inventory_invalidates_root(
+        tmp_path, monkeypatch, scan):
+    """A newly yielded omission must poison either planner root observation."""
+    from tests.test_retention_plan import plan
+
+    session(tmp_path, "alpha")
+    scans = change_during_closing_inventory(
+        tmp_path, monkeypatch, scan=scan,
+        action=lambda: session(tmp_path, "late", creator="bravo"))
+    results = plan(tmp_path, protected=("bravo",))
+    assert scans() == 4
+    assert all(item["classification"] != "eligible" for item in results)
+
+
+def test_claimant_created_inside_capture_closing_inventory_is_unstable(
+        tmp_path, monkeypatch):
+    """The mutation occurs after old entries yield but before iterdir finishes."""
+    session(tmp_path, "alpha")
+    scans = change_during_closing_inventory(
+        tmp_path, monkeypatch, scan=2,
+        action=lambda: session(tmp_path, "late", creator="bravo"))
+    assert not capture_root(tmp_path, capture_claim).stable
+    assert scans() == 2
+
+
+@pytest.mark.parametrize("action", ["remove", "replace"])
+def test_child_change_inside_closing_enumeration_is_unstable(
+        tmp_path, monkeypatch, action):
+    """Closing child identity must match the claimant read earlier."""
+    directory = session(tmp_path, "alpha")
+
+    def change():
+        directory.rename(tmp_path / "old")
+        if action == "replace":
+            session(tmp_path, "alpha", creator="bravo")
+
+    change_during_closing_inventory(tmp_path, monkeypatch, scan=2, action=change)
+    assert not capture_root(tmp_path, capture_claim).stable
+
+
+def test_stable_root_inventory_remains_stable(tmp_path):
+    session(tmp_path, "alpha")
+    assert capture_root(tmp_path, capture_claim).stable
+
+
+def test_unreadable_closing_inventory_is_unstable(tmp_path, monkeypatch):
+    session(tmp_path, "alpha")
+
+    def unreadable():
+        raise OSError("closing inventory unreadable")
+
+    change_during_closing_inventory(
+        tmp_path, monkeypatch, scan=2, action=unreadable)
+    assert not capture_root(tmp_path, capture_claim).stable
 
 
 def test_root_capture_rejects_claimant_added_during_its_own_scan(tmp_path):

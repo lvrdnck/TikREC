@@ -16,7 +16,7 @@ from .part_validation import validate_part
 from .session_parts import RetainedParts, _check_structure, _discover_parts
 from .writer import _FLV_HEADER
 from .writer_recovery_evidence import (evidence_name, file_sha256, recovery_records,
-                                       validate_recorded_evidence)
+                                       same_prefix, validate_recorded_evidence)
 
 _PARTIAL = re.compile(r"\.part-([0-9]+)\.flv\.partial")
 _EVIDENCE = re.compile(
@@ -153,7 +153,7 @@ def recover_writer_partial(
     if plan.recovered.exists() or plan.recovered.is_symlink():
         if (plan.recovered.is_symlink() or not plan.recovered.is_file()
                 or plan.recovered.stat().st_size != plan.recovered_bytes
-                or not _same_prefix(plan.evidence, plan.recovered, plan.recovered_bytes)):
+                or not same_prefix(plan.evidence, plan.recovered, plan.recovered_bytes)):
             raise ValueError("published recovered part conflicts with crash evidence")
         validator(plan.recovered)
         return plan.recovered
@@ -265,17 +265,6 @@ def _copy_prefix(source, destination, count):
             remaining -= len(chunk)
         writer.flush()
         os.fsync(writer.fileno())
-
-
-def _same_prefix(source, recovered, count):
-    with source.open("rb") as left, recovered.open("rb") as right:
-        remaining = count
-        while remaining:
-            size = min(64 * 1024, remaining)
-            if left.read(size) != right.read(size):
-                return False
-            remaining -= size
-    return True
 
 
 def _evidence_path(directory, session_id, index):

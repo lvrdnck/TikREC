@@ -535,3 +535,36 @@ def test_writer_manifest_promotion_rechecks_job_after_serialization(tmp_path, mo
     assert changed and result.outcome == "failed"
     assert (partial.parent / "part-0001.flv").exists()
     assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+
+
+def test_final_manifest_guard_rejects_equal_eof_after_earlier_checks(
+        tmp_path, monkeypatch):
+    """A false prefix proof cannot publish recovery after the temp write."""
+    import tikrec.writer_recovery_ownership as ownership
+
+    store, _, manifest, partial = crashed_session(tmp_path, creator="creator")
+    committed = manifest.path.read_bytes()
+    temporary = manifest.path.with_name(f".{manifest.path.name}.partial")
+    original = ownership.same_prefix
+    changed = False
+    inventory_at_guard = None
+
+    def shorten_during_final_proof(left, right, count):
+        nonlocal changed, inventory_at_guard
+        if temporary.exists() and not changed:
+            changed = True
+            inventory_at_guard = {path.name for path in partial.parent.iterdir()}
+            left.write_bytes(b"")
+            right.write_bytes(b"")
+        return original(left, right, count)
+
+    monkeypatch.setattr(ownership, "same_prefix", shorten_during_final_proof)
+    result = reconciler(store, resolver=no_call).reconcile()
+    assert changed and result.outcome == "failed"
+    assert manifest.path.read_bytes() == committed
+    assert b'"writer_recoveries"' not in manifest.path.read_bytes()
+    assert inventory_at_guard - {temporary.name} == {
+        path.name for path in partial.parent.iterdir()}
+    assert not temporary.exists()
+    assert evidence_path(partial.parent).exists()
+    assert (partial.parent / "part-0001.flv").exists()

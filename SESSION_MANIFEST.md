@@ -202,7 +202,9 @@ pass before atomic part publication. The original evidence never changes.
 Optional `writer_recoveries` entries record timestamp, bare evidence/part
 names, source SHA-256, source/recovered bytes, and discarded trailing bytes.
 The unchanged manifest ownership fingerprint and recovered source/prefix are
-rechecked immediately before recording that evidence. Counts include only
+rechecked immediately before recording that evidence. Prefix comparison must
+read every recorded byte from both files; matching short reads or EOF are not
+proof. Counts include only
 published parts; the next resume boundary creates a fresh connection and next
 part, while wall elapsed time may include downtime without claiming media coverage.
 Missing/mutated evidence, duplicate indexes, collisions, incompatible lifecycle,

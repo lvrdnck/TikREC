@@ -113,12 +113,14 @@ def validate_record_schema(records: list[dict], timestamp_validator) -> None:
 
 
 def same_prefix(source: Path, recovered: Path, count: int) -> bool:
-    """Compare a bounded source prefix with one recovered part."""
+    """Prove both artifacts contain exactly the requested identical prefix."""
     with source.open("rb") as left, recovered.open("rb") as right:
         remaining = count
         while remaining:
             size = min(64 * 1024, remaining)
-            if left.read(size) != right.read(size):
+            left_chunk, right_chunk = left.read(size), right.read(size)
+            if (len(left_chunk) != size or len(right_chunk) != size
+                    or left_chunk != right_chunk):
                 return False
             remaining -= size
     return True

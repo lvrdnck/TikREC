@@ -1293,6 +1293,17 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fifth retention-safety correction complete (2026-09-24):** Fresh independent
+review of `32de6ed` remained NOT READY on exactly R1 and R2. The closing root
+stamp now follows the complete closing child enumeration and identity scan, so
+a claimant appearing inside that scan invalidates eligibility. Recovery prefix
+proof now requires all requested bytes through one shared comparator, including
+the final conditional manifest guard and later persisted-evidence validation.
+Baseline regressions reproduced both defects. The planner remains read-only and
+advisory; no deletion executor exists. Another fresh independent safety review
+is required before deletion design. v0.10.0 remains released, v0.11.0 unreleased,
+and #8/#13/#28 remain separate non-blocking evidence work.
+
 **Fourth retention-safety correction complete (2026-09-24):** Independent review of
 `0089a6d` remained NOT READY: a claimant could appear inside one root scan;
 observed control divergence could affect only one candidate; post-start

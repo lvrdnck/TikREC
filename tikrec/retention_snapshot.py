@@ -49,15 +49,19 @@ class RootSnapshot:
 
 def capture_root(root: Path, claim_reader) -> RootSnapshot:
     """Observe the root and each immediate parts child in deterministic order."""
-    local_path(root, directory=True)
-    before = _stamp(root)
-    children = _children(root)
-    membership = _membership(children)
-    claims = tuple(claim_reader(path, root) for path in children)
+    before, claims = (), ()
     try:
+        local_path(root, directory=True)
+        before = _stamp(root)
+        children = _children(root)
+        membership = _membership(children)
+        claims = tuple(claim_reader(path, root) for path in children)
+        closing_membership = _membership(_children(root))
+        # Stamp only after the closing enumeration and every child identity read.
+        after = _stamp(root)
         stable = (all(stamp is not None for _, stamp in membership)
-                  and before == _stamp(root)
-                  and membership == _membership(_children(root)))
+                  and all(stamp is not None for _, stamp in closing_membership)
+                  and membership == closing_membership and before == after)
     except (OSError, ValueError):
         stable = False
     return RootSnapshot(before, claims, stable)

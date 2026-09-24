@@ -412,6 +412,7 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    never resynchronize or repair framing. A prefix without valid media still
    blocks. Immediately before appending manifest recovery evidence, recheck its
    unchanged ownership fingerprint and the actual recovered source/prefix,
+   requiring every byte of the recorded prefix rather than accepting equal EOF,
    including after slow hashing/prefix comparison. The manifest promotion itself
    conditionally checks its original bytes and current job/media ownership.
    Manifest evidence records source SHA-256 and discarded byte counts.

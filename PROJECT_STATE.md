@@ -7,6 +7,26 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fifth v0.11.0 retention-safety correction complete (2026-09-24):** The latest
+  fresh independent review of `32de6ed` remained NOT READY on exactly two
+  observation-completeness blockers. R1: a claimant created inside a closing
+  root enumeration could evade that snapshot; root and child identities now
+  bracket the entire closing inventory, with the final root stamp taken only
+  after its enumeration and child stamps finish. R2: equal short reads could
+  falsely prove a writer-recovery prefix; one shared helper now requires every
+  requested byte for both persisted evidence and the final conditional manifest
+  guard. Regressions reproduced both failures on `32de6ed`. The planner stays
+  advisory and read-only; deletion remains unimplemented. v0.10.0 is the
+  released/package version, v0.11.0 is unreleased, and #8/#13/#28 remain
+  separate non-blocking evidence work. Next gate: another fresh independent
+  safety review before any destructive retention design. Focused retention,
+  recovery, and manifest tests passed 353 (one skip); the isolated full suite
+  passed 1,372 plus 19 subtests (one skip). Unittest discovery passed 228;
+  compilation, 29 CLI help paths/version, all 91 package sources under 300
+  lines, and diff checks passed. Native Windows junctions passed; native file
+  symlink creation skipped because unavailable. POSIX mount and Windows drive
+  classifications passed injected offline tests; native POSIX mounts and a real
+  mapped drive were not run on this Windows host.
 - **Fourth v0.11.0 retention-safety correction complete (2026-09-24):** Independent
   review of `0089a6d` remained NOT READY on five reproduced gaps. Root claims
   now require an internally bracketed stable inventory; observed control or

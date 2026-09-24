@@ -973,7 +973,9 @@ membership, small control-file content identity, artifact metadata, output
 identity, and creator/lifecycle changes must remain stable. A changing root
 cannot yield eligible sessions.
 Each individual root capture also brackets its claim reads with root/child
-identity and membership checks; an unstable capture cannot yield eligibility.
+identity and membership checks. Its closing root identity is read only after
+the entire closing child enumeration and child identity scan finish; an
+unreadable or unstable capture cannot yield eligibility.
 An observed control or evidence mismatch invalidates every candidate in that
 planning call even if a later read sees the original bytes again.
 `resolver_error` at any connection position can carry only resolver-failure
