@@ -946,8 +946,35 @@ age threshold (`ended_at <= now - days * 86400`). Only a supported completed
 TikTok session with canonical creator, completed finalization, proven regular
 output directly beside its `.parts` directory, stable known evidence, and an
 unprotected creator can be `eligible`. Unknown, changing, extra, symlinked,
-recoverable, and conflicting evidence is not eligible. No deletion executor or
-automatic cleanup exists.
+recoverable, and conflicting evidence is not eligible. No owner-facing deletion
+command or automatic cleanup exists.
+
+The unreleased internal executor accepts one explicit root and canonical session
+UUID, never a saved planner result. It takes an exclusive OS-backed root lease,
+reloads current configuration, replans the full root, and refuses any target
+referenced by either durable service job slot, including a completed job. The
+private authorization binds root/claim identity, creator and durable end time,
+policy, local volume, and exact singly linked artifact fingerprints. Before
+each mutation it checks the lease, current policy and job stores, non-target
+claims, remaining/removed target artifacts, and no-follow identity/locality.
+It removes retained media and referenced recovery evidence first, then the
+connection log, manifest, empty `.parts` directory, and final MP4 last.
+Unexpected evidence or failure stops immediately. A later call cannot resume
+the stale operation; it must pass fresh authorization, which normally refuses
+an incomplete session.
+
+An append-only schema-1 JSONL journal lives beneath the per-user TikREC state
+directory's `retention-audit` folder, in a deterministic per-root file. A
+synced intent containing the exact order/fingerprints precedes all deletion;
+synced attempt, deleted, failed, and completed records follow. A new journal's
+parent directory is synced on POSIX; successful POSIX removals sync their parent
+before a deleted record. The journal excludes transport secrets and signed
+URLs. Root-level persistent lifecycle locks use POSIX shared/exclusive `flock`
+or Windows bounded byte-range leases; process exit releases a held lock. All
+TikREC mutators of a recording root take writer leases while this private
+executor takes the exclusive lease. The protocol excludes TikREC's own writers,
+not an arbitrary hostile process deliberately defeating filesystem metadata
+guarantees. Independent review remains required before exposing deletion.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

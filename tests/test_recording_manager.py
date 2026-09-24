@@ -9,6 +9,7 @@ import pytest
 
 from tikrec.capture import CaptureError, CaptureResult
 from tikrec.job_state import JobState, JobStateStore
+from tikrec.lifecycle_lock import LifecycleBusy, acquire_lifecycle
 from tikrec.recording import RecordingBusy, RecordingController
 from tikrec.recording_manager import (RecordingAmbiguous, RecordingDuplicate,
                                       RecordingManager)
@@ -87,6 +88,23 @@ def test_two_jobs_run_with_distinct_sessions_then_reuse_only_freed_slot(tmp_path
         assert not harness.stop_events["third"].is_set()
     finally:
         manager.shutdown()
+
+
+def test_two_service_slots_hold_compatible_writer_leases(tmp_path):
+    harness = CaptureHarness()
+    manager = _manager(harness)
+    manager.start(PAGE, str(tmp_path / "first.mp4"))
+    manager.start(PAGE_BETA, str(tmp_path / "second.mp4"))
+    harness.wait("first")
+    harness.wait("second")
+    try:
+        with pytest.raises(LifecycleBusy):
+            acquire_lifecycle(tmp_path, "retention")
+        assert manager.health()["active_count"] == 2
+    finally:
+        manager.shutdown()
+    with acquire_lifecycle(tmp_path, "retention") as lease:
+        lease.assert_held()
 
 
 def test_cross_slot_output_and_parts_collision_is_rejected(tmp_path):

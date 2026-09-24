@@ -16,8 +16,9 @@ from .reconciliation import StartupReconciler
 from .service_job import (job_snapshot, persist_snapshot, progress_snapshot, update_network_status, update_capture_state)
 from .capture_control import CaptureControl
 from .retry_policy import RetryPolicy
-from .live_recovery import OutageCaptureError
+from .lifecycle_lock import acquire_lifecycle
 from .recording_safety import normalize_live_url, safe_error
+from .recording_worker import run_recording_worker
 from .tiktok_identity import canonical_room_id
 
 
@@ -189,47 +190,19 @@ class RecordingController:
     def _run(self, url: str, output_path: Path, recovery=None,
              expected_room_id: str | None = None) -> None:
         try:
-            options = dict(stop_event=self._stop, state=self._state, heartbeat=self._heartbeat,
-                           room_identity=self._identity, recovery_observer=self._network_status,
-                           retry_policy=self._retry_policy, recovery_clock=self._recovery_clock,
-                           recovery_waiter=self._recovery_waiter)
-            if self._job.get("raw_copy_enabled"):
-                options["raw_copy_dir"] = self._parts
-            if expected_room_id is not None:
-                options.update(self._automatic_resolvers(expected_room_id))
-            if recovery is None:
-                result = self._capture(url, parts_directory=self._parts, output_path=output_path,
-                                       session_id=self._job["session_id"], **options)
-            else:
-                result = self._reconciler.resume(recovery, **options)
+            with acquire_lifecycle(output_path.parent, "writer"):
+                run_recording_worker(self, url, output_path, recovery, expected_room_id)
         except BaseException as error:
-            # Contain even an injected worker interrupt; HTTP threads must remain available.
+            # Keep a failed lease acquisition as a visible worker failure.
             with self._lock:
-                phase = self._job["state"]
                 self._job.update(state="failed", error=safe_error(error) or type(error).__name__)
-                if isinstance(error, OutageCaptureError):
-                    self._job.update(recovery_state="exhausted", recovery_reason="outage_timeout")
-                    self._blocked = False
-                elif recovery is not None:
-                    self._blocked = True
-                    phase = "finalizing" if phase == "finalizing" else "recovering"
-                    self._job.update(state=phase, recovery_state="failed", recovery_reason="failed_resume")
-        else:
-            with self._lock:
-                self._job.update(state="completed", interrupted=result.interrupted,
-                                 final_output_path=None if result.output_path is None
-                                 else str(result.output_path))
-                self._resolutions = max(self._resolutions, len(result.connections))
-        finally:
-            with self._lock:
+                self._blocked = recovery is not None
                 self._job["ended_at"] = self._clock()
                 try:
                     self._persist()
                 except Exception:
                     self._blocked = True
-                    self._job.update(recovery_state="failed", error="could not persist recording result")
-                finally:
-                    self._active = False
+                self._active = False
 
     def _persist(self):
         if self._store is not None:
@@ -268,6 +241,17 @@ class RecordingController:
                 self._persist()
 
     def _recover(self):
+        try:
+            with acquire_lifecycle(Path(self._job["output_path"]).parent, "writer"):
+                self._recover_locked()
+        except BaseException:
+            with self._lock:
+                self._active = False
+                self._blocked = True
+                self._job.update(state="recovering", recovery_state="failed",
+                                 recovery_reason="ambiguous_state", error="startup recovery failed")
+
+    def _recover_locked(self):
         try:
             result = self._reconciler.reconcile(observe=self._recovery_observed,
                 retry_policy=self._retry_policy, recovery_clock=self._recovery_clock,

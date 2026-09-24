@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**First internal executor slice complete (2026-09-24):** The fresh independent
+review of the corrected foundation concluded READY TO DESIGN BOUNDED RETENTION
+EXECUTION. A private one-session executor now authorizes a canonical UUID from
+a fresh full-root plan under an exclusive lifecycle lease, checks both service
+job slots, restricts deletion to exact proven artifacts, and journals synced
+intent/attempt/results outside the recording root. Compatible writer leases
+cover service capture/recovery and direct CLI mutation; both service slots can
+still record in one root. The final MP4 is deleted last and partial operations
+never auto-resume. No public delete command, HTTP action, or automatic cleanup
+exists. Another independent review of this executor and lifecycle/audit protocol
+is required before owner-facing execution. v0.10.0 remains released, v0.11.0
+unreleased; #8/#13/#28 remain separate non-blocking evidence work.
+
 **Sixth retention-safety correction complete (2026-09-24):** Fresh independent
 review of `9feafa1` passed the targeted planner/root checks and found one
 remaining writer-recovery byte-proof coherence blocker. The final manifest

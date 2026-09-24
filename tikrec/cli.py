@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 from collections.abc import Callable, Sequence
+from contextlib import nullcontext
 from pathlib import Path
 from typing import TextIO
 
@@ -17,6 +18,7 @@ from .diagnostics import add_debug_arguments, parse_arguments, print_unexpected_
 from .finalize import finalize_parts
 from .decode_diagnostics import input_decode_health
 from .live import capture_live
+from .lifecycle_lock import acquire_lifecycle, acquire_writer_roots
 from .cli_manifest import _load_manifest, _finish_recovery
 from .monitor_cli import add_monitor_command, run_monitor_command
 from .retention_cli import add_retention_command, run_retention_command
@@ -80,19 +82,25 @@ def main(
                 print(render_validation(result), file=stdout)
             return 0 if result.passed else 1
         if arguments.command == "recover":
-            return run_recovery_command(
-                arguments, stdout, discoverer=recovery_discoverer, validator=validator,
-                finalizer=finalizer,
-            )
+            scope = Path(arguments.scope)
+            lease = (acquire_lifecycle(scope.parent, "writer")
+                     if arguments.finalize and finalizer is finalize_parts else nullcontext())
+            with lease:
+                return run_recovery_command(
+                    arguments, stdout, discoverer=recovery_discoverer, validator=validator,
+                    finalizer=finalizer,
+                )
         if arguments.command == "finalize":
             output_path = Path(arguments.output)
             live_progress = LiveProgress(stdout)
-            _finalize_directory(
-                Path(arguments.parts_directory),
-                output_path,
-                finalizer,
-                live_progress.event,
-            )
+            lease = (acquire_writer_roots(Path(arguments.parts_directory).parent,
+                                          output_path.parent)
+                     if finalizer is finalize_parts else nullcontext())
+            with lease:
+                _finalize_directory(
+                    Path(arguments.parts_directory), output_path,
+                    finalizer, live_progress.event,
+                )
             return 0
         output_path, parts_directory = local_recording_paths(
             arguments.command, arguments.url, arguments.output,
@@ -101,29 +109,32 @@ def main(
         raw_copy_dir = Path(arguments.raw_copy) if arguments.raw_copy is not None else None
         warning = lambda message: print(f"tikrec: warning: {message}", file=stderr)
         capture_function = live_capture if arguments.command == "live" else capture
-        if arguments.command == "live":
-            live_progress = LiveProgress(stdout)
-            retry_policy = effective_retry_policy(
-                arguments.recovery_window_seconds, arguments.config_path
-            )
-            result = capture_function(
-                arguments.url,
-                parts_directory=parts_directory,
-                output_path=output_path,
-                progress=live_progress.event,
-                heartbeat=live_progress.heartbeat,
-                raw_copy_dir=raw_copy_dir,
-                warning=warning,
-                retry_policy=retry_policy,
-            )
-        else:
-            result = capture_function(
-                arguments.url,
-                parts_directory=parts_directory,
-                output_path=output_path,
-                raw_copy_dir=raw_copy_dir,
-                warning=warning,
-            )
+        lease = (acquire_lifecycle(output_path.parent, "writer")
+                 if capture_function in {capture_live, capture_url} else nullcontext())
+        with lease:
+            if arguments.command == "live":
+                live_progress = LiveProgress(stdout)
+                retry_policy = effective_retry_policy(
+                    arguments.recovery_window_seconds, arguments.config_path
+                )
+                result = capture_function(
+                    arguments.url,
+                    parts_directory=parts_directory,
+                    output_path=output_path,
+                    progress=live_progress.event,
+                    heartbeat=live_progress.heartbeat,
+                    raw_copy_dir=raw_copy_dir,
+                    warning=warning,
+                    retry_policy=retry_policy,
+                )
+            else:
+                result = capture_function(
+                    arguments.url,
+                    parts_directory=parts_directory,
+                    output_path=output_path,
+                    raw_copy_dir=raw_copy_dir,
+                    warning=warning,
+                )
         if result.interrupted:
             if result.output_path is not None:
                 message = (

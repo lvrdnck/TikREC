@@ -7,6 +7,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **First internal bounded retention executor complete (2026-09-24):** The
+  independent foundation review concluded READY TO DESIGN BOUNDED RETENTION
+  EXECUTION. An internal one-session executor now takes an exclusive root lease,
+  reloads current configuration, replans the whole root, checks both durable
+  service slots, binds an exact local artifact allowlist, and revalidates before
+  each deletion. A synced schema-1 JSONL intent and per-artifact results live
+  outside the recording root. Current completed service-job references block
+  deletion. Service and local CLI mutators take compatible writer leases; two
+  service slots may share a root. The executor has no CLI/API/automatic cleanup
+  caller, does not resume partial operations, and has been exercised only on
+  synthetic fixtures. v0.10.0 remains released/package version, v0.11.0 is
+  unreleased, and #8/#13/#28 are separate non-blocking evidence work. Next gate:
+  fresh independent review of the executor, lifecycle lock, and audit protocol
+  before any owner-facing deletion surface. Windows cross-process lease, crash,
+  two-slot, audit, and exact-deletion tests passed; the isolated full suite
+  passed 1,414 plus 19 subtests (three platform skips). Native POSIX locking
+  and real-recording validation were not run on this Windows development pass.
 - **Sixth v0.11.0 retention-safety correction complete (2026-09-24):** Fresh
   independent review of `9feafa1` passed the targeted planner/root checks but
   remained NOT READY on one writer-recovery byte-proof coherence blocker.

@@ -512,13 +512,14 @@ the configurable per-start reserve (10 GiB by default), room binding, collision-
 same-room suppression. It does not authenticate to TikTok, notify the owner,
 automatically delete media, or provide a library/Web UI/playback. Unreleased
 v0.11 development adds a read-only age-retention plan and explicit creator
-protection; it does not delete, move, or rename any artifact.
+protection. The public CLI and service do not offer deletion; a private bounded
+executor is pending independent review and has no owner-facing caller.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,
 offline verification, and package build/install checks.
-Library/history/playback, a web interface, notifications, and retention execution remain
-future work.
+Library/history/playback, a web interface, notifications, and owner-facing
+retention execution remain future work.
 
 `tikrec retention protect CREATOR` keeps a canonical creator on an independent
 protected list; removing monitoring does not remove this protection. Optional
@@ -534,7 +535,8 @@ exact inspected control evidence, whole-root stability, terminal chronology,
 output aliases, and per-artifact proven local/no-follow storage. Each root scan
 checks its own membership and identity across claim reads; observed evidence
 changes prevent eligibility for that entire planning call. A saved plan is never permission
-to delete; future cleanup would require fresh validation and separate approval.
+to delete; the private executor always performs fresh validation under an
+exclusive recording-root lease before any deletion.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

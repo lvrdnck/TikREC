@@ -10,8 +10,16 @@ This document describes the released v0.10.0 service plus unreleased v0.11.0 sto
 Per-user recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can own and automatically fill a fixed capacity of two independent recordings.
-Library, download, retention, notification, and browser-control capabilities
+Library, download, public retention execution, notification, and browser-control capabilities
 remain outside this slice. v0.10.0 is the current published release.
+
+In unreleased v0.11 development, each service capture/finalization worker and
+startup reconciliation/resume holds a root-scoped writer lease while it may
+mutate session or output artifacts. Two service slots can hold compatible writer
+leases in one output root. The private, currently unexposed retention executor
+requires the exclusive lease; it fails closed while either worker owns one.
+The persistent root lock file is never a retention target. Durable completed
+job references still block that executor even after their writer lease ends.
 
 ## Bind and secret
 
