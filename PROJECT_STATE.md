@@ -1,25 +1,33 @@
 # TikREC current state
 
-Last reviewed: 2026-09-24. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-25. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Monitoring change authorized for activation (2026-09-25):** The Scheduled
-  Task's task-visible configuration at the documented UNC path lists exactly
-  `eliss4r.n` and `gracie.kf`, replacing `phoebelightt`; the output directory
-  is unchanged. The running service still has its startup snapshot of
-  Phoebe/Eliss and is recording Eliss in slot 1. The owner now explicitly
-  authorizes one restart of the unchanged `TikREC Service` task even while that
-  recording is active, accepting the bounded restart/recovery interruption, so
-  Gracie monitoring no longer needs to wait for both slots to become idle.
-  After restart, verify authenticated `remote recordings` recovers/settles any
-  interrupted job safely and `remote monitor-status` lists exactly Eliss/Gracie
-  with `running=true`. Issue #30 now tracks the follow-up design improvement:
-  hot-reload monitored creators without restarting active recording workers.
-  The queued implementation task remains the v0.11 retention executor review.
+- **Gracie monitoring activated; Eliss recovery failed closed (2026-09-25):**
+  The owner authorized one restart of the unchanged `TikREC Service` task while
+  Eliss was recording. Before restart, slot 1 held session
+  `f5a33415-d19e-4fbd-91dd-d71724b61cb2` in room `7689313707369335565`
+  with 49 completed parts and 2,687,344,663 reported bytes; slot 2 held an
+  older completed Eliss job. The task definition SHA-256 stayed
+  `CF57505AA9BB57CFEB089D476098F8ECB31C5950EBCC2F4069A92B49F3E8A40C`.
+  The restarted v0.10.0 service reports monitoring `running=true` for exactly
+  `eliss4r.n` (live) and `gracie.kf` (offline), with its coordinator operational.
+  Startup recovery preserved a 462,154,077-byte part-50 crash evidence file
+  and published `part-0050.flv` of identical length and SHA-256. It then failed
+  closed: slot 1 reports `recovering/failed/ambiguous_state`, error "invalid or
+  conflicting session storage; preserve artifacts", and is unavailable. The
+  session manifest still records 49 parts; no resume or final MP4 occurred.
+  Slot 2 remains independently completed and available; health reports capacity
+  2, available slots 1, active recordings 0, and storage `ok`. No manual media
+  repair or second restart was attempted. The earlier idle-only heartbeat is
+  paused. Pending action: review the preserved recovery evidence in a separate
+  scoped task before any repair; do not describe the Eliss capture as
+  uninterrupted. Issue #30 remains the queued hot-reload design, and the v0.11
+  retention review must wait for this operational incident to be triaged.
 - **First internal bounded retention executor complete (2026-09-24):** The
   independent foundation review concluded READY TO DESIGN BOUNDED RETENTION
   EXECUTION. An internal one-session executor now takes an exclusive root lease,
