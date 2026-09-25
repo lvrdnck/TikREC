@@ -24,10 +24,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   Slot 2 remains independently completed and available; health reports capacity
   2, available slots 1, active recordings 0, and storage `ok`. No manual media
   repair or second restart was attempted. The earlier idle-only heartbeat is
-  paused. Pending action: review the preserved recovery evidence in a separate
-  scoped task before any repair; do not describe the Eliss capture as
-  uninterrupted. Issue #30 remains the queued hot-reload design, and the v0.11
-  retention review must wait for this operational incident to be triaged.
+  paused. **Issue #31 is now the active task:** perform a read-only investigation
+  of the preserved startup-recovery evidence, identify the exact ambiguity and
+  whether recovery created it, and reproduce any suspected defect offline before
+  any repair. Do not describe the Eliss capture as uninterrupted. Issue #30
+  remains the queued hot-reload design, and the v0.11 retention review remains
+  paused until #31 is triaged.
 - **First internal bounded retention executor complete (2026-09-24):** The
   independent foundation review concluded READY TO DESIGN BOUNDED RETENTION
   EXECUTION. An internal one-session executor now takes an exclusive root lease,
