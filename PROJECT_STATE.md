@@ -7,15 +7,19 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Monitoring change pending activation (2026-09-25):** The Scheduled Task's
-  task-visible configuration at the documented UNC path now lists exactly
+- **Monitoring change authorized for activation (2026-09-25):** The Scheduled
+  Task's task-visible configuration at the documented UNC path lists exactly
   `eliss4r.n` and `gracie.kf`, replacing `phoebelightt`; the output directory
-  was not changed. The running service still has its startup snapshot of
-  Phoebe/Eliss and is recording Eliss in slot 1, so it was not restarted.
-  Pending owner action: none. Once `remote recordings` reports no active slots,
-  restart the unchanged `TikREC Service` task and verify authenticated
-  `remote monitor-status` lists exactly Eliss/Gracie with `running=true`.
-  The queued roadmap work remains the v0.11 retention executor review.
+  is unchanged. The running service still has its startup snapshot of
+  Phoebe/Eliss and is recording Eliss in slot 1. The owner now explicitly
+  authorizes one restart of the unchanged `TikREC Service` task even while that
+  recording is active, accepting the bounded restart/recovery interruption, so
+  Gracie monitoring no longer needs to wait for both slots to become idle.
+  After restart, verify authenticated `remote recordings` recovers/settles any
+  interrupted job safely and `remote monitor-status` lists exactly Eliss/Gracie
+  with `running=true`. Issue #30 now tracks the follow-up design improvement:
+  hot-reload monitored creators without restarting active recording workers.
+  The queued implementation task remains the v0.11 retention executor review.
 - **First internal bounded retention executor complete (2026-09-24):** The
   independent foundation review concluded READY TO DESIGN BOUNDED RETENTION
   EXECUTION. An internal one-session executor now takes an exclusive root lease,
