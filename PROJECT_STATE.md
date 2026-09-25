@@ -7,6 +7,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #31 diagnosis complete; fix pending (2026-09-25):** Read-only Eliss
+  inspection and an offline full-startup reproduction isolated a Windows false
+  negative in the post-publication writer byte proof. Path `lstat()` and opened
+  handle `fstat()` disagree only on `st_ctime_ns` after an aged writer partial is
+  preserved; `verify_writer_commit()` then rejects identical evidence/part
+  bytes before the manifest can advance from 49 to 50 parts. The real slot 1
+  remains failed closed and unavailable; no real evidence was changed. Issue #31
+  has the chronology, exact check, v0.10 comparison, and narrow fix/test scope.
+  Pending owner action: authorize a separate recovery-code fix and later real
+  session procedure. Issue #30 and the v0.11 retention review remain queued.
 - **Gracie monitoring activated; Eliss recovery failed closed (2026-09-25):**
   The owner authorized one restart of the unchanged `TikREC Service` task while
   Eliss was recording. Before restart, slot 1 held session
