@@ -1410,6 +1410,21 @@ be configured as **never automatically delete** even when general recordings use
 age/space-based cleanup. Destructive cleanup must remain auditable and must never
 silently remove protected recordings or retained evidence needed for recovery.
 
+**Queued operational follow-up — runtime monitoring reconfiguration (issue #30):**
+The released service intentionally owns both recording slots inside one process,
+so a process restart affects both workers even though their recording/session
+state is otherwise independent. Normal use has now exposed an avoidable coupling:
+`monitored_creators` is a startup snapshot, so changing the creator list requires
+a whole-service restart and therefore an unnecessary capture interruption/recovery
+boundary for active recordings. Preserve the single-process two-slot manager for
+now; do not split slots into separately launched services merely to solve this.
+After the current retention-executor safety gate, implement a bounded atomic
+live reload of the monitored-creator list so monitoring/coordinator state can
+adopt additions/removals without stopping active recordings. A bad replacement
+configuration must keep the last known-good runtime snapshot. Other startup
+settings remain restart-only unless separately reviewed. Issue #30 carries the
+detailed acceptance criteria and deployed validation requirement.
+
 ### v0.12.0 — Notifications and integrations
 
 **Goal:** Tell the owner when unattended behavior matters: creator LIVE detected,
