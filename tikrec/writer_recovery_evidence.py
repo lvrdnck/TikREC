@@ -136,7 +136,9 @@ def prove_recovery_bytes(source: Path, recovered: Path, source_bytes: int,
         return False
     with source.open("rb") as left, recovered.open("rb") as right:
         handles = (_artifact_identity(left), _artifact_identity(right))
-        if handles != opening or handles[0][1] != source_bytes or handles[1][1] != recovered_bytes:
+        if (not all(_same_opened_artifact(path, handle)
+                    for path, handle in zip(opening, handles))
+                or handles[0][1] != source_bytes or handles[1][1] != recovered_bytes):
             return False
         digest = hashlib.sha256()
         prefix_remaining = recovered_bytes
@@ -157,7 +159,7 @@ def prove_recovery_bytes(source: Path, recovered: Path, source_bytes: int,
             digest.update(chunk)
             source_remaining -= size
         if (left.read(1) or right.read(1)
-                or (_artifact_identity(left), _artifact_identity(right)) != opening
+                or (_artifact_identity(left), _artifact_identity(right)) != handles
                 or (_artifact_identity(source), _artifact_identity(recovered)) != opening):
             return False
         return digest.hexdigest() == source_sha256
@@ -174,6 +176,17 @@ def _artifact_identity(artifact) -> tuple | None:
     return (details.st_mode, details.st_size, details.st_dev, details.st_ino,
             details.st_mtime_ns, details.st_ctime_ns, details.st_nlink,
             getattr(details, "st_file_attributes", 0))
+
+
+def _same_opened_artifact(path_identity: tuple, handle_identity: tuple | None) -> bool:
+    if handle_identity is None:
+        return False
+    if os.name == "nt":
+        # Windows lstat/fstat can disagree on ctime after preserving an aged partial.
+        # Keep ctime in each API's pre/post stamp, but omit it across the two APIs.
+        return (path_identity[:5] + path_identity[6:]
+                == handle_identity[:5] + handle_identity[6:])
+    return path_identity == handle_identity
 
 
 def file_sha256(path: Path) -> str:

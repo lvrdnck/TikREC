@@ -1410,6 +1410,17 @@ be configured as **never automatically delete** even when general recordings use
 age/space-based cleanup. Destructive cleanup must remain auditable and must never
 silently remove protected recordings or retained evidence needed for recovery.
 
+**Issue #31 production recovery fix complete (2026-09-27):** An aged writer
+partial exposed a Windows false negative after preservation/publication: path
+`lstat()` and handle `fstat()` can disagree only on ctime before manifest
+promotion. Cross-API identity now compares only fields with consistent Windows
+semantics, while retaining complete per-path/per-handle stability, byte proof,
+and ownership guards. Native fresh/retry regressions reproduced the failure
+before the fix; 192 focused and 1,436 full offline tests plus 19 subtests pass.
+Real Eliss evidence and service state were untouched. The separately authorized
+real procedure is pending in #32; #30 and the retention-executor review remain
+queued/paused. v0.10.0 remains released and v0.11.0 unreleased.
+
 **Queued operational follow-up — runtime monitoring reconfiguration (issue #30):**
 The released service intentionally owns both recording slots inside one process,
 so a process restart affects both workers even though their recording/session

@@ -1,22 +1,30 @@
 # TikREC current state
 
-Last reviewed: 2026-09-25. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-27. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Issue #31 diagnosis complete; fix pending (2026-09-25):** Read-only Eliss
-  inspection and an offline full-startup reproduction isolated a Windows false
-  negative in the post-publication writer byte proof. Path `lstat()` and opened
-  handle `fstat()` disagree only on `st_ctime_ns` after an aged writer partial is
-  preserved; `verify_writer_commit()` then rejects identical evidence/part
-  bytes before the manifest can advance from 49 to 50 parts. The real slot 1
-  remains failed closed and unavailable; no real evidence was changed. Issue #31
-  has the chronology, exact check, v0.10 comparison, and narrow fix/test scope.
-  Pending owner action: authorize a separate recovery-code fix and later real
-  session procedure. Issue #30 and the v0.11 retention review remain queued.
+- **Issue #31 production fix complete (2026-09-27):** Windows path/open-handle
+  identity comparison now excludes only the incomparable `st_ctime_ns` field.
+  Each path and handle still retains its complete pre/post metadata stamp,
+  including ctime; regular/reparse protection, other identity fields, exact
+  reads, coherent source SHA-256/prefix proof, durable ownership, and conditional
+  manifest promotion remain enforced. Both aged native Windows regressions
+  reproduced `failed/ambiguous_state` on the previous code under project Python
+  3.12.10, then passed for fresh recovery and already-published retry, including
+  later persisted-evidence validation. Focused tests passed 192 (two POSIX skips);
+  the isolated full offline suite passed 1,436 plus 19 subtests (three platform
+  skips). Python 3.11 compatibility passed 38 focused tests (two skips).
+  No real Eliss artifact, durable state, or service process was changed; real
+  recovery/media validation remains unperformed. **No implementation task is
+  active. Issue #32 tracks the separate Eliss procedure, awaiting explicit owner
+  authorization:** freshly inspect current ownership/media/deployment and choose
+  the authorized recovery outcome before any real write or restart. Issue #31
+  retains the diagnosis and fix evidence. Issue #30 and the v0.11 retention review
+  remain queued/paused; v0.10.0 remains released and v0.11.0 unreleased.
 - **Gracie monitoring activated; Eliss recovery failed closed (2026-09-25):**
   The owner authorized one restart of the unchanged `TikREC Service` task while
   Eliss was recording. Before restart, slot 1 held session

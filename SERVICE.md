@@ -422,6 +422,10 @@ fixed evidence. The controller reserves recovery before HTTP accepts any start.
    unchanged ownership fingerprint and one coherent source/recovered byte proof.
    It hashes the full source while comparing its exact recovered prefix from the
    same read, and checks opened artifact identity and metadata around that proof.
+   On Windows, path/handle identity comparison excludes only ctime, whose
+   semantics can differ between `lstat()` and `fstat()` after preservation.
+   Full metadata, including ctime, must still stay stable separately for each
+   path and opened handle; regular/reparse and other identity checks remain.
    The job and manifest are rechecked after the slow byte proof. Manifest
    promotion itself conditionally checks its original bytes and current
    job/media ownership.
