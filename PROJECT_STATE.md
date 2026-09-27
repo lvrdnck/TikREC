@@ -7,6 +7,33 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #32 recovery and readiness complete (2026-09-27):** The owner approved
+  guarded real recovery/finalization to make both watched accounts ready. The
+  service loads fixed code `0d44c5f`; monitoring exactly `eliss4r.n` and `gracie.kf`
+  is running with an operational coordinator, both accounts offline, empty
+  durable consumed-room/pending-start state, two available slots, no active
+  recordings, and storage OK (about 65 GiB free versus the 10 GiB reserve).
+  Offline creators report `armed=false/not_applicable` by design; they become
+  eligible when a fresh LIVE is observed. The unchanged task-definition SHA-256
+  is `CF57505AA9BB57CFEB089D476098F8ECB31C5950EBCC2F4069A92B49F3E8A40C`;
+  unauthenticated health remains 401. Two idle/offline restarts and the normal
+  targeted stop settled Eliss `f5a33415-d19e-4fbd-91dd-d71724b61cb2`: the first
+  restart committed part 50 and its exact writer record; bound lookup could not
+  establish the old room, so explicit `user_stop` finalization followed the
+  second restart. The job completed at 20:25:18 UTC with resume count zero and
+  original room `7689313707369335565`; the manifest truthfully says interrupted,
+  50 parts, one writer recovery, and zero discarded source bytes. All 57 immutable
+  baseline files, including every Eliss part/crash artifact and Gracie's latest
+  completed job/session/output, retained their hashes. The MP4 is 3,290,677,180
+  bytes, 720x1280, and 22,018.720 seconds; inspection and full output decode pass.
+  **Historical media limitation:** full 50-part `validate --deep` exits 1 for
+  unchanged input decode errors in parts 7, 12, 14, 25, 26, 29, and 44; it also
+  reports 26 backward-DTS warnings. Input decode health is truthfully degraded
+  (103 finalizer H.264 diagnostics); a clean output decode does not prove visual
+  repair or identify the original error source. #32 journals the full result.
+  **No implementation task or owner action is pending.** Next queued gate is
+  fresh independent review of the v0.11 retention executor; #30 remains queued
+  after that gate. v0.10.0 remains released and v0.11.0 unreleased.
 - **Issue #31 production fix complete (2026-09-27):** Windows path/open-handle
   identity comparison now excludes only the incomparable `st_ctime_ns` field.
   Each path and handle still retains its complete pre/post metadata stamp,
@@ -18,13 +45,11 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   later persisted-evidence validation. Focused tests passed 192 (two POSIX skips);
   the isolated full offline suite passed 1,436 plus 19 subtests (three platform
   skips). Python 3.11 compatibility passed 38 focused tests (two skips).
-  No real Eliss artifact, durable state, or service process was changed; real
-  recovery/media validation remains unperformed. **No implementation task is
-  active. Issue #32 tracks the separate Eliss procedure, awaiting explicit owner
-  authorization:** freshly inspect current ownership/media/deployment and choose
-  the authorized recovery outcome before any real write or restart. Issue #31
-  retains the diagnosis and fix evidence. Issue #30 and the v0.11 retention review
-  remain queued/paused; v0.10.0 remains released and v0.11.0 unreleased.
+  At the production-fix handoff, no real Eliss artifact, durable state, or service
+  process had changed. The separately authorized real procedure is tracked above
+  and in issue #32. Issue #31 retains the diagnosis and fix evidence. At that
+  checkpoint, issue #30 and the v0.11 retention review remained queued/paused;
+  v0.10.0 remains released and v0.11.0 unreleased.
 - **Gracie monitoring activated; Eliss recovery failed closed (2026-09-25):**
   The owner authorized one restart of the unchanged `TikREC Service` task while
   Eliss was recording. Before restart, slot 1 held session

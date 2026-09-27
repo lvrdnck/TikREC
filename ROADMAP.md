@@ -1417,9 +1417,14 @@ promotion. Cross-API identity now compares only fields with consistent Windows
 semantics, while retaining complete per-path/per-handle stability, byte proof,
 and ownership guards. Native fresh/retry regressions reproduced the failure
 before the fix; 192 focused and 1,436 full offline tests plus 19 subtests pass.
-Real Eliss evidence and service state were untouched. The separately authorized
-real procedure is pending in #32; #30 and the retention-executor review remain
-queued/paused. v0.10.0 remains released and v0.11.0 unreleased.
+Real Eliss evidence and service state were untouched by the production-fix task.
+The separately authorized real procedure is complete in #32: guarded writer
+recovery and explicit `user_stop` finalization restored two available slots, with
+Eliss/Gracie monitoring operational and original media/evidence hashes preserved.
+The final MP4 passes deep decoding; full session validation truthfully fails for
+historical decode errors in seven unchanged FLV parts, as documented in #32 and
+PROJECT_STATE.md. Fresh independent retention-executor review is the next queued
+gate, with #30 queued after it. v0.10.0 remains released and v0.11.0 unreleased.
 
 **Queued operational follow-up — runtime monitoring reconfiguration (issue #30):**
 The released service intentionally owns both recording slots inside one process,
