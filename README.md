@@ -518,8 +518,9 @@ Windows handles for removal and serializes policy updates with each destructive
 step. POSIX destructive execution refuses before changing the recording root;
 read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
-cooperative-filesystem scope. Owner-facing execution design is the next v0.11
-slice; public deletion and automatic cleanup remain unavailable.
+cooperative-filesystem scope. The proposed owner-facing CLI contract is in
+[RETENTION_CLI.md](RETENTION_CLI.md); it is **planned and unimplemented**.
+Public deletion and automatic cleanup remain unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,
@@ -555,6 +556,8 @@ ROADMAP.md.
 
 [SPEC.md](SPEC.md) — architecture, module responsibilities, validation
 notes and the reasoning behind past fixes.
+[RETENTION_CLI.md](RETENTION_CLI.md) — planned, unimplemented local retention
+deletion interface and safety contract.
 [ROADMAP.md](ROADMAP.md) — workflow-driven direction for future releases.
 [SERVICE.md](SERVICE.md) — remote API and Windows Task Scheduler deployment.
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md) — `session.json` schema and lifecycle.

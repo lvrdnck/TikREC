@@ -962,7 +962,10 @@ TikTok session with canonical creator, completed finalization, proven regular
 output directly beside its `.parts` directory, stable known evidence, and an
 unprotected creator can be `eligible`. Unknown, changing, extra, symlinked,
 recoverable, and conflicting evidence is not eligible. No owner-facing deletion
-command or automatic cleanup exists.
+command or automatic cleanup exists. The proposed local Windows-only
+`retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]` workflow and
+expanded advisory plan are specified in [RETENTION_CLI.md](RETENTION_CLI.md).
+They are **planned and unimplemented**; viewing a plan cannot authorize deletion.
 
 The unreleased internal executor accepts one explicit root and canonical session
 UUID, never a saved planner result. Under the owner-approved issue #37 platform
@@ -1037,8 +1040,9 @@ without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #35
 corrected the plan-to-authorization and audit-history gaps found at `3ff83bc`.
 A fresh independent review of `ef8d01b` passed the Windows-only private
-executor gate under this cooperative-filesystem boundary; owner-facing
-execution still requires a separate design slice.
+executor gate under this cooperative-filesystem boundary. The owner-facing
+design is recorded separately in [RETENTION_CLI.md](RETENTION_CLI.md); it does
+not expose the private executor yet.
 Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
@@ -1066,7 +1070,8 @@ gaps; its later review at `5d27dc8` found private-name and policy-revocation
 races. Issue #37 supplies the Windows handle protocol and policy synchronization,
 with owner-approved POSIX refusal. The fresh independent `ef8d01b` review
 passed the private executor gate on native NTFS and WSL POSIX refusal/history;
-owner-facing retention execution remains undesigned and unavailable.
+owner-facing retention execution remains unavailable; its planned design is in
+[RETENTION_CLI.md](RETENTION_CLI.md).
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

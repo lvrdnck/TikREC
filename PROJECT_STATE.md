@@ -7,6 +7,17 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Owner-facing retention CLI design complete (2026-09-28):**
+  [RETENTION_CLI.md](RETENTION_CLI.md) is the approved design-only contract for
+  an expanded read-only plan and explicit, one-UUID local Windows deletion
+  command. It specifies exact-UUID confirmation, a preview-evidence veto plus
+  fresh executor authorization, truthful refusal/partial reporting, audit
+  visibility, and exit codes. **No public deletion command was implemented.**
+  **State:** design complete; the single next active implementation slice is
+  issue #38, implementing only this local CLI workflow and offline tests. No
+  owner action is pending. #30 remains queued; #8/#13/#28 remain non-blocking
+  evidence work. v0.10.0 remains released and v0.11.0 unreleased.
+
 - **Fresh independent retention gate passed (2026-09-28; HEAD `ef8d01b`):**
   Windows-only private deletion is READY FOR OWNER-FACING RETENTION DESIGN under
   the documented cooperative-filesystem boundary. Native NTFS handle,

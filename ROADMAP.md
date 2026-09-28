@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Owner-facing retention CLI design complete (2026-09-28):**
+[RETENTION_CLI.md](RETENTION_CLI.md) specifies the local Windows-only,
+single-session `retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]`
+workflow, expanded read-only plan display, exact-UUID confirmation, fresh
+authorization with a display-evidence veto, refusal/partial-result reporting,
+audit visibility, and exit codes. This is **planned and unimplemented**; no
+public deletion command exists. The single next implementation slice is issue
+#38, limited to that local CLI contract and its offline tests. Automatic,
+scheduled, disk-pressure, bulk, remote/API, Web UI, and POSIX destructive
+deletion remain outside this slice. #30 stays queued. v0.10.0 remains released;
+v0.11.0 remains unreleased.
+
 **Fresh independent retention gate passed (2026-09-28; `ef8d01b`):** The
 Windows-only private executor is READY FOR OWNER-FACING RETENTION DESIGN under
 SPEC.md's cooperative-filesystem boundary. Native NTFS handle and policy-race
