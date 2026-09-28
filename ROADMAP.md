@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate NOT READY (2026-09-28;
+reviewed `1b38b65`; issue #45):** A native Windows disposable probe found
+that held-artifact cleanup can replace the first post-intent proof fault
+before caller-owned progress or the `failed` audit event captures it. The
+public result retains `PARTIAL`/3 and operation/audit context but reports
+the later cause; a primary `SystemExit` can appear as `OSError` in the
+journal. Focused tests passed 424 (five skipped), the isolated full suite
+passed 1,679 (seven skipped, 19 subtests), and applicable WSL checks passed
+143 (five skipped). No production code or real media changed. #45 is the
+single next bounded correction, followed by a NEW fresh-context public CLI
+review before separately authorized real-media validation. #30 stays
+queued; v0.10.0 remains released and v0.11.0 unreleased.
+
 **Issue #44 correction complete (2026-09-28):** The first fault after proven
 `completed` sync remains the primary diagnostic even if later audit/lifecycle
 cleanup fails. `COMPLETE`/0, operation UUID, and audit path remain authoritative;

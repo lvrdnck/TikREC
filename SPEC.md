@@ -1126,6 +1126,13 @@ now captures that first fault before later cleanup and reports secondary cleanup
 faults separately when diagnostics work. Broken diagnostics cannot change
 `COMPLETE`/0. The public CLI gate remains NOT READY pending a NEW independent
 review; only disposable synthetic media was used.
+The NEW independent public CLI review at `1b38b65` found that a held-artifact
+cleanup fault can mask the first post-intent proof/removal failure before
+executor progress or the `failed` audit event captures it (#45). The exit
+stays incomplete/3 with operation context, but the cause is wrong. The
+public CLI gate remains NOT READY pending the bounded #45 correction and
+another NEW review before separately authorized real-media validation.
+No production code or real media was changed in this review.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

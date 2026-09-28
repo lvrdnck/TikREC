@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-28;
+  reviewed `1b38b65`; issue #45):** Disposable native Windows proof and
+  held-handle cleanup faults showed that inner mutation cleanup can replace
+  the first post-intent operation cause before executor progress captures it.
+  The CLI keeps `PARTIAL`/3 and operation/audit context but reports only the
+  later close fault; a primary `SystemExit` can be misrecorded as `OSError`
+  in the `failed` event. Focused retention/lifecycle: 424 passed, five
+  skipped; isolated full offline suite: 1,679 passed, seven skipped, 19
+  subtests; applicable WSL planning/refusal/read-only audit: 143 passed, five
+  skipped. **State:** #45 is the single next bounded v0.11 correction; repeat
+  a NEW fresh-context public CLI review afterward. No owner decision is
+  pending. Separately authorized real-media validation remains later; #30
+  stays queued and #8/#13/#28 remain non-blocking evidence work. v0.10.0
+  remains released and v0.11.0 unreleased. No production code or real media
+  was changed in this review.
+
 - **Issue #44 post-completion fault correction complete (2026-09-28):** After
   proven `completed` sync, caller-owned progress now retains the first operation
   or audit cleanup fault before lifecycle cleanup can mask it. The public CLI

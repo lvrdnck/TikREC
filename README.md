@@ -540,8 +540,11 @@ post-intent `SystemExit` as incomplete exit 3 with operation context. The public
 review at `3850d8c` found that later cleanup could mask the first fault after
 proven completion (#44). The correction retains that first diagnostic cause,
 reports later cleanup faults separately when possible, and keeps `COMPLETE`/0.
-The public CLI gate remains NOT READY pending a NEW fresh review before separately
-authorized real-media validation.
+A NEW public review at `1b38b65` found that cleanup inside held-artifact
+mutation can replace the first post-intent proof/removal fault before it is
+recorded (#45). The public CLI gate remains NOT READY pending that bounded
+correction and another NEW fresh review before separately authorized
+real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.

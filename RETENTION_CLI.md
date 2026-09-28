@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; ISSUE #45 NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -30,8 +30,12 @@ that after synced `completed`, a later cleanup fault can hide the first
 post-completion interruption or cleanup error from `COMPLETE`/0 diagnostics.
 Issue #44 now preserves the first post-completion operation or audit cleanup
 fault before later cleanup can replace it, and reports later faults separately
-when stderr works. The public CLI gate remains NOT READY until a NEW fresh
-independent review passes. Separately authorized real-media
+when stderr works. The NEW independent review at `1b38b65` found that an
+inner held-artifact cleanup fault can still replace the first post-intent
+proof/removal fault before executor progress captures it. Issue #45 is the
+single next bounded correction. The public CLI gate remains NOT READY until
+that correction receives another NEW fresh independent review. Separately
+authorized real-media
 validation follows that gate. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
