@@ -1,5 +1,6 @@
 """Offline one-session destructive retention over synthetic eligible evidence."""
 
+import hashlib
 import json
 import uuid
 from pathlib import Path
@@ -38,6 +39,7 @@ def events(path):
 
 def test_exact_one_session_order_and_external_audit(tmp_path):
     root, parts, session_id, _, _, audit, run = fixture(tmp_path)
+    manifest_hash = hashlib.sha256((parts / "session.json").read_bytes()).hexdigest()
     other = session(root, "beta", creator="beta")
     unrelated = root / "notes.txt"
     unrelated.write_text("keep")
@@ -50,6 +52,7 @@ def test_exact_one_session_order_and_external_audit(tmp_path):
     records = events(audit)
     assert records[0]["event"] == "intent" and records[-1]["event"] == "completed"
     assert records[0]["session_id"] == session_id
+    assert records[0]["target_controls"] == {"session.json": manifest_hash}
     assert [record["event"] for record in records[1:-1]] == [
         event for _ in order for event in ("attempt", "deleted")]
     assert [record["path"] for record in records if record["event"] == "deleted"] == [

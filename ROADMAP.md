@@ -1293,15 +1293,24 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #33 corrective slice complete (2026-09-28):** The private executor now
+revalidates the bound target control content through planned partial removals,
+rejects damaged existing audit JSONL before another intent, and durably links
+new POSIX audit directories before deletion. Native Windows, Python 3.11,
+isolated full-suite, and WSL POSIX sync-order checks passed; no real media was
+deleted. A separate fresh independent review of executor, lifecycle locking,
+and audit remains the next gate before owner-facing retention design. Issue #30
+stays queued after that gate; v0.10.0 is released and v0.11.0 unreleased.
+
 **Independent executor gate NOT READY (2026-09-28):** Review of current HEAD
 `ef4ef30` found three blockers in the private retention executor: a Windows
 same-metadata target-control change can bypass post-authorization eligibility,
 a torn existing JSONL audit tail does not prevent another deletion, and a newly
 created POSIX audit directory lacks a synced parent entry. Issue #33 records
 reproductions, source evidence, and narrow fix scope. No real deletion or
-production change was made. Fix #33 and repeat the fresh independent safety
-review before designing an owner-facing deletion surface. Issue #30 remains
-queued after the retention gate; v0.10.0 is released and v0.11.0 unreleased.
+production change was made. At that checkpoint, fixing #33 and repeating the
+independent review were required before owner-facing design. Issue #30 remained
+queued after the retention gate; v0.10.0 was released and v0.11.0 unreleased.
 
 **First internal executor slice complete (2026-09-24):** The fresh independent
 review of the corrected foundation concluded READY TO DESIGN BOUNDED RETENTION
@@ -1433,9 +1442,9 @@ recovery and explicit `user_stop` finalization restored two available slots, wit
 Eliss/Gracie monitoring operational and original media/evidence hashes preserved.
 The final MP4 passes deep decoding; full session validation truthfully fails for
 historical decode errors in seven unchanged FLV parts, as documented in #32 and
-PROJECT_STATE.md. The retention-executor review found blockers tracked in #33;
-fix and repeat that gate before #30. v0.10.0 remains released and v0.11.0
-unreleased.
+PROJECT_STATE.md. Issue #33's corrective work is complete; fresh independent
+retention-executor review remains required before #30. v0.10.0 remains released
+and v0.11.0 unreleased.
 
 **Queued operational follow-up — runtime monitoring reconfiguration (issue #30):**
 The released service intentionally owns both recording slots inside one process,

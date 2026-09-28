@@ -12,6 +12,9 @@ from .service_job import default_job_state_path
 
 
 AUDIT_SCHEMA = 1
+_MAX_RECORD_BYTES = 64 * 1024 * 1024
+_EVENTS = {"intent", "attempt", "deleted", "failed", "completed"}
+_POSIX_SYNC = os.name != "nt"
 
 
 def default_audit_path(root: Path) -> Path:
@@ -36,18 +39,16 @@ class RetentionAudit:
         self.identity = None
 
     def __enter__(self) -> RetentionAudit:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        _prepare_parent(self.path.parent)
         # A parent redirect inserted after construction must not place the journal
         # among the artifacts being deleted.
         if (self.root.resolve() == self.path.resolve()
                 or self.root.resolve() in self.path.resolve().parents):
             raise ValueError("retention audit must be outside recording root")
-        flags = os.O_WRONLY | os.O_APPEND | getattr(os, "O_BINARY", 0)
+        flags = os.O_RDWR | os.O_APPEND | getattr(os, "O_BINARY", 0)
         flags |= getattr(os, "O_NOFOLLOW", 0)
-        created = False
         try:
             descriptor = os.open(self.path, flags | os.O_CREAT | os.O_EXCL, 0o600)
-            created = True
         except FileExistsError:
             descriptor = os.open(self.path, flags)
         try:
@@ -58,13 +59,12 @@ class RetentionAudit:
                     or getattr(named, "st_file_attributes", 0) & 0x400):
                 raise ValueError("retention audit journal is redirected or multiply linked")
             self.identity = (opened.st_dev, opened.st_ino)
-            self.handle = os.fdopen(descriptor, "wb", buffering=0)
-            if created and os.name != "nt":
-                parent = os.open(self.path.parent, os.O_RDONLY)
-                try:
-                    os.fsync(parent)
-                finally:
-                    os.close(parent)
+            self.handle = os.fdopen(descriptor, "r+b", buffering=0)
+            # A prior torn write must never be joined to a new deletion intent.
+            _validate_history(self.handle)
+            if _POSIX_SYNC:
+                # Retry must also publish an entry left visible by a failed sync.
+                _sync_directory(self.path.parent)
             return self
         except BaseException:
             if self.handle is not None:
@@ -90,3 +90,65 @@ class RetentionAudit:
         if written != len(data):
             raise OSError("short retention audit write")
         os.fsync(self.handle.fileno())
+
+
+def _prepare_parent(parent: Path) -> None:
+    """Create each missing audit ancestor and durably publish its directory entry."""
+    missing = []
+    current = parent
+    while not current.exists():
+        missing.append(current)
+        if current.parent == current:
+            raise ValueError("retention audit parent is unavailable")
+        current = current.parent
+    if not current.is_dir():
+        raise ValueError("retention audit parent is not a directory")
+    missing_set = set(missing)
+    # Publish each entry before creating its child. Re-sync existing entries too:
+    # a prior failed attempt may have left one visible but not durable.
+    for directory in (*reversed(parent.parents), parent):
+        if directory.parent == directory:
+            continue
+        if directory in missing_set:
+            directory.mkdir()
+        if _POSIX_SYNC:
+            _sync_directory(directory.parent)
+
+
+def _sync_directory(directory: Path) -> None:
+    """Flush one POSIX directory entry boundary after creation."""
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(directory, flags)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _validate_history(handle) -> None:
+    """Require complete, readable schema-1 JSONL before accepting another intent."""
+    handle.seek(0)
+    try:
+        while record_bytes := handle.readline(_MAX_RECORD_BYTES + 1):
+            if len(record_bytes) > _MAX_RECORD_BYTES or not record_bytes.endswith(b"\n"):
+                raise ValueError("incomplete retention audit record")
+            record = json.loads(record_bytes.decode("utf-8"), object_pairs_hook=_unique_fields)
+            if (type(record) is not dict or type(record.get("schema_version")) is not int
+                    or record["schema_version"] != AUDIT_SCHEMA
+                    or record.get("event") not in _EVENTS
+                    or type(record.get("operation_id")) is not str
+                    or not record["operation_id"]):
+                raise ValueError("invalid retention audit record")
+    except (UnicodeError, ValueError, TypeError) as error:
+        raise ValueError("retention audit journal is incomplete or invalid") from error
+    handle.seek(0, os.SEEK_END)
+
+
+def _unique_fields(pairs: list[tuple[str, object]]) -> dict:
+    """Reject conflicting JSON fields rather than accepting the last value."""
+    values = {}
+    for name, value in pairs:
+        if name in values:
+            raise ValueError("duplicate retention audit field")
+        values[name] = value
+    return values

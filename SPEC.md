@@ -954,9 +954,11 @@ UUID, never a saved planner result. It takes an exclusive OS-backed root lease,
 reloads current configuration, replans the full root, and refuses any target
 referenced by either durable service job slot, including a completed job. The
 private authorization binds root/claim identity, creator and durable end time,
-policy, local volume, and exact singly linked artifact fingerprints. Before
-each mutation it checks the lease, current policy and job stores, non-target
-claims, remaining/removed target artifacts, and no-follow identity/locality.
+policy, local volume, target control hashes, and exact singly linked artifact
+fingerprints. Before each mutation it checks the lease, current policy and job
+stores, non-target claims, all still-present target controls against their
+original content hashes, remaining/removed artifacts, and no-follow
+identity/locality.
 It removes retained media and referenced recovery evidence first, then the
 connection log, manifest, empty `.parts` directory, and final MP4 last.
 Unexpected evidence or failure stops immediately. A later call cannot resume
@@ -965,18 +967,21 @@ an incomplete session.
 
 An append-only schema-1 JSONL journal lives beneath the per-user TikREC state
 directory's `retention-audit` folder, in a deterministic per-root file. A
-synced intent containing the exact order/fingerprints precedes all deletion;
-synced attempt, deleted, failed, and completed records follow. A new journal's
-parent directory is synced on POSIX; successful POSIX removals sync their parent
-before a deleted record. The journal excludes transport secrets and signed
-URLs. Independent review of the current private executor found that a target
-control edit preserving Windows metadata can escape post-authorization checks,
-an existing torn audit line can corrupt the next operation's JSONL, and a newly
-created POSIX audit directory is not yet durably linked through its parent.
-Issue #33 blocks any owner-facing deletion surface until these are fixed and
-reviewed again. Root-level persistent lifecycle locks use POSIX shared/exclusive
-`flock` or Windows bounded byte-range leases; process exit releases a held lock. All
-TikREC mutators of a recording root take writer leases while this private
+synced intent containing the exact order/fingerprints and target control hashes
+precedes all deletion; synced attempt, deleted, failed, and completed records
+follow. On POSIX, audit ancestors are synced root-to-leaf on every attempt;
+each new directory entry is synced before creating its child, and the journal
+entry is synced before use. This also covers a visible entry left by a failed
+prior sync.
+Successful POSIX removals sync their parent before a deleted record. Existing
+audit history is read and validated as complete schema-1 JSONL before another
+intent; damaged history is retained and blocks deletion without automatic
+repair. The journal excludes transport secrets and signed URLs. Issue #33's
+corrective implementation awaits a separate fresh independent review before
+any owner-facing deletion surface. Root-level persistent lifecycle locks use
+POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
+releases a held lock. All TikREC mutators of a recording root take writer leases
+while this private
 executor takes the exclusive lease. The protocol excludes TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata
 guarantees. Independent review remains required before exposing deletion.

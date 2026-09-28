@@ -7,7 +7,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Retention executor gate NOT READY (2026-09-28; issue #33 active):** Fresh
+- **Issue #33 corrective implementation complete (2026-09-28):** The private
+  executor now binds the target claim and control hashes, rechecks surviving
+  controls before every unlink, and records their hashes in the intent. Existing
+  audit JSONL must be complete and readable before another intent; malformed or
+  torn history fails closed without repair. POSIX audit ancestors are synced
+  root-to-leaf on every attempt, creating and syncing each new entry before its
+  child; the journal entry is synced before use.
+  Native Windows restored-metadata regressions and audit fault/retry tests pass.
+  Focused retention/planner tests passed 191 (one skip); Python 3.11 focused
+  tests passed 54; the isolated full offline suite passed 1,456 plus 19 subtests
+  (three skips). A WSL Ubuntu test exercised real POSIX directory fsync order on
+  its `/var/tmp` filesystem; power-loss crash validation was not performed. No
+  real media was deleted. v0.10.0 remains released and v0.11.0 unreleased.
+  **Next gate:** A separate fresh independent review of the corrected executor,
+  lifecycle lock, and audit protocol. #30 remains queued after that gate; no owner
+  action is pending.
+- **Retention executor gate NOT READY (2026-09-28; issue #33 opened):** Fresh
   independent review of current HEAD `ef4ef30` found three blockers before any
   owner-facing deletion design. On Windows, a same-size target manifest edit
   with restored mtime can change an eligible creator to a protected one after
@@ -20,10 +36,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   native validation. Focused executor/authorization/audit/lock tests passed 34;
   the isolated full run had 1,436 passing tests plus 19 subtests, three skips,
   and one intermittent unrelated Windows `os.replace` denial that passed on
-  targeted rerun. No real media was deleted, and production code was not changed. Fix
-  #33 narrowly, then repeat the fresh safety review. #30 remains queued after
-  this gate; no owner action is pending. v0.10.0 remains released and v0.11.0
-  unreleased.
+  targeted rerun. No real media was deleted, and production code was not changed.
+  At this checkpoint #33 was the next fix; #30 remained queued. v0.10.0 was
+  released and v0.11.0 unreleased.
 - **Issue #32 recovery and readiness complete (2026-09-27):** The owner approved
   guarded real recovery/finalization to make both watched accounts ready. The
   service loads fixed code `0d44c5f`; monitoring exactly `eliss4r.n` and `gracie.kf`

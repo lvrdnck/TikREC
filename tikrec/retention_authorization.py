@@ -14,7 +14,8 @@ from .configuration import Configuration, ConfigurationStore
 from .job_state import JobStateStore
 from .retention_locality import LocalVolume, local_volume, proven_local
 from .retention_paths import local_path
-from .retention_snapshot import ClaimSnapshot, capture_claim, capture_root
+from .retention_snapshot import (ClaimSnapshot, capture_claim, capture_root,
+                                 checked_control)
 from .service_job import default_job_state_path, second_job_state_path
 from .writer_recovery_evidence import recovery_records
 
@@ -55,6 +56,7 @@ class DeletionAuthorization:
     parts: ArtifactFingerprint
     output: ArtifactFingerprint
     order: tuple[ArtifactFingerprint, ...]
+    target_claim: ClaimSnapshot
     other_claims: tuple[ClaimSnapshot, ...]
 
 
@@ -77,7 +79,8 @@ def authorize(root: Path, session: dict, config: Configuration) -> DeletionAutho
     if (len(matches) != 1 or matches[0].directory != str(directory)
             or matches[0].output_path != str(output)):
         raise ValueError("retention claimant changed")
-    manifest = json.loads((directory / "session.json").read_text(encoding="utf-8"))
+    # Read the exact manifest captured with the root, even if its metadata is stable.
+    manifest = json.loads(checked_control(matches[0], directory / "session.json"))
     if (manifest["session_id"] != session["session_id"]
             or manifest["creator"] != session["creator"]
             or manifest["ended_at"] != session["ended_at"]):
@@ -104,7 +107,7 @@ def authorize(root: Path, session: dict, config: Configuration) -> DeletionAutho
     return DeletionAuthorization(
         root, _directory_identity(root), volume, session["session_id"], session["creator"],
         session["ended_at"], config.retention_max_age_days,
-        config.retention_protected_creators, order[-2], order[-1], order,
+        config.retention_protected_creators, order[-2], order[-1], order, matches[0],
         tuple(claim for claim in snapshot.claims if claim.directory != str(directory)))
 
 
@@ -169,7 +172,7 @@ def check_policy(auth: DeletionAuthorization, store: ConfigurationStore, now: fl
 
 
 def check_root(auth: DeletionAuthorization, deleted: frozenset[str]) -> None:
-    """Reject a changed root, new claimant, extra child, or remaining identity loss."""
+    """Reject changed claims, controls, extra children, or remaining identity loss."""
     if (_directory_identity(local_path(auth.root, directory=True)) != auth.root_identity
             or not proven_local(auth.root) or local_volume(auth.root) != auth.volume):
         raise ValueError("retention root identity or locality changed")
@@ -181,6 +184,24 @@ def check_root(auth: DeletionAuthorization, deleted: frozenset[str]) -> None:
                    if claim.directory != str(auth.root / auth.parts.relative_path))
     if others != auth.other_claims:
         raise ValueError("retention non-target claim changed")
+    parts_path = auth.root / auth.parts.relative_path
+    if auth.parts.relative_path not in deleted:
+        targets = [claim for claim in snapshot.claims if claim.directory == str(parts_path)]
+        if len(targets) != 1:
+            raise ValueError("retention target claim disappeared")
+        manifest_key = str(Path(auth.parts.relative_path) / "session.json")
+        if manifest_key not in deleted:
+            current, expected = targets[0], auth.target_claim
+            # Media removals change directory evidence, but these claim fields must not.
+            fields = ("session_id", "manifest_digest", "output_path", "source_type",
+                      "creator", "physical_output", "output_stamp")
+            if current.uncertain or any(getattr(current, name) != getattr(expected, name)
+                                        for name in fields):
+                raise ValueError("retention target claim changed")
+        for name in ("session.json", "connections.jsonl"):
+            relative = str(Path(auth.parts.relative_path) / name)
+            if relative not in deleted:
+                checked_control(auth.target_claim, parts_path / name)
     for item in auth.order:
         path = auth.root / item.relative_path
         if item.relative_path in deleted:
@@ -188,7 +209,6 @@ def check_root(auth: DeletionAuthorization, deleted: frozenset[str]) -> None:
                 raise ValueError("deleted retention artifact reappeared")
         else:
             check_fingerprint(auth.root, item, auth.volume)
-    parts_path = auth.root / auth.parts.relative_path
     if auth.parts.relative_path not in deleted:
         expected = {Path(item.relative_path).name for item in auth.order
                     if item.relative_path not in deleted and item != auth.parts
