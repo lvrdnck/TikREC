@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate NOT READY (2026-09-28;
+`f99528f`; issue #40):** Native Windows Python 3.11 synthetic faults in the
+CLI's first `COMPLETE` output write, after the executor returned, produced
+`PARTIAL`/exit 3 for both `OSError` and `KeyboardInterrupt`. The journal already
+ended in synced `completed`, and all authorized synthetic artifacts were gone.
+The #39 intent-boundary correction held; #40 is the single next bounded
+terminal-output result correction. Focused retention tests passed 355 (four
+skipped), the isolated full suite passed 1,619 (seven skipped, 19 subtests),
+and selected WSL planning/refusal tests passed 107 (35 Windows-only skipped).
+No real media was deleted. Repeat a NEW fresh-context public CLI review after
+#40 before separately authorized real-media validation. #30 stays queued;
+v0.10.0 remains released and v0.11.0 unreleased.
+
 **Issue #39 correction complete (2026-09-28):** The audit append publishes
 durable-intent progress immediately after successful `fsync`, so a subsequent
 exception or interruption is reported as `FAILED`/3 with its operation context.

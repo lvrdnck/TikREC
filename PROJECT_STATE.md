@@ -7,6 +7,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-28;
+  HEAD `f99528f`; issue #40):** A disposable native Windows Python 3.11
+  probe raised `OSError` or `KeyboardInterrupt` while the CLI printed
+  `COMPLETE`, after the executor returned. Both paths reported `PARTIAL`/exit 3,
+  although the audit ended with synced `completed` and all authorized synthetic
+  artifacts were gone. The #39 post-intent correction held; this is a distinct
+  terminal-output classification gap. Focused retention suite: 355 passed,
+  four skipped; isolated full suite: 1,619 passed, seven skipped, 19 subtests;
+  selected WSL planning/refusal: 107 passed, 35 Windows-only skipped.
+  **State:** #40 is the single active bounded correction; no owner decision is
+  pending. After it, repeat a NEW fresh-context public CLI review before
+  separately authorized real-media validation. #30 stays queued; #8/#13/#28
+  remain non-blocking evidence work. v0.10.0 remains released and v0.11.0
+  unreleased. Only disposable synthetic fixtures were deleted.
+
 - **Issue #39 post-sync intent reporting correction complete (2026-09-28):**
   Audit append now marks caller progress immediately after a successful intent
   `fsync`, before control can return to a faulting caller. A later exception or

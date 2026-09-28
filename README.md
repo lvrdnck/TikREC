@@ -522,9 +522,11 @@ read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
 cooperative-filesystem scope. The owner-facing CLI contract is in
 [RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **unreleased
-v0.11 development behavior**. Its fresh public review found a post-sync audit
-intent result-reporting defect; #39 corrected that boundary, and a separate
-fresh-context public review remains the gate before real-media validation.
+v0.11 development behavior**. Issue #39 corrected a post-sync audit intent
+result-reporting defect. The next fresh public review found that a CLI output
+failure after completed deletion can falsely report `PARTIAL`/exit 3; #40 is
+the active correction. Another fresh-context public review is required before
+real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
