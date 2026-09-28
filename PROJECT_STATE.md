@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent retention gate passed (2026-09-28; HEAD `ef8d01b`):**
+  Windows-only private deletion is READY FOR OWNER-FACING RETENTION DESIGN under
+  the documented cooperative-filesystem boundary. Native NTFS handle,
+  collision, byte-proof, final-MP4 order, policy-race, two-slot, and audit/crash
+  checks found no in-scope blocker. Focused Windows suite: 403 passed, one
+  skipped; isolated full suite: 1,581 passed, five skipped, 19 subtests. WSL
+  POSIX refusal and historical journal reopening passed. A cross-process
+  protection change before disposition refused removal and recorded `failed`;
+  preexisting hard links refused before audit intent. A deliberately added
+  hard link after final identity proof is outside the cooperative boundary.
+  No real recording was deleted or power-loss validation performed.
+  **State:** gate complete; the single next v0.11 slice is owner-facing explicit
+  retention execution design, not yet implementation. #30 stays queued;
+  #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains released and
+  v0.11.0 unreleased. No owner action is pending for this review.
+
 - **Issue #37 corrective implementation complete (2026-09-28):** Windows
   retention holds one exclusive object handle through non-overwriting quarantine,
   byte proof, and handle-based file/directory deletion. Configuration promotion

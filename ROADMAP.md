@@ -1293,6 +1293,16 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent retention gate passed (2026-09-28; `ef8d01b`):** The
+Windows-only private executor is READY FOR OWNER-FACING RETENTION DESIGN under
+SPEC.md's cooperative-filesystem boundary. Native NTFS handle and policy-race
+probes, 403 focused Windows tests, the isolated 1,581-test offline suite, and
+WSL POSIX refusal/history checks found no in-scope blocker. No real recording
+was deleted or power-loss behavior validated. The single next v0.11 slice is
+owner-facing explicit retention execution design; do not start automatic
+cleanup or publish deletion while designing it. #30 stays queued. v0.10.0
+remains released and v0.11.0 unreleased.
+
 **Issue #37 corrective slice complete (2026-09-28):** Windows retention now
 uses one exclusive verified handle for non-overwriting quarantine, byte proof,
 and exact-object file/directory removal. A short cross-process policy lock

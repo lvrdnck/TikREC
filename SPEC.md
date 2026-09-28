@@ -1005,6 +1005,11 @@ after proof. Sharing conflicts, unsupported filesystem operations, reparse
 objects, identity/byte changes, or path reappearance stop the operation. An
 unexpected occupant is never cleaned up. Failed proof leaves the original or
 quarantined object for inspection, and final MP4 removal remains last.
+Preexisting hard links refuse eligibility before audit intent. A deliberately
+concurrent external hard-link creation after the final held-identity check can
+preserve an alias when the private name is disposed; this is outside the
+cooperative-filesystem threat model. Native review covered fixed-drive NTFS,
+not every Windows filesystem, and did not test power loss.
 Unexpected evidence or failure stops immediately. A later call cannot resume
 the stale operation; it must pass fresh authorization, which normally refuses
 an incomplete session.
@@ -1030,9 +1035,10 @@ any earlier incomplete operation. A valid intent-only,
 unmatched-attempt, or other coherent event-boundary crash tail remains readable
 without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #35
-corrects the plan-to-authorization and audit-history gaps found at `3ff83bc`;
-a NEW fresh-context independent review of issue #37's handle-removal and policy
-correction remains required before any owner-facing deletion surface.
+corrected the plan-to-authorization and audit-history gaps found at `3ff83bc`.
+A fresh independent review of `ef8d01b` passed the Windows-only private
+executor gate under this cooperative-filesystem boundary; owner-facing
+execution still requires a separate design slice.
 Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
@@ -1058,8 +1064,9 @@ POSIX journal written by the executor for a legal literal-backslash filename
 and accept unpaired writer-recovery evidence names. Issue #36 corrected those
 gaps; its later review at `5d27dc8` found private-name and policy-revocation
 races. Issue #37 supplies the Windows handle protocol and policy synchronization,
-with owner-approved POSIX refusal. Another NEW fresh-context independent review
-remains required before owner-facing retention design.
+with owner-approved POSIX refusal. The fresh independent `ef8d01b` review
+passed the private executor gate on native NTFS and WSL POSIX refusal/history;
+owner-facing retention execution remains undesigned and unavailable.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

@@ -516,8 +516,10 @@ protection. The public CLI and service do not offer deletion. The private bounde
 executor has no owner-facing caller. Issue #37's correction uses verified
 Windows handles for removal and serializes policy updates with each destructive
 step. POSIX destructive execution refuses before changing the recording root;
-read-only planning remains available. Owner-facing deletion design awaits a
-NEW fresh independent safety review of this correction.
+read-only planning remains available. The fresh independent review of
+`ef8d01b` passed the Windows-only private safety gate under the documented
+cooperative-filesystem scope. Owner-facing execution design is the next v0.11
+slice; public deletion and automatic cleanup remain unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,
