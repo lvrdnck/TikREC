@@ -59,18 +59,22 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
             root, session_id, store, audit_path=audit_path, job_paths=job_paths,
             clock=clock, media_inspector=media_inspector,
             preview_guard=preview.guard, progress=progress)
-    except KeyboardInterrupt as error:
-        if progress.intent_sync_started:
-            return _incomplete(progress, session_id, root, error, stderr)
-        _diagnose(stderr, [f"tikrec retention delete: interrupted before intent; "
-                           f"session={session_id}; root={root or '<unconfigured>'}"])
-        return 130
-    except Exception as error:
-        if progress.intent_sync_started:
-            return _incomplete(progress, session_id, root, error, stderr)
-        _refused(session_id, root, error, stderr,
-                 intent_attempted=progress.intent_attempted)
-        return 1
+    except BaseException as error:
+        if progress.completed_durable:
+            return _completed_after_cleanup(session_id, preview, progress, error, stderr)
+        if isinstance(error, KeyboardInterrupt):
+            if progress.intent_sync_started:
+                return _incomplete(progress, session_id, root, error, stderr)
+            _diagnose(stderr, [f"tikrec retention delete: interrupted before intent; "
+                               f"session={session_id}; root={root or '<unconfigured>'}"])
+            return 130
+        if isinstance(error, Exception):
+            if progress.intent_sync_started:
+                return _incomplete(progress, session_id, root, error, stderr)
+            _refused(session_id, root, error, stderr,
+                     intent_attempted=progress.intent_attempted)
+            return 1
+        raise
     # The executor has returned only after the completed event synced. Display
     # failures cannot turn that completed deletion into an incomplete result.
     return _completed(session_id, preview, operation_id, progress.audit_path,
@@ -97,6 +101,23 @@ def _completed(session_id: str, preview: RetentionPreview, operation_id: str,
             stderr.flush()
         except BaseException:
             pass
+    return 0
+
+
+def _completed_after_cleanup(session_id: str, preview: RetentionPreview,
+                             progress: RetentionProgress, error: BaseException,
+                             stderr: TextIO) -> int:
+    """Keep synced completion authoritative when later executor cleanup fails."""
+    try:
+        _diagnose(stderr, [
+            f"COMPLETE: deleted session {session_id} from {preview.root}",
+            f"Cleanup error: {type(error).__name__}: {_one_line(error)}",
+            f"Operation ID: {progress.operation_id}",
+            f"Audit: {progress.audit_path}",
+        ])
+    except BaseException:
+        # Formatting or diagnostic failures cannot replace proven completion.
+        pass
     return 0
 
 

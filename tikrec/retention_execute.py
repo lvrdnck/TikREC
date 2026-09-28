@@ -25,13 +25,14 @@ from .retention_plan import _plan_retention_with_snapshot
 
 @dataclass
 class RetentionProgress:
-    """Optional caller-owned facts about an operation that did not return normally."""
+    """Caller-owned facts for classifying an operation across executor cleanup."""
 
     operation_id: str | None = None
     audit_path: Path | None = None
     intent_attempted: bool = False
     intent_sync_started: bool = False
     intent_durable: bool = False
+    completed_durable: bool = False
     deleted_count: int = 0
     removal_uncertain: bool = False
     audit_uncertain: bool = False
@@ -43,6 +44,10 @@ class RetentionProgress:
     def mark_intent_durable(self) -> None:
         """Record a successful audit intent sync before append can return."""
         self.intent_durable = True
+
+    def mark_completed_durable(self) -> None:
+        """Publish proven completion before audit or lifecycle cleanup runs."""
+        self.completed_durable = True
 
 
 def execute_retention(root: Path, session_id: str, configuration_store: ConfigurationStore,
@@ -147,7 +152,9 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                         # Keep the first failure and stop; the journal may be unavailable.
                     raise
             try:
-                audit.append("completed", operation_id, deleted_count=len(deleted))
+                audit.append("completed", operation_id,
+                             after_sync=progress.mark_completed_durable,
+                             deleted_count=len(deleted))
             except BaseException:
                 progress.audit_uncertain = True
                 raise

@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; #42 OPEN.**
+**Status: IMPLEMENTED IN DEVELOPMENT — #42 CORRECTED; NEW PUBLIC REVIEW PENDING.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -15,8 +15,11 @@ escape without exit `3`. Issue #41 records the sync-in-progress state before
 the syscall, reports an interrupted or failed sync as uncertain `FAILED`/3,
 and makes failure diagnostics best-effort. The NEW review at `cc0824d` found
 that a cleanup fault after synced `completed` but before executor return still
-reports `PARTIAL`/3 for a proven completed deletion. Issue #42 is the single
-next bounded correction, followed by another fresh-context public review
+reports `PARTIAL`/3 for a proven completed deletion. Issue #42 now publishes
+proven completion in caller-owned progress immediately after `completed` sync,
+before executor cleanup. Later cleanup faults retain `COMPLETE`/0 and report
+their cause and operation context when diagnostics are available; faults during
+the sync remain non-complete/3. A NEW fresh-context public review is required
 before separately authorized real-media validation. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
@@ -168,7 +171,8 @@ normally refuses an incomplete session.
 
 The private executor returns an operation ID on success and fills a caller-owned
 progress record after intent, including audit path, sync-started and durable-intent
-states, known deletion count, and possible removal or journal uncertainty. The
+states, proven completed sync, known deletion count, and possible removal or
+journal uncertainty. The
 CLI keeps the original failure and performs no second mutation to improve the message. If
 the journal itself is unavailable, it says its state is uncertain rather than
 promising an audit record exists. A failed intent write before sync is a refusal

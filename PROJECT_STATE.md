@@ -7,6 +7,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #42 completion-result correction complete (2026-09-28):** The
+  caller-owned retention progress now records a proven `completed` audit sync
+  before audit-handle or lifecycle cleanup. Later cleanup faults report
+  `COMPLETE`/0 with the original cause and operation context through one
+  best-effort diagnostic; an interrupted or failed `completed` sync remains
+  non-complete/3. Native Windows retention/lifecycle tests: 388 passed, four
+  skipped; isolated full suite: 1,649 passed, seven skipped, 19 subtests;
+  applicable WSL planning/refusal and read-only audit history: 116 passed,
+  five skipped. **State:** #42 correction complete; the single next v0.11
+  task is a NEW fresh-context independent public CLI review before separately
+  authorized real-media validation. No owner decision is pending. #30 stays
+  queued; #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains
+  released and v0.11.0 unreleased. No real media was deleted.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-28;
   HEAD `cc0824d`; issue #42):** Native Windows disposable `OSError` and
   `KeyboardInterrupt` probes after the synced `completed` audit event, during

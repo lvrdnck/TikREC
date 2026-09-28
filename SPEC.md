@@ -1101,6 +1101,11 @@ an audit close failure or interruption after synced `completed` reports
 `PARTIAL`/3 even though the operation is proven complete. The public CLI gate
 is NOT READY pending #42 correction and another fresh review. No real media
 was deleted in this review.
+Issue #42 now publishes proven `completed` sync in caller-owned progress before
+audit/lifecycle cleanup. A later cleanup fault retains `COMPLETE`/0 with a
+bounded best-effort diagnostic; failed or interrupted completion sync remains
+non-complete/3. A NEW independent public CLI review is still required before
+real-media retention validation.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
