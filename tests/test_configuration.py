@@ -195,7 +195,7 @@ def test_failed_atomic_replace_preserves_previous_configuration(tmp_path: Path) 
     store = ConfigurationStore(path)
     original = Configuration(output_directory=tmp_path / "original")
     store.save(original)
-    with patch("tikrec.configuration.os.replace", side_effect=OSError("disk failure")):
+    with patch("tikrec.configuration_atomic.os.replace", side_effect=OSError("disk failure")):
         with pytest.raises(OSError, match="disk failure"):
             store.save(replace(original, output_directory=tmp_path / "new"))
     assert store.load() == original

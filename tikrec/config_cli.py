@@ -152,45 +152,45 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
     if arguments.config_action == "set":
         if arguments.setting == "output-directory":
             value = configured_output_directory(arguments.value)
-            store.save(replace(configuration, output_directory=value))
+            store.update(lambda current: replace(current, output_directory=value))
             print(f"Set output directory: {value}", file=stdout)
         elif arguments.setting == "recovery-window-seconds":
             value = configured_recovery_window_seconds(arguments.value)
-            store.save(replace(configuration, recovery_window_seconds=value))
+            store.update(lambda current: replace(current, recovery_window_seconds=value))
             print(f"Set recovery window: {value} seconds", file=stdout)
         elif arguments.setting == "validation-mode":
             value = configured_validation_mode(arguments.value)
-            store.save(replace(configuration, validation_mode=value))
+            store.update(lambda current: replace(current, validation_mode=value))
             print(f"Set validation mode: {value}", file=stdout)
         elif arguments.setting == "minimum-free-space-gib":
             value = configured_minimum_free_space_gib(arguments.value)
-            store.save(replace(configuration, minimum_free_space_gib=value))
+            store.update(lambda current: replace(current, minimum_free_space_gib=value))
             print(f"Set minimum free space: {value} GiB", file=stdout)
         elif arguments.setting == "retention-max-age-days":
             value = configured_retention_max_age_days(arguments.value)
-            store.save(replace(configuration, retention_max_age_days=value))
+            store.update(lambda current: replace(current, retention_max_age_days=value))
             print(f"Set retention maximum age: {value} days", file=stdout)
         else:
             value = configured_debug_tracebacks(arguments.value)
-            store.save(replace(configuration, debug_tracebacks=value))
+            store.update(lambda current: replace(current, debug_tracebacks=value))
             print(f"Set debug tracebacks: {str(value).lower()}", file=stdout)
         return 0
     if arguments.setting == "output-directory":
-        store.save(replace(configuration, output_directory=None))
+        store.update(lambda current: replace(current, output_directory=None))
         print("Unset output directory", file=stdout)
     elif arguments.setting == "recovery-window-seconds":
-        store.save(replace(configuration, recovery_window_seconds=None))
+        store.update(lambda current: replace(current, recovery_window_seconds=None))
         print("Unset recovery window", file=stdout)
     elif arguments.setting == "validation-mode":
-        store.save(replace(configuration, validation_mode=None))
+        store.update(lambda current: replace(current, validation_mode=None))
         print("Unset validation mode", file=stdout)
     elif arguments.setting == "minimum-free-space-gib":
-        store.save(replace(configuration, minimum_free_space_gib=None))
+        store.update(lambda current: replace(current, minimum_free_space_gib=None))
         print("Unset minimum free space", file=stdout)
     elif arguments.setting == "retention-max-age-days":
-        store.save(replace(configuration, retention_max_age_days=None))
+        store.update(lambda current: replace(current, retention_max_age_days=None))
         print("Disabled age retention", file=stdout)
     else:
-        store.save(replace(configuration, debug_tracebacks=None))
+        store.update(lambda current: replace(current, debug_tracebacks=None))
         print("Unset debug tracebacks", file=stdout)
     return 0

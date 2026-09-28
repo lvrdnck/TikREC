@@ -938,6 +938,21 @@ with a parent-directory sync on POSIX. Unsetting all optional settings retains a
 versioned document. This store must never contain TikTok cookies, credentials,
 bearer tokens, or signed media URLs.
 
+Configuration promotion and the internal retention executor's final removal
+share a per-configuration OS lock in a persistent sibling
+`.CONFIG_FILENAME.retention-policy.lock`. Windows uses a byte-range lock and
+POSIX uses `flock`; both are released on process exit. General saves participate,
+and the config, monitoring, and protection CLI commands reload and apply their
+specific change inside the same transaction so stale reads cannot revert newer
+protection. Ordinary configuration reads remain unlocked. Canonical parent,
+Windows case, and existing 8.3 filename aliases share authority; retention
+refuses a redirected configuration file. The lock covers the final policy/job
+recheck and handle removal, not planning or media hashing. An update already
+committed blocks old-policy removal; an update racing an already-held removal
+boundary waits until that step finishes. Once it applies, every later removal
+must recheck the updated policy. Direct external edits do not participate in this
+cooperative protocol.
+
 In unreleased v0.11 development, `retention protect/unprotect/protected` manages
 the independent ordered protection list. `retention plan [ROOT] [--json]` inspects
 only immediate `.parts` children of an explicit or configured output directory.
@@ -950,7 +965,14 @@ recoverable, and conflicting evidence is not eligible. No owner-facing deletion
 command or automatic cleanup exists.
 
 The unreleased internal executor accepts one explicit root and canonical session
-UUID, never a saved planner result. It takes an exclusive OS-backed root lease,
+UUID, never a saved planner result. Under the owner-approved issue #37 platform
+scope, destructive execution is Windows-only. POSIX refuses before creating a
+lifecycle lock or audit, or changing any recording artifact; advisory planning
+and historical schema-1 journal reading remain supported. POSIX `unlinkat`
+still resolves a final filename and cannot provide exact-object removal against
+private-name substitution through the available unprivileged interface. There
+is no pathname-deletion fallback.
+On Windows it takes an exclusive OS-backed root lease,
 reloads current configuration, replans the full root, and refuses any target
 referenced by either durable service job slot, including a completed job. The
 planner's coherent whole-root claim snapshot must still match when authorization
@@ -969,21 +991,20 @@ part remains byte-bound even after its writer-recovery evidence file has been
 intentionally removed.
 It removes retained media and referenced recovery evidence first, then the
 connection log, manifest, empty `.parts` directory, and final MP4 last.
-For each artifact it first moves the pathname to a unique, same-directory
-private sibling derived from the audited operation and order position. It then
-verifies the moved object's original identity and, for files, its bound bytes
-before removing that private sibling. A failed verification leaves the moved
-object for manual inspection and terminates the operation. POSIX syncs the
-parent after the move and removal. Current `5d27dc8` still has a proof-to-unlink
-gap if the private pathname is replaced after verification: it can remove the
-replacement and report completion while the authorized object survives. POSIX
-`rename` can also overwrite an occupant inserted at that name after the
-pre-rename occupancy check. Issue #37 blocks owner-facing deletion design until
-these mutation boundaries are corrected and independently reviewed.
-The lifecycle lease coordinates TikREC writers. As with the existing filesystem
-trust boundary, a noncooperating process with write access to private quarantine
-names is outside the current implementation's protection; the independent gate
-explicitly requires post-rename replacement and collision safety.
+Each artifact is opened with Windows read/delete access, no sharing, and
+no-follow/reparse inspection. Held identity must match the authorized file or
+directory before it can move. `FileRenameInfo` on that handle moves it to the
+audited same-directory sibling with `ReplaceIfExists=FALSE`; occupancy is
+refused atomically, including a collision after the preliminary check and a
+case alias. The exclusive handle prevents source/private-name substitution
+through proof and removal. File bytes are hashed through that same held handle.
+After the synchronized policy/job/lease recheck, `FileDispositionInfo` marks
+that exact object for deletion and closes the handle; no pathname unlink or
+rmdir follows. The kernel refuses a nonempty directory even if a child appears
+after proof. Sharing conflicts, unsupported filesystem operations, reparse
+objects, identity/byte changes, or path reappearance stop the operation. An
+unexpected occupant is never cleaned up. Failed proof leaves the original or
+quarantined object for inspection, and final MP4 removal remains last.
 Unexpected evidence or failure stops immediately. A later call cannot resume
 the stale operation; it must pass fresh authorization, which normally refuses
 an incomplete session.
@@ -998,7 +1019,8 @@ follow. On POSIX, audit ancestors are synced root-to-leaf on every attempt;
 each new directory entry is synced before creating its child, and the journal
 entry is synced before use. This also covers a visible entry left by a failed
 prior sync.
-Successful POSIX removals sync their parent before a deleted record. Existing
+Older POSIX execution synced removals before deleted records; new POSIX
+execution is refused. Existing
 audit history is checked for complete schema-1 JSONL framing, unique JSON
 fields and operation IDs, event-specific fields, this journal's canonical root,
 the child/control/directory/final-MP4 destructive order, paired recovery evidence
@@ -1009,26 +1031,35 @@ unmatched-attempt, or other coherent event-boundary crash tail remains readable
 without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #35
 corrects the plan-to-authorization and audit-history gaps found at `3ff83bc`;
-a NEW fresh-context independent review remains required after issue #37 before
-any owner-facing deletion surface. The public protection/configuration writer
-does not share the lifecycle lease: a protection change after the last policy
-check can precede a file unlink, so issue #37 also requires mutation-time policy
-authority. Root-level persistent lifecycle locks use
+a NEW fresh-context independent review of issue #37's handle-removal and policy
+correction remains required before any owner-facing deletion surface.
+Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
 while this private
 executor takes the exclusive lease. The protocol excludes TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata
 guarantees. The private executor remains unreleased.
+An `attempt` without `deleted` can mean no rename, a preserved quarantine, or
+actual removal before the result could be journaled. Process death before
+setting disposition leaves the quarantine; death after setting it closes the
+handle and may complete removal. `failed` can likewise follow actual removal,
+including a failed result write/sync; the existing same-path `deleted` then
+`failed` history remains valid. No earlier operation resumes, and no incomplete
+operation is reported as completed. Schema 1 and deterministic quarantine names
+remain sufficient for audit plus filesystem reconstruction. Native process-exit
+tests do not establish Windows power-loss durability; no power-loss claim is made.
 Independent review at `d20ed7a` found that ordinary FLV parts and the final
 MP4 are only metadata-bound after the closing planner pass; same-size Windows
 byte changes with restored metadata can invalidate eligibility without
 stopping deletion. The final path check also leaves a check-to-unlink
 replacement window. At that reviewed commit, audit validation could reject a
 POSIX journal written by the executor for a legal literal-backslash filename
-and accept unpaired writer-recovery evidence names. Issue #36 implements the bounded
-corrections; a NEW fresh-context independent review remains required before
-owner-facing retention design.
+and accept unpaired writer-recovery evidence names. Issue #36 corrected those
+gaps; its later review at `5d27dc8` found private-name and policy-revocation
+races. Issue #37 supplies the Windows handle protocol and policy synchronization,
+with owner-approved POSIX refusal. Another NEW fresh-context independent review
+remains required before owner-facing retention design.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

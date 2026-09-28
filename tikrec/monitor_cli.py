@@ -43,18 +43,18 @@ def run_monitor_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
         return 0
 
     creator = normalize_creator(arguments.creator)
-    monitored = configuration.monitored_creators
-    if arguments.monitor_action == "add":
-        if creator in monitored:
-            raise CreatorIdentityError(f"creator is already monitored: @{creator}")
-        store.save(replace(configuration, monitored_creators=monitored + (creator,)))
-        print(f"Added monitored creator: @{creator}", file=stdout)
-        return 0
-    if creator not in monitored:
-        raise CreatorIdentityError(f"creator is not monitored: @{creator}")
-    store.save(replace(
-        configuration,
-        monitored_creators=tuple(item for item in monitored if item != creator),
-    ))
-    print(f"Removed monitored creator: @{creator}", file=stdout)
+    def change(current):
+        monitored = current.monitored_creators
+        if arguments.monitor_action == "add":
+            if creator in monitored:
+                raise CreatorIdentityError(f"creator is already monitored: @{creator}")
+            return replace(current, monitored_creators=monitored + (creator,))
+        if creator not in monitored:
+            raise CreatorIdentityError(f"creator is not monitored: @{creator}")
+        return replace(current, monitored_creators=tuple(
+            item for item in monitored if item != creator))
+    # Monitoring changes must preserve protection committed by another command.
+    store.update(change)
+    print(f"{'Added' if arguments.monitor_action == 'add' else 'Removed'} monitored "
+          f"creator: @{creator}", file=stdout)
     return 0

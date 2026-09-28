@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 from .creator_identity import validate_monitored_creators
 from .retry_policy import DEFAULT_RECOVERY_WINDOW_SECONDS
 from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, MAX_MINIMUM_FREE_SPACE_GIB
 from .configuration_path import default_config_path
 from .configuration_json import unique_fields as _unique_fields
+from .configuration_atomic import write_document
+from .policy_lock import policy_lock
 
 CONFIG_SCHEMA_VERSION = 1
 MIN_RECOVERY_WINDOW_SECONDS = 60
@@ -164,33 +164,14 @@ class ConfigurationStore:
             document["retention_protected_creators"] = list(configuration.retention_protected_creators)
         if configuration.retention_max_age_days is not None:
             document["retention_max_age_days"] = configuration.retention_max_age_days
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        temporary: Path | None = None
-        try:
-            with NamedTemporaryFile(
-                mode="w",
-                encoding="utf-8",
-                dir=self.path.parent,
-                prefix=f".{self.path.name}.",
-                suffix=".partial",
-                delete=False,
-            ) as handle:
-                temporary = Path(handle.name)
-                json.dump(document, handle, indent=2, sort_keys=True)
-                handle.write("\n")
-                handle.flush()
-                os.fsync(handle.fileno())
-            # Windows requires the temporary handle to be closed before promotion.
-            os.replace(temporary, self.path)
-            if os.name != "nt":
-                descriptor = os.open(self.path.parent, os.O_RDONLY)
-                try:
-                    os.fsync(descriptor)
-                finally:
-                    os.close(descriptor)
-        finally:
-            if temporary is not None:
-                temporary.unlink(missing_ok=True)
+        write_document(self.path, document)
+
+    def update(self, transform) -> Configuration:
+        """Apply one change to the latest document without reverting newer policy."""
+        with policy_lock(self.path, "write"):
+            updated = transform(self.load())
+            self.save(updated)
+            return updated
 
 
 def configured_output_directory(value: str) -> Path:

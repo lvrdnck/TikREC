@@ -58,16 +58,19 @@ def run_retention_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 print("No immediate TikREC sessions found.", file=stdout)
         return 0
     creator = normalize_creator(arguments.creator)
-    protected = config.retention_protected_creators
-    if action == "protect":
-        if creator in protected:
-            raise CreatorIdentityError(f"creator is already protected: @{creator}")
-        store.save(replace(config, retention_protected_creators=protected + (creator,)))
-        print(f"Protected creator: @{creator}", file=stdout)
-        return 0
-    if creator not in protected:
-        raise CreatorIdentityError(f"creator is not protected: @{creator}")
-    store.save(replace(config, retention_protected_creators=tuple(
-        item for item in protected if item != creator)))
-    print(f"Unprotected creator: @{creator}", file=stdout)
+    def change(current):
+        protected = current.retention_protected_creators
+        if action == "protect":
+            if creator in protected:
+                raise CreatorIdentityError(f"creator is already protected: @{creator}")
+            return replace(current, retention_protected_creators=protected + (creator,))
+        if creator not in protected:
+            raise CreatorIdentityError(f"creator is not protected: @{creator}")
+        return replace(current, retention_protected_creators=tuple(
+            item for item in protected if item != creator))
+    # Read-modify-write under the policy lock keeps a concurrent config command
+    # from accidentally restoring an older protection list.
+    store.update(change)
+    print(f"{'Protected' if action == 'protect' else 'Unprotected'} creator: @{creator}",
+          file=stdout)
     return 0

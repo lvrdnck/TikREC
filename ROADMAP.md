@@ -1293,6 +1293,23 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #37 corrective slice complete (2026-09-28):** Windows retention now
+uses one exclusive verified handle for non-overwriting quarantine, byte proof,
+and exact-object file/directory removal. A short cross-process policy lock
+serializes configuration promotion with the final policy/job check and removal;
+public configuration, monitoring, and protection updates preserve concurrently
+committed protection. The owner approved Windows deletion and POSIX refusal
+before any retention mutation, replacing the former POSIX deletion acceptance
+criterion. POSIX inspection/planning and valid schema-1 audit history remain
+supported. Native Windows/Python 3.11 full suite: 1,581 passed, five skipped,
+19 subtests passed; WSL/POSIX refusal, collision preservation, and historical
+unusual-name journal reopen passed. Native collision/substitution, policy races,
+configuration aliases, and process-crash regressions passed. No real recording
+was deleted or power-loss test performed. The single next task is a NEW
+fresh-context independent executor/lifecycle/authorization/mutation/audit gate
+before owner-facing retention design. #30 stays queued; v0.10.0 remains released
+and v0.11.0 unreleased.
+
 **NEW fresh independent retention gate NOT READY (2026-09-28; issue #37):**
 Current `5d27dc8` still removes by a mutable private pathname after proving the
 quarantined object. Native Windows synthetic full-executor probes swapped the

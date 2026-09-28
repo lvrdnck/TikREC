@@ -6,6 +6,7 @@ import time
 import uuid
 import os
 from collections.abc import Callable
+from contextlib import contextmanager
 from pathlib import Path
 
 from .configuration import ConfigurationStore
@@ -14,7 +15,9 @@ from .media import MediaInfo, inspect_media
 from .retention_audit import RetentionAudit
 from .retention_authorization import (authorize, check_jobs,
                                       check_policy, check_root)
-from .retention_mutation import quarantine_relative, remove_authorized
+from .retention_mutation import (quarantine_relative, remove_authorized,
+                                 require_identity_removal)
+from .policy_lock import policy_lock
 from .retention_paths import local_path
 from .retention_plan import _plan_retention_with_snapshot
 
@@ -30,6 +33,7 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
     This private API never accepts a saved plan. An interrupted or partially failed
     operation has no resume path; a later call must pass fresh eligibility again.
     """
+    require_identity_removal()  # Unsupported systems refuse even before lock/audit creation.
     if type(session_id) is not str or str(uuid.UUID(session_id)) != session_id:
         raise ValueError("retention target must be a canonical session UUID")
     scope = local_path(Path(root), directory=True)
@@ -54,6 +58,16 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
         check_policy(auth, configuration_store, clock())
         check_jobs(auth, job_paths)
         check_root(auth, frozenset())
+
+        @contextmanager
+        def mutation_authority():
+            with policy_lock(configuration_store.path) as policy:
+                lease.assert_held()
+                check_policy(auth, configuration_store, clock())
+                check_jobs(auth, job_paths)
+                policy.assert_held()
+                yield
+
         operation_id = str(uuid.uuid4())
         with RetentionAudit(scope, audit_path) as audit:
             # The intent is synced before any artifact is even attempted.
@@ -90,7 +104,7 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                     check_root(auth, frozenset(deleted))
                     remove_authorized(scope, item, auth.volume,
                                       hashes.get(item.relative_path),
-                                      operation_id, index, _sync_parent)
+                                      operation_id, index, _sync_parent, mutation_authority)
                     deleted.add(item.relative_path)
                     audit.append("deleted", operation_id, path=item.relative_path)
                 except BaseException as error:

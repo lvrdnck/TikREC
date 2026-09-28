@@ -7,6 +7,24 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #37 corrective implementation complete (2026-09-28):** Windows
+  retention holds one exclusive object handle through non-overwriting quarantine,
+  byte proof, and handle-based file/directory deletion. Configuration promotion
+  and the final policy/job recheck plus removal share a short cross-process lock;
+  CLI read-modify-write transactions preserve concurrent protection changes.
+  The owner explicitly approved Windows deletion with POSIX refusal before any
+  retention mutation, replacing the earlier POSIX normal-deletion criterion.
+  Read-only POSIX planning and valid schema-1 history remain supported.
+  Native Windows/Python 3.11 full offline suite: 1,581 passed, five skipped,
+  19 subtests passed. Native WSL/POSIX refusal, collision preservation, and
+  historical unusual-name journal reopen passed. Deterministic collision,
+  substitution, policy-race, alias, and process-crash regressions passed.
+  No real recording was deleted or power-loss test performed.
+  **State:** implementation complete; the single next task is a NEW fresh-context
+  independent executor/lifecycle/authorization/mutation/audit safety review before
+  owner-facing retention design. No owner action is pending. #30 stays queued;
+  #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains released and
+  v0.11.0 unreleased.
 - **NEW fresh independent retention gate NOT READY (2026-09-28; issue #37):**
   Review of current HEAD `5d27dc8` reproduced a post-quarantine proof-to-unlink
   race on native Windows: an FLV, final MP4, or empty parts directory can be

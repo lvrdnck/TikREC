@@ -513,9 +513,11 @@ same-room suppression. It does not authenticate to TikTok, notify the owner,
 automatically delete media, or provide a library/Web UI/playback. Unreleased
 v0.11 development adds a read-only age-retention plan and explicit creator
 protection. The public CLI and service do not offer deletion. The private bounded
-executor has no owner-facing caller; the fresh independent review of issue #36's
-corrections found the remaining races recorded in issue #37. Owner-facing
-deletion design remains blocked pending correction and another review.
+executor has no owner-facing caller. Issue #37's correction uses verified
+Windows handles for removal and serializes policy updates with each destructive
+step. POSIX destructive execution refuses before changing the recording root;
+read-only planning remains available. Owner-facing deletion design awaits a
+NEW fresh independent safety review of this correction.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,

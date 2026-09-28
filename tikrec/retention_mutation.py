@@ -3,10 +3,18 @@
 from __future__ import annotations
 
 import os
+from contextlib import nullcontext
 from pathlib import Path
 
-from .retention_authorization import (ArtifactFingerprint, _checked_digest,
+from .retention_authorization import (ArtifactFingerprint,
                                       check_fingerprint, fingerprint)
+
+
+def require_identity_removal() -> None:
+    """Refuse platforms without the approved exact-object removal primitive."""
+    if os.name != "nt":
+        raise ValueError("destructive retention requires Windows handle-based removal; "
+                         "POSIX retention is read-only")
 
 
 def quarantine_relative(item: ArtifactFingerprint, operation_id: str,
@@ -18,12 +26,15 @@ def quarantine_relative(item: ArtifactFingerprint, operation_id: str,
 
 def remove_authorized(root: Path, item: ArtifactFingerprint, volume,
                       digest: str | None, operation_id: str, index: int,
-                      sync_parent) -> None:
+                      sync_parent, mutation_guard=nullcontext) -> None:
     """Move, prove, then remove only the originally authorized filesystem object.
 
     A failed move or proof leaves the original or private sibling for manual
     inspection. The durable intent and attempt identify the private sibling.
     """
+    require_identity_removal()
+    from .retention_windows import HeldArtifact
+
     original = root / item.relative_path
     private = root / quarantine_relative(item, operation_id, index)
     check_fingerprint(root, item, volume)
@@ -31,24 +42,24 @@ def remove_authorized(root: Path, item: ArtifactFingerprint, volume,
         raise ValueError("retention parts directory is not empty")
     if os.path.lexists(private):
         raise ValueError("retention private quarantine name is occupied")
-    # Same-directory rename isolates a stable name before any irreversible remove.
-    original.rename(private)
-    sync_parent(private)
-    moved = fingerprint(root, private, directory=item.kind == "directory", volume=volume)
-    if not _same_moved_identity(item, moved):
-        raise ValueError("retention quarantined artifact identity changed")
-    if item.kind == "directory":
-        if any(private.iterdir()):
-            raise ValueError("retention quarantined parts directory is not empty")
-    elif digest is None or _checked_digest(root, moved, volume) != digest:
-        raise ValueError("retention quarantined artifact byte proof changed")
-    if os.path.lexists(original):
-        raise ValueError("retention original path reappeared after quarantine")
-    if item.kind == "directory":
-        private.rmdir()
-    else:
-        private.unlink()
-    sync_parent(private)
+    with HeldArtifact(original, item) as held:
+        # The kernel refuses an occupied destination atomically, including a
+        # collision after lexists. The same exclusive handle owns the whole step.
+        held.rename(private)
+        sync_parent(private)
+        moved = fingerprint(root, private, directory=item.kind == "directory", volume=volume)
+        if not _same_moved_identity(item, moved):
+            raise ValueError("retention quarantined artifact identity changed")
+        held.prove(digest)
+        if os.path.lexists(original):
+            raise ValueError("retention original path reappeared after quarantine")
+        # Hashing and reversible quarantine do not delay config promotion. Only
+        # the final policy/job recheck and exact-handle removal share authority.
+        with mutation_guard():
+            held.delete()
+            sync_parent(private)
+            if os.path.lexists(private) or os.path.lexists(original):
+                raise ValueError("retention pathname reappeared after removal")
 
 
 def _same_moved_identity(before: ArtifactFingerprint,
@@ -61,7 +72,7 @@ def _same_moved_identity(before: ArtifactFingerprint,
                  before.attributes)
                 == (after.mode, after.device, after.inode, after.link_count,
                     after.attributes))
-    # POSIX rename changes ctime; a file's content and other identity must hold.
+    # Rename/cross-API ctime is not invariant; held file bytes and identity are.
     return ((before.mode, before.size, before.device, before.inode,
              before.mtime_ns, before.link_count, before.attributes)
             == (after.mode, after.size, after.device, after.inode,
