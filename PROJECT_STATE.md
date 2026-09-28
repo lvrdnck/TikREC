@@ -7,6 +7,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #28 intermittent Gracie recurrence investigated (2026-09-28):**
+  Owner-reported battle-linked columns around MP4 10:11 are visible in both the
+  retained FLV and final MP4 at 10:15. Both retained parts use one identical
+  640x1280 AVC configuration; no retained 640/720 switch or timestamp replay was
+  found. This session has no raw/arrival copy, so source-versus-writer origin is
+  unresolved. The next useful evidence is an owner-authorized normal `--raw-copy`
+  occurrence with battle times and all raw/retained/final artifacts preserved.
+  #28 stays non-blocking; the single active v0.11 task remains bounded issue #43,
+  followed by a NEW independent public retention CLI review before separately
+  authorized real-media validation.
+  #30 stays queued; v0.10.0 remains released and v0.11.0 unreleased.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-28;
   HEAD `b8ad110`; issue #43):** Disposable native Windows probes showed that
   an audit or lifecycle cleanup `OSError` after an execution failure replaces

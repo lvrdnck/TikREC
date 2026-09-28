@@ -2,8 +2,77 @@
 
 2026-09-22 Moe investigation, extended 2026-09-23 with the owner-started Kayla
 raw-backed session. **Historical forensic record; finite product blocker #27 closed.** v0.10 simultaneous
-validation/readiness is paused. No product code, release, tag, original media,
+validation/readiness was paused at that checkpoint. No product code, release, tag, original media,
 or durable job/automation evidence was changed by this investigation.
+
+## 2026-09-28 Gracie recurrence (open issue #28)
+
+The owner reports severe vertical columns/smearing during at least some battles
+in `gracie.kf-20260928-014356.mp4`, around MP4 10:11. This is **intermittent**:
+ordinary non-battle footage and other LIVEs can be clean, and the evidence does
+not establish that every battle is affected. The battle timing is owner-reported;
+the retained files contain no independent battle event marker.
+
+Read-only inspection found session `ea288e43-61af-4189-b068-2f57a18b7539`
+(v0.10.0), room `7690364623728102175`, naturally completed with two FLVs and
+a finalized 6167.444-second, 640x1280 H.264/AAC MP4. Connections 1 and 3
+contained media; connection 2 received HTTP 504 and connection 4 confirmed the
+room offline. Neither media connection logged a timestamp replay. The reported
+10:11 corruption is within connection 1, well before the reconnect. Finalization
+reports `input_decode.status=not_checked`: the parts share a configuration and
+the stream-copy path does not decode its inputs. That status is not a clean-media
+finding. Full `tikrec validate --deep` failed retained-media and final-output
+decoding, while final-output structural inspection passed.
+
+Both connection records have `raw_copy=null` and `raw_arrivals=null`; the
+`.parts` directory contains neither `.raw` nor arrival sidecar. Gracie has no
+matching raw source evidence. Each connection's `part_timings` reports 640x1280
+and nominal `25/1` from `onMetaData`. An exhaustive scan of the two retained
+FLVs found exactly one AVC sequence header at byte offset 13 in each part, with
+the same avcC SHA-256
+`870a4f92a24b18d64bad87ae74a49a489803f331bc0e61cdcee57c2972c6521e`.
+This is the same 640x1280 configuration recorded for Moe and one of Kayla's
+source configurations. No 720x1280 header, changed/repeated AVC header, in-band
+SPS/PPS, malformed four-byte NAL length, or backward audio/video tag timestamp
+appears in either retained part. Part 2 begins at a reconnect with an identical
+configuration; it is not evidence of a battle-triggered resolution change.
+
+Sequentially decoded stills at MP4/part-1 10:15 independently show the same
+severe columns in the retained FLV and final MP4. Thus final MP4 muxing is not
+the sole origin of the visible defect. A 610--625-second video-packet comparison
+found 230 of 240 FLV/MP4 packet payload hashes identical; the ten differing
+packets were all IDRs, each 40 bytes larger in MP4. That bounded comparison does
+not attribute the retained damage to TikREC or to TikTok.
+
+The three causal possibilities remain distinct: malformed H.264 already received
+from TikTok; a legitimate source change mishandled before retention; or damage
+unrelated to a configuration transition. The retained Gracie evidence argues
+against a *recorded* 640/720 configuration switch near 10:11, but only matching
+raw bytes can settle source-versus-writer attribution. Kayla remains a proven
+raw-source defect with short errors before source configuration changes; Moe
+remains a separate raw-less, single-configuration case. This recurrence extends
+the non-blocking #28 evidence, not #8's timestamp-replay question or #13's
+alternate-rendition selection policy. It does not alter the v0.11 retention gate
+or justify frame dropping, decoder resets, transcoding, resizing, or battle
+handling.
+
+For a future owner-authorized ordinary public LIVE, enable `--raw-copy` before
+capture and preserve the complete `.parts` directory (`connection-NNNN.raw`,
+`connection-NNNN.arrivals.jsonl`, retained FLVs, `session.json`, and
+`connections.jsonl`) with the final MP4. Note battle entry/exit and visible
+corruption times. Compare raw and retained audio/video tag payloads, ordering,
+timestamps, AVC records, IDRs, arrival coverage, and independent decoder results
+across those times before deciding on any product change. No new capture was
+started for this investigation. The original Gracie media was not modified.
+
+Current original artifact SHA-256 (read-only, 2026-09-28): MP4
+`64096acb4f1027b5c6b10f63959a17fda6c4e323661afbe4fad78d7557bdb249`;
+part 1 `2a0745c350568d17529c0df3d7206544b321e60a045f61a6df34864dc64849eb`;
+part 2 `5498254988136f840e29b0e0c54ab611bf2d0e31d43d67abafac108d86a1fd1b`;
+manifest `784ab9c79f3bcdd34b321f00384ec659f4852fb0e0ff37b86f472905f8cab28c`;
+connection log `e36cf83e558c5e902fe774c670a107668f8f410b40ce5cc93ca8715a774a0f87`.
+Disposable stills and decode logs are under
+`C:\Users\Leandro\Videos\TikREC-diagnostics\issue-28-gracie-20260928`.
 
 ## 2026-09-23 product decision and bounded acceptance
 
@@ -156,7 +225,8 @@ order, and every AAC packet, are preserved in the MP4. Both full decodes emit
 the same 10,352 error messages in the same order after normalizing decoder
 addresses. No parser/writer defect or safe decoder-reset rule is yet proven.
 
-The owner reports corruption during every battle. Diagnostic stills independently
+For the historical Moe recording, the owner reported corruption during every
+battle. Diagnostic stills independently
 confirm the reported vertical columns/smearing, but corrupted imagery alone does
 not establish exact battle entry/exit. Match the timeline below against a new
 raw-backed battle; do not infer source malformation from retained media alone.
