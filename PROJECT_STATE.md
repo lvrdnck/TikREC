@@ -7,6 +7,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-28;
+  HEAD `b8ad110`; issue #43):** Disposable native Windows probes showed that
+  an audit or lifecycle cleanup `OSError` after an execution failure replaces
+  the original cause in the public `FAILED`/`PARTIAL` result. A `SystemExit`
+  during an audit attempt after durable intent escapes without exit 3 or
+  operation/audit context, despite a journaled `failed` event. Focused
+  retention/lifecycle tests: 388 passed, four skipped; isolated full suite:
+  1,649 passed, seven skipped, 19 subtests; applicable WSL planning/refusal
+  and read-only audit history: 116 passed, five skipped. **State:** #43 is the
+  single next bounded v0.11 correction; repeat a NEW fresh-context public
+  CLI review afterward. No owner decision is pending. Separately authorized
+  real-media validation remains later; #30 stays queued and #8/#13/#28 remain
+  non-blocking evidence work. v0.10.0 remains released and v0.11.0 unreleased.
+  No real media was deleted or production code changed in this review.
+
 - **Issue #42 completion-result correction complete (2026-09-28):** The
   caller-owned retention progress now records a proven `completed` audit sync
   before audit-handle or lifecycle cleanup. Later cleanup faults report

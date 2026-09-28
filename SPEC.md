@@ -1106,6 +1106,11 @@ audit/lifecycle cleanup. A later cleanup fault retains `COMPLETE`/0 with a
 bounded best-effort diagnostic; failed or interrupted completion sync remains
 non-complete/3. A NEW independent public CLI review is still required before
 real-media retention validation.
+The fresh review at `b8ad110` found an after-intent failure-reporting blocker
+(#43): a cleanup fault can mask the original execution cause, and a post-intent
+`SystemExit` can escape without the required incomplete-result context. The
+public CLI gate is NOT READY pending #43 correction and another independent
+review. Only disposable synthetic media was used.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

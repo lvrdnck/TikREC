@@ -532,8 +532,11 @@ A fresh independent review at `cc0824d` found a remaining cleanup-boundary
 defect (#42): a completed deletion could be reported as `PARTIAL`/3 if audit
 cleanup failed before the executor returned. The #42 correction records proven
 completion before cleanup and preserves `COMPLETE`/0 across later faults. A NEW
-independent public CLI review precedes separately authorized real-media
-validation.
+independent review at `b8ad110` found an after-intent failure-reporting gap
+(#43): secondary cleanup faults can mask the original cause, and a
+post-intent `SystemExit` can escape without operation context. The public CLI
+gate is NOT READY pending #43 correction and another fresh review before
+separately authorized real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
