@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate NOT READY (2026-09-28;
+`653f5fe`; issue #41):** Disposable Windows probes found a remaining
+post-`fsync`, pre-callback interrupt window: a durable audit intent can be
+reported as pre-intent `130` or `REFUSED`/1. A broken stderr write during an
+after-intent failure also prevents the CLI from returning `FAILED`/3. No media
+was removed in either probe. Native Python 3.11 retention tests passed 360
+(four skipped); the isolated full suite passed 1,628 (seven skipped, 19
+subtests); applicable WSL planning/refusal passed 107 (39 skipped), with ten
+read-only audit-history checks passed. The single next v0.11 task is bounded
+issue #41, followed by a NEW fresh-context public CLI review before separately
+authorized real-media deletion. #30 stays queued; v0.10.0 remains released
+and v0.11.0 unreleased.
+
 **Issue #40 correction complete (2026-09-28):** Once the executor returns
 after synced `completed`, a failed or interrupted success-output write keeps
 `COMPLETE`/exit 0. A bounded stderr fallback reports the original output cause,

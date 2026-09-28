@@ -524,8 +524,11 @@ cooperative-filesystem scope. The owner-facing CLI contract is in
 [RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **unreleased
 v0.11 development behavior**. Issue #39 corrected a post-sync audit intent
 result-reporting defect. Issue #40 corrected a later success-output failure
-that falsely reported completed deletion as `PARTIAL`. Another fresh-context
-public review is required before real-media validation.
+that falsely reported completed deletion as `PARTIAL`. A fresh-context public
+review at `653f5fe` found a remaining intent-sync interruption window
+and a broken-stderr after-intent reporting gap (#41). The public CLI gate is
+NOT READY; a new review is required after #41 before separately authorized
+real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.

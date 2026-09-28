@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-28;
+  HEAD `653f5fe`; issue #41):** Native Windows disposable probes found two
+  result-reporting gaps. An interrupt after the OS successfully syncs `intent`
+  but before the durability callback runs reports pre-intent `130` (or
+  `REFUSED`/1 for an exception) despite a complete intent record. A broken
+  stderr write during an after-intent failure escapes instead of returning
+  `FAILED`/3. No artifact was removed in either probe. Native Python 3.11
+  retention tests: 360 passed, four skipped; isolated full suite: 1,628
+  passed, seven skipped, 19 subtests; applicable WSL planning/refusal: 107
+  passed, 39 skipped, plus ten read-only audit-history checks passed.
+  **State:** #41 is the single next bounded correction; repeat a NEW
+  fresh-context public CLI review afterward. No owner decision is pending;
+  separately authorized real-media validation remains later. #30 stays queued;
+  #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains released and
+  v0.11.0 unreleased. No real media was deleted.
+
 - **Issue #40 completed-output reporting correction complete (2026-09-28):**
   After the executor returns with synced `completed`, success-output failures
   now keep `COMPLETE`/exit 0. The CLI makes one bounded stderr report with the

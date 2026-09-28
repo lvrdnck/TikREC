@@ -1,16 +1,21 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — NEW PUBLIC REVIEW PENDING.**
-Issue #39 corrected the post-sync intent reporting gap found in the 2026-09-28
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY (#41).**
+Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
-a later exception or interruption reports an after-intent outcome. Failed
-intent sync keeps the documented pre-intent result. A new independent review
+faults after append returns report an after-intent outcome. Failed intent sync
+keeps the documented pre-intent result. A new independent review
 at `f99528f` found that a failed or interrupted CLI `COMPLETE` output write
 after the executor returns incorrectly reported `PARTIAL`/exit 3 despite a
 synced `completed` audit event and completed removal. Issue #40 corrected that
-result boundary. Repeat a NEW fresh-context review before real-media validation.
-The local CLI workflow
-below exists in the development checkout; it is not in the current
+result boundary.
+The fresh review at `653f5fe` found two remaining reporting gaps: an interrupt
+between successful OS intent `fsync` and the durability callback can still
+claim no intent exists, and a failed after-intent stderr diagnostic can escape
+without exit `3`. Issue #41 is the single next correction. Repeat a NEW
+fresh-context public review after that correction, before separately authorized
+real-media validation. The local CLI workflow below exists in the development
+checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 
