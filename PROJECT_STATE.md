@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent retention gate NOT READY (2026-09-28; issue #34 active):**
+  Review of current HEAD `bcfe38b` found two blockers. On native Windows, a
+  same-size writer-recovery evidence byte change with restored timestamps leaves
+  artifact metadata unchanged; a fresh plan becomes `needs_attention`, yet the
+  executor deletes the final MP4 and records `completed`. Existing audit JSONL
+  with an orphan `completed` event or duplicate `intent` operation ID is also
+  accepted before a new deletion, so prior history is not reliably
+  reconstructable. Issue #34 has the synthetic reproductions and narrow fix
+  scope. Focused Windows tests passed 176 (one skip); the isolated full offline
+  suite passed 1,456 plus 19 subtests (three skips). Native WSL POSIX first-use
+  directory fsync ordering and failed-sync retry passed; power-loss testing was
+  not performed. No real media was deleted or production behavior changed.
+  **Active task:** fix #34, then repeat a fresh independent retention gate.
+  #30 remains queued after that gate; #8/#13/#28 remain separate non-blocking
+  evidence work. No owner action is pending. v0.10.0 remains released and
+  v0.11.0 unreleased.
 - **Issue #33 corrective implementation complete (2026-09-28):** The private
   executor now binds the target claim and control hashes, rechecks surviving
   controls before every unlink, and records their hashes in the intent. Existing
@@ -20,9 +36,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   (three skips). A WSL Ubuntu test exercised real POSIX directory fsync order on
   its `/var/tmp` filesystem; power-loss crash validation was not performed. No
   real media was deleted. v0.10.0 remains released and v0.11.0 unreleased.
-  **Next gate:** A separate fresh independent review of the corrected executor,
-  lifecycle lock, and audit protocol. #30 remains queued after that gate; no owner
-  action is pending.
+  At that checkpoint the next gate was a separate fresh independent review of
+  the corrected executor, lifecycle lock, and audit protocol.
 - **Retention executor gate NOT READY (2026-09-28; issue #33 opened):** Fresh
   independent review of current HEAD `ef4ef30` found three blockers before any
   owner-facing deletion design. On Windows, a same-size target manifest edit

@@ -974,11 +974,15 @@ each new directory entry is synced before creating its child, and the journal
 entry is synced before use. This also covers a visible entry left by a failed
 prior sync.
 Successful POSIX removals sync their parent before a deleted record. Existing
-audit history is read and validated as complete schema-1 JSONL before another
-intent; damaged history is retained and blocks deletion without automatic
-repair. The journal excludes transport secrets and signed URLs. Issue #33's
-corrective implementation awaits a separate fresh independent review before
-any owner-facing deletion surface. Root-level persistent lifecycle locks use
+audit history is checked for complete, decodable schema-1 JSONL framing and
+duplicate JSON keys before another intent; torn or syntactically malformed
+history blocks deletion without automatic repair. The journal excludes
+transport secrets and signed URLs. Fresh independent
+review of `bcfe38b` found that writer-recovery evidence bytes can change without
+changing Windows artifact metadata and make a session newly ineligible while
+deletion still completes. It also found that syntactically valid but semantically
+invalid prior audit histories are accepted. Issue #34 tracks these blockers;
+owner-facing deletion remains gated. Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
 while this private

@@ -1293,6 +1293,16 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent executor gate NOT READY (2026-09-28; issue #34):** Current
+HEAD `bcfe38b` still permits a native Windows same-size/restored-metadata
+writer-recovery evidence change to make a session ineligible while the private
+executor deletes it and audits completion. The audit parser also accepts
+semantically invalid prior histories, including an orphan completion and
+duplicate operation intents. #34 records synthetic reproductions and bounded
+fix scope. No real media was deleted or production behavior changed. Fix #34
+and repeat the independent retention gate before owner-facing design; #30 stays
+queued. v0.10.0 is released and v0.11.0 remains unreleased.
+
 **Issue #33 corrective slice complete (2026-09-28):** The private executor now
 revalidates the bound target control content through planned partial removals,
 rejects damaged existing audit JSONL before another intent, and durably links
@@ -1442,9 +1452,9 @@ recovery and explicit `user_stop` finalization restored two available slots, wit
 Eliss/Gracie monitoring operational and original media/evidence hashes preserved.
 The final MP4 passes deep decoding; full session validation truthfully fails for
 historical decode errors in seven unchanged FLV parts, as documented in #32 and
-PROJECT_STATE.md. Issue #33's corrective work is complete; fresh independent
-retention-executor review remains required before #30. v0.10.0 remains released
-and v0.11.0 unreleased.
+PROJECT_STATE.md. Issue #34 is the active retention correction after a fresh
+independent gate; #30 remains queued. v0.10.0 remains released and v0.11.0
+unreleased.
 
 **Queued operational follow-up — runtime monitoring reconfiguration (issue #30):**
 The released service intentionally owns both recording slots inside one process,
@@ -1553,7 +1563,7 @@ Requirements may move when real use exposes dependencies, but future product
 capabilities should no longer sit in an unversioned "someday" bucket. Reliability,
 guided recovery, configuration/defaults, creator automation, and simultaneous
 creator recording through v0.10.0 are released. v0.11.0 smart storage,
-retention, and disk protection is the next planned version, not active work.
+retention, and disk protection is the active unreleased development target.
 #27 and #29 are closed; #8, #13, and #28 remain separate non-blocking
 evidence work.
 
