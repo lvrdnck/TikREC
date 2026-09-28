@@ -7,6 +7,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI review NOT READY (2026-09-28;
+  HEAD `bddcedd`; issue #39):** A disposable native Windows fault injected
+  immediately after a synced audit `intent` but before executor progress was
+  marked durable. The public CLI reported `REFUSED`/exit 1 or pre-intent
+  interruption/exit 130, although the journal contained a durable intent and
+  operation UUID. No artifact was removed. **State:** #39 is the single active
+  bounded correction for truthful post-intent reporting; no owner action is
+  pending. After it, repeat a NEW
+  fresh-context public CLI review before separately authorized real-media
+  validation. Python 3.11 focused Windows suite: 409 passed, four skipped;
+  isolated full suite: 1,614 passed, seven skipped, 19 subtests. Native WSL
+  selected planning/refusal suite: 109 passed, 28 Windows-only skipped.
+  v0.10.0 remains released, v0.11.0 unreleased; #30 stays queued and
+  #8/#13/#28 remain non-blocking evidence work. No real media was deleted.
+
 - **Issue #38 owner-facing retention CLI implementation complete (2026-09-28):**
   The unreleased local CLI now extends read-only planning with safe nullable
   file counts/bytes and offers explicit one-UUID Windows deletion with exact

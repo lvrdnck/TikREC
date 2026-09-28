@@ -1293,6 +1293,17 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate NOT READY (2026-09-28;
+`bddcedd`; issue #39):** A native Windows synthetic fault after a synced
+`intent` but before progress publication left a durable audit operation while
+the public CLI returned `REFUSED`/1 or pre-intent interruption/130. No media
+was removed. #39 is the single active correction for post-intent result
+truthfulness; repeat a NEW fresh-context public CLI review after the fix before
+separately authorized real-media validation. Python 3.11 focused Windows tests
+passed 409 (four skipped); the isolated full suite passed 1,614 (seven skipped,
+19 subtests); selected WSL planning/refusal tests passed 109 (28 Windows-only
+skipped). v0.10.0 remains released, v0.11.0 unreleased, and #30 queued.
+
 **Issue #38 local retention CLI implementation complete (2026-09-28):**
 `retention plan` now displays nullable safe artifact counts/bytes alongside
 identity, UTC end time, classification, protection, and paths. The Windows-only
