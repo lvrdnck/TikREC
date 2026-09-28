@@ -1293,6 +1293,17 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent executor gate NOT READY (2026-09-28; issue #35):** Current
+HEAD `3ff83bc` can bind a manifest that loses terminal eligibility between a
+fresh plan and authorization, then delete it; native Windows synthetic evidence
+shows this with restored metadata. Semantic audit validation also accepts
+interleaved operations, foreign-root history, and a falsified final-MP4-first
+history. #35 is the single next corrective task, followed by another fresh
+independent retention gate. The isolated full offline suite passed; WSL first-use
+audit reopen and failed-sync retry passed. No real media was deleted or
+production code changed; no power-loss test was performed. #30 stays queued,
+and v0.10.0 remains released while v0.11.0 remains unreleased.
+
 **Issue #34 corrective slice complete (2026-09-28):** Destructive authorization
 now binds writer-recovery evidence and referenced-part byte hashes through
 planned partial deletion. Existing audit history is checked as ordered,

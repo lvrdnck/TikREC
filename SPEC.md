@@ -983,14 +983,18 @@ deleted/failed/completed ordering before another intent. A valid intent-only,
 unmatched-attempt, or other coherent event-boundary crash tail remains readable
 without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #34's
-corrective implementation awaits a NEW fresh independent review before any
-owner-facing deletion surface. Root-level persistent lifecycle locks use
+corrective implementation failed the fresh independent gate at `3ff83bc`.
+Issue #35 records two remaining gaps: eligibility can change between the fresh
+plan and authorization without a new eligibility decision, and historical audit
+validation accepts impossible interleaving, foreign-root records, or a falsified
+final-MP4-first order. These must be corrected and independently reviewed before
+any owner-facing deletion surface. Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
 while this private
 executor takes the exclusive lease. The protocol excludes TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata
-guarantees. Independent review remains required before exposing deletion.
+guarantees. The private executor remains unreleased.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent retention gate NOT READY (2026-09-28; issue #35 opened):**
+  Review of current HEAD `3ff83bc` found that eligibility can change after the
+  fresh plan but before authorization: a native Windows synthetic manifest status
+  edit with restored size/mtime/ctime/inode made a new plan `needs_attention`, yet
+  the private executor deleted the session and recorded `completed`. Existing
+  audit history also accepts an earlier operation resuming after a later intent,
+  a foreign-root intent, and a falsified final-MP4-first order. #35 contains
+  reproductions and the bounded corrective scope. Focused suites passed 253
+  (three skips) apart from one transient Windows `os.replace` fixture failure
+  that passed on exact rerun; the isolated full suite passed 1,491 plus 19
+  subtests (three skips). Native WSL first-use audit reopen and failed-sync
+  retry passed; power-loss validation was not performed. No real media was
+  deleted or production code changed. **Single next task:** fix #35, then run
+  another fresh independent retention gate. #30 stays queued; #8/#13/#28 remain
+  separate non-blocking evidence work. No owner action is pending. v0.10.0
+  remains released and v0.11.0 unreleased.
 - **Issue #34 corrective implementation complete (2026-09-28):** The private
   executor now captures stable byte hashes of each writer-recovery evidence file
   and its referenced retained part under the exclusive lease, validates the
