@@ -1085,9 +1085,11 @@ unreleased v0.11 development; its contract is in
 [RETENTION_CLI.md](RETENTION_CLI.md).
 The fresh independent public CLI review at `f99528f` found a terminal-output
 result-reporting blocker (#40): an output exception or interruption after the
-executor returns can label an audited, completed deletion `PARTIAL`/exit 3.
-The public gate is not ready pending correction and another fresh review; no
-real-media retention deletion has been performed.
+executor returned could label an audited, completed deletion `PARTIAL`/exit 3.
+The correction keeps exit 0 once the executor returns and makes a bounded
+diagnostic attempt with the output cause and operation context. A NEW fresh
+public review remains pending; no real-media retention deletion has been
+performed.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

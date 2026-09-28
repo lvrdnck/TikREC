@@ -59,10 +59,6 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
             root, session_id, store, audit_path=audit_path, job_paths=job_paths,
             clock=clock, media_inspector=media_inspector,
             preview_guard=preview.guard, progress=progress)
-        print(f"COMPLETE: deleted session {session_id} from {preview.root}", file=stdout)
-        print(f"Operation ID: {operation_id}", file=stdout)
-        print(f"Audit: {progress.audit_path}", file=stdout)
-        return 0
     except KeyboardInterrupt as error:
         if progress.intent_durable:
             return _incomplete(progress, session_id, root, error, stderr)
@@ -77,6 +73,33 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
                   "was attempted.", file=stderr)
         _refused(session_id, root, error, stderr)
         return 1
+    # The executor has returned only after the completed event synced. Display
+    # failures cannot turn that completed deletion into an incomplete result.
+    return _completed(session_id, preview, operation_id, progress.audit_path,
+                      stdout, stderr)
+
+
+def _completed(session_id: str, preview: RetentionPreview, operation_id: str,
+               audit_path: Path | None, stdout: TextIO, stderr: TextIO) -> int:
+    """Keep a durable completed result truthful if its normal display fails."""
+    try:
+        print(f"COMPLETE: deleted session {session_id} from {preview.root}", file=stdout)
+        print(f"Operation ID: {operation_id}", file=stdout)
+        print(f"Audit: {audit_path}", file=stdout)
+        stdout.flush()
+    except BaseException as error:
+        # A broken diagnostic channel must not change the known completed exit.
+        try:
+            print(f"COMPLETE: deleted session {session_id} from {preview.root}",
+                  file=stderr)
+            print(f"Output error: {type(error).__name__}: {_one_line(error)}",
+                  file=stderr)
+            print(f"Operation ID: {operation_id}", file=stderr)
+            print(f"Audit: {audit_path}", file=stderr)
+            stderr.flush()
+        except BaseException:
+            pass
+    return 0
 
 
 def _show_preview(preview: RetentionPreview, stdout: TextIO) -> None:

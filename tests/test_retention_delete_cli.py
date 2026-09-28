@@ -71,6 +71,66 @@ def test_complete_exact_noninteractive_deletion_and_audit(tmp_path):
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+@pytest.mark.parametrize("failure", [OSError, KeyboardInterrupt])
+@pytest.mark.parametrize("line", ["COMPLETE:", "Operation ID:", "Audit:", "flush"])
+def test_completed_output_fault_stays_complete(tmp_path, failure, line):
+    case = fixture(tmp_path)
+    root, parts, session_id, config, jobs, audit, _ = case
+
+    class FailingOutput(StringIO):
+        def write(self, value):
+            if value.startswith(line):
+                raise failure("synthetic completed output fault")
+            return super().write(value)
+
+        def flush(self):
+            if line == "flush":
+                raise failure("synthetic completed output fault")
+            return super().flush()
+
+    arguments = argparse.Namespace(
+        config_path=str(config.path), retention_action="delete",
+        session_id=session_id, root=str(root), confirm=session_id)
+    stdout, stderr = FailingOutput(), StringIO()
+    code = run_retention_command(
+        arguments, stdout, stderr, StringIO(), clock=lambda: NOW,
+        media_inspector=inspect, job_paths=jobs, audit_path=audit)
+    records = events(audit)
+    assert code == 0 and records[-1]["event"] == "completed"
+    assert not parts.exists() and not (root / "alpha.mp4").exists()
+    assert "COMPLETE" in stderr.getvalue()
+    assert f"Output error: {failure.__name__}: synthetic completed output fault" in stderr.getvalue()
+    assert f"Operation ID: {records[0]['operation_id']}" in stderr.getvalue()
+    assert f"Audit: {audit}" in stderr.getvalue()
+    assert "PARTIAL" not in stderr.getvalue() and "FAILED" not in stderr.getvalue()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+def test_completed_output_and_diagnostic_failure_keep_exit_zero(tmp_path):
+    case = fixture(tmp_path)
+    root, parts, session_id, config, jobs, audit, _ = case
+
+    class FailingSuccessOutput(StringIO):
+        def write(self, value):
+            if value.startswith("COMPLETE:"):
+                raise OSError("synthetic output failure")
+            return super().write(value)
+
+    class FailingDiagnostic(StringIO):
+        def write(self, _value):
+            raise OSError("synthetic diagnostic failure")
+
+    arguments = argparse.Namespace(
+        config_path=str(config.path), retention_action="delete",
+        session_id=session_id, root=str(root), confirm=session_id)
+    code = run_retention_command(
+        arguments, FailingSuccessOutput(), FailingDiagnostic(), StringIO(),
+        clock=lambda: NOW, media_inspector=inspect, job_paths=jobs, audit_path=audit)
+    assert code == 0 and events(audit)[-1]["event"] == "completed"
+    assert not parts.exists() and not (root / "alpha.mp4").exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
 def test_configured_root_and_interactive_exact_uuid(tmp_path):
     case = fixture(tmp_path)
     root, parts, session_id, config, _, audit, _ = case

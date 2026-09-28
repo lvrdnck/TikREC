@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #40 correction complete (2026-09-28):** Once the executor returns
+after synced `completed`, a failed or interrupted success-output write keeps
+`COMPLETE`/exit 0. A bounded stderr fallback reports the original output cause,
+operation UUID, and audit path when available. Synthetic Windows tests cover
+each success-output line and flush, plus failure of the fallback channel.
+Focused retention tests passed 364 (four skipped), the isolated full suite
+passed 1,628 (seven skipped, 19 subtests), and selected WSL planning/refusal
+tests passed 107 (44 Windows-only skipped). No real media was deleted. The
+single next v0.11 task is a NEW fresh-context independent public CLI review
+before separately authorized real-media validation. #30 stays queued;
+v0.10.0 remains released and v0.11.0 unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-28;
 `f99528f`; issue #40):** Native Windows Python 3.11 synthetic faults in the
 CLI's first `COMPLETE` output write, after the executor returned, produced

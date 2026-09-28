@@ -7,6 +7,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #40 completed-output reporting correction complete (2026-09-28):**
+  After the executor returns with synced `completed`, success-output failures
+  now keep `COMPLETE`/exit 0. The CLI makes one bounded stderr report with the
+  original output cause, operation UUID, and audit path; a failed diagnostic
+  channel does not change the completed result. Native Windows Python 3.11
+  focused retention tests: 364 passed, four skipped; isolated full suite:
+  1,628 passed, seven skipped, 19 subtests; selected WSL planning/refusal:
+  107 passed, 44 Windows-only skipped. **State:** #40 correction complete;
+  the single next v0.11 task is a NEW fresh-context independent public CLI
+  review before separately authorized real-media validation. No owner decision
+  is pending. #30 stays queued; #8/#13/#28 remain non-blocking evidence work.
+  v0.10.0 remains released and v0.11.0 unreleased. Only disposable synthetic
+  fixtures were deleted.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-28;
   HEAD `f99528f`; issue #40):** A disposable native Windows Python 3.11
   probe raised `OSError` or `KeyboardInterrupt` while the CLI printed

@@ -1,14 +1,14 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC REVIEW NOT READY (#40).**
+**Status: IMPLEMENTED IN DEVELOPMENT — NEW PUBLIC REVIEW PENDING.**
 Issue #39 corrected the post-sync intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 a later exception or interruption reports an after-intent outcome. Failed
 intent sync keeps the documented pre-intent result. A new independent review
 at `f99528f` found that a failed or interrupted CLI `COMPLETE` output write
-after the executor returns incorrectly reports `PARTIAL`/exit 3 despite a
-synced `completed` audit event and completed removal. Issue #40 tracks that
-bounded correction. Repeat a fresh-context review before real-media validation.
+after the executor returns incorrectly reported `PARTIAL`/exit 3 despite a
+synced `completed` audit event and completed removal. Issue #40 corrected that
+result boundary. Repeat a NEW fresh-context review before real-media validation.
 The local CLI workflow
 below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
@@ -141,7 +141,11 @@ audit command is required in this slice. The CLI never prints the entire
 journal, hashes, signed URLs, or private transport data.
 
 Report `COMPLETE` only after the executor returns and the synced `completed`
-event is known. Report `FAILED` when an intent exists but no removal is known
+event is known. If normal success output fails or is interrupted after that
+return, keep exit `0` and make one bounded stderr attempt to report `COMPLETE`,
+the original output cause, operation UUID, and audit path. Failure of that
+diagnostic channel does not change the completed result. Report `FAILED` when
+an intent exists but no removal is known
 to have occurred. Report `PARTIAL` when at least one artifact was removed or
 when an attempted removal/audit write leaves removal uncertain. Both failure
 labels state that the audit preserves the known event sequence and may require
