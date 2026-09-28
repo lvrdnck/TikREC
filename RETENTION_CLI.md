@@ -1,11 +1,12 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC SAFETY GATE NOT READY (#39).**
-The 2026-09-28 independent review reproduced a post-sync intent reporting gap:
-the CLI can return pre-intent `REFUSED`/1 or interruption/130 after the audit
-already contains a durable `intent`. No artifact was removed in the probe.
-Correct #39 and repeat a fresh review before real-media validation. The local
-CLI workflow below exists in the development checkout; it is not in the current
+**Status: IMPLEMENTED IN DEVELOPMENT — NEW PUBLIC REVIEW PENDING.**
+Issue #39 corrected the post-sync intent reporting gap found in the 2026-09-28
+review. Audit append marks progress immediately after successful intent sync;
+a later exception or interruption reports an after-intent outcome. Failed
+intent sync keeps the documented pre-intent result. A separate fresh-context
+review remains required before real-media validation. The local CLI workflow
+below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 

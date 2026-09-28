@@ -523,7 +523,8 @@ read-only planning remains available. The fresh independent review of
 cooperative-filesystem scope. The owner-facing CLI contract is in
 [RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **unreleased
 v0.11 development behavior**. Its fresh public review found a post-sync audit
-intent result-reporting defect (#39), so real-media validation remains gated.
+intent result-reporting defect; #39 corrected that boundary, and a separate
+fresh-context public review remains the gate before real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.

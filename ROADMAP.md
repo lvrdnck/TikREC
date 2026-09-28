@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #39 correction complete (2026-09-28):** The audit append publishes
+durable-intent progress immediately after successful `fsync`, so a subsequent
+exception or interruption is reported as `FAILED`/3 with its operation context.
+Pre-sync failure and interruption retain exit 1 and 130. Synthetic fault
+regressions passed; native Windows Python 3.11 focused tests passed 414 (four
+skipped), the isolated full suite passed 1,619 (seven skipped, 19 subtests),
+and selected WSL planning/refusal tests passed 109 (33 Windows-only skipped).
+No real media was deleted. The single next v0.11 task is a NEW fresh-context
+independent review of the corrected public CLI before separately authorized
+real-media validation. #30 stays queued; v0.10.0 remains released and v0.11.0
+unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-28;
 `bddcedd`; issue #39):** A native Windows synthetic fault after a synced
 `intent` but before progress publication left a durable audit operation while

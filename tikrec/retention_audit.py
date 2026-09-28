@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import stat
+from collections.abc import Callable
 from pathlib import Path
 
 from .service_job import default_job_state_path
@@ -76,8 +77,9 @@ class RetentionAudit:
     def __exit__(self, *_exc) -> None:
         self.handle.close()
 
-    def append(self, event: str, operation_id: str, **fields) -> None:
-        """Persist one schema-versioned event before returning to the caller."""
+    def append(self, event: str, operation_id: str, *,
+               after_sync: Callable[[], None] | None = None, **fields) -> None:
+        """Persist one event, then publish optional caller progress after sync."""
         named = self.path.lstat()
         if ((named.st_dev, named.st_ino) != self.identity
                 or named.st_nlink != 1 or not stat.S_ISREG(named.st_mode)
@@ -90,6 +92,10 @@ class RetentionAudit:
         if written != len(data):
             raise OSError("short retention audit write")
         os.fsync(self.handle.fileno())
+        if after_sync is not None:
+            # The executor must publish known durability before append returns
+            # so a later interrupt cannot be mistaken for a pre-intent refusal.
+            after_sync()
 
 
 def _prepare_parent(parent: Path) -> None:

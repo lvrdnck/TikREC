@@ -7,6 +7,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #39 post-sync intent reporting correction complete (2026-09-28):**
+  Audit append now marks caller progress immediately after a successful intent
+  `fsync`, before control can return to a faulting caller. A later exception or
+  `KeyboardInterrupt` reports `FAILED`/exit 3 with the original cause, operation
+  UUID, and audit path; pre-sync failures still report refusal/exit 1 or
+  pre-intent interruption/exit 130. Synthetic Windows regressions cover both
+  sides of the boundary. Python 3.11 focused suite: 414 passed, four skipped;
+  isolated full suite: 1,619 passed, seven skipped, 19 subtests. Selected WSL
+  read-only planning/refusal suite: 109 passed, 33 Windows-only skipped.
+  **State:** correction complete; the single next v0.11 task is a NEW
+  fresh-context independent public CLI review before separately authorized
+  real-media validation. No owner decision is pending. #30 stays queued;
+  #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains released and
+  v0.11.0 unreleased. Only disposable synthetic fixtures were deleted.
+
 - **Fresh independent public retention CLI review NOT READY (2026-09-28;
   HEAD `bddcedd`; issue #39):** A disposable native Windows fault injected
   immediately after a synced audit `intent` but before executor progress was

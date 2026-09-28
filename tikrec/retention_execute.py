@@ -35,6 +35,10 @@ class RetentionProgress:
     removal_uncertain: bool = False
     audit_uncertain: bool = False
 
+    def mark_intent_durable(self) -> None:
+        """Record a successful audit intent sync before append can return."""
+        self.intent_durable = True
+
 
 def execute_retention(root: Path, session_id: str, configuration_store: ConfigurationStore,
                       *, audit_path: Path | None = None,
@@ -76,7 +80,9 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
             # The intent is synced before any artifact is even attempted.
             progress.intent_attempted = True
             try:
-                audit.append("intent", operation_id, timestamp=clock(), root=str(scope),
+                audit.append("intent", operation_id,
+                             after_sync=progress.mark_intent_durable,
+                             timestamp=clock(), root=str(scope),
                              session_id=session_id, creator=auth.creator,
                              ended_at=auth.ended_at, max_age_days=auth.max_age_days,
                              protected=False, protected_creators=list(auth.protected_creators),
@@ -92,7 +98,6 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
             except BaseException:
                 progress.audit_uncertain = True
                 raise
-            progress.intent_durable = True
             deleted: set[str] = set()
             hashes = dict(auth.artifact_byte_hashes)
             for index, item in enumerate(auth.order):
