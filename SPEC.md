@@ -1090,7 +1090,11 @@ The correction keeps exit 0 once the executor returns and makes a bounded
 diagnostic attempt with the output cause and operation context. The NEW fresh
 review at `653f5fe` found a narrower successful-intent-`fsync` to progress
 callback interruption window and an unhandled broken-stderr path for
-after-intent failure reporting (#41). The public CLI gate is NOT READY;
+after-intent failure reporting (#41). The correction marks intent sync in
+progress after the complete write and before the syscall. Faults in that
+boundary report `FAILED`/3 with explicit durability uncertainty; faults before
+sync retain pre-intent results. Best-effort diagnostics preserve the known exit
+result when stderr fails. A NEW independent public CLI review remains required;
 no real-media retention deletion has been performed.
 
 Retention planning first discovers safely readable immediate UUID/output claims,

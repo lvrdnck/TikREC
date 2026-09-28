@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #41 correction complete (2026-09-28):** Intent sync now has a distinct
+in-progress result state. If `fsync` fails or is interrupted, the CLI reports
+uncertain `FAILED`/3 with operation context; proven pre-sync failure keeps
+`REFUSED`/1 or interruption 130. Broken stderr writes and flushes cannot replace
+an after-intent exit 3, and #40's completed-output exit 0 remains unchanged.
+Native Windows retention tests passed 369 (four skipped); the isolated full
+suite passed 1,637 (seven skipped, 19 subtests); applicable WSL planning/refusal
+passed 107 (39 skipped), plus ten read-only audit-history checks. No real media
+was deleted. The single next v0.11 task is a NEW fresh-context independent
+public CLI review before separately authorized real-media validation. #30 stays
+queued; v0.10.0 remains released and v0.11.0 unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-28;
 `653f5fe`; issue #41):** Disposable Windows probes found a remaining
 post-`fsync`, pre-callback interrupt window: a durable audit intent can be

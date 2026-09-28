@@ -60,18 +60,16 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
             clock=clock, media_inspector=media_inspector,
             preview_guard=preview.guard, progress=progress)
     except KeyboardInterrupt as error:
-        if progress.intent_durable:
+        if progress.intent_sync_started:
             return _incomplete(progress, session_id, root, error, stderr)
-        print(f"tikrec retention delete: interrupted before intent; "
-              f"session={session_id}; root={root or '<unconfigured>'}", file=stderr)
+        _diagnose(stderr, [f"tikrec retention delete: interrupted before intent; "
+                           f"session={session_id}; root={root or '<unconfigured>'}"])
         return 130
     except Exception as error:
-        if progress.intent_durable:
+        if progress.intent_sync_started:
             return _incomplete(progress, session_id, root, error, stderr)
-        if progress.intent_attempted:
-            print("Audit intent durability was not confirmed; no artifact removal "
-                  "was attempted.", file=stderr)
-        _refused(session_id, root, error, stderr)
+        _refused(session_id, root, error, stderr,
+                 intent_attempted=progress.intent_attempted)
         return 1
     # The executor has returned only after the completed event synced. Display
     # failures cannot turn that completed deletion into an incomplete result.
@@ -135,29 +133,46 @@ def _typed_confirmation(stdin: TextIO, stdout: TextIO, session_id: str) -> bool:
 
 
 def _refused(session_id: str, root: Path | None, error: Exception,
-             stderr: TextIO) -> None:
+             stderr: TextIO, *, intent_attempted: bool = False) -> None:
     """Report a pre-intent refusal without implying a journaled operation."""
-    print(f"REFUSED: session={session_id}; root={root or '<unconfigured>'}; "
-          f"reason={_one_line(error)}", file=stderr)
-    print("No deletion operation was started.", file=stderr)
+    lines = []
+    if intent_attempted:
+        lines.append("Audit intent durability was not confirmed; no artifact "
+                     "removal was attempted.")
+    lines.extend((f"REFUSED: session={session_id}; root={root or '<unconfigured>'}; "
+                  f"reason={_one_line(error)}",
+                  "No deletion operation was started."))
+    _diagnose(stderr, lines)
 
 
 def _incomplete(progress: RetentionProgress, session_id: str, root: Path | None,
                 error: BaseException, stderr: TextIO) -> int:
     """Report after-intent uncertainty without changing or repairing artifacts."""
     state = "PARTIAL" if progress.deleted_count or progress.removal_uncertain else "FAILED"
-    print(f"{state}: session={session_id}; root={root}; reason={_one_line(error)}",
-          file=stderr)
-    print(f"Operation ID: {progress.operation_id or 'unknown'}", file=stderr)
+    lines = [f"{state}: session={session_id}; root={root}; reason={_one_line(error)}",
+             f"Operation ID: {progress.operation_id or 'unknown'}"]
     if progress.audit_path is not None:
-        print(f"Audit: {progress.audit_path}", file=stderr)
-    if progress.audit_uncertain or not progress.intent_durable:
-        print("Audit state may be incomplete or unavailable.", file=stderr)
+        lines.append(f"Audit: {progress.audit_path}")
+    if not progress.intent_durable:
+        lines.append("Audit intent durability was not confirmed; the journal may "
+                     "contain an intent.")
+    elif progress.audit_uncertain:
+        lines.append("Audit state may be incomplete or unavailable.")
     else:
-        print("The audit record preserves the known event sequence.", file=stderr)
-    print("Inspect the audit and filesystem before any fresh retention decision; "
-          "TikREC will not retry or resume automatically.", file=stderr)
+        lines.append("The audit record preserves the known event sequence.")
+    lines.append("Inspect the audit and filesystem before any fresh retention "
+                 "decision; TikREC will not retry or resume automatically.")
+    _diagnose(stderr, lines)
     return 3
+
+
+def _diagnose(stderr: TextIO, lines: list[str]) -> None:
+    """Make one bounded diagnostic attempt without altering the known result."""
+    try:
+        stderr.write("\n".join(lines) + "\n")
+        stderr.flush()
+    except BaseException:
+        pass
 
 
 def _one_line(error: BaseException) -> str:

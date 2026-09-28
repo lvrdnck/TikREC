@@ -1,21 +1,21 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY (#41).**
+**Status: IMPLEMENTED IN DEVELOPMENT — #41 CORRECTED; NEW PUBLIC REVIEW PENDING.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
-faults after append returns report an after-intent outcome. Failed intent sync
-keeps the documented pre-intent result. A new independent review
-at `f99528f` found that a failed or interrupted CLI `COMPLETE` output write
+faults after append returns report an after-intent outcome. A new independent
+review at `f99528f` found that a failed or interrupted CLI `COMPLETE` output write
 after the executor returns incorrectly reported `PARTIAL`/exit 3 despite a
 synced `completed` audit event and completed removal. Issue #40 corrected that
-result boundary.
-The fresh review at `653f5fe` found two remaining reporting gaps: an interrupt
-between successful OS intent `fsync` and the durability callback can still
-claim no intent exists, and a failed after-intent stderr diagnostic can escape
-without exit `3`. Issue #41 is the single next correction. Repeat a NEW
-fresh-context public review after that correction, before separately authorized
-real-media validation. The local CLI workflow below exists in the development
-checkout; it is not in the current
+result boundary. The fresh review at `653f5fe` found two remaining reporting
+gaps: an interrupt between successful OS intent `fsync` and the durability
+callback could still
+claim no intent existed, and a failed after-intent stderr diagnostic could
+escape without exit `3`. Issue #41 records the sync-in-progress state before
+the syscall, reports an interrupted or failed sync as uncertain `FAILED`/3,
+and makes failure diagnostics best-effort. A NEW fresh-context public review
+is required before separately authorized real-media validation. The local CLI
+workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 
@@ -134,7 +134,7 @@ conflicting lifecycle ownership, unsupported filesystem behavior, or a failed
 preview comparison. POSIX/macOS/Linux `delete` refuses before lifecycle-lock
 creation, audit creation, or recording mutation with: `v0.11 destructive
 retention is Windows-only; retention plan remains available`. Do not fall back
-to pathname deletion. A refusal before durable audit intent reports `REFUSED`,
+to pathname deletion. A refusal before intent sync begins reports `REFUSED`,
 the reason, the target UUID/root, and `No deletion operation was started`.
 
 The executor records a durable intent before any artifact attempt and retains
@@ -150,33 +150,37 @@ event is known. If normal success output fails or is interrupted after that
 return, keep exit `0` and make one bounded stderr attempt to report `COMPLETE`,
 the original output cause, operation UUID, and audit path. Failure of that
 diagnostic channel does not change the completed result. Report `FAILED` when
-an intent exists but no removal is known
-to have occurred. Report `PARTIAL` when at least one artifact was removed or
-when an attempted removal/audit write leaves removal uncertain. Both failure
-labels state that the audit preserves the known event sequence and may require
-filesystem inspection for an ambiguous final attempt. A process crash may
-prevent any CLI message; the deterministic audit path remains available for
+intent is durable or its sync began but may have succeeded, and no removal is
+known to have occurred. An interrupted or failed sync call cannot prove the
+intent did not persist; report its uncertainty with operation context and exit
+`3`, without claiming known durability. Report `PARTIAL` when at least one
+artifact was removed or when an attempted removal/audit write leaves removal
+uncertain. Both failure labels state only what is known about the audit and may
+require filesystem inspection for an ambiguous final attempt. A process crash
+may prevent any CLI message; the deterministic audit path remains available for
 reconstruction. Never claim success from missing files alone. Do not retry,
 resume, repair the journal, clean up quarantine names, or silently continue
 after any failure. A later deletion decision starts from fresh eligibility and
 normally refuses an incomplete session.
 
 The private executor returns an operation ID on success and fills a caller-owned
-progress record after intent, including audit path, durable-intent state, known
-deletion count, and possible removal or journal uncertainty. The CLI keeps the
-original failure and performs no second mutation to improve the message. If
+progress record after intent, including audit path, sync-started and durable-intent
+states, known deletion count, and possible removal or journal uncertainty. The
+CLI keeps the original failure and performs no second mutation to improve the message. If
 the journal itself is unavailable, it says its state is uncertain rather than
-promising an audit record exists. A failed intent write is a refusal because no
-artifact removal is attempted; the CLI notes that intent durability was not
-confirmed.
+promising an audit record exists. A failed intent write before sync is a refusal
+because no artifact removal is attempted; the CLI notes that intent durability
+was not confirmed. A failed sync is uncertain rather than a proven pre-intent
+refusal. Diagnostic stderr writes and flushes are best-effort and cannot change
+an already determined exit result.
 
 | Exit code | Meaning |
 | --- | --- |
 | `0` | Read-only plan succeeded, or one deletion reached durable `completed`. |
-| `1` | Operational refusal before intent; no deletion operation started. |
+| `1` | Operational refusal before intent sync; no deletion operation started. |
 | `2` | CLI syntax or argument error, following existing `argparse` behavior. |
-| `3` | Intent/attempt occurred without proven completion (`FAILED` or `PARTIAL`). |
-| `130` | User interruption before intent; after intent use `3` with operation context when the process can report it. |
+| `3` | Intent sync began or removal was attempted without proven completion (`FAILED` or `PARTIAL`). |
+| `130` | User interruption before intent sync; after sync begins use `3` with operation context when the process can report it. |
 
 Diagnostics go to stderr; successful plan and completed deletion results go to
 stdout. Do not overload `2` for a retention refusal or return `0` for a partial

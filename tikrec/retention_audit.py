@@ -78,8 +78,9 @@ class RetentionAudit:
         self.handle.close()
 
     def append(self, event: str, operation_id: str, *,
+               before_sync: Callable[[], None] | None = None,
                after_sync: Callable[[], None] | None = None, **fields) -> None:
-        """Persist one event, then publish optional caller progress after sync."""
+        """Persist one event and publish the sync boundary to its caller."""
         named = self.path.lstat()
         if ((named.st_dev, named.st_ino) != self.identity
                 or named.st_nlink != 1 or not stat.S_ISREG(named.st_mode)
@@ -91,6 +92,10 @@ class RetentionAudit:
         written = self.handle.write(data)
         if written != len(data):
             raise OSError("short retention audit write")
+        if before_sync is not None:
+            # A fault inside fsync may follow successful persistence but precede
+            # the after-sync callback, so the caller must retain uncertainty.
+            before_sync()
         os.fsync(self.handle.fileno())
         if after_sync is not None:
             # The executor must publish known durability before append returns

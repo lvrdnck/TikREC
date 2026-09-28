@@ -30,10 +30,15 @@ class RetentionProgress:
     operation_id: str | None = None
     audit_path: Path | None = None
     intent_attempted: bool = False
+    intent_sync_started: bool = False
     intent_durable: bool = False
     deleted_count: int = 0
     removal_uncertain: bool = False
     audit_uncertain: bool = False
+
+    def mark_intent_sync_started(self) -> None:
+        """Record the boundary after writing intent and before calling fsync."""
+        self.intent_sync_started = True
 
     def mark_intent_durable(self) -> None:
         """Record a successful audit intent sync before append can return."""
@@ -81,6 +86,7 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
             progress.intent_attempted = True
             try:
                 audit.append("intent", operation_id,
+                             before_sync=progress.mark_intent_sync_started,
                              after_sync=progress.mark_intent_durable,
                              timestamp=clock(), root=str(scope),
                              session_id=session_id, creator=auth.creator,

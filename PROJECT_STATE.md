@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #41 intent-sync and diagnostic result correction complete
+  (2026-09-28):** The audit marks sync started after writing intent and before
+  `fsync`; faults inside that boundary report uncertain `FAILED`/3 with the
+  original cause, operation ID, and audit path instead of a definitive
+  pre-intent result. Proven pre-sync faults retain `REFUSED`/1 or interruption
+  130. Failure diagnostics are best-effort, so broken stderr writes/flushes
+  preserve exit 3; #40 completed-output exit 0 remains intact. Native Windows
+  Python 3.11 retention tests: 369 passed, four skipped; isolated full suite:
+  1,637 passed, seven skipped, 19 subtests; applicable WSL planning/refusal:
+  107 passed, 39 skipped, plus ten read-only audit-history checks passed.
+  **State:** #41 correction complete; the single next v0.11 task is a NEW
+  fresh-context independent public CLI review. No owner decision is pending;
+  separately authorized real-media validation remains later. #30 stays queued;
+  #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains released and
+  v0.11.0 unreleased. Only disposable synthetic fixtures were deleted.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-28;
   HEAD `653f5fe`; issue #41):** Native Windows disposable probes found two
   result-reporting gaps. An interrupt after the OS successfully syncs `intent`
