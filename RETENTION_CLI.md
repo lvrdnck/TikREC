@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — #43 CORRECTED; NEW PUBLIC REVIEW PENDING.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; #44 NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -25,9 +25,12 @@ execution cause in `FAILED`/`PARTIAL` output. A post-intent `SystemExit` can
 also escape without exit 3 or operation context. Issue #43 now preserves the
 first operation fault before audit/lifecycle cleanup, reports a later cleanup
 fault separately when possible, and classifies post-intent `SystemExit` as an
-incomplete exit 3 with operation context. The public CLI gate remains NOT READY
-pending a NEW fresh-context review before separately authorized real-media
-validation. The local CLI
+incomplete exit 3 with operation context. The NEW review at `3850d8c` found
+that after synced `completed`, a later cleanup fault can hide the first
+post-completion interruption or cleanup error from `COMPLETE`/0 diagnostics.
+Issue #44 is the single next correction; the public CLI gate remains NOT READY
+until another fresh independent review passes. Separately authorized real-media
+validation follows that gate. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).

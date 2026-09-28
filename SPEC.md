@@ -1118,6 +1118,12 @@ diagnostic channel works. Relevant post-intent `BaseException` faults, including
 refusal/interruption and proven completion keep their existing results. A NEW
 independent public CLI review remains required before separately authorized
 real-media retention validation; v0.11 is unreleased.
+The fresh review at `3850d8c` found a post-completion reporting blocker (#44):
+after synced `completed`, a later audit/lifecycle cleanup error can mask the
+first post-completion interruption or cleanup error. The result stays
+`COMPLETE`/0 with operation context, but the original cause is lost. The public
+CLI gate is NOT READY pending #44 correction and another independent review;
+only disposable synthetic media was used.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

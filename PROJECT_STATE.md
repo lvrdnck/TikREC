@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-28;
+  HEAD `3850d8c`; issue #44):** Disposable native Windows probes found that
+  after a synced `completed` event, a later audit/lifecycle cleanup fault can
+  hide the first post-completion interruption or cleanup error from `COMPLETE`/0
+  diagnostics. The result code and operation/audit context remain correct, but
+  fault precedence is not. Focused retention/lifecycle tests: 403 passed, four
+  skipped; isolated full suite: 1,663 passed, seven skipped, 19 subtests;
+  applicable WSL planning/refusal and read-only audit checks: 177 passed, five
+  skipped. Combined pre-completion fault and post-preview claimant probes held
+  their expected boundaries. **State:** #44 is the single next bounded v0.11
+  correction; repeat a NEW fresh-context public CLI review afterward. No owner
+  decision is pending. Separately authorized real-media validation remains
+  later; #30 stays queued, and #8/#13/#28 remain non-blocking evidence work.
+  v0.10.0 remains released and v0.11.0 unreleased. No production code or real
+  media was changed in this review.
+
 - **Issue #43 after-intent result correction complete (2026-09-28):** The
   executor now publishes the first operation fault before audit or lifecycle
   cleanup can mask it. The public CLI retains that cause in `FAILED`/`PARTIAL`
