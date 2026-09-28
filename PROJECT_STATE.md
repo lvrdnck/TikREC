@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **NEW fresh independent retention gate NOT READY (2026-09-28; issue #37):**
+  Review of current HEAD `5d27dc8` reproduced a post-quarantine proof-to-unlink
+  race on native Windows: an FLV, final MP4, or empty parts directory can be
+  replaced at its private name, the replacement removed, and the audit marked
+  `completed` while the authorized object survives. Native WSL/POSIX `rename`
+  overwrote an unexpected private-name occupant inserted after the occupancy
+  check. A public creator-protection update after the last policy check but
+  before unlink allowed one newly protected part to be removed before the next
+  check stopped the operation. #37 records reproductions and narrow corrective
+  scope. Focused Windows suites passed 312 (four skips); the isolated full
+  offline suite passed 1,535 plus 19 subtests (four skips); native WSL/POSIX
+  journal reopen passed. No real media was deleted or power-loss behavior tested.
+  **State:** v0.11 owner-facing retention design is blocked on #37. Correct #37,
+  then run another NEW fresh-context independent gate. #30 stays queued;
+  #8/#13/#28 remain separate non-blocking evidence work. No owner action is
+  pending. v0.10.0 remains released and v0.11.0 unreleased.
 - **Issue #36 corrective implementation complete (2026-09-28):** The private
   executor now byte-binds every authorized file across the first plan,
   authorization, closing plan, and each surviving deletion position. It moves

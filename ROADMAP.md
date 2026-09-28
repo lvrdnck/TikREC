@@ -1293,6 +1293,20 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**NEW fresh independent retention gate NOT READY (2026-09-28; issue #37):**
+Current `5d27dc8` still removes by a mutable private pathname after proving the
+quarantined object. Native Windows synthetic full-executor probes swapped the
+private FLV, final MP4, and empty parts directory after proof; each removed the
+replacement and wrote `completed` while the authorized object survived. Native
+POSIX `rename` overwrote a private-name occupant introduced after the collision
+check. A public protection change between the final policy check and unlink also
+allowed one newly protected part to be removed before the next check failed.
+Focused suites passed 312 (four skips), the isolated full suite passed 1,535
+plus 19 subtests (four skips), and native POSIX journal reopen passed. No real
+media deletion or power-loss test was performed. Correct #37, then repeat a NEW
+fresh-context independent gate before owner-facing deletion design. #30 remains
+queued; v0.10.0 is released and v0.11.0 unreleased.
+
 **Issue #36 corrective slice complete (2026-09-28):** Destructive
 retention now binds all eligible file bytes through both planner observations,
 authorization, and every surviving deletion position. Same-directory private

@@ -973,11 +973,17 @@ For each artifact it first moves the pathname to a unique, same-directory
 private sibling derived from the audited operation and order position. It then
 verifies the moved object's original identity and, for files, its bound bytes
 before removing that private sibling. A failed verification leaves the moved
-object for manual inspection and terminates the operation; it never removes an
-unverified replacement. POSIX syncs the parent after the move and removal.
+object for manual inspection and terminates the operation. POSIX syncs the
+parent after the move and removal. Current `5d27dc8` still has a proof-to-unlink
+gap if the private pathname is replaced after verification: it can remove the
+replacement and report completion while the authorized object survives. POSIX
+`rename` can also overwrite an occupant inserted at that name after the
+pre-rename occupancy check. Issue #37 blocks owner-facing deletion design until
+these mutation boundaries are corrected and independently reviewed.
 The lifecycle lease coordinates TikREC writers. As with the existing filesystem
 trust boundary, a noncooperating process with write access to private quarantine
-names is outside this protocol's protection.
+names is outside the current implementation's protection; the independent gate
+explicitly requires post-rename replacement and collision safety.
 Unexpected evidence or failure stops immediately. A later call cannot resume
 the stale operation; it must pass fresh authorization, which normally refuses
 an incomplete session.
@@ -1003,8 +1009,11 @@ unmatched-attempt, or other coherent event-boundary crash tail remains readable
 without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #35
 corrects the plan-to-authorization and audit-history gaps found at `3ff83bc`;
-a NEW fresh-context independent review remains required before any owner-facing
-deletion surface. Root-level persistent lifecycle locks use
+a NEW fresh-context independent review remains required after issue #37 before
+any owner-facing deletion surface. The public protection/configuration writer
+does not share the lifecycle lease: a protection change after the last policy
+check can precede a file unlink, so issue #37 also requires mutation-time policy
+authority. Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
 while this private
