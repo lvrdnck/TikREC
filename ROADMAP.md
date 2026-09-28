@@ -1293,15 +1293,27 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #34 corrective slice complete (2026-09-28):** Destructive authorization
+now binds writer-recovery evidence and referenced-part byte hashes through
+planned partial deletion. Existing audit history is checked as ordered,
+schema-1 operations, including valid incomplete crash tails; impossible
+event histories block new deletion. Native Windows restored-metadata cases,
+Python 3.11 focused tests (211 passed, one skip), the isolated full offline
+suite (1,491 passed, three skips, 19 subtests), and a native WSL audit reopen
+check passed. No real media was deleted. A NEW fresh independent review of the
+corrected executor, lifecycle lock, and audit protocol is the next gate before
+owner-facing retention design. #30 stays queued; v0.10.0 remains released and
+v0.11.0 unreleased.
+
 **Fresh independent executor gate NOT READY (2026-09-28; issue #34):** Current
 HEAD `bcfe38b` still permits a native Windows same-size/restored-metadata
 writer-recovery evidence change to make a session ineligible while the private
 executor deletes it and audits completion. The audit parser also accepts
 semantically invalid prior histories, including an orphan completion and
 duplicate operation intents. #34 records synthetic reproductions and bounded
-fix scope. No real media was deleted or production behavior changed. Fix #34
-and repeat the independent retention gate before owner-facing design; #30 stays
-queued. v0.10.0 is released and v0.11.0 remains unreleased.
+fix scope. No real media was deleted or production behavior changed. At that
+checkpoint, fixing #34 and repeating the independent retention gate were next;
+#30 stayed queued. v0.10.0 was released and v0.11.0 unreleased.
 
 **Issue #33 corrective slice complete (2026-09-28):** The private executor now
 revalidates the bound target control content through planned partial removals,
@@ -1452,8 +1464,8 @@ recovery and explicit `user_stop` finalization restored two available slots, wit
 Eliss/Gracie monitoring operational and original media/evidence hashes preserved.
 The final MP4 passes deep decoding; full session validation truthfully fails for
 historical decode errors in seven unchanged FLV parts, as documented in #32 and
-PROJECT_STATE.md. Issue #34 is the active retention correction after a fresh
-independent gate; #30 remains queued. v0.10.0 remains released and v0.11.0
+PROJECT_STATE.md. Issue #34's corrective work is complete; a fresh independent
+retention gate remains before #30. v0.10.0 remains released and v0.11.0
 unreleased.
 
 **Queued operational follow-up — runtime monitoring reconfiguration (issue #30):**

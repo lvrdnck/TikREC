@@ -53,6 +53,7 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                          target_controls={entry[0]: entry[2] for entry in
                                           auth.target_claim.evidence if len(entry) == 3
                                           and entry[2] is not None},
+                         recovery_byte_hashes=dict(auth.recovery_byte_hashes),
                          artifacts=[item.audit_dict() for item in auth.order],
                          order=[item.relative_path for item in auth.order])
             deleted: set[str] = set()

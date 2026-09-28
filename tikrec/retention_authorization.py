@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -17,7 +18,8 @@ from .retention_paths import local_path
 from .retention_snapshot import (ClaimSnapshot, capture_claim, capture_root,
                                  checked_control)
 from .service_job import default_job_state_path, second_job_state_path
-from .writer_recovery_evidence import recovery_records
+from .writer_recovery_evidence import (recovery_records, prove_recovery_bytes,
+                                       _artifact_identity, _same_opened_artifact)
 
 
 @dataclass(frozen=True)
@@ -58,6 +60,7 @@ class DeletionAuthorization:
     order: tuple[ArtifactFingerprint, ...]
     target_claim: ClaimSnapshot
     other_claims: tuple[ClaimSnapshot, ...]
+    recovery_byte_hashes: tuple[tuple[str, str], ...]
 
 
 def authorize(root: Path, session: dict, config: Configuration) -> DeletionAuthorization:
@@ -85,7 +88,8 @@ def authorize(root: Path, session: dict, config: Configuration) -> DeletionAutho
             or manifest["creator"] != session["creator"]
             or manifest["ended_at"] != session["ended_at"]):
         raise ValueError("retention manifest changed")
-    media = {record["evidence"] for record in recovery_records(manifest)}
+    recoveries = recovery_records(manifest)
+    media = {record["evidence"] for record in recoveries}
     children = list(directory.iterdir())
     for child in children:
         if re.fullmatch(r"part-[0-9]+\.flv", child.name):
@@ -104,11 +108,32 @@ def authorize(root: Path, session: dict, config: Configuration) -> DeletionAutho
                               {directory.name, output.name} else root / name,
                               directory=name == directory.name, volume=volume)
                   for name in order_names)
+    # A recovery evidence file and its part can change bytes while Windows
+    # preserves the metadata used by ordinary artifact fingerprints.
+    by_path = {item.relative_path: item for item in order}
+    proof_names = {name for record in recoveries
+                   for name in (record["evidence"], record["part"])}
+    byte_hashes = {}
+    for name in sorted(proof_names):
+        relative = str(directory.relative_to(root) / name)
+        if relative not in by_path:
+            raise ValueError("retention recovery proof is outside the artifact allowlist")
+        byte_hashes[relative] = _checked_digest(root, by_path[relative], volume)
+    for record in recoveries:
+        evidence = str(directory.relative_to(root) / record["evidence"])
+        if (byte_hashes[evidence] != record["source_sha256"]
+                or not prove_recovery_bytes(directory / record["evidence"],
+                                            directory / record["part"],
+                                            record["source_bytes"],
+                                            record["recovered_bytes"],
+                                            record["source_sha256"])):
+            raise ValueError("retention recovery byte proof changed")
     return DeletionAuthorization(
         root, _directory_identity(root), volume, session["session_id"], session["creator"],
         session["ended_at"], config.retention_max_age_days,
         config.retention_protected_creators, order[-2], order[-1], order, matches[0],
-        tuple(claim for claim in snapshot.claims if claim.directory != str(directory)))
+        tuple(claim for claim in snapshot.claims if claim.directory != str(directory)),
+        tuple(sorted(byte_hashes.items())))
 
 
 def fingerprint(root: Path, path: Path, *, directory: bool,
@@ -140,6 +165,32 @@ def check_fingerprint(root: Path, expected: ArtifactFingerprint,
             raise ValueError("retention parts directory identity changed")
     elif current != expected:
         raise ValueError("retention artifact identity changed")
+
+
+def _checked_digest(root: Path, expected: ArtifactFingerprint,
+                    volume: LocalVolume) -> str:
+    """Hash one authorized file with stable path and opened-handle identity."""
+    if expected.kind != "file":
+        raise ValueError("retention byte proof is not a file")
+    check_fingerprint(root, expected, volume)
+    path = root / expected.relative_path
+    opening = (expected.mode, expected.size, expected.device, expected.inode,
+               expected.mtime_ns, expected.ctime_ns, expected.link_count,
+               expected.attributes)
+    with path.open("rb") as handle:
+        held = _artifact_identity(handle)
+        # Windows path and handle ctime are incomparable for aged recovered files.
+        if not _same_opened_artifact(opening, held):
+            raise ValueError("retention byte proof handle changed")
+        digest = hashlib.sha256()
+        read_bytes = 0
+        for chunk in iter(lambda: handle.read(64 * 1024), b""):
+            digest.update(chunk)
+            read_bytes += len(chunk)
+        if read_bytes != expected.size or _artifact_identity(handle) != held:
+            raise ValueError("retention byte proof changed during read")
+    check_fingerprint(root, expected, volume)
+    return digest.hexdigest()
 
 
 def check_jobs(auth: DeletionAuthorization,
@@ -202,11 +253,16 @@ def check_root(auth: DeletionAuthorization, deleted: frozenset[str]) -> None:
             relative = str(Path(auth.parts.relative_path) / name)
             if relative not in deleted:
                 checked_control(auth.target_claim, parts_path / name)
+    proof_hashes = dict(auth.recovery_byte_hashes)
     for item in auth.order:
         path = auth.root / item.relative_path
         if item.relative_path in deleted:
             if path.exists() or path.is_symlink():
                 raise ValueError("deleted retention artifact reappeared")
+        elif item.relative_path in proof_hashes:
+            # Keep the surviving part bound after its evidence file is removed.
+            if _checked_digest(auth.root, item, auth.volume) != proof_hashes[item.relative_path]:
+                raise ValueError("retention recovery byte proof changed")
         else:
             check_fingerprint(auth.root, item, auth.volume)
     if auth.parts.relative_path not in deleted:

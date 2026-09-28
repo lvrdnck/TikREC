@@ -514,7 +514,7 @@ automatically delete media, or provide a library/Web UI/playback. Unreleased
 v0.11 development adds a read-only age-retention plan and explicit creator
 protection. The public CLI and service do not offer deletion; a private bounded
 executor has no owner-facing caller and awaits a fresh independent safety review
-after the issue #33 corrections.
+after the issue #34 corrections.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,

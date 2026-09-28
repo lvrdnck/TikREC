@@ -9,11 +9,11 @@ import stat
 from pathlib import Path
 
 from .service_job import default_job_state_path
+from .retention_audit_history import AuditHistory
 
 
 AUDIT_SCHEMA = 1
 _MAX_RECORD_BYTES = 64 * 1024 * 1024
-_EVENTS = {"intent", "attempt", "deleted", "failed", "completed"}
 _POSIX_SYNC = os.name != "nt"
 
 
@@ -126,19 +126,15 @@ def _sync_directory(directory: Path) -> None:
 
 
 def _validate_history(handle) -> None:
-    """Require complete, readable schema-1 JSONL before accepting another intent."""
+    """Require complete, coherent schema-1 operations before another intent."""
     handle.seek(0)
+    history = AuditHistory()
     try:
         while record_bytes := handle.readline(_MAX_RECORD_BYTES + 1):
             if len(record_bytes) > _MAX_RECORD_BYTES or not record_bytes.endswith(b"\n"):
                 raise ValueError("incomplete retention audit record")
             record = json.loads(record_bytes.decode("utf-8"), object_pairs_hook=_unique_fields)
-            if (type(record) is not dict or type(record.get("schema_version")) is not int
-                    or record["schema_version"] != AUDIT_SCHEMA
-                    or record.get("event") not in _EVENTS
-                    or type(record.get("operation_id")) is not str
-                    or not record["operation_id"]):
-                raise ValueError("invalid retention audit record")
+            history.accept(record)
     except (UnicodeError, ValueError, TypeError) as error:
         raise ValueError("retention audit journal is incomplete or invalid") from error
     handle.seek(0, os.SEEK_END)

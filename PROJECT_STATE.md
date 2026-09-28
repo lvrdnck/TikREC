@@ -7,7 +7,25 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Fresh independent retention gate NOT READY (2026-09-28; issue #34 active):**
+- **Issue #34 corrective implementation complete (2026-09-28):** The private
+  executor now captures stable byte hashes of each writer-recovery evidence file
+  and its referenced retained part under the exclusive lease, validates the
+  manifest's recovery proof, and rechecks every surviving proof artifact before
+  each unlink. The durable intent records those hashes. Existing audit JSONL
+  must now represent coherent schema-1 operations with unique IDs, exact
+  artifact order, valid event transitions, and valid completed counts; legitimate
+  incomplete crash histories remain readable without repair or resume. Native
+  Windows restored-metadata regressions pass before evidence deletion, after
+  evidence deletion while its part survives, and after an audit attempt.
+  Python 3.11 focused suites passed 211 (one skip); the isolated full offline
+  suite passed 1,491 plus 19 subtests (three skips). A native WSL `/var/tmp`
+  audit reopen and orphan rejection check passed; power-loss validation was not
+  performed. No real media was deleted. **Next gate:** a NEW fresh independent
+  review of the corrected executor, lifecycle locking, authorization, and audit
+  protocol. #30 remains queued after that gate; #8/#13/#28 remain separate
+  non-blocking evidence work. No owner action is pending. v0.10.0 remains
+  released and v0.11.0 unreleased.
+- **Fresh independent retention gate NOT READY (2026-09-28; issue #34 opened):**
   Review of current HEAD `bcfe38b` found two blockers. On native Windows, a
   same-size writer-recovery evidence byte change with restored timestamps leaves
   artifact metadata unchanged; a fresh plan becomes `needs_attention`, yet the
@@ -19,10 +37,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   suite passed 1,456 plus 19 subtests (three skips). Native WSL POSIX first-use
   directory fsync ordering and failed-sync retry passed; power-loss testing was
   not performed. No real media was deleted or production behavior changed.
-  **Active task:** fix #34, then repeat a fresh independent retention gate.
-  #30 remains queued after that gate; #8/#13/#28 remain separate non-blocking
-  evidence work. No owner action is pending. v0.10.0 remains released and
-  v0.11.0 unreleased.
+  At that checkpoint the next task was to fix #34 and repeat the independent
+  gate. #30 remained queued; v0.10.0 was released and v0.11.0 unreleased.
 - **Issue #33 corrective implementation complete (2026-09-28):** The private
   executor now binds the target claim and control hashes, rechecks surviving
   controls before every unlink, and records their hashes in the intent. Existing

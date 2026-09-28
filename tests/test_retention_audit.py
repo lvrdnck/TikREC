@@ -2,12 +2,31 @@
 
 import json
 import os
+import uuid
 
 import pytest
 
 from tikrec.retention_audit import AUDIT_SCHEMA, RetentionAudit
 import tikrec.retention_audit as audit_module
 from tests.test_retention_execute import fixture
+
+
+def intent_fields(root, *, order=("alpha.mp4",)):
+    """Build one journal-only schema-1 intent without relying on deleted media."""
+    return dict(timestamp=2000000.0, root=str(root), session_id=str(uuid.uuid4()),
+                creator="alpha", ended_at=1010.0, max_age_days=1,
+                protected=False, protected_creators=[], order=list(order),
+                artifacts=[dict(relative_path=path, kind="file", mode=0o100666,
+                                size=1, device=1, inode=index + 1,
+                                mtime_ns=1, ctime_ns=1, link_count=1,
+                                attributes=0, volume=dict(platform="test",
+                                                          point="test", identity="test"))
+                           for index, path in enumerate(order)])
+
+
+def new_operation():
+    """Use the same canonical operation-ID shape as the executor."""
+    return str(uuid.uuid4())
 
 
 def expected_posix_syncs(parent):
@@ -20,11 +39,15 @@ def test_external_journal_appends_schema_events_and_refuses_hardlinks(tmp_path):
     root = tmp_path / "recordings"
     root.mkdir()
     path = tmp_path / "audit" / "history.jsonl"
+    operation = new_operation()
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "operation", session_id="session")
-        audit.append("completed", "operation", deleted_count=0)
+        audit.append("intent", operation, **intent_fields(root))
+        audit.append("attempt", operation, path="alpha.mp4")
+        audit.append("deleted", operation, path="alpha.mp4")
+        audit.append("completed", operation, deleted_count=1)
     records = [json.loads(line) for line in path.read_text().splitlines()]
-    assert [item["event"] for item in records] == ["intent", "completed"]
+    assert [item["event"] for item in records] == ["intent", "attempt", "deleted",
+                                                "completed"]
     assert all(item["schema_version"] == AUDIT_SCHEMA for item in records)
     (tmp_path / "audit-link").hardlink_to(path)
     with pytest.raises(ValueError, match="journal"):
@@ -45,12 +68,13 @@ def test_valid_existing_journal_accepts_another_complete_operation(tmp_path):
     root = tmp_path / "recordings"
     root.mkdir()
     path = tmp_path / "audit" / "history.jsonl"
+    first, second = new_operation(), new_operation()
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "first", session_id="one")
+        audit.append("intent", first, **intent_fields(root))
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "second", session_id="two")
+        audit.append("intent", second, **intent_fields(root))
     assert [json.loads(line)["operation_id"] for line in path.read_text().splitlines()] == [
-        "first", "second"]
+        first, second]
 
 
 @pytest.mark.parametrize("failure", ["short", "raised"])
@@ -58,6 +82,7 @@ def test_torn_write_blocks_subsequent_audit_retry(tmp_path, failure):
     root = tmp_path / "recordings"
     root.mkdir()
     path = tmp_path / "audit" / "history.jsonl"
+    operation = new_operation()
 
     class BrokenWrite:
         def __init__(self, handle):
@@ -75,7 +100,7 @@ def test_torn_write_blocks_subsequent_audit_retry(tmp_path, failure):
     with pytest.raises(OSError):
         with RetentionAudit(root, path) as audit:
             audit.handle = BrokenWrite(audit.handle)
-            audit.append("intent", "interrupted", session_id="one")
+            audit.append("intent", operation, **intent_fields(root))
     with pytest.raises(ValueError, match="audit"):
         with RetentionAudit(root, path):
             pass
@@ -86,19 +111,20 @@ def test_failed_audit_sync_does_not_poison_complete_existing_history(tmp_path, m
     root = tmp_path / "recordings"
     root.mkdir()
     path = tmp_path / "audit" / "history.jsonl"
+    first, second, third = new_operation(), new_operation(), new_operation()
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "first", session_id="one")
+        audit.append("intent", first, **intent_fields(root))
     real_sync = os.fsync
     monkeypatch.setattr(audit_module.os, "fsync",
                         lambda _fd: (_ for _ in ()).throw(OSError("injected sync failure")))
     with pytest.raises(OSError, match="sync failure"):
         with RetentionAudit(root, path) as audit:
-            audit.append("intent", "second", session_id="two")
+            audit.append("intent", second, **intent_fields(root))
     monkeypatch.setattr(audit_module.os, "fsync", real_sync)
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "third", session_id="three")
+        audit.append("intent", third, **intent_fields(root))
     assert [json.loads(line)["operation_id"] for line in path.read_text().splitlines()] == [
-        "first", "second", "third"]
+        first, second, third]
 
 
 def test_posix_first_use_syncs_each_new_directory_entry_before_journal(
@@ -118,7 +144,7 @@ def test_posix_first_use_syncs_each_new_directory_entry_before_journal(
 
     monkeypatch.setattr(audit_module, "_sync_directory", observe)
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "first", session_id="one")
+        audit.append("intent", new_operation(), **intent_fields(root))
     assert synced == expected_posix_syncs(path.parent)
 
 
@@ -133,10 +159,10 @@ def test_posix_existing_directories_resync_path_and_journal_entry(
     monkeypatch.setattr(audit_module, "_POSIX_SYNC", True)
     monkeypatch.setattr(audit_module, "_sync_directory", synced.append)
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "first", session_id="one")
+        audit.append("intent", new_operation(), **intent_fields(root))
     assert synced == expected_posix_syncs(parent)
     with RetentionAudit(root, path) as audit:
-        audit.append("intent", "second", session_id="two")
+        audit.append("intent", new_operation(), **intent_fields(root))
     assert synced == expected_posix_syncs(parent) * 2
 
 
