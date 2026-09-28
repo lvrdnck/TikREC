@@ -49,6 +49,7 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec retention unprotect CREATOR
     tikrec retention protected
     tikrec retention plan [ROOT] [--json]
+    tikrec retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
     tikrec remote status --server URL [--token-file FILE]
@@ -511,22 +512,23 @@ finalization, and result. Creator automation can fill both slots while retaining
 the configurable per-start reserve (10 GiB by default), room binding, collision-safe naming, and durable
 same-room suppression. It does not authenticate to TikTok, notify the owner,
 automatically delete media, or provide a library/Web UI/playback. Unreleased
-v0.11 development adds a read-only age-retention plan and explicit creator
-protection. The public CLI and service do not offer deletion. The private bounded
-executor has no owner-facing caller. Issue #37's correction uses verified
-Windows handles for removal and serializes policy updates with each destructive
+v0.11 development adds a read-only age-retention plan, explicit creator
+protection, and a local Windows-only command to delete one eligible session
+with exact-UUID confirmation. The service has no deletion endpoint. Issue #37's
+correction uses verified Windows handles for removal and serializes policy
+updates with each destructive
 step. POSIX destructive execution refuses before changing the recording root;
 read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
-cooperative-filesystem scope. The proposed owner-facing CLI contract is in
-[RETENTION_CLI.md](RETENTION_CLI.md); it is **planned and unimplemented**.
-Public deletion and automatic cleanup remain unavailable.
+cooperative-filesystem scope. The owner-facing CLI contract is in
+[RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **unreleased
+v0.11 development behavior**; automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,
 offline verification, and package build/install checks.
-Library/history/playback, a web interface, notifications, and owner-facing
-retention execution remain future work.
+Library/history/playback, a web interface, notifications, and automatic
+retention cleanup remain future work.
 
 `tikrec retention protect CREATOR` keeps a canonical creator on an independent
 protected list; removing monitoring does not remove this protection. Optional
@@ -536,18 +538,25 @@ selected directory (or configured output directory). It uses the durable
 session end time, validates completed output and retained evidence, and reports
 `eligible`, `retained`, `protected`, `ineligible`, or `needs_attention` with a
 reason. Legacy sessions without a proven creator and uncertain evidence never
-become eligible. This is an advisory plan only; automatic deletion does not exist.
+become eligible. The plan also shows the session UUID, UTC end time, protection,
+output/parts paths, and safely observed file counts and byte totals (or
+`unknown`). It remains advisory and never authorizes deletion.
 The planner checks competing session/output claims even for rejected candidates,
 exact inspected control evidence, whole-root stability, terminal chronology,
 output aliases, and per-artifact proven local/no-follow storage. Each root scan
 checks its own membership and identity across claim reads; observed evidence
-changes prevent eligibility for that entire planning call. A saved plan is never permission
-to delete; the private executor always performs fresh validation under an
-exclusive recording-root lease before any deletion.
+changes prevent eligibility for that entire planning call. `retention delete`
+previews one exact UUID and requires typing it on an interactive terminal or
+passing the same value with `--confirm`. It then reauthorizes under an exclusive
+recording-root lease and refuses changed evidence. Retained artifacts are
+removed first and the final MP4 last; any failed or uncertain operation stops
+with its audit context and requires a fresh later decision. POSIX deletion
+refuses before mutation. A saved plan is never permission to delete.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support
-covert surveillance or destructive handling of user recordings/evidence. A
+covert surveillance or unauthorized destructive handling of recordings or
+evidence. A
 separately designed future authenticated mode may use authorization explicitly
 supplied by the user while respecting platform controls. See SPEC.md and
 ROADMAP.md.
@@ -556,8 +565,8 @@ ROADMAP.md.
 
 [SPEC.md](SPEC.md) — architecture, module responsibilities, validation
 notes and the reasoning behind past fixes.
-[RETENTION_CLI.md](RETENTION_CLI.md) — planned, unimplemented local retention
-deletion interface and safety contract.
+[RETENTION_CLI.md](RETENTION_CLI.md) — unreleased local retention deletion
+interface and safety contract.
 [ROADMAP.md](ROADMAP.md) — workflow-driven direction for future releases.
 [SERVICE.md](SERVICE.md) — remote API and Windows Task Scheduler deployment.
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md) — `session.json` schema and lifecycle.

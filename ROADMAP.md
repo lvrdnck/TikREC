@@ -1293,14 +1293,30 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #38 local retention CLI implementation complete (2026-09-28):**
+`retention plan` now displays nullable safe artifact counts/bytes alongside
+identity, UTC end time, classification, protection, and paths. The Windows-only
+`retention delete` command previews one UUID, requires exact confirmation,
+compares fresh authority with the displayed evidence, and reports truthful
+REFUSED/COMPLETE/FAILED/PARTIAL results with audit context. Native Windows
+Python 3.11 focused verification passed 442 tests (three skipped); the isolated
+full offline suite passed 1,609 tests (six skipped, 19 subtests). Native WSL
+POSIX refusal/read-only tests passed. Only synthetic fixtures were deleted; no
+real recording or power-loss validation was performed. The single next v0.11
+step is a fresh independent review of the public retention CLI and its
+preview/result integration before real-media validation or release readiness.
+Automatic, scheduled, disk-pressure, bulk, remote/API, Web UI, and POSIX
+destructive deletion remain out of scope. #30 stays queued; v0.10.0 remains
+released and v0.11.0 unreleased.
+
 **Owner-facing retention CLI design complete (2026-09-28):**
 [RETENTION_CLI.md](RETENTION_CLI.md) specifies the local Windows-only,
 single-session `retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]`
 workflow, expanded read-only plan display, exact-UUID confirmation, fresh
 authorization with a display-evidence veto, refusal/partial-result reporting,
-audit visibility, and exit codes. This is **planned and unimplemented**; no
-public deletion command exists. The single next implementation slice is issue
-#38, limited to that local CLI contract and its offline tests. Automatic,
+audit visibility, and exit codes. At this design checkpoint the surface was
+**planned and unimplemented**; issue #38 defined the bounded implementation
+slice. Automatic,
 scheduled, disk-pressure, bulk, remote/API, Web UI, and POSIX destructive
 deletion remain outside this slice. #30 stays queued. v0.10.0 remains released;
 v0.11.0 remains unreleased.

@@ -7,14 +7,29 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #38 owner-facing retention CLI implementation complete (2026-09-28):**
+  The unreleased local CLI now extends read-only planning with safe nullable
+  file counts/bytes and offers explicit one-UUID Windows deletion with exact
+  confirmation, a display-evidence veto, fresh executor authorization, and
+  truthful audit-backed COMPLETE/FAILED/PARTIAL outcomes. Python 3.11 focused
+  Windows suite: 442 passed, three skipped; isolated full suite: 1,609 passed,
+  six skipped, 19 subtests. Native WSL POSIX refusal/planning tests passed.
+  Only disposable synthetic media was deleted; no real recording or power-loss
+  validation was performed. **State:** implementation complete; the single next
+  v0.11 step is a NEW fresh-context independent review of the public CLI,
+  preview/authorization boundary, and result/audit reporting before real-media
+  validation or release readiness. No owner action is pending. #30 stays
+  queued; #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains
+  released and v0.11.0 unreleased.
+
 - **Owner-facing retention CLI design complete (2026-09-28):**
   [RETENTION_CLI.md](RETENTION_CLI.md) is the approved design-only contract for
   an expanded read-only plan and explicit, one-UUID local Windows deletion
   command. It specifies exact-UUID confirmation, a preview-evidence veto plus
   fresh executor authorization, truthful refusal/partial reporting, audit
   visibility, and exit codes. **No public deletion command was implemented.**
-  **State:** design complete; the single next active implementation slice is
-  issue #38, implementing only this local CLI workflow and offline tests. No
+  **State at that checkpoint:** design complete; issue #38 became the bounded
+  implementation slice for this local CLI workflow and offline tests. No
   owner action is pending. #30 remains queued; #8/#13/#28 remain non-blocking
   evidence work. v0.10.0 remains released and v0.11.0 unreleased.
 

@@ -17,6 +17,7 @@ from .session_resume import _unique_values
 from .writer_recovery_evidence import recovery_records
 from .retention_paths import local_path
 from .retention_locality import LocalVolume, local_volume, proven_local
+from .retention_inventory import inspect_inventory, unknown_inventory
 from .retention_snapshot import (ObservedInstability, capture_claim, capture_root,
                                  checked_control)
 from .retention_terminal import terminal_success
@@ -64,6 +65,9 @@ def _plan_retention_with_snapshot(root: Path, configuration: Configuration, *,
                 or (item["output_path"] is not None and item["output_path"] != claim.output_path)):
             unknown = True
         item["session_id"], item["output_path"] = claim.session_id, claim.output_path
+        if not claim.uncertain:
+            item.update(inspect_inventory(scope, Path(claim.directory),
+                                          claim.output_path, volume))
         sessions.append(item)
     # A late child, replacement, or changed control claim invalidates the whole plan.
     try:
@@ -176,7 +180,7 @@ def _empty_item(directory: Path) -> dict:
     return {"parts_directory": str(directory), "session_id": None,
             "creator": None, "ended_at": None, "output_path": None,
             "classification": "needs_attention", "reason": "evidence_conflict",
-            "protected": None}
+            "protected": None, **unknown_inventory()}
 
 
 def _claims(directory: Path, root: Path):

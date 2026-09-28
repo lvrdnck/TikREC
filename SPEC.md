@@ -961,11 +961,11 @@ age threshold (`ended_at <= now - days * 86400`). Only a supported completed
 TikTok session with canonical creator, completed finalization, proven regular
 output directly beside its `.parts` directory, stable known evidence, and an
 unprotected creator can be `eligible`. Unknown, changing, extra, symlinked,
-recoverable, and conflicting evidence is not eligible. No owner-facing deletion
-command or automatic cleanup exists. The proposed local Windows-only
+recoverable, and conflicting evidence is not eligible. The local Windows-only
 `retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]` workflow and
 expanded advisory plan are specified in [RETENTION_CLI.md](RETENTION_CLI.md).
-They are **planned and unimplemented**; viewing a plan cannot authorize deletion.
+They are implemented in unreleased v0.11 development; no automatic cleanup
+exists. Viewing a plan cannot authorize deletion.
 
 The unreleased internal executor accepts one explicit root and canonical session
 UUID, never a saved planner result. Under the owner-approved issue #37 platform
@@ -984,6 +984,15 @@ the decision, claim snapshot, and first-pass file byte digests must still match
 before audit intent. Destructive planning captures stable byte digests around
 media inspection; authorization independently hashes every allowlisted file.
 The public read-only planner does not perform this additional full-file hashing.
+It reports only stable, singly linked regular-file counts and sizes from
+no-follow local-volume observations; unsafe or incomplete inventories remain
+unknown rather than zero. The local delete preview does perform full-file
+binding and the same fresh authorization checks without holding an exclusive
+lease while waiting for confirmation. After confirmation, the executor repeats
+authorization under its exclusive lease and compares root identity, all session
+claims, policy, and exact artifact identities/bytes against that preview as a
+veto only. First-use lifecycle-lock creation may change the root directory
+timestamp without changing those claims or root identity.
 The private authorization binds root/claim identity, creator and durable end
 time, policy, local volume, every file's byte hash, writer-recovery evidence and
 referenced-part byte hashes, and exact singly linked artifact fingerprints.
@@ -1040,16 +1049,17 @@ without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #35
 corrected the plan-to-authorization and audit-history gaps found at `3ff83bc`.
 A fresh independent review of `ef8d01b` passed the Windows-only private
-executor gate under this cooperative-filesystem boundary. The owner-facing
-design is recorded separately in [RETENTION_CLI.md](RETENTION_CLI.md); it does
-not expose the private executor yet.
+executor gate under this cooperative-filesystem boundary. The unreleased local
+CLI now exposes one explicit Windows-only session deletion through the private
+executor; [RETENTION_CLI.md](RETENTION_CLI.md) specifies its confirmation,
+status, audit, and exit contract.
 Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
-while this private
-executor takes the exclusive lease. The protocol excludes TikREC's own writers,
+while the retention executor takes the exclusive lease. The protocol excludes
+TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata
-guarantees. The private executor remains unreleased.
+guarantees. The executor and its local CLI caller remain unreleased.
 An `attempt` without `deleted` can mean no rename, a preserved quarantine, or
 actual removal before the result could be journaled. Process death before
 setting disposition leaves the quarantine; death after setting it closes the
@@ -1070,7 +1080,8 @@ gaps; its later review at `5d27dc8` found private-name and policy-revocation
 races. Issue #37 supplies the Windows handle protocol and policy synchronization,
 with owner-approved POSIX refusal. The fresh independent `ef8d01b` review
 passed the private executor gate on native NTFS and WSL POSIX refusal/history;
-owner-facing retention execution remains unavailable; its planned design is in
+owner-facing retention execution is now implemented locally on Windows in
+unreleased v0.11 development; its contract is in
 [RETENTION_CLI.md](RETENTION_CLI.md).
 
 Retention planning first discovers safely readable immediate UUID/output claims,

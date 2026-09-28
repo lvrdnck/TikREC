@@ -1,10 +1,9 @@
-# Planned owner-facing retention CLI (v0.11 development)
+# Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: DESIGN ONLY — UNIMPLEMENTED.** No public deletion command exists. The
-current `tikrec retention plan` is read-only and has a smaller human-readable
-display than the one specified here. v0.10.0 is the current released version;
-v0.11.0 is unreleased. This contract is for a local, explicit Windows workflow
-under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
+**Status: IMPLEMENTED IN DEVELOPMENT — UNRELEASED.** The local CLI workflow
+below exists in the development checkout; it is not in the current v0.10.0
+release. v0.11.0 is unreleased. This contract is for a local, explicit Windows
+workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 
 ## Commands and scope
 
@@ -24,7 +23,8 @@ The root and UUID are printed back before any confirmation, so an implicit
 configured root cannot be mistaken for another location.
 
 There is no HTTP, remote CLI, Web UI, service-triggered, background, scheduled,
-disk-pressure-triggered, bulk, or POSIX destructive operation in this design.
+disk-pressure-triggered, bulk, or POSIX destructive operation in this
+implementation.
 Automatic cleanup and release/tag work are separate future decisions.
 
 ## Read-only plan
@@ -102,7 +102,7 @@ refuse without calling the executor. No confirmation is cached or reusable.
 
 After confirmation, the executor must derive fresh authority under its
 exclusive lifecycle lease. It must compare that authority with the preview
-guard and refuse if root/volume identity, the full root claim snapshot,
+guard and refuse if root/volume identity, all root session claims,
 retention policy, selected session claim, creator, end time, output, or exact
 artifact set/identity/size/bytes changed. Current job references and lifecycle
 ownership must also pass fresh checks. Even
@@ -143,12 +143,14 @@ resume, repair the journal, clean up quarantine names, or silently continue
 after any failure. A later deletion decision starts from fresh eligibility and
 normally refuses an incomplete session.
 
-The implementation must carry operation ID, audit path, and known/uncertain
-removal progress across executor errors after intent; the current private API
-only returns an ID on success, so this reporting requires a bounded interface
-change. Preserve the original failure and avoid a second mutation to improve
-the message. If the journal itself is unavailable, say that its state is
-uncertain rather than promising an audit record exists.
+The private executor returns an operation ID on success and fills a caller-owned
+progress record after intent, including audit path, durable-intent state, known
+deletion count, and possible removal or journal uncertainty. The CLI keeps the
+original failure and performs no second mutation to improve the message. If
+the journal itself is unavailable, it says its state is uncertain rather than
+promising an audit record exists. A failed intent write is a refusal because no
+artifact removal is attempted; the CLI notes that intent durability was not
+confirmed.
 
 | Exit code | Meaning |
 | --- | --- |
@@ -161,6 +163,6 @@ uncertain rather than promising an audit record exists.
 Diagnostics go to stderr; successful plan and completed deletion results go to
 stdout. Do not overload `2` for a retention refusal or return `0` for a partial
 operation. This is a human-readable contract; structured delete output is not
-part of the first interface. Offline CLI tests should cover exact confirmation,
-root selection, summary and plan fields, refusal categories, evidence changes
-after confirmation, audit context, and exit codes on Windows and POSIX.
+part of the first interface. Offline tests cover exact confirmation, root
+selection, summary and plan fields, refusal categories, evidence changes after
+confirmation, audit context, and exit codes on Windows and POSIX.

@@ -1,0 +1,141 @@
+"""Explicit local one-session retention deletion and truthful CLI outcomes."""
+
+from __future__ import annotations
+
+import sys
+import time
+import uuid
+from collections.abc import Callable
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import TextIO
+
+from .configuration import ConfigurationStore
+from .media import MediaInfo, inspect_media
+from .retention_execute import RetentionProgress, execute_retention
+from .retention_mutation import require_identity_removal
+from .retention_preview import RetentionPreview, prepare_preview
+
+
+def canonical_uuid(value: str) -> str:
+    """Accept only the exact lowercase canonical target spelling."""
+    try:
+        if str(uuid.UUID(value)) == value:
+            return value
+    except (ValueError, AttributeError):
+        pass
+    raise ValueError("retention target must be a canonical lowercase session UUID")
+
+
+def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
+               stderr: TextIO, stdin: TextIO = sys.stdin, *,
+               clock: Callable[[], float] = time.time,
+               media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
+               job_paths: tuple[Path, Path] | None = None,
+               audit_path: Path | None = None) -> int:
+    """Preview, confirm, freshly execute, and classify one retention attempt."""
+    session_id = arguments.session_id
+    root = Path(arguments.root) if arguments.root is not None else None
+    progress = RetentionProgress()
+    try:
+        # Platform refusal precedes even a read-only preview, lock, or audit.
+        try:
+            require_identity_removal()
+        except ValueError as error:
+            raise ValueError("v0.11 destructive retention is Windows-only; "
+                             "retention plan remains available") from error
+        config = store.load()
+        root = root if root is not None else config.output_directory
+        if root is None:
+            raise ValueError("retention delete requires ROOT or configured output_directory")
+        if arguments.confirm is not None and arguments.confirm != session_id:
+            raise ValueError("confirmation UUID does not exactly match target")
+        preview = prepare_preview(root, session_id, store, job_paths=job_paths,
+                                  clock=clock, media_inspector=media_inspector)
+        _show_preview(preview, stdout)
+        if arguments.confirm is None and not _typed_confirmation(stdin, stdout, session_id):
+            raise ValueError("exact session UUID confirmation was not provided")
+        operation_id = execute_retention(
+            root, session_id, store, audit_path=audit_path, job_paths=job_paths,
+            clock=clock, media_inspector=media_inspector,
+            preview_guard=preview.guard, progress=progress)
+        print(f"COMPLETE: deleted session {session_id} from {preview.root}", file=stdout)
+        print(f"Operation ID: {operation_id}", file=stdout)
+        print(f"Audit: {progress.audit_path}", file=stdout)
+        return 0
+    except KeyboardInterrupt as error:
+        if progress.intent_durable:
+            return _incomplete(progress, session_id, root, error, stderr)
+        print(f"tikrec retention delete: interrupted before intent; "
+              f"session={session_id}; root={root or '<unconfigured>'}", file=stderr)
+        return 130
+    except Exception as error:
+        if progress.intent_durable:
+            return _incomplete(progress, session_id, root, error, stderr)
+        if progress.intent_attempted:
+            print("Audit intent durability was not confirmed; no artifact removal "
+                  "was attempted.", file=stderr)
+        _refused(session_id, root, error, stderr)
+        return 1
+
+
+def _show_preview(preview: RetentionPreview, stdout: TextIO) -> None:
+    """Show the exact target and scale of permanent removal before consent."""
+    ended = datetime.fromtimestamp(preview.ended_at, timezone.utc).isoformat().replace(
+        "+00:00", "Z")
+    print("Retention deletion preview — permanent", file=stdout)
+    print(f"Root: {preview.root}", file=stdout)
+    print(f"Creator: @{preview.creator}    Session: {preview.session_id}", file=stdout)
+    print(f"Ended: {ended}    State: eligible (age threshold reached; not protected)",
+          file=stdout)
+    print(f"Final MP4: {preview.output}", file=stdout)
+    print(f"Retained parts: {preview.parts}", file=stdout)
+    print(f"Removal: about {preview.total_file_bytes} bytes across "
+          f"{preview.file_count} files, then the empty parts directory", file=stdout)
+    print("Order: retained artifacts and controls first; final MP4 last", file=stdout)
+    print("Deletion is permanent. TikREC will recheck eligibility and evidence "
+          "after confirmation.", file=stdout)
+
+
+def _typed_confirmation(stdin: TextIO, stdout: TextIO, session_id: str) -> bool:
+    """Require an interactive exact UUID, stripping only its terminal newline."""
+    if not stdin.isatty():
+        return False
+    print(f"Type the exact session UUID to delete: {session_id}", file=stdout)
+    stdout.flush()
+    value = stdin.readline()
+    if value.endswith("\r\n"):
+        value = value[:-2]
+    elif value.endswith(("\n", "\r")):
+        value = value[:-1]
+    return value == session_id
+
+
+def _refused(session_id: str, root: Path | None, error: Exception,
+             stderr: TextIO) -> None:
+    """Report a pre-intent refusal without implying a journaled operation."""
+    print(f"REFUSED: session={session_id}; root={root or '<unconfigured>'}; "
+          f"reason={_one_line(error)}", file=stderr)
+    print("No deletion operation was started.", file=stderr)
+
+
+def _incomplete(progress: RetentionProgress, session_id: str, root: Path | None,
+                error: BaseException, stderr: TextIO) -> int:
+    """Report after-intent uncertainty without changing or repairing artifacts."""
+    state = "PARTIAL" if progress.deleted_count or progress.removal_uncertain else "FAILED"
+    print(f"{state}: session={session_id}; root={root}; reason={_one_line(error)}",
+          file=stderr)
+    print(f"Operation ID: {progress.operation_id or 'unknown'}", file=stderr)
+    if progress.audit_path is not None:
+        print(f"Audit: {progress.audit_path}", file=stderr)
+    if progress.audit_uncertain or not progress.intent_durable:
+        print("Audit state may be incomplete or unavailable.", file=stderr)
+    else:
+        print("The audit record preserves the known event sequence.", file=stderr)
+    print("Inspect the audit and filesystem before any fresh retention decision; "
+          "TikREC will not retry or resume automatically.", file=stderr)
+    return 3
+
+
+def _one_line(error: BaseException) -> str:
+    return " ".join(str(error).split()) or type(error).__name__

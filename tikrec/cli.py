@@ -48,6 +48,7 @@ def main(
     naming_clock: Callable | None = None,
     stdout: TextIO = sys.stdout,
     stderr: TextIO = sys.stderr,
+    stdin: TextIO = sys.stdin,
 ) -> int:
     """Run the small recording CLI and return a conventional process code."""
     parser = _parser()
@@ -68,7 +69,7 @@ def main(
         if arguments.command == "monitor":
             return run_monitor_command(arguments, stdout)
         if arguments.command == "retention":
-            return run_retention_command(arguments, stdout)
+            return run_retention_command(arguments, stdout, stderr, stdin)
         if arguments.command == "resolve":
             direct_url = resolver(arguments.url)
             print(direct_url, file=stdout)
