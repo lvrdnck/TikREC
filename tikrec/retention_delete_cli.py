@@ -62,19 +62,22 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
     except BaseException as error:
         if progress.completed_durable:
             return _completed_after_cleanup(session_id, preview, progress, error, stderr)
-        if isinstance(error, KeyboardInterrupt):
-            if progress.intent_sync_started:
-                return _incomplete(progress, session_id, root, error, stderr)
+        # The executor publishes the body fault before context cleanup can
+        # replace it; a later cleanup error is only secondary evidence.
+        primary = progress.operation_error if progress.operation_error is not None else error
+        cleanup_error = error if primary is not error else None
+        if progress.intent_sync_started:
+            return _incomplete(progress, session_id, root, primary, stderr,
+                               cleanup_error=cleanup_error)
+        if isinstance(primary, KeyboardInterrupt):
             _diagnose(stderr, [f"tikrec retention delete: interrupted before intent; "
                                f"session={session_id}; root={root or '<unconfigured>'}"])
             return 130
-        if isinstance(error, Exception):
-            if progress.intent_sync_started:
-                return _incomplete(progress, session_id, root, error, stderr)
-            _refused(session_id, root, error, stderr,
+        if isinstance(primary, Exception):
+            _refused(session_id, root, primary, stderr,
                      intent_attempted=progress.intent_attempted)
             return 1
-        raise
+        raise primary
     # The executor has returned only after the completed event synced. Display
     # failures cannot turn that completed deletion into an incomplete result.
     return _completed(session_id, preview, operation_id, progress.audit_path,
@@ -167,11 +170,15 @@ def _refused(session_id: str, root: Path | None, error: Exception,
 
 
 def _incomplete(progress: RetentionProgress, session_id: str, root: Path | None,
-                error: BaseException, stderr: TextIO) -> int:
+                error: BaseException, stderr: TextIO, *,
+                cleanup_error: BaseException | None = None) -> int:
     """Report after-intent uncertainty without changing or repairing artifacts."""
     state = "PARTIAL" if progress.deleted_count or progress.removal_uncertain else "FAILED"
     lines = [f"{state}: session={session_id}; root={root}; reason={_one_line(error)}",
              f"Operation ID: {progress.operation_id or 'unknown'}"]
+    if cleanup_error is not None:
+        lines.append(f"Cleanup error: {type(cleanup_error).__name__}: "
+                     f"{_one_line(cleanup_error)}")
     if progress.audit_path is not None:
         lines.append(f"Audit: {progress.audit_path}")
     if not progress.intent_durable:

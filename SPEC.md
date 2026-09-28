@@ -1111,6 +1111,13 @@ The fresh review at `b8ad110` found an after-intent failure-reporting blocker
 `SystemExit` can escape without the required incomplete-result context. The
 public CLI gate is NOT READY pending #43 correction and another independent
 review. Only disposable synthetic media was used.
+Issue #43 now retains the first after-intent operation fault before audit or
+lifecycle cleanup and reports any later cleanup fault as secondary when a
+diagnostic channel works. Relevant post-intent `BaseException` faults, including
+`SystemExit`, produce incomplete exit 3 with operation context. Pre-intent
+refusal/interruption and proven completion keep their existing results. A NEW
+independent public CLI review remains required before separately authorized
+real-media retention validation; v0.11 is unreleased.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

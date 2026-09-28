@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; #43 OPEN.**
+**Status: IMPLEMENTED IN DEVELOPMENT — #43 CORRECTED; NEW PUBLIC REVIEW PENDING.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -22,9 +22,12 @@ their cause and operation context when diagnostics are available; faults during
 the sync remain non-complete/3. The NEW review at `b8ad110` found that a
 secondary audit/lifecycle cleanup fault can replace the original after-intent
 execution cause in `FAILED`/`PARTIAL` output. A post-intent `SystemExit` can
-also escape without exit 3 or operation context. Issue #43 is the single next
-bounded correction, followed by another fresh-context public review before
-separately authorized real-media validation. The local CLI
+also escape without exit 3 or operation context. Issue #43 now preserves the
+first operation fault before audit/lifecycle cleanup, reports a later cleanup
+fault separately when possible, and classifies post-intent `SystemExit` as an
+incomplete exit 3 with operation context. The public CLI gate remains NOT READY
+pending a NEW fresh-context review before separately authorized real-media
+validation. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
@@ -175,12 +178,13 @@ normally refuses an incomplete session.
 
 The private executor returns an operation ID on success and fills a caller-owned
 progress record after intent, including audit path, sync-started and durable-intent
-states, proven completed sync, known deletion count, and possible removal or
-journal uncertainty. The
-CLI keeps the original failure and performs no second mutation to improve the message. If
-the journal itself is unavailable, it says its state is uncertain rather than
-promising an audit record exists. A failed intent write before sync is a refusal
-because no artifact removal is attempted; the CLI notes that intent durability
+states, proven completed sync, known deletion count, possible removal or journal
+uncertainty, and the first operation fault before context cleanup. The CLI keeps
+that original failure authoritative and performs no second mutation to improve
+the message. If the journal itself is unavailable, it says its state is
+uncertain rather than promising an audit record exists. A failed intent write
+before sync is a refusal because no artifact removal is attempted; the CLI
+notes that intent durability
 was not confirmed. A failed sync is uncertain rather than a proven pre-intent
 refusal. Diagnostic stderr writes and flushes are best-effort and cannot change
 an already determined exit result.

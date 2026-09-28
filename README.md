@@ -535,8 +535,10 @@ completion before cleanup and preserves `COMPLETE`/0 across later faults. A NEW
 independent review at `b8ad110` found an after-intent failure-reporting gap
 (#43): secondary cleanup faults can mask the original cause, and a
 post-intent `SystemExit` can escape without operation context. The public CLI
-gate is NOT READY pending #43 correction and another fresh review before
-separately authorized real-media validation.
+now retains the first operation fault before cleanup and reports
+post-intent `SystemExit` as incomplete exit 3 with operation context. The public
+CLI gate remains NOT READY pending a NEW fresh review before separately
+authorized real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.

@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #43 correction complete (2026-09-28):** Caller-owned progress captures
+the first operation fault before audit/lifecycle cleanup. A secondary cleanup
+fault is reported separately when possible; post-intent `SystemExit` now yields
+truthful `FAILED`/`PARTIAL` exit 3 with operation and audit context. Pre-intent
+1/130, uncertain intent/completion sync, and proven `COMPLETE`/0 remain intact.
+Native Windows retention/lifecycle tests passed 402 (four skipped); the isolated
+full suite passed 1,663 (seven skipped, 19 subtests); applicable WSL read-only
+checks passed 116 (five skipped). No real media was deleted. The public CLI gate
+remains NOT READY pending a NEW fresh-context independent review; separately
+authorized real-media validation follows a passing review. #30 stays queued;
+v0.10.0 remains released and v0.11.0 unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-28;
 `b8ad110`; issue #43):** Native Windows disposable probes found that a second
 audit/lifecycle cleanup fault masks the original after-intent execution error

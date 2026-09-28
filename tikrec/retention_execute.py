@@ -36,6 +36,7 @@ class RetentionProgress:
     deleted_count: int = 0
     removal_uncertain: bool = False
     audit_uncertain: bool = False
+    operation_error: BaseException | None = None
 
     def mark_intent_sync_started(self) -> None:
         """Record the boundary after writing intent and before calling fsync."""
@@ -85,7 +86,8 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                 yield
 
         operation_id = str(uuid.uuid4())
-        with RetentionAudit(scope, audit_path) as audit:
+        with (RetentionAudit(scope, audit_path) as audit,
+              _preserve_operation_failure(progress)):
             progress.operation_id, progress.audit_path = operation_id, audit.path
             # The intent is synced before any artifact is even attempted.
             progress.intent_attempted = True
@@ -159,6 +161,17 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                 progress.audit_uncertain = True
                 raise
         return operation_id
+
+
+@contextmanager
+def _preserve_operation_failure(progress: RetentionProgress):
+    """Publish the first operation fault before audit or lifecycle cleanup."""
+    try:
+        yield
+    except BaseException as error:
+        if progress.operation_error is None:
+            progress.operation_error = error
+        raise
 
 
 def _fresh_authorization(scope: Path, session_id: str,

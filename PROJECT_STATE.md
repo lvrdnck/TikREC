@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #43 after-intent result correction complete (2026-09-28):** The
+  executor now publishes the first operation fault before audit or lifecycle
+  cleanup can mask it. The public CLI retains that cause in `FAILED`/`PARTIAL`
+  exit 3, reports a secondary cleanup fault when stderr works, and converts
+  post-intent `SystemExit` to an incomplete result with operation/audit context.
+  Pre-intent 1/130, uncertain intent/completion sync, and proven `COMPLETE`/0
+  remain intact. Native Windows retention/lifecycle tests: 402 passed, four
+  skipped; isolated full suite: 1,663 passed, seven skipped, 19 subtests;
+  applicable WSL planning/refusal and read-only audit history: 116 passed,
+  five skipped. **State:** #43 correction complete; the single next v0.11 task
+  is a NEW fresh-context independent public CLI review. The public CLI gate
+  remains NOT READY until that review passes. No owner decision is pending;
+  separately authorized real-media validation follows a passing review.
+  #30 stays queued; #8/#13/#28 remain non-blocking evidence work. v0.10.0
+  remains released and v0.11.0 unreleased. No real media was deleted.
+
 - **Issue #28 intermittent Gracie recurrence investigated (2026-09-28):**
   Owner-reported battle-linked columns around MP4 10:11 are visible in both the
   retained FLV and final MP4 at 10:15. Both retained parts use one identical
@@ -14,9 +30,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   found. This session has no raw/arrival copy, so source-versus-writer origin is
   unresolved. The next useful evidence is an owner-authorized normal `--raw-copy`
   occurrence with battle times and all raw/retained/final artifacts preserved.
-  #28 stays non-blocking; the single active v0.11 task remains bounded issue #43,
-  followed by a NEW independent public retention CLI review before separately
-  authorized real-media validation.
+  #28 stays non-blocking; #43 is corrected and the single next v0.11 task is a
+  NEW independent public retention CLI review before separately authorized
+  real-media validation.
   #30 stays queued; v0.10.0 remains released and v0.11.0 unreleased.
 
 - **Fresh independent public retention CLI gate NOT READY (2026-09-28;
