@@ -12,8 +12,9 @@ from .configuration import ConfigurationStore
 from .lifecycle_lock import acquire_lifecycle
 from .media import MediaInfo, inspect_media
 from .retention_audit import RetentionAudit
-from .retention_authorization import (authorize, check_fingerprint, check_jobs,
+from .retention_authorization import (authorize, check_jobs,
                                       check_policy, check_root)
+from .retention_mutation import quarantine_relative, remove_authorized
 from .retention_paths import local_path
 from .retention_plan import _plan_retention_with_snapshot
 
@@ -35,17 +36,20 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
     with acquire_lifecycle(scope, "retention") as lease:
         config = configuration_store.load()
         config.validate()
-        fresh, evidence = _plan_retention_with_snapshot(
-            scope, config, clock=clock, media_inspector=media_inspector)
+        fresh, evidence, first_bytes = _plan_retention_with_snapshot(
+            scope, config, clock=clock, media_inspector=media_inspector,
+            bind_bytes=True)
         matches = [item for item in fresh["sessions"] if item["session_id"] == session_id]
         if len(matches) != 1 or matches[0]["classification"] != "eligible":
             raise ValueError("retention target is not uniquely and currently eligible")
-        auth = authorize(scope, matches[0], config, evidence)
+        auth = authorize(scope, matches[0], config, evidence,
+                         first_bytes.get(matches[0]["parts_directory"], ()))
         # Re-run the same planner after artifact binding so media/recovery facts
         # cannot change unnoticed between eligibility and durable intent.
-        confirmed, closing = _plan_retention_with_snapshot(
-            scope, config, clock=clock, media_inspector=media_inspector)
-        if confirmed != fresh or closing != evidence:
+        confirmed, closing, closing_bytes = _plan_retention_with_snapshot(
+            scope, config, clock=clock, media_inspector=media_inspector,
+            bind_bytes=True)
+        if confirmed != fresh or closing != evidence or closing_bytes != first_bytes:
             raise ValueError("retention eligibility changed before authorization")
         check_policy(auth, configuration_store, clock())
         check_jobs(auth, job_paths)
@@ -60,11 +64,15 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                          target_controls={entry[0]: entry[2] for entry in
                                           auth.target_claim.evidence if len(entry) == 3
                                           and entry[2] is not None},
+                         artifact_byte_hashes=dict(auth.artifact_byte_hashes),
                          recovery_byte_hashes=dict(auth.recovery_byte_hashes),
                          artifacts=[item.audit_dict() for item in auth.order],
-                         order=[item.relative_path for item in auth.order])
+                         order=[item.relative_path for item in auth.order],
+                         quarantine_order=[quarantine_relative(item, operation_id, index)
+                                           for index, item in enumerate(auth.order)])
             deleted: set[str] = set()
-            for item in auth.order:
+            hashes = dict(auth.artifact_byte_hashes)
+            for index, item in enumerate(auth.order):
                 path = scope / item.relative_path
                 try:
                     if before_mutation is not None:
@@ -80,14 +88,9 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                     check_policy(auth, configuration_store, clock())
                     check_jobs(auth, job_paths)
                     check_root(auth, frozenset(deleted))
-                    check_fingerprint(scope, item, auth.volume)
-                    if item.kind == "directory":
-                        if any(path.iterdir()):
-                            raise ValueError("retention parts directory is not empty")
-                        path.rmdir()
-                    else:
-                        path.unlink()
-                    _sync_parent(path)
+                    remove_authorized(scope, item, auth.volume,
+                                      hashes.get(item.relative_path),
+                                      operation_id, index, _sync_parent)
                     deleted.add(item.relative_path)
                     audit.append("deleted", operation_id, path=item.relative_path)
                 except BaseException as error:

@@ -41,9 +41,11 @@ def recovery_fixture(tmp_path):
 def test_authorization_binds_exact_order_and_rejects_later_hardlink(tmp_path):
     parts = session(tmp_path, "alpha")
     config = Configuration(retention_max_age_days=1)
-    planned, snapshot = _plan_retention_with_snapshot(
-        tmp_path, config, clock=lambda: NOW, media_inspector=inspect)
-    auth = authorize(tmp_path, planned["sessions"][0], config, snapshot)
+    planned, snapshot, bytes_by_directory = _plan_retention_with_snapshot(
+        tmp_path, config, clock=lambda: NOW, media_inspector=inspect,
+        bind_bytes=True)
+    auth = authorize(tmp_path, planned["sessions"][0], config, snapshot,
+                     bytes_by_directory[str(parts)])
     assert auth.session_id == json.loads((parts / "session.json").read_text())["session_id"]
     assert [artifact.relative_path for artifact in auth.order][-3:] == [
         str(Path("alpha.parts") / "session.json"),

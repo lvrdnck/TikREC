@@ -99,7 +99,8 @@ class AuditHistory:
 
 def _intent_order(record: dict, journal_root: str) -> tuple[str, ...]:
     _fields(record, _COMMON | _INTENT,
-            {"target_controls", "recovery_byte_hashes"})
+            {"target_controls", "recovery_byte_hashes", "artifact_byte_hashes",
+             "quarantine_order"})
     if (not _finite(record["timestamp"]) or not _finite(record["ended_at"])
             or not _absolute(record["root"]) or not _uuid(record["session_id"])
             or type(record["creator"]) is not str or not record["creator"]
@@ -127,7 +128,13 @@ def _intent_order(record: dict, journal_root: str) -> tuple[str, ...]:
     if len({tuple(sorted(item["volume"].items())) for item in artifacts}) != 1:
         raise ValueError("retention audit artifacts cross volumes")
     media_order = _destructive_order(order, artifacts, record["session_id"])
-    for field in ("target_controls", "recovery_byte_hashes"):
+    if "quarantine_order" in record:
+        expected = [str(Path(path).with_name(
+            f".tikrec-retention-{record['operation_id']}-{index:06d}"))
+            for index, path in enumerate(order)]
+        if record["quarantine_order"] != expected:
+            raise ValueError("invalid retention audit quarantine order")
+    for field in ("target_controls", "recovery_byte_hashes", "artifact_byte_hashes"):
         if field in record:
             hashes = record[field]
             if (type(hashes) is not dict or any(
@@ -139,6 +146,21 @@ def _intent_order(record: dict, journal_root: str) -> tuple[str, ...]:
                 raise ValueError("unknown retention audit control")
             if field == "recovery_byte_hashes" and not set(hashes).issubset(media_order):
                 raise ValueError("retention audit byte proof is outside order")
+            if field == "artifact_byte_hashes" and set(hashes) != {
+                    path for path, item in zip(order, artifacts) if item["kind"] == "file"}:
+                raise ValueError("retention audit file byte proof is incomplete")
+    if "recovery_byte_hashes" in record:
+        pairs = _recovery_paths(media_order, record["session_id"])
+        if set(record["recovery_byte_hashes"]) != pairs:
+            raise ValueError("retention audit recovery byte proof is incomplete")
+    if "artifact_byte_hashes" in record:
+        all_hashes = record["artifact_byte_hashes"]
+        if any(all_hashes.get(path) != digest for path, digest in
+               record.get("recovery_byte_hashes", {}).items()):
+            raise ValueError("retention audit byte proofs disagree")
+        if any(all_hashes.get(str(Path(order[-2]) / name)) != digest
+               for name, digest in record.get("target_controls", {}).items()):
+            raise ValueError("retention audit control byte proofs disagree")
     return tuple(order)
 
 
@@ -166,13 +188,38 @@ def _destructive_order(order: list[str], artifacts: list[dict],
             raise ValueError("retention audit child is outside its parts directory")
         names.append(child.name)
     evidence = re.compile(rf"\.tikrec-writer-crash-{re.escape(session_id)}"
-                          rf"-part-[0-9]{{4,}}\.evidence\Z")
+                          rf"-part-([0-9]{{4,}})\.evidence\Z")
     if (names != sorted(set(names))
             or not any(re.fullmatch(r"part-[0-9]+\.flv", name) for name in names)
             or any(re.fullmatch(r"part-[0-9]+\.flv", name) is None
                    and evidence.fullmatch(name) is None for name in names)):
         raise ValueError("invalid retention audit retained-media order")
+    _recovery_paths(tuple(children), session_id)
     return tuple(children)
+
+
+def _recovery_paths(media_order: tuple[str, ...], session_id: str) -> set[str]:
+    """Require canonical evidence names paired with their retained writer part."""
+    names = {Path(path).name for path in media_order}
+    expected = set()
+    prefix = f".tikrec-writer-crash-{session_id}-part-"
+    for path in media_order:
+        name = Path(path).name
+        if name.startswith(prefix) and name.endswith(".evidence"):
+            digits = name[len(prefix):-len(".evidence")]
+            if not digits.isascii() or not digits.isdigit() or int(digits) < 1:
+                raise ValueError("invalid retention audit recovery evidence")
+            index = int(digits)
+            part = f"part-{index:04d}.flv"
+            if (name != f"{prefix}{index:04d}.evidence" or part not in names):
+                raise ValueError("unpaired retention audit recovery evidence")
+            expected.update((path, str(Path(path).with_name(part))))
+        elif name.startswith("part-") and name.endswith(".flv"):
+            digits = name[len("part-"):-len(".flv")]
+            if (not digits.isascii() or not digits.isdigit()
+                    or int(digits) < 1 or name != f"part-{int(digits):04d}.flv"):
+                raise ValueError("invalid retention audit part spelling")
+    return expected
 
 
 def _artifact(artifact: object, path: str) -> None:
@@ -219,6 +266,6 @@ def _absolute(value: object) -> bool:
 def _relative(value: object) -> bool:
     if type(value) is not str or value in {"", "."} or "\x00" in value:
         return False
-    windows, posix = PureWindowsPath(value), PurePosixPath(value)
-    return (not windows.drive and not windows.root and not posix.root
-            and ".." not in windows.parts and ".." not in posix.parts)
+    path = PureWindowsPath(value) if os.name == "nt" else PurePosixPath(value)
+    return (not path.is_absolute() and not path.anchor
+            and ".." not in path.parts)

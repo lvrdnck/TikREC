@@ -7,8 +7,24 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #36 corrective implementation complete (2026-09-28):** The private
+  executor now byte-binds every authorized file across the first plan,
+  authorization, closing plan, and each surviving deletion position. It moves
+  each artifact to an audited same-directory quarantine name and verifies the
+  moved identity and bytes before removal; a failed move/proof leaves evidence
+  and stops. Schema-1 history accepts legal POSIX literal backslashes and
+  rejects unpaired writer-recovery evidence/part paths while reading old valid
+  journals. Native Windows and Python 3.11 focused suites passed, native
+  WSL/POSIX unusual-name reopen passed, and the isolated full offline suite
+  passed 1,535 plus 19 subtests (four skips). No real media was deleted and no
+  power-loss test was performed.
+  **State:** #36 implementation complete; a NEW fresh-context independent
+  retention executor/lifecycle/authorization/audit safety review is the single
+  next gate. No owner action is pending. #30 stays queued; #8/#13/#28 remain
+  separate non-blocking evidence work. v0.10.0 remains released and v0.11.0
+  unreleased.
 - **Fresh independent retention gate NOT READY (2026-09-28; issue #36
-  opened):** Current HEAD `d20ed7a` can delete ordinary FLV and final MP4
+  opened):** Reviewed HEAD `d20ed7a` could delete ordinary FLV and final MP4
   media after a same-size/restored-metadata Windows byte change makes fresh
   planning `needs_attention`; a final check-to-unlink replacement can delete
   the wrong file and still record `completed`. On native POSIX, an eligible
@@ -19,8 +35,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   passed 1,510 plus 19 subtests (three skips). WSL audit fsync failure blocked
   use and retry succeeded; no power-loss test was performed. No real media or
   production code changed. **State:** v0.11 retention design blocked on open
-  #36; no implementation task is active and no owner action is pending.
-  **Single next task:** fix #36, then repeat a new
+  #36; no implementation task was active and no owner action was pending.
+  **Next task at that review:** fix #36, then repeat a new
   independent retention gate. #30 stays queued; #8/#13/#28 remain non-blocking
   evidence work. v0.10.0 remains released and v0.11.0 unreleased.
 - **Issue #35 corrective implementation complete (2026-09-28):** The private

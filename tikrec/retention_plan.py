@@ -26,15 +26,16 @@ def plan_retention(root: Path, configuration: Configuration, *,
                    clock: Callable[[], float] = time.time,
                    media_inspector: Callable[[Path], MediaInfo | None] = inspect_media) -> dict:
     """Classify immediate TikREC session directories without modifying artifacts."""
-    result, _ = _plan_retention_with_snapshot(
+    result, _, _ = _plan_retention_with_snapshot(
         root, configuration, clock=clock, media_inspector=media_inspector)
     return result
 
 
 def _plan_retention_with_snapshot(root: Path, configuration: Configuration, *,
                                   clock: Callable[[], float] = time.time,
-                                  media_inspector: Callable[[Path], MediaInfo | None] = inspect_media):
-    """Return one advisory plan with the coherent claims that produced it."""
+                                  media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
+                                  bind_bytes: bool = False):
+    """Return a plan and its claims, optionally binding destructive file bytes."""
     configuration.validate()
     scope = local_path(Path(root), directory=True)
     if not proven_local(scope):
@@ -46,14 +47,19 @@ def _plan_retention_with_snapshot(root: Path, configuration: Configuration, *,
     if type(now) not in {int, float} or not math.isfinite(now):
         raise ValueError("retention clock must be finite")
     initial = capture_root(scope, _claims)
-    sessions, unknown = [], not initial.stable or any(
+    sessions, byte_proofs = [], {}
+    unknown = not initial.stable or any(
         claim.uncertain for claim in initial.claims)
     for claim in initial.claims:
         try:
-            item = _inspect(claim, scope, volume, configuration, now, media_inspector)
+            item = _inspect(claim, scope, volume, configuration, now, media_inspector,
+                            bind_bytes)
         except ObservedInstability:
             unknown = True
             item = _empty_item(Path(claim.directory))
+        bound = item.pop("_bound_file_hashes", None)
+        if item["classification"] == "eligible" and bound is not None:
+            byte_proofs[claim.directory] = bound
         if ((item["session_id"] is not None and item["session_id"] != claim.session_id)
                 or (item["output_path"] is not None and item["output_path"] != claim.output_path)):
             unknown = True
@@ -82,15 +88,17 @@ def _plan_retention_with_snapshot(root: Path, configuration: Configuration, *,
             session["classification"] = "needs_attention"
             session["reason"] = "evidence_conflict"
     return ({"root": str(scope), "retention_max_age_days": configuration.retention_max_age_days,
-             "sessions": sessions}, initial)
+             "sessions": sessions}, initial, byte_proofs)
 
 
-def _inspect(claim, root, volume, config, now, media_inspector):
+def _inspect(claim, root, volume, config, now, media_inspector, bind_bytes):
     directory = Path(claim.directory)
     item = _empty_item(directory)
     try:
         local_path(directory, directory=True)
         _artifact_scope(directory, volume)
+        before_hashes = (_candidate_hashes(directory, root, volume)
+                         if bind_bytes else None)
         manifest_path = directory / "session.json"
         control = lambda path: checked_control(claim, path)
         before = _evidence_stamp(directory)
@@ -152,6 +160,10 @@ def _inspect(claim, root, volume, config, now, media_inspector):
             if (control(manifest_path) != content
                     or control(directory / "connections.jsonl") != log):
                 raise ObservedInstability("observed candidate evidence changed")
+            if bind_bytes:
+                if _candidate_hashes(directory, root, volume) != before_hashes:
+                    raise ObservedInstability("observed candidate bytes changed")
+                item["_bound_file_hashes"] = before_hashes
             return _mark(item, "eligible", "age_threshold_reached")
         return _mark(item, "retained", "not_old_enough")
     except ObservedInstability:
@@ -183,6 +195,24 @@ def _artifact_scope(directory: Path, volume: LocalVolume) -> None:
         local_path(output, directory=False)
         if not proven_local(output) or local_volume(output) != volume:
             raise ValueError("retention output is outside the proven local volume")
+
+
+def _candidate_hashes(directory: Path, root: Path, volume: LocalVolume) -> tuple:
+    """Observe all candidate file bytes with stable path and opened-handle proof."""
+    from .retention_authorization import _checked_digest, fingerprint
+
+    output = directory.with_suffix(".mp4")
+    paths = list(directory.iterdir())
+    if output.exists() or output.is_symlink():
+        paths.append(output)
+    result = []
+    try:
+        for path in sorted(paths, key=lambda item: str(item)):
+            item = fingerprint(root, path, directory=False, volume=volume)
+            result.append((item.relative_path, _checked_digest(root, item, volume)))
+    except (OSError, ValueError) as error:
+        raise ObservedInstability("candidate byte observation changed") from error
+    return tuple(result)
 
 
 def _evidence_stamp(directory: Path) -> tuple:

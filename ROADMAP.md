@@ -1293,6 +1293,20 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #36 corrective slice complete (2026-09-28):** Destructive
+retention now binds all eligible file bytes through both planner observations,
+authorization, and every surviving deletion position. Same-directory private
+quarantine plus moved-object identity/byte proof prevents a post-check
+replacement from being deleted as the authorized artifact; failures remain
+auditable and nonresumable. Audit validation uses native path semantics and
+requires writer-recovery evidence/part pairs without rejecting older valid
+schema-1 intents. Focused Windows and Python 3.11 tests passed, native
+WSL/POSIX unusual-name reopen passed, and the isolated full suite passed
+1,535 plus 19 subtests (four skips).
+No real media was deleted or power-loss test performed. A NEW fresh-context
+independent retention safety review is the next gate. #30 remains queued;
+v0.10.0 is released and v0.11.0 unreleased.
+
 **Fresh independent retention gate NOT READY (2026-09-28; issue #36):** At
 `d20ed7a`, ordinary validated FLV/MP4 bytes can change with restored Windows
 metadata after the closing plan and still be deleted; a check-to-unlink

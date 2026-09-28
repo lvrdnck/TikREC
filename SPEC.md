@@ -955,25 +955,38 @@ reloads current configuration, replans the full root, and refuses any target
 referenced by either durable service job slot, including a completed job. The
 planner's coherent whole-root claim snapshot must still match when authorization
 captures artifacts. The same planner runs again after artifact binding, and both
-the decision and claim snapshot must still match before audit intent. The private
-authorization binds root/claim identity, creator and durable end time,
-policy, local volume, target control hashes, writer-recovery evidence and
+the decision, claim snapshot, and first-pass file byte digests must still match
+before audit intent. Destructive planning captures stable byte digests around
+media inspection; authorization independently hashes every allowlisted file.
+The public read-only planner does not perform this additional full-file hashing.
+The private authorization binds root/claim identity, creator and durable end
+time, policy, local volume, every file's byte hash, writer-recovery evidence and
 referenced-part byte hashes, and exact singly linked artifact fingerprints.
 Before each mutation it checks the lease, current policy and job stores,
-non-target claims, all still-present target controls and recovery proof
-artifacts against their original content hashes, remaining/removed artifacts,
-and no-follow identity/locality. A referenced part remains byte-bound even
-after its writer-recovery evidence file has been intentionally removed.
+non-target claims, every still-present authorized file against its bound bytes,
+remaining/removed artifacts, and no-follow identity/locality. A referenced
+part remains byte-bound even after its writer-recovery evidence file has been
+intentionally removed.
 It removes retained media and referenced recovery evidence first, then the
 connection log, manifest, empty `.parts` directory, and final MP4 last.
+For each artifact it first moves the pathname to a unique, same-directory
+private sibling derived from the audited operation and order position. It then
+verifies the moved object's original identity and, for files, its bound bytes
+before removing that private sibling. A failed verification leaves the moved
+object for manual inspection and terminates the operation; it never removes an
+unverified replacement. POSIX syncs the parent after the move and removal.
+The lifecycle lease coordinates TikREC writers. As with the existing filesystem
+trust boundary, a noncooperating process with write access to private quarantine
+names is outside this protocol's protection.
 Unexpected evidence or failure stops immediately. A later call cannot resume
 the stale operation; it must pass fresh authorization, which normally refuses
 an incomplete session.
 
 An append-only schema-1 JSONL journal lives beneath the per-user TikREC state
 directory's `retention-audit` folder, in a deterministic per-root file. A
-synced intent containing the exact order/fingerprints, target control hashes,
-and writer-recovery byte hashes precedes all deletion; synced attempt, deleted,
+synced intent containing the exact order/fingerprints, every file's byte hash,
+writer-recovery byte hashes, and deterministic quarantine names precedes all
+deletion; synced attempt, deleted,
 failed, and completed records
 follow. On POSIX, audit ancestors are synced root-to-leaf on every attempt;
 each new directory entry is synced before creating its child, and the journal
@@ -982,7 +995,8 @@ prior sync.
 Successful POSIX removals sync their parent before a deleted record. Existing
 audit history is checked for complete schema-1 JSONL framing, unique JSON
 fields and operation IDs, event-specific fields, this journal's canonical root,
-the child/control/directory/final-MP4 destructive order, and coherent intent/
+the child/control/directory/final-MP4 destructive order, paired recovery evidence
+and parts, platform-correct path spelling, and coherent intent/
 attempt/deleted/failed/completed transitions. A later intent permanently freezes
 any earlier incomplete operation. A valid intent-only,
 unmatched-attempt, or other coherent event-boundary crash tail remains readable
@@ -1001,10 +1015,11 @@ Independent review at `d20ed7a` found that ordinary FLV parts and the final
 MP4 are only metadata-bound after the closing planner pass; same-size Windows
 byte changes with restored metadata can invalidate eligibility without
 stopping deletion. The final path check also leaves a check-to-unlink
-replacement window. Current audit validation can reject a POSIX journal
-written by the executor for a legal literal-backslash filename and can accept
-unpaired writer-recovery evidence names. Issue #36 blocks owner-facing
-retention design until correction and a new independent safety review.
+replacement window. At that reviewed commit, audit validation could reject a
+POSIX journal written by the executor for a legal literal-backslash filename
+and accept unpaired writer-recovery evidence names. Issue #36 implements the bounded
+corrections; a NEW fresh-context independent review remains required before
+owner-facing retention design.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
