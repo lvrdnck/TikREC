@@ -7,7 +7,7 @@ import uuid
 import os
 from collections.abc import Callable
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .configuration import Configuration, ConfigurationStore
@@ -37,6 +37,7 @@ class RetentionProgress:
     removal_uncertain: bool = False
     audit_uncertain: bool = False
     operation_error: BaseException | None = None
+    post_completion_cleanup_errors: list[BaseException] = field(default_factory=list)
 
     def mark_intent_sync_started(self) -> None:
         """Record the boundary after writing intent and before calling fsync."""
@@ -86,7 +87,8 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                 yield
 
         operation_id = str(uuid.uuid4())
-        with (RetentionAudit(scope, audit_path) as audit,
+        with (_preserve_post_completion_failure(progress),
+              RetentionAudit(scope, audit_path) as audit,
               _preserve_operation_failure(progress)):
             progress.operation_id, progress.audit_path = operation_id, audit.path
             # The intent is synced before any artifact is even attempted.
@@ -171,6 +173,20 @@ def _preserve_operation_failure(progress: RetentionProgress):
     except BaseException as error:
         if progress.operation_error is None:
             progress.operation_error = error
+        raise
+
+
+@contextmanager
+def _preserve_post_completion_failure(progress: RetentionProgress):
+    """Capture an audit-exit fault before lifecycle cleanup can replace it."""
+    try:
+        yield
+    except BaseException as error:
+        if progress.completed_durable:
+            if progress.operation_error is None:
+                progress.operation_error = error
+            elif error is not progress.operation_error:
+                progress.post_completion_cleanup_errors.append(error)
         raise
 
 

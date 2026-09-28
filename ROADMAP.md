@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #44 correction complete (2026-09-28):** The first fault after proven
+`completed` sync remains the primary diagnostic even if later audit/lifecycle
+cleanup fails. `COMPLETE`/0, operation UUID, and audit path remain authoritative;
+secondary cleanup faults are separate when stderr works, and broken diagnostics
+cannot change the result. Native Windows focused tests passed 120 (one skipped),
+the isolated full suite passed 1,679 (seven skipped, 19 subtests), and applicable
+WSL planning/refusal/read-only audit checks passed 100 (two skipped). No real
+media was deleted. The single next task is a NEW fresh-context independent
+public retention CLI review; the gate remains NOT READY before separately
+authorized real-media validation. #30 stays queued; v0.10.0 is released and
+v0.11.0 remains unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-28;
 `3850d8c`; issue #44):** Native Windows disposable probes found a remaining
 post-completion fault-precedence gap: an interruption after synced `completed`

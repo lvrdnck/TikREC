@@ -1121,9 +1121,11 @@ real-media retention validation; v0.11 is unreleased.
 The fresh review at `3850d8c` found a post-completion reporting blocker (#44):
 after synced `completed`, a later audit/lifecycle cleanup error can mask the
 first post-completion interruption or cleanup error. The result stays
-`COMPLETE`/0 with operation context, but the original cause is lost. The public
-CLI gate is NOT READY pending #44 correction and another independent review;
-only disposable synthetic media was used.
+`COMPLETE`/0 with operation context, but the original cause is lost. Issue #44
+now captures that first fault before later cleanup and reports secondary cleanup
+faults separately when diagnostics work. Broken diagnostics cannot change
+`COMPLETE`/0. The public CLI gate remains NOT READY pending a NEW independent
+review; only disposable synthetic media was used.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

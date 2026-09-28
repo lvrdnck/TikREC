@@ -61,7 +61,12 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
             preview_guard=preview.guard, progress=progress)
     except BaseException as error:
         if progress.completed_durable:
-            return _completed_after_cleanup(session_id, preview, progress, error, stderr)
+            primary = progress.operation_error if progress.operation_error is not None else error
+            secondary = list(progress.post_completion_cleanup_errors)
+            if error is not primary and all(error is not item for item in secondary):
+                secondary.append(error)
+            return _completed_after_cleanup(session_id, preview, progress, primary,
+                                            secondary, stderr)
         # The executor publishes the body fault before context cleanup can
         # replace it; a later cleanup error is only secondary evidence.
         primary = progress.operation_error if progress.operation_error is not None else error
@@ -108,16 +113,19 @@ def _completed(session_id: str, preview: RetentionPreview, operation_id: str,
 
 
 def _completed_after_cleanup(session_id: str, preview: RetentionPreview,
-                             progress: RetentionProgress, error: BaseException,
-                             stderr: TextIO) -> int:
-    """Keep synced completion authoritative when later executor cleanup fails."""
+                             progress: RetentionProgress, primary: BaseException,
+                             secondary: list[BaseException], stderr: TextIO) -> int:
+    """Keep synced completion and its first fault authoritative across cleanup."""
     try:
-        _diagnose(stderr, [
+        lines = [
             f"COMPLETE: deleted session {session_id} from {preview.root}",
-            f"Cleanup error: {type(error).__name__}: {_one_line(error)}",
+            f"Post-completion error: {type(primary).__name__}: {_one_line(primary)}",
             f"Operation ID: {progress.operation_id}",
             f"Audit: {progress.audit_path}",
-        ])
+        ]
+        lines.extend(f"Secondary cleanup error: {type(error).__name__}: "
+                     f"{_one_line(error)}" for error in secondary)
+        _diagnose(stderr, lines)
     except BaseException:
         # Formatting or diagnostic failures cannot replace proven completion.
         pass

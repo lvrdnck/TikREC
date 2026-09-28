@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; #44 NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -28,8 +28,10 @@ fault separately when possible, and classifies post-intent `SystemExit` as an
 incomplete exit 3 with operation context. The NEW review at `3850d8c` found
 that after synced `completed`, a later cleanup fault can hide the first
 post-completion interruption or cleanup error from `COMPLETE`/0 diagnostics.
-Issue #44 is the single next correction; the public CLI gate remains NOT READY
-until another fresh independent review passes. Separately authorized real-media
+Issue #44 now preserves the first post-completion operation or audit cleanup
+fault before later cleanup can replace it, and reports later faults separately
+when stderr works. The public CLI gate remains NOT READY until a NEW fresh
+independent review passes. Separately authorized real-media
 validation follows that gate. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
@@ -163,8 +165,9 @@ journal, hashes, signed URLs, or private transport data.
 
 Report `COMPLETE` once the synced `completed` event is known, including when
 later executor cleanup or normal success output fails or is interrupted. Keep
-exit `0` and make one bounded stderr attempt to report `COMPLETE`, the original
-cleanup or output cause, operation UUID, and audit path. Failure of that
+exit `0` and make one bounded stderr attempt to report `COMPLETE`, the first
+post-completion operation or cleanup fault, any later cleanup faults separately,
+operation UUID, and audit path. Failure of that
 diagnostic channel does not change the completed result. Report `FAILED` when
 intent is durable or its sync began but may have succeeded, and no removal is
 known to have occurred. An interrupted or failed sync call cannot prove the

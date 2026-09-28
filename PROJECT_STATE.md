@@ -7,6 +7,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #44 post-completion fault correction complete (2026-09-28):** After
+  proven `completed` sync, caller-owned progress now retains the first operation
+  or audit cleanup fault before lifecycle cleanup can mask it. The public CLI
+  keeps `COMPLETE`/0 and operation/audit context, reports later cleanup faults
+  separately when stderr works, and survives broken diagnostics. Native Windows
+  focused tests: 120 passed, one skipped; isolated full offline suite: 1,679
+  passed, seven skipped, 19 subtests; applicable WSL planning/refusal and
+  read-only audit checks: 100 passed, two skipped. **State:** #44 correction
+  complete; the single next v0.11 task is a NEW fresh-context independent public
+  retention CLI review. The gate remains NOT READY until that review passes;
+  separately authorized real-media validation follows a passing review. No
+  owner decision is pending. #30 stays queued; #8/#13/#28 are non-blocking
+  evidence work. v0.10.0 remains released and v0.11.0 unreleased. No real media
+  was deleted.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-28;
   HEAD `3850d8c`; issue #44):** Disposable native Windows probes found that
   after a synced `completed` event, a later audit/lifecycle cleanup fault can

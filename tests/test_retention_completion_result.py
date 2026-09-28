@@ -48,6 +48,7 @@ def test_proven_completion_survives_executor_cleanup(
     assert not parts.exists() and not (root / "alpha.mp4").exists()
     assert "COMPLETE" in err and "PARTIAL" not in err and "FAILED" not in err
     assert f"{failure.__name__}: synthetic {boundary} cleanup fault" in err
+    assert "Secondary cleanup error:" not in err
     assert f"Operation ID: {records[0]['operation_id']}" in err
     assert f"Audit: {audit}" in err
     assert f"Session: {session_id}" in out
@@ -113,3 +114,183 @@ def test_interrupted_completed_sync_is_not_proven(tmp_path, monkeypatch, failure
     assert not parts.exists() and not (root / "alpha.mp4").exists()
     assert code == 3 and "PARTIAL" in err and "COMPLETE" not in err
     assert "synthetic completed sync uncertainty" in err
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+@pytest.mark.parametrize("primary_type", [KeyboardInterrupt, SystemExit, RuntimeError])
+def test_first_fault_after_completed_sync_survives_audit_cleanup(
+        tmp_path, monkeypatch, primary_type):
+    case = fixture(tmp_path)
+    root, parts, _, _, _, audit, _ = case
+    original_append = RetentionAudit.append
+    original_exit = RetentionAudit.__exit__
+
+    def fault_after_completed(self, event, operation_id, **fields):
+        original_append(self, event, operation_id, **fields)
+        if event == "completed":
+            raise primary_type("first post-completion fault")
+
+    def fault_after_close(self, *exc):
+        original_exit(self, *exc)
+        raise OSError("second audit cleanup fault")
+
+    monkeypatch.setattr(RetentionAudit, "append", fault_after_completed)
+    monkeypatch.setattr(RetentionAudit, "__exit__", fault_after_close)
+    code, _, err = _invoke(case)
+    records = events(audit)
+    assert code == 0 and records[-1]["event"] == "completed"
+    assert not parts.exists() and not (root / "alpha.mp4").exists()
+    assert f"Post-completion error: {primary_type.__name__}: first post-completion fault" in err
+    assert "Secondary cleanup error: OSError: second audit cleanup fault" in err
+    assert f"Operation ID: {records[0]['operation_id']}" in err
+    assert f"Audit: {audit}" in err
+    assert "PARTIAL:" not in err and "FAILED:" not in err
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+@pytest.mark.parametrize("later_type", [OSError, KeyboardInterrupt, SystemExit])
+def test_first_audit_cleanup_fault_survives_lifecycle_cleanup(
+        tmp_path, monkeypatch, later_type):
+    case = fixture(tmp_path)
+    root, parts, _, _, _, audit, _ = case
+    original_audit_exit = RetentionAudit.__exit__
+    original_lease_exit = LifecycleLease.__exit__
+
+    def fault_after_audit_close(self, *exc):
+        original_audit_exit(self, *exc)
+        raise OSError("first audit cleanup fault")
+
+    def fault_after_lease_close(self, *exc):
+        original_lease_exit(self, *exc)
+        raise later_type("second lifecycle cleanup fault")
+
+    monkeypatch.setattr(RetentionAudit, "__exit__", fault_after_audit_close)
+    monkeypatch.setattr(LifecycleLease, "__exit__", fault_after_lease_close)
+    code, _, err = _invoke(case)
+    records = events(audit)
+    assert code == 0 and records[-1]["event"] == "completed"
+    assert not parts.exists() and not (root / "alpha.mp4").exists()
+    assert "Post-completion error: OSError: first audit cleanup fault" in err
+    assert (f"Secondary cleanup error: {later_type.__name__}: "
+            "second lifecycle cleanup fault") in err
+    assert f"Operation ID: {records[0]['operation_id']}" in err
+    assert f"Audit: {audit}" in err
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+@pytest.mark.parametrize("boundary", ["post_completed", "two_cleanups"])
+@pytest.mark.parametrize("channel_fault", ["write", "flush"])
+def test_combined_completed_faults_keep_zero_with_broken_stderr(
+        tmp_path, monkeypatch, boundary, channel_fault):
+    case = fixture(tmp_path)
+    root, parts, _, _, _, audit, _ = case
+    original_audit_exit = RetentionAudit.__exit__
+
+    def fault_after_audit_close(self, *exc):
+        original_audit_exit(self, *exc)
+        raise OSError("first audit cleanup fault" if boundary == "two_cleanups"
+                      else "second audit cleanup fault")
+
+    monkeypatch.setattr(RetentionAudit, "__exit__", fault_after_audit_close)
+    if boundary == "post_completed":
+        original_append = RetentionAudit.append
+
+        def fault_after_completed(self, event, operation_id, **fields):
+            original_append(self, event, operation_id, **fields)
+            if event == "completed":
+                raise KeyboardInterrupt("first post-completion fault")
+
+        monkeypatch.setattr(RetentionAudit, "append", fault_after_completed)
+    else:
+        original_lease_exit = LifecycleLease.__exit__
+
+        def fault_after_lease_close(self, *exc):
+            original_lease_exit(self, *exc)
+            raise OSError("second lifecycle cleanup fault")
+
+        monkeypatch.setattr(LifecycleLease, "__exit__", fault_after_lease_close)
+
+    class BrokenDiagnostic(StringIO):
+        def write(self, value):
+            if channel_fault == "write":
+                raise OSError("broken stderr write")
+            return super().write(value)
+
+        def flush(self):
+            if channel_fault == "flush":
+                raise OSError("broken stderr flush")
+            return super().flush()
+
+    code, _, err = _invoke(case, BrokenDiagnostic())
+    assert code == 0 and events(audit)[-1]["event"] == "completed"
+    assert not parts.exists() and not (root / "alpha.mp4").exists()
+    if channel_fault == "flush":
+        assert "COMPLETE:" in err and "Secondary cleanup error:" in err
+
+
+def _post_completion_faults(monkeypatch, scenario):
+    """Inject the issue #44 fault order after genuine completed persistence."""
+    audit_exit = RetentionAudit.__exit__
+
+    def fail_audit_close(self, *exc):
+        audit_exit(self, *exc)
+        message = ("secondary audit close fault" if scenario == "append_then_audit"
+                   else "first audit cleanup fault")
+        raise OSError(message)
+
+    monkeypatch.setattr(RetentionAudit, "__exit__", fail_audit_close)
+    if scenario == "append_then_audit":
+        append = RetentionAudit.append
+
+        def interrupt_after_completed(self, event, operation_id, **fields):
+            append(self, event, operation_id, **fields)
+            if event == "completed":
+                raise KeyboardInterrupt("primary after-completed interruption")
+
+        monkeypatch.setattr(RetentionAudit, "append", interrupt_after_completed)
+    else:
+        lifecycle_exit = LifecycleLease.__exit__
+
+        def fail_lifecycle_close(self, *exc):
+            lifecycle_exit(self, *exc)
+            raise OSError("second lifecycle cleanup fault")
+
+        monkeypatch.setattr(LifecycleLease, "__exit__", fail_lifecycle_close)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+@pytest.mark.parametrize("scenario,primary,secondary", [
+    ("append_then_audit", "KeyboardInterrupt: primary after-completed interruption",
+     "OSError: secondary audit close fault"),
+    ("audit_then_lifecycle", "OSError: first audit cleanup fault",
+     "OSError: second lifecycle cleanup fault"),
+])
+@pytest.mark.parametrize("channel_fault", [None, "write", "flush"])
+def test_first_post_completion_fault_survives_later_cleanup(
+        tmp_path, monkeypatch, scenario, primary, secondary, channel_fault):
+    case = fixture(tmp_path)
+    root, parts, _, _, _, audit, _ = case
+    _post_completion_faults(monkeypatch, scenario)
+
+    class Diagnostic(StringIO):
+        def write(self, value):
+            if channel_fault == "write":
+                raise OSError("broken stderr write")
+            return super().write(value)
+
+        def flush(self):
+            if channel_fault == "flush":
+                raise OSError("broken stderr flush")
+            return super().flush()
+
+    code, _, err = _invoke(case, Diagnostic())
+    records = events(audit)
+    assert code == 0 and records[-1]["event"] == "completed"
+    assert not parts.exists() and not (root / "alpha.mp4").exists()
+    if channel_fault != "write":
+        assert "COMPLETE" in err and "PARTIAL" not in err and "FAILED" not in err
+        assert f"Post-completion error: {primary}" in err
+        assert f"Secondary cleanup error: {secondary}" in err
+        assert err.index(primary) < err.index(secondary)
+        assert f"Operation ID: {records[0]['operation_id']}" in err
+        assert f"Audit: {audit}" in err
