@@ -7,6 +7,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-28;
+  HEAD `cc0824d`; issue #42):** Native Windows disposable `OSError` and
+  `KeyboardInterrupt` probes after the synced `completed` audit event, during
+  audit-handle cleanup, returned `PARTIAL`/3 although the journal ended in
+  `completed` and all synthetic artifacts were removed. The CLI has no
+  caller-owned proof of completion until the executor returns, leaving a
+  completion-to-return gap after #40. Focused retention/lifecycle tests:
+  376 passed, four skipped; isolated full suite: 1,637 passed, seven skipped,
+  19 subtests; applicable WSL planning/refusal and read-only audit history:
+  116 passed, five skipped. **State:** #42 is the single next bounded v0.11
+  correction; repeat a NEW fresh-context public CLI review afterward. No
+  owner decision is pending. Separately authorized real-media validation is
+  later; #30 stays queued, #8/#13/#28 remain non-blocking evidence work.
+  v0.10.0 remains released and v0.11.0 unreleased. No real media was deleted.
+
 - **Issue #41 intent-sync and diagnostic result correction complete
   (2026-09-28):** The audit marks sync started after writing intent and before
   `fsync`; faults inside that boundary report uncertain `FAILED`/3 with the

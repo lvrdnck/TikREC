@@ -1096,6 +1096,11 @@ boundary report `FAILED`/3 with explicit durability uncertainty; faults before
 sync retain pre-intent results. Best-effort diagnostics preserve the known exit
 result when stderr fails. A NEW independent public CLI review remains required;
 no real-media retention deletion has been performed.
+That new review at `cc0824d` found a completion-to-return result gap (#42):
+an audit close failure or interruption after synced `completed` reports
+`PARTIAL`/3 even though the operation is proven complete. The public CLI gate
+is NOT READY pending #42 correction and another fresh review. No real media
+was deleted in this review.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

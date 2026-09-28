@@ -1293,6 +1293,20 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate NOT READY (2026-09-28;
+`cc0824d`; issue #42):** A native Windows synthetic fault after the audit
+synced `completed`, but before the executor returned, produced `PARTIAL`/3
+for both `OSError` and `KeyboardInterrupt`. The audit ended in `completed`
+and every authorized synthetic artifact was gone. This leaves a
+completion-to-return result gap beyond #40's post-return output correction.
+Focused retention/lifecycle tests passed 376 (four skipped); the isolated
+full suite passed 1,637 (seven skipped, 19 subtests); applicable WSL
+planning/refusal and read-only audit-history tests passed 116 (five skipped).
+No real media was deleted. #42 is the single next bounded v0.11 correction,
+followed by a NEW fresh-context public CLI review before separately authorized
+real-media validation. #30 stays queued; v0.10.0 remains released and
+v0.11.0 unreleased.
+
 **Issue #41 correction complete (2026-09-28):** Intent sync now has a distinct
 in-progress result state. If `fsync` fails or is interrupted, the CLI reports
 uncertain `FAILED`/3 with operation context; proven pre-sync failure keeps

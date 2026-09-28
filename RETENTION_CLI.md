@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — #41 CORRECTED; NEW PUBLIC REVIEW PENDING.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; #42 OPEN.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -13,8 +13,11 @@ callback could still
 claim no intent existed, and a failed after-intent stderr diagnostic could
 escape without exit `3`. Issue #41 records the sync-in-progress state before
 the syscall, reports an interrupted or failed sync as uncertain `FAILED`/3,
-and makes failure diagnostics best-effort. A NEW fresh-context public review
-is required before separately authorized real-media validation. The local CLI
+and makes failure diagnostics best-effort. The NEW review at `cc0824d` found
+that a cleanup fault after synced `completed` but before executor return still
+reports `PARTIAL`/3 for a proven completed deletion. Issue #42 is the single
+next bounded correction, followed by another fresh-context public review
+before separately authorized real-media validation. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
@@ -145,10 +148,10 @@ owner can inspect that local file and filter records by `operation_id`; no new
 audit command is required in this slice. The CLI never prints the entire
 journal, hashes, signed URLs, or private transport data.
 
-Report `COMPLETE` only after the executor returns and the synced `completed`
-event is known. If normal success output fails or is interrupted after that
-return, keep exit `0` and make one bounded stderr attempt to report `COMPLETE`,
-the original output cause, operation UUID, and audit path. Failure of that
+Report `COMPLETE` once the synced `completed` event is known, including when
+later executor cleanup or normal success output fails or is interrupted. Keep
+exit `0` and make one bounded stderr attempt to report `COMPLETE`, the original
+cleanup or output cause, operation UUID, and audit path. Failure of that
 diagnostic channel does not change the completed result. Report `FAILED` when
 intent is durable or its sync began but may have succeeded, and no removal is
 known to have occurred. An interrupted or failed sync call cannot prove the

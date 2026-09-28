@@ -528,8 +528,11 @@ that falsely reported completed deletion as `PARTIAL`. A fresh-context public
 review at `653f5fe` found a remaining intent-sync interruption window
 and a broken-stderr after-intent reporting gap (#41). The #41 correction reports
 uncertain intent sync as `FAILED`/3 and makes failure diagnostics best-effort.
-A NEW independent public CLI review is required before
-separately authorized real-media validation.
+A fresh independent review at `cc0824d` found a remaining cleanup-boundary
+defect (#42): a completed deletion can be reported as `PARTIAL`/3 if audit
+cleanup fails before the executor returns. The public CLI gate is NOT READY;
+#42 correction and another fresh review precede separately authorized
+real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
