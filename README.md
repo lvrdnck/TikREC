@@ -513,7 +513,8 @@ same-room suppression. It does not authenticate to TikTok, notify the owner,
 automatically delete media, or provide a library/Web UI/playback. Unreleased
 v0.11 development adds a read-only age-retention plan and explicit creator
 protection. The public CLI and service do not offer deletion; a private bounded
-executor is pending independent review and has no owner-facing caller.
+executor has no owner-facing caller and is blocked by the independent safety
+review findings in issue #33.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,

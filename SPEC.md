@@ -969,8 +969,13 @@ synced intent containing the exact order/fingerprints precedes all deletion;
 synced attempt, deleted, failed, and completed records follow. A new journal's
 parent directory is synced on POSIX; successful POSIX removals sync their parent
 before a deleted record. The journal excludes transport secrets and signed
-URLs. Root-level persistent lifecycle locks use POSIX shared/exclusive `flock`
-or Windows bounded byte-range leases; process exit releases a held lock. All
+URLs. Independent review of the current private executor found that a target
+control edit preserving Windows metadata can escape post-authorization checks,
+an existing torn audit line can corrupt the next operation's JSONL, and a newly
+created POSIX audit directory is not yet durably linked through its parent.
+Issue #33 blocks any owner-facing deletion surface until these are fixed and
+reviewed again. Root-level persistent lifecycle locks use POSIX shared/exclusive
+`flock` or Windows bounded byte-range leases; process exit releases a held lock. All
 TikREC mutators of a recording root take writer leases while this private
 executor takes the exclusive lease. The protocol excludes TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata

@@ -1,12 +1,29 @@
 # TikREC current state
 
-Last reviewed: 2026-09-27. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-28. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
+- **Retention executor gate NOT READY (2026-09-28; issue #33 active):** Fresh
+  independent review of current HEAD `ef4ef30` found three blockers before any
+  owner-facing deletion design. On Windows, a same-size target manifest edit
+  with restored mtime can change an eligible creator to a protected one after
+  authorization; target metadata still matches, so the executor deletes it and
+  audits the old creator. A torn existing audit line is accepted for append, so
+  the next completed deletion can have an unreadable intent. On first POSIX use,
+  the new audit directory's parent entry is not synced, risking loss of the
+  journal after durable removals. Two synthetic reproductions passed on native
+  Windows; the POSIX finding follows from the current sync order and awaits
+  native validation. Focused executor/authorization/audit/lock tests passed 34;
+  the isolated full run had 1,436 passing tests plus 19 subtests, three skips,
+  and one intermittent unrelated Windows `os.replace` denial that passed on
+  targeted rerun. No real media was deleted, and production code was not changed. Fix
+  #33 narrowly, then repeat the fresh safety review. #30 remains queued after
+  this gate; no owner action is pending. v0.10.0 remains released and v0.11.0
+  unreleased.
 - **Issue #32 recovery and readiness complete (2026-09-27):** The owner approved
   guarded real recovery/finalization to make both watched accounts ready. The
   service loads fixed code `0d44c5f`; monitoring exactly `eliss4r.n` and `gracie.kf`
@@ -31,9 +48,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   reports 26 backward-DTS warnings. Input decode health is truthfully degraded
   (103 finalizer H.264 diagnostics); a clean output decode does not prove visual
   repair or identify the original error source. #32 journals the full result.
-  **No implementation task or owner action is pending.** Next queued gate is
-  fresh independent review of the v0.11 retention executor; #30 remains queued
-  after that gate. v0.10.0 remains released and v0.11.0 unreleased.
+  At this checkpoint no implementation task or owner action was pending; the
+  then-next gate was fresh review of the v0.11 retention executor. #30 remained
+  queued after that gate. v0.10.0 was released and v0.11.0 unreleased.
 - **Issue #31 production fix complete (2026-09-27):** Windows path/open-handle
   identity comparison now excludes only the incomparable `st_ctime_ns` field.
   Each path and handle still retains its complete pre/post metadata stamp,
