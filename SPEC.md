@@ -997,6 +997,14 @@ while this private
 executor takes the exclusive lease. The protocol excludes TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata
 guarantees. The private executor remains unreleased.
+Independent review at `d20ed7a` found that ordinary FLV parts and the final
+MP4 are only metadata-bound after the closing planner pass; same-size Windows
+byte changes with restored metadata can invalidate eligibility without
+stopping deletion. The final path check also leaves a check-to-unlink
+replacement window. Current audit validation can reject a POSIX journal
+written by the executor for a legal literal-backslash filename and can accept
+unpaired writer-recovery evidence names. Issue #36 blocks owner-facing
+retention design until correction and a new independent safety review.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent retention gate NOT READY (2026-09-28; issue #36):** At
+`d20ed7a`, ordinary validated FLV/MP4 bytes can change with restored Windows
+metadata after the closing plan and still be deleted; a check-to-unlink
+replacement can delete a different file. Native POSIX produced a completed
+operation with a legal literal-backslash name that its own audit validator
+cannot reopen; the validator also accepts an unpaired writer-recovery evidence
+path. Focused tests passed 333 (three skips), the isolated full suite passed
+1,510 plus 19 subtests (three skips), and WSL first-use audit sync
+failure/retry remained fail-closed. No real media was deleted or power-loss
+test performed. Fix #36 as the single next slice, then repeat a new
+independent gate. #30 remains queued; v0.10.0 is released and v0.11.0
+unreleased.
+
 **Issue #35 corrective slice complete (2026-09-28):** A coherent whole-root
 planner snapshot now binds initial eligibility to destructive authorization, and
 the same planner runs again after artifact binding before durable intent. Existing

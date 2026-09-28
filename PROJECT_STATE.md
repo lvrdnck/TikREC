@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent retention gate NOT READY (2026-09-28; issue #36
+  opened):** Current HEAD `d20ed7a` can delete ordinary FLV and final MP4
+  media after a same-size/restored-metadata Windows byte change makes fresh
+  planning `needs_attention`; a final check-to-unlink replacement can delete
+  the wrong file and still record `completed`. On native POSIX, an eligible
+  legal literal-backslash name was deleted and journaled, but the journal
+  cannot reopen; audit history also accepts an unpaired writer-recovery
+  evidence artifact. #36 records disposable reproductions and narrow fix
+  scope. Focused tests passed 333 (three skips); the isolated full suite
+  passed 1,510 plus 19 subtests (three skips). WSL audit fsync failure blocked
+  use and retry succeeded; no power-loss test was performed. No real media or
+  production code changed. **State:** v0.11 retention design blocked on open
+  #36; no implementation task is active and no owner action is pending.
+  **Single next task:** fix #36, then repeat a new
+  independent retention gate. #30 stays queued; #8/#13/#28 remain non-blocking
+  evidence work. v0.10.0 remains released and v0.11.0 unreleased.
 - **Issue #35 corrective implementation complete (2026-09-28):** The private
   executor now carries the planner's coherent whole-root claim snapshot into
   authorization and repeats the same planner after artifact binding; changed
