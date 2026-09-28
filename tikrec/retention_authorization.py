@@ -15,7 +15,7 @@ from .configuration import Configuration, ConfigurationStore
 from .job_state import JobStateStore
 from .retention_locality import LocalVolume, local_volume, proven_local
 from .retention_paths import local_path
-from .retention_snapshot import (ClaimSnapshot, capture_claim, capture_root,
+from .retention_snapshot import (ClaimSnapshot, RootSnapshot, capture_claim, capture_root,
                                  checked_control)
 from .service_job import default_job_state_path, second_job_state_path
 from .writer_recovery_evidence import (recovery_records, prove_recovery_bytes,
@@ -63,7 +63,8 @@ class DeletionAuthorization:
     recovery_byte_hashes: tuple[tuple[str, str], ...]
 
 
-def authorize(root: Path, session: dict, config: Configuration) -> DeletionAuthorization:
+def authorize(root: Path, session: dict, config: Configuration,
+              expected_snapshot: RootSnapshot) -> DeletionAuthorization:
     """Bind current eligible planner result to exact local artifact identities."""
     root = local_path(root, directory=True)
     if session["classification"] != "eligible" or session["protected"]:
@@ -78,6 +79,8 @@ def authorize(root: Path, session: dict, config: Configuration) -> DeletionAutho
     snapshot = capture_root(root, capture_claim)
     if not snapshot.stable or any(claim.uncertain for claim in snapshot.claims):
         raise ValueError("retention claimant evidence is unstable")
+    if snapshot != expected_snapshot:
+        raise ValueError("retention eligibility evidence changed before authorization")
     matches = [claim for claim in snapshot.claims if claim.session_id == session["session_id"]]
     if (len(matches) != 1 or matches[0].directory != str(directory)
             or matches[0].output_path != str(output)):

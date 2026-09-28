@@ -178,7 +178,7 @@ def test_invalid_clock_after_intent_stops_before_unlink(tmp_path):
     def changing_clock():
         nonlocal calls
         calls += 1
-        return float("nan") if calls >= 4 else NOW
+        return float("nan") if calls >= 5 else NOW
     with pytest.raises(ValueError, match="clock"):
         run(clock=changing_clock)
     assert parts.exists() and (root / "alpha.mp4").exists()

@@ -15,7 +15,7 @@ from .retention_audit import RetentionAudit
 from .retention_authorization import (authorize, check_fingerprint, check_jobs,
                                       check_policy, check_root)
 from .retention_paths import local_path
-from .retention_plan import plan_retention
+from .retention_plan import _plan_retention_with_snapshot
 
 
 def execute_retention(root: Path, session_id: str, configuration_store: ConfigurationStore,
@@ -35,11 +35,18 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
     with acquire_lifecycle(scope, "retention") as lease:
         config = configuration_store.load()
         config.validate()
-        fresh = plan_retention(scope, config, clock=clock, media_inspector=media_inspector)
+        fresh, evidence = _plan_retention_with_snapshot(
+            scope, config, clock=clock, media_inspector=media_inspector)
         matches = [item for item in fresh["sessions"] if item["session_id"] == session_id]
         if len(matches) != 1 or matches[0]["classification"] != "eligible":
             raise ValueError("retention target is not uniquely and currently eligible")
-        auth = authorize(scope, matches[0], config)
+        auth = authorize(scope, matches[0], config, evidence)
+        # Re-run the same planner after artifact binding so media/recovery facts
+        # cannot change unnoticed between eligibility and durable intent.
+        confirmed, closing = _plan_retention_with_snapshot(
+            scope, config, clock=clock, media_inspector=media_inspector)
+        if confirmed != fresh or closing != evidence:
+            raise ValueError("retention eligibility changed before authorization")
         check_policy(auth, configuration_store, clock())
         check_jobs(auth, job_paths)
         check_root(auth, frozenset())

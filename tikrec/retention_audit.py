@@ -61,7 +61,7 @@ class RetentionAudit:
             self.identity = (opened.st_dev, opened.st_ino)
             self.handle = os.fdopen(descriptor, "r+b", buffering=0)
             # A prior torn write must never be joined to a new deletion intent.
-            _validate_history(self.handle)
+            _validate_history(self.handle, self.root)
             if _POSIX_SYNC:
                 # Retry must also publish an entry left visible by a failed sync.
                 _sync_directory(self.path.parent)
@@ -125,10 +125,10 @@ def _sync_directory(directory: Path) -> None:
         os.close(descriptor)
 
 
-def _validate_history(handle) -> None:
+def _validate_history(handle, root: Path) -> None:
     """Require complete, coherent schema-1 operations before another intent."""
     handle.seek(0)
-    history = AuditHistory()
+    history = AuditHistory(root)
     try:
         while record_bytes := handle.readline(_MAX_RECORD_BYTES + 1):
             if len(record_bytes) > _MAX_RECORD_BYTES or not record_bytes.endswith(b"\n"):

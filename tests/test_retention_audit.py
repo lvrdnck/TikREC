@@ -3,6 +3,7 @@
 import json
 import os
 import uuid
+from pathlib import Path
 
 import pytest
 
@@ -11,12 +12,19 @@ import tikrec.retention_audit as audit_module
 from tests.test_retention_execute import fixture
 
 
-def intent_fields(root, *, order=("alpha.mp4",)):
+ORDER = (str(Path("alpha.parts") / "part-0001.flv"),
+         str(Path("alpha.parts") / "session.json"),
+         "alpha.parts", "alpha.mp4")
+
+
+def intent_fields(root, *, order=ORDER):
     """Build one journal-only schema-1 intent without relying on deleted media."""
     return dict(timestamp=2000000.0, root=str(root), session_id=str(uuid.uuid4()),
                 creator="alpha", ended_at=1010.0, max_age_days=1,
                 protected=False, protected_creators=[], order=list(order),
-                artifacts=[dict(relative_path=path, kind="file", mode=0o100666,
+                artifacts=[dict(relative_path=path,
+                                kind="directory" if path == "alpha.parts" else "file",
+                                mode=0o40777 if path == "alpha.parts" else 0o100666,
                                 size=1, device=1, inode=index + 1,
                                 mtime_ns=1, ctime_ns=1, link_count=1,
                                 attributes=0, volume=dict(platform="test",
@@ -42,12 +50,13 @@ def test_external_journal_appends_schema_events_and_refuses_hardlinks(tmp_path):
     operation = new_operation()
     with RetentionAudit(root, path) as audit:
         audit.append("intent", operation, **intent_fields(root))
-        audit.append("attempt", operation, path="alpha.mp4")
-        audit.append("deleted", operation, path="alpha.mp4")
-        audit.append("completed", operation, deleted_count=1)
+        for artifact in ORDER:
+            audit.append("attempt", operation, path=artifact)
+            audit.append("deleted", operation, path=artifact)
+        audit.append("completed", operation, deleted_count=len(ORDER))
     records = [json.loads(line) for line in path.read_text().splitlines()]
-    assert [item["event"] for item in records] == ["intent", "attempt", "deleted",
-                                                "completed"]
+    assert [item["event"] for item in records] == [
+        "intent", *[kind for _ in ORDER for kind in ("attempt", "deleted")], "completed"]
     assert all(item["schema_version"] == AUDIT_SCHEMA for item in records)
     (tmp_path / "audit-link").hardlink_to(path)
     with pytest.raises(ValueError, match="journal"):

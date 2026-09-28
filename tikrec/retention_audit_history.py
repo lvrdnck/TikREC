@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import math
+import os
 import re
+import stat
 import uuid
 from dataclasses import dataclass
-from pathlib import PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
 _COMMON = {"schema_version", "event", "operation_id"}
@@ -29,8 +31,10 @@ class _Operation:
 class AuditHistory:
     """Accept only one ordered deletion protocol for each unique operation ID."""
 
-    def __init__(self) -> None:
+    def __init__(self, root: Path) -> None:
+        self.root = os.path.normcase(os.path.abspath(root))
         self.operations: dict[str, _Operation] = {}
+        self.latest: str | None = None
 
     def accept(self, record: object) -> None:
         """Check one schema-1 event without consulting possibly deleted media."""
@@ -43,10 +47,12 @@ class AuditHistory:
         if event == "intent":
             if operation_id in self.operations:
                 raise ValueError("duplicate retention audit intent")
-            self.operations[operation_id] = _Operation(_intent_order(record))
+            self.operations[operation_id] = _Operation(_intent_order(record, self.root))
+            self.latest = operation_id
             return
         operation = self.operations.get(operation_id)
-        if operation is None or operation.terminal:
+        # A later intent freezes every older crash tail; deletion never resumes it.
+        if operation is None or operation.terminal or operation_id != self.latest:
             raise ValueError("orphan or terminal retention audit event")
         if event == "completed":
             _fields(record, _COMMON | {"deleted_count"})
@@ -91,7 +97,7 @@ class AuditHistory:
             operation.last_deleted = record["path"]
 
 
-def _intent_order(record: dict) -> tuple[str, ...]:
+def _intent_order(record: dict, journal_root: str) -> tuple[str, ...]:
     _fields(record, _COMMON | _INTENT,
             {"target_controls", "recovery_byte_hashes"})
     if (not _finite(record["timestamp"]) or not _finite(record["ended_at"])
@@ -104,6 +110,12 @@ def _intent_order(record: dict) -> tuple[str, ...]:
             or any(type(value) is not str or not value
                    for value in record["protected_creators"])):
         raise ValueError("invalid retention audit intent")
+    root = record["root"]
+    # The journal is keyed by the lexical no-redirect root used by the executor.
+    # Reject foreign paths and noncanonical aliases without opening deleted media.
+    if (not os.path.isabs(root) or os.path.normcase(root) != journal_root
+            or os.path.normcase(os.path.abspath(root)) != os.path.normcase(root)):
+        raise ValueError("retention audit intent names another root")
     order, artifacts = record["order"], record["artifacts"]
     if (type(order) is not list or not order or type(artifacts) is not list
             or len(order) != len(artifacts)
@@ -112,6 +124,9 @@ def _intent_order(record: dict) -> tuple[str, ...]:
         raise ValueError("invalid retention audit artifact order")
     for path, artifact in zip(order, artifacts):
         _artifact(artifact, path)
+    if len({tuple(sorted(item["volume"].items())) for item in artifacts}) != 1:
+        raise ValueError("retention audit artifacts cross volumes")
+    media_order = _destructive_order(order, artifacts, record["session_id"])
     for field in ("target_controls", "recovery_byte_hashes"):
         if field in record:
             hashes = record[field]
@@ -119,12 +134,45 @@ def _intent_order(record: dict) -> tuple[str, ...]:
                     type(name) is not str or not name or not _digest(value)
                     for name, value in hashes.items())):
                 raise ValueError("invalid retention audit byte proof")
-            if field == "target_controls" and not set(hashes).issubset(
-                    {"session.json", "connections.jsonl"}):
+            if field == "target_controls" and ("session.json" not in hashes or not
+                    set(hashes).issubset({"session.json", "connections.jsonl"})):
                 raise ValueError("unknown retention audit control")
-            if field == "recovery_byte_hashes" and not set(hashes).issubset(order):
+            if field == "recovery_byte_hashes" and not set(hashes).issubset(media_order):
                 raise ValueError("retention audit byte proof is outside order")
     return tuple(order)
+
+
+def _destructive_order(order: list[str], artifacts: list[dict],
+                       session_id: str) -> tuple[str, ...]:
+    """Require one-session deletion order and return its retained-media paths."""
+    if len(order) < 4:
+        raise ValueError("retention audit omits required artifacts")
+    parts_name, output_name = order[-2:]
+    parts = Path(parts_name)
+    if (parts.name != parts_name or not parts_name.lower().endswith(".parts")
+            or Path(output_name).name != output_name
+            or output_name != parts.with_suffix(".mp4").name
+            or order[-3] != str(parts / "session.json")
+            or artifacts[-2]["kind"] != "directory"
+            or any(item["kind"] != "file" for item in (*artifacts[:-2], artifacts[-1]))):
+        raise ValueError("invalid retention audit destructive order")
+    children = list(order[:-3])
+    if children and children[-1] == str(parts / "connections.jsonl"):
+        children.pop()
+    names = []
+    for path in children:
+        child = Path(path)
+        if child.parent != parts or str(child) != path:
+            raise ValueError("retention audit child is outside its parts directory")
+        names.append(child.name)
+    evidence = re.compile(rf"\.tikrec-writer-crash-{re.escape(session_id)}"
+                          rf"-part-[0-9]{{4,}}\.evidence\Z")
+    if (names != sorted(set(names))
+            or not any(re.fullmatch(r"part-[0-9]+\.flv", name) for name in names)
+            or any(re.fullmatch(r"part-[0-9]+\.flv", name) is None
+                   and evidence.fullmatch(name) is None for name in names)):
+        raise ValueError("invalid retention audit retained-media order")
+    return tuple(children)
 
 
 def _artifact(artifact: object, path: str) -> None:
@@ -132,6 +180,9 @@ def _artifact(artifact: object, path: str) -> None:
         raise ValueError("invalid retention audit artifact")
     volume = artifact["volume"]
     if (artifact["relative_path"] != path or artifact["kind"] not in {"file", "directory"}
+            or (not stat.S_ISDIR(artifact["mode"]) if artifact["kind"] == "directory"
+                else not stat.S_ISREG(artifact["mode"]))
+            or artifact["kind"] == "file" and artifact["link_count"] != 1
             or any(type(artifact[name]) is not int or artifact[name] < 0 for name in
                    ("mode", "size", "device", "inode", "mtime_ns", "ctime_ns",
                     "link_count", "attributes"))

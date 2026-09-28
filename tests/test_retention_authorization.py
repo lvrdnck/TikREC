@@ -12,7 +12,7 @@ from tests.test_retention_execute import fixture, events
 from tikrec.configuration import Configuration
 from tikrec.retention_authorization import authorize, check_fingerprint, fingerprint
 from tikrec.retention_locality import local_volume
-from tikrec.retention_plan import plan_retention
+from tikrec.retention_plan import plan_retention, _plan_retention_with_snapshot
 from tikrec.writer_recovery_evidence import evidence_name
 
 
@@ -41,9 +41,9 @@ def recovery_fixture(tmp_path):
 def test_authorization_binds_exact_order_and_rejects_later_hardlink(tmp_path):
     parts = session(tmp_path, "alpha")
     config = Configuration(retention_max_age_days=1)
-    item = plan_retention(tmp_path, config, clock=lambda: NOW,
-                          media_inspector=inspect)["sessions"][0]
-    auth = authorize(tmp_path, item, config)
+    planned, snapshot = _plan_retention_with_snapshot(
+        tmp_path, config, clock=lambda: NOW, media_inspector=inspect)
+    auth = authorize(tmp_path, planned["sessions"][0], config, snapshot)
     assert auth.session_id == json.loads((parts / "session.json").read_text())["session_id"]
     assert [artifact.relative_path for artifact in auth.order][-3:] == [
         str(Path("alpha.parts") / "session.json"),
@@ -52,6 +52,79 @@ def test_authorization_binds_exact_order_and_rejects_later_hardlink(tmp_path):
     (parts / "other.flv").hardlink_to(media)
     with pytest.raises(ValueError):
         check_fingerprint(tmp_path, auth.order[0], auth.volume)
+
+
+@pytest.mark.parametrize("change", ["recording", "failed", "finalization"])
+def test_changed_eligibility_between_plan_and_authorization_blocks_without_intent(
+        tmp_path, monkeypatch, change):
+    """A planner result cannot authorize a different terminal manifest."""
+    import tikrec.retention_execute as executor
+
+    root, parts, _, config, _, audit, run = fixture(tmp_path)
+    manifest = parts / "session.json"
+    original_plan = executor._plan_retention_with_snapshot
+    calls = 0
+
+    def change_after_plan(*args, **kwargs):
+        nonlocal calls
+        result = original_plan(*args, **kwargs)
+        calls += 1
+        if calls == 1:
+            before = manifest.stat()
+            content = manifest.read_bytes()
+            if change == "recording":
+                old, new = b'"status": "completed"', b'"status": "recording"'
+                position = content.rfind(old)
+                assert position >= 0 and len(old) == len(new)
+                manifest.write_bytes(content[:position] + new + content[position + len(old):])
+                os.utime(manifest, ns=(before.st_atime_ns, before.st_mtime_ns))
+                after = manifest.stat()
+                if os.name == "nt":
+                    assert (before.st_size, before.st_mtime_ns, before.st_ctime_ns,
+                            before.st_ino) == (after.st_size, after.st_mtime_ns,
+                                               after.st_ctime_ns, after.st_ino)
+            else:
+                values = json.loads(content)
+                if change == "failed":
+                    values["status"] = "failed"
+                else:
+                    values["finalization"]["status"] = "failed"
+                manifest.write_text(json.dumps(values), encoding="utf-8")
+            assert plan_retention(root, config.load(), clock=lambda: NOW,
+                                  media_inspector=inspect)["sessions"][0][
+                                      "classification"] != "eligible"
+        return result
+
+    monkeypatch.setattr(executor, "_plan_retention_with_snapshot", change_after_plan)
+    with pytest.raises(ValueError, match="eligibility evidence changed"):
+        run()
+    assert calls == 1 and parts.exists() and (root / "alpha.mp4").exists()
+    assert not audit.exists()
+
+
+def test_eligibility_change_during_artifact_binding_blocks_without_intent(
+        tmp_path, monkeypatch):
+    """The closing planner rejects a state changed after the authority capture."""
+    import tikrec.retention_execute as executor
+
+    root, parts, _, config, _, audit, run = fixture(tmp_path)
+    original_authorize = executor.authorize
+
+    def change_after_binding(*args):
+        bound = original_authorize(*args)
+        manifest = parts / "session.json"
+        values = json.loads(manifest.read_text())
+        values["finalization"]["status"] = "failed"
+        manifest.write_text(json.dumps(values), encoding="utf-8")
+        assert plan_retention(root, config.load(), clock=lambda: NOW,
+                              media_inspector=inspect)["sessions"][0][
+                                  "classification"] != "eligible"
+        return bound
+
+    monkeypatch.setattr(executor, "authorize", change_after_binding)
+    with pytest.raises(ValueError, match="eligibility changed"):
+        run()
+    assert parts.exists() and (root / "alpha.mp4").exists() and not audit.exists()
 
 
 def test_fingerprint_refuses_multiply_linked_file(tmp_path):

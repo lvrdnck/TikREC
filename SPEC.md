@@ -953,7 +953,10 @@ The unreleased internal executor accepts one explicit root and canonical session
 UUID, never a saved planner result. It takes an exclusive OS-backed root lease,
 reloads current configuration, replans the full root, and refuses any target
 referenced by either durable service job slot, including a completed job. The
-private authorization binds root/claim identity, creator and durable end time,
+planner's coherent whole-root claim snapshot must still match when authorization
+captures artifacts. The same planner runs again after artifact binding, and both
+the decision and claim snapshot must still match before audit intent. The private
+authorization binds root/claim identity, creator and durable end time,
 policy, local volume, target control hashes, writer-recovery evidence and
 referenced-part byte hashes, and exact singly linked artifact fingerprints.
 Before each mutation it checks the lease, current policy and job stores,
@@ -978,17 +981,16 @@ entry is synced before use. This also covers a visible entry left by a failed
 prior sync.
 Successful POSIX removals sync their parent before a deleted record. Existing
 audit history is checked for complete schema-1 JSONL framing, unique JSON
-fields and operation IDs, event-specific fields, and coherent intent/attempt/
-deleted/failed/completed ordering before another intent. A valid intent-only,
+fields and operation IDs, event-specific fields, this journal's canonical root,
+the child/control/directory/final-MP4 destructive order, and coherent intent/
+attempt/deleted/failed/completed transitions. A later intent permanently freezes
+any earlier incomplete operation. A valid intent-only,
 unmatched-attempt, or other coherent event-boundary crash tail remains readable
 without repair or automatic resume. Malformed or contradictory history blocks
-deletion. The journal excludes transport secrets and signed URLs. Issue #34's
-corrective implementation failed the fresh independent gate at `3ff83bc`.
-Issue #35 records two remaining gaps: eligibility can change between the fresh
-plan and authorization without a new eligibility decision, and historical audit
-validation accepts impossible interleaving, foreign-root records, or a falsified
-final-MP4-first order. These must be corrected and independently reviewed before
-any owner-facing deletion surface. Root-level persistent lifecycle locks use
+deletion. The journal excludes transport secrets and signed URLs. Issue #35
+corrects the plan-to-authorization and audit-history gaps found at `3ff83bc`;
+a NEW fresh-context independent review remains required before any owner-facing
+deletion surface. Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
 releases a held lock. All TikREC mutators of a recording root take writer leases
 while this private

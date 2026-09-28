@@ -26,6 +26,15 @@ def plan_retention(root: Path, configuration: Configuration, *,
                    clock: Callable[[], float] = time.time,
                    media_inspector: Callable[[Path], MediaInfo | None] = inspect_media) -> dict:
     """Classify immediate TikREC session directories without modifying artifacts."""
+    result, _ = _plan_retention_with_snapshot(
+        root, configuration, clock=clock, media_inspector=media_inspector)
+    return result
+
+
+def _plan_retention_with_snapshot(root: Path, configuration: Configuration, *,
+                                  clock: Callable[[], float] = time.time,
+                                  media_inspector: Callable[[Path], MediaInfo | None] = inspect_media):
+    """Return one advisory plan with the coherent claims that produced it."""
     configuration.validate()
     scope = local_path(Path(root), directory=True)
     if not proven_local(scope):
@@ -72,8 +81,8 @@ def plan_retention(root: Path, configuration: Configuration, *,
         for session in sessions:
             session["classification"] = "needs_attention"
             session["reason"] = "evidence_conflict"
-    return {"root": str(scope), "retention_max_age_days": configuration.retention_max_age_days,
-            "sessions": sessions}
+    return ({"root": str(scope), "retention_max_age_days": configuration.retention_max_age_days,
+             "sessions": sessions}, initial)
 
 
 def _inspect(claim, root, volume, config, now, media_inspector):

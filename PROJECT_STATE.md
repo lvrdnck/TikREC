@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #35 corrective implementation complete (2026-09-28):** The private
+  executor now carries the planner's coherent whole-root claim snapshot into
+  authorization and repeats the same planner after artifact binding; changed
+  lifecycle, finalization, controls, recovery, media eligibility, or ownership
+  must fail before audit intent. Schema-1 audit history is bound to its canonical
+  recording root, freezes older incomplete operations after a new intent, and
+  requires the executor's child/control/directory/final-MP4 order and artifact
+  shape. Native Windows restored-metadata and synthetic journal regressions pass.
+  Focused retention/lifecycle/recovery suites passed 370 (three skips); the final
+  isolated full offline suite passed 1,510 plus 19 subtests (three skips). WSL
+  `/var/tmp` accepted a valid reopened journal and rejected a foreign-root
+  intent; no power-loss validation was performed. No real media was deleted.
+  **Next gate:** a NEW fresh-context independent retention executor, lifecycle,
+  authorization, and audit safety review. #30 remains queued; #8/#13/#28 remain
+  separate non-blocking evidence work. No owner action is pending. v0.10.0
+  remains released and v0.11.0 unreleased.
 - **Fresh independent retention gate NOT READY (2026-09-28; issue #35 opened):**
   Review of current HEAD `3ff83bc` found that eligibility can change after the
   fresh plan but before authorization: a native Windows synthetic manifest status

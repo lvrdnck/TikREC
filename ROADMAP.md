@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #35 corrective slice complete (2026-09-28):** A coherent whole-root
+planner snapshot now binds initial eligibility to destructive authorization, and
+the same planner runs again after artifact binding before durable intent. Existing
+schema-1 audit history must belong to this root, cannot resume an earlier crash
+tail after a later intent, and must follow the child/control/directory/final-MP4
+destructive order. Native Windows regressions, 370 focused tests (three skips),
+the final isolated full suite (1,510 passed, three skips, 19 subtests), and a WSL
+valid-reopen/foreign-root check passed. No real media was deleted or power-loss
+test performed. A NEW fresh-context independent retention safety review is the
+next gate before owner-facing design. #30 stays queued; v0.10.0 remains released
+and v0.11.0 unreleased.
+
 **Fresh independent executor gate NOT READY (2026-09-28; issue #35):** Current
 HEAD `3ff83bc` can bind a manifest that loses terminal eligibility between a
 fresh plan and authorization, then delete it; native Windows synthetic evidence
