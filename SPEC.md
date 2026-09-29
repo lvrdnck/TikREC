@@ -1181,6 +1181,12 @@ pre-intent refusal/interruption, incomplete uncertainty, and proven completion
 retain their established results. The public CLI gate remains NOT READY until
 a separate NEW fresh-context independent review passes before separately
 authorized real-media validation. No real media was deleted.
+The NEW independent review at `72996a7` found a remaining pre-intent public
+result gap (#50): a first `SystemExit` from preview stdout or audit-entry
+validation escapes instead of reporting `REFUSED`/1, even when later cleanup
+faults leave the first cause intact. The gate remains NOT READY pending #50
+and another NEW independent review before separately authorized real-media
+validation. No production code or real media changed in this review.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

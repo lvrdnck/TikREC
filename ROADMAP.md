@@ -1293,6 +1293,20 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate NOT READY (2026-09-29;
+reviewed `72996a7`; issue #50):** A first pre-intent `SystemExit` from preview
+output or audit-entry validation escapes the public command instead of
+reporting `REFUSED`/1. Combined audit-entry and lifecycle cleanup retained the
+first cause, but no refusal diagnostic was attempted; no intent or removal
+occurred. New disposable Windows fault probes: 14 passed. Native Windows
+retention/lifecycle/policy: 467 passed, five skipped; isolated full offline:
+1,721 passed, seven skipped, 19 subtests; applicable WSL/POSIX:
+117 passed, 40 skipped, plus 15 direct audit/history passes. No production
+code or real media changed. #50 is the single next bounded v0.11 correction;
+repeat a NEW independent public CLI review before separately authorized
+real-media validation. #30, #48, #49, #28, #13, and #8 remain outside this
+review. v0.10.0 is released and v0.11.0 unreleased.
+
 **Issue #47 correction complete (2026-09-29):** Audit-entry faults now remain
 primary across later close failures. Lifecycle teardown preserves its first
 unlock/close fault, attempts each remaining cleanup action once, and releases

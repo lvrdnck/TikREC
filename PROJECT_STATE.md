@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-29;
+  reviewed `72996a7`; issue #50):** Disposable Windows probes found that a
+  first pre-intent `SystemExit` from preview stdout or audit-entry validation
+  escapes the public delete command instead of returning `REFUSED`/1. In the
+  audit case, later handle-close and lifecycle-unlock faults did not replace
+  the first cause, but no refusal diagnostic was attempted. No intent or
+  removal occurred. New combined fault probes: 14 passed. Native Windows
+  retention/lifecycle/policy: 467 passed, five skipped; isolated full offline:
+  1,721 passed, seven skipped, 19 subtests; applicable WSL/POSIX:
+  117 passed, 40 skipped, plus 15 direct audit/history passes. **State:**
+  #50 is the single next bounded v0.11 correction; repeat a NEW independent
+  public CLI review afterward. The gate remains NOT READY before separately
+  authorized real-media validation. No owner decision is pending. #30, #48,
+  #49, #28, #13, and #8 remain outside this task. v0.10.0 is released and
+  v0.11.0 unreleased. No production code or real media changed.
+
 - **Issue #47 audit/lifecycle teardown correction complete (2026-09-29):**
   Audit-entry validation and acquisition faults now survive later handle-close
   faults, preserving genuine pre-intent `REFUSED`/1 and interruption/130.
