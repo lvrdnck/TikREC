@@ -7,6 +7,21 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate PASSED (2026-09-29;
+  reviewed `f3dd917`):** Rechecked the full preview, consent, authorization,
+  audit, lifecycle, policy, held-artifact, and result paths against corrections
+  #39–#50. Six new disposable Windows probes covered confirmation read failure,
+  parser diagnostics, lifecycle and policy acquisition, post-quarantine failure,
+  and combined post-intent `BaseException`/failed-event/outer cleanup faults;
+  all passed. Native Windows retention/lifecycle/policy/audit: 477 passed,
+  five skipped; isolated full offline: 1,731 passed, seven skipped,
+  19 subtests; applicable WSL/POSIX: 117 passed, 60 skipped, plus 15 direct
+  audit/history passes. No review blocker was found. **State:** public CLI gate
+  PASSED; the next retention step is separately authorized real-media retention
+  validation. No owner decision was required for this review. #30, #48, #49,
+  #28, #13, and #8 remain outside this task. v0.10.0 is released and v0.11.0
+  unreleased. No production code or real media changed.
+
 - **Issue #50 pre-intent `SystemExit` correction complete (2026-09-29):**
   The public retention delete CLI now returns `REFUSED`/1 with the first
   `SystemExit` reason, selected UUID, absolute root, and no-operation notice

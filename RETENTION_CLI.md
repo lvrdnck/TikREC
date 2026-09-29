@@ -1,6 +1,7 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; SEPARATELY
+AUTHORIZED REAL-MEDIA VALIDATION NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -64,6 +65,11 @@ its reason, selected UUID and absolute root, and the no-operation notice.
 Later audit/lifecycle faults remain secondary; broken stderr does not alter
 the exit. The public CLI gate remains NOT READY until another NEW independent
 review passes. Separately authorized real-media validation follows a passing gate.
+The NEW independent review of `f3dd917` found no blocker after corrections
+#39–#50. Six fresh disposable Windows fault probes and the native Windows,
+isolated full offline, and applicable WSL/POSIX suites passed. The public CLI
+gate is PASSED; real-media retention deletion has not been performed and needs
+separate authorization.
 The local CLI workflow below exists in the development checkout; it is
 not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit

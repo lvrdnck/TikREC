@@ -1293,6 +1293,17 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate PASSED (2026-09-29;
+reviewed `f3dd917`):** Full source, history, and fault-result review found no
+blocker after corrections #39–#50. Six new disposable Windows fault probes
+passed, including confirmation input, parser, lifecycle/policy acquisition,
+post-quarantine, and combined after-intent cleanup cases. Native Windows
+retention/lifecycle/policy/audit: 477 passed, five skipped; isolated full
+offline: 1,731 passed, seven skipped, 19 subtests; applicable WSL/POSIX:
+117 passed, 60 skipped, plus 15 direct audit/history passes. The next retention
+step is separately authorized real-media retention validation. No production
+code or real media changed; v0.10.0 remains released and v0.11.0 unreleased.
+
 **Issue #50 correction complete (2026-09-29):** A pre-intent `SystemExit` now
 returns `REFUSED`/1 with its original reason, selected UUID, absolute root,
 and no-operation notice. Later audit/lifecycle cleanup remains secondary;

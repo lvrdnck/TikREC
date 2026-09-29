@@ -1193,6 +1193,13 @@ audit/lifecycle cleanup faults stay secondary and broken diagnostics do not
 change that exit. The public CLI gate remains NOT READY pending a NEW
 independent review before separately authorized real-media validation.
 No real media was deleted in this correction.
+The NEW independent public CLI review of `f3dd917` found no blocker after
+corrections #39–#50. Six fresh disposable Windows fault probes passed alongside
+native Windows retention/lifecycle/policy/audit, the isolated full offline
+suite, and applicable WSL/POSIX read-only/refusal/audit-history coverage. The
+public retention CLI gate is PASSED. Separately authorized real-media retention
+validation is the next retention step; none occurred in this review. v0.11 is
+still unreleased.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
