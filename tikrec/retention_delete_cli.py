@@ -184,6 +184,8 @@ def _incomplete(progress: RetentionProgress, session_id: str, root: Path | None,
     state = "PARTIAL" if progress.deleted_count or progress.removal_uncertain else "FAILED"
     lines = [f"{state}: session={session_id}; root={root}; reason={_one_line(error)}",
              f"Operation ID: {progress.operation_id or 'unknown'}"]
+    lines.extend(f"Inner cleanup error: {type(later).__name__}: {_one_line(later)}"
+                 for later in progress.inner_cleanup_errors)
     if cleanup_error is not None:
         lines.append(f"Cleanup error: {type(cleanup_error).__name__}: "
                      f"{_one_line(cleanup_error)}")

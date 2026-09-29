@@ -1133,6 +1133,12 @@ stays incomplete/3 with operation context, but the cause is wrong. The
 public CLI gate remains NOT READY pending the bounded #45 correction and
 another NEW review before separately authorized real-media validation.
 No production code or real media was changed in this review.
+Issue #45 now captures the first inner mutation or handle-entry fault before
+held-handle or policy cleanup can replace it. The `failed` event retains the
+original type, and the public incomplete result retains its cause; later
+inner cleanup errors are secondary diagnostics. The public CLI gate remains
+NOT READY pending a NEW fresh-context independent review before separately
+authorized real-media validation. No real media was deleted.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

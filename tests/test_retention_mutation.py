@@ -1,10 +1,12 @@
 """Quarantine must never remove a post-check replacement as an authorized file."""
 
+import os
 from pathlib import Path
 
 import pytest
 
 from tests.test_retention_execute import events, fixture
+from tikrec.retention_execute import RetentionProgress
 
 
 @pytest.mark.parametrize("kind", ["file", "directory"])
@@ -206,3 +208,34 @@ def test_reappearance_after_handle_close_is_preserved_and_audited_failed(
         run()
     assert occupants[0].read_bytes() == b"new occupant after removal"
     assert [record["event"] for record in events(audit)] == ["intent", "attempt", "failed"]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+def test_inner_primary_is_published_before_held_cleanup(tmp_path, monkeypatch):
+    from tikrec.retention_windows import HeldArtifact
+
+    root, parts, _, _, _, audit, run = fixture(tmp_path)
+    original_exit = HeldArtifact.__exit__
+    progress = RetentionProgress()
+
+    def first_proof_fault(self, _digest):
+        raise SystemExit("first proof fault")
+
+    def later_cleanup_fault(self, *exc):
+        original_exit(self, *exc)
+        raise OSError("later held cleanup fault")
+
+    monkeypatch.setattr(HeldArtifact, "prove", first_proof_fault)
+    monkeypatch.setattr(HeldArtifact, "__exit__", later_cleanup_fault)
+    with pytest.raises(SystemExit, match="first proof fault"):
+        run(progress=progress)
+    records = events(audit)
+    assert type(progress.operation_error) is SystemExit
+    assert str(progress.operation_error) == "first proof fault"
+    assert [str(error) for error in progress.inner_cleanup_errors] == [
+        "later held cleanup fault"]
+    assert records[-1]["event"] == "failed"
+    assert records[-1]["error_type"] == "SystemExit"
+    assert (root / records[0]["quarantine_order"][0]).exists()
+    assert not (parts / "part-0001.flv").exists()
+    assert (root / "alpha.mp4").exists()

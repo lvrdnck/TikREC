@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; ISSUE #45 NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -33,10 +33,13 @@ fault before later cleanup can replace it, and reports later faults separately
 when stderr works. The NEW independent review at `1b38b65` found that an
 inner held-artifact cleanup fault can still replace the first post-intent
 proof/removal fault before executor progress captures it. Issue #45 is the
-single next bounded correction. The public CLI gate remains NOT READY until
-that correction receives another NEW fresh independent review. Separately
-authorized real-media
-validation follows that gate. The local CLI
+bounded correction for that finding. It now preserves the first inner
+artifact, proof, removal, or handle-entry fault before held-handle or
+policy cleanup can replace it. The original type reaches the failed audit
+event and the public incomplete reason; later inner cleanup faults are
+reported separately when stderr works. The public CLI gate remains
+NOT READY until a NEW fresh independent review passes. Separately authorized
+real-media validation follows that gate. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
@@ -189,7 +192,8 @@ normally refuses an incomplete session.
 The private executor returns an operation ID on success and fills a caller-owned
 progress record after intent, including audit path, sync-started and durable-intent
 states, proven completed sync, known deletion count, possible removal or journal
-uncertainty, and the first operation fault before context cleanup. The CLI keeps
+uncertainty, the first operation fault before context cleanup, and secondary
+inner cleanup faults when present. The CLI keeps
 that original failure authoritative and performs no second mutation to improve
 the message. If the journal itself is unavailable, it says its state is
 uncertain rather than promising an audit record exists. A failed intent write

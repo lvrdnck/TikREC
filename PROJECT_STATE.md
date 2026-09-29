@@ -1,11 +1,26 @@
 # TikREC current state
 
-Last reviewed: 2026-09-28. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-29. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
+
+- **Issue #45 inner artifact fault correction complete (2026-09-29):**
+  The mutation boundary now captures the first proof/removal or handle-entry
+  fault before policy or held-handle cleanup can replace it. The original
+  exception type reaches the `failed` audit event; its message reaches the
+  public `FAILED`/`PARTIAL` reason. Later inner cleanup faults remain secondary
+  diagnostics. Native Windows retention/lifecycle tests: 435 passed, five
+  skipped; isolated full offline suite: 1,690 passed, seven skipped, 19
+  subtests; applicable WSL planning/refusal/read-only audit: 143 passed,
+  five skipped. **State:** #45 correction complete; the single next v0.11
+  task is a NEW fresh-context independent public retention CLI review. The
+  gate remains NOT READY until that review passes. No owner decision is
+  pending; separately authorized real-media validation follows a passing
+  review. #30 stays queued and #8/#13/#28 remain non-blocking evidence work.
+  v0.10.0 remains released and v0.11.0 unreleased. No real media was deleted.
 
 - **Fresh independent public retention CLI gate NOT READY (2026-09-28;
   reviewed `1b38b65`; issue #45):** Disposable native Windows proof and

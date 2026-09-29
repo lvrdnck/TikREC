@@ -37,6 +37,7 @@ class RetentionProgress:
     removal_uncertain: bool = False
     audit_uncertain: bool = False
     operation_error: BaseException | None = None
+    inner_cleanup_errors: list[BaseException] = field(default_factory=list)
     post_completion_cleanup_errors: list[BaseException] = field(default_factory=list)
 
     def mark_intent_sync_started(self) -> None:
@@ -138,7 +139,8 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                     progress.removal_uncertain = True
                     remove_authorized(scope, item, auth.volume,
                                       hashes.get(item.relative_path),
-                                      operation_id, index, _sync_parent, mutation_authority)
+                                      operation_id, index, _sync_parent, mutation_authority,
+                                      cleanup_errors=progress.inner_cleanup_errors)
                     progress.removal_uncertain = False
                     deleted.add(item.relative_path)
                     progress.deleted_count = len(deleted)

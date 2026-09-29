@@ -38,6 +38,8 @@ class HeldArtifact:
     def __init__(self, path, expected) -> None:
         self.path, self.expected = path, expected
         self.fd = None
+        # Entry cleanup can fail before the with body starts; retain it separately.
+        self.enter_cleanup_error: BaseException | None = None
         self.api = _kernel()
 
     def __enter__(self):
@@ -52,13 +54,21 @@ class HeldArtifact:
             raise ctypes.WinError(ctypes.get_last_error())
         try:
             self.fd = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
-        except BaseException:
-            self.api.CloseHandle(handle)
+        except BaseException as error:
+            try:
+                self.api.CloseHandle(handle)
+            except BaseException as cleanup:
+                self.enter_cleanup_error = cleanup
+                raise error from cleanup
             raise
         try:
             self._identity()
-        except BaseException:
-            self.close()
+        except BaseException as error:
+            try:
+                self.close()
+            except BaseException as cleanup:
+                self.enter_cleanup_error = cleanup
+                raise error from cleanup
             raise
         return self
 

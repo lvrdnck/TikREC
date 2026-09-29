@@ -26,11 +26,13 @@ def quarantine_relative(item: ArtifactFingerprint, operation_id: str,
 
 def remove_authorized(root: Path, item: ArtifactFingerprint, volume,
                       digest: str | None, operation_id: str, index: int,
-                      sync_parent, mutation_guard=nullcontext) -> None:
+                      sync_parent, mutation_guard=nullcontext,
+                      cleanup_errors: list[BaseException] | None = None) -> None:
     """Move, prove, then remove only the originally authorized filesystem object.
 
     A failed move or proof leaves the original or private sibling for manual
     inspection. The durable intent and attempt identify the private sibling.
+    Later inner cleanup faults are exposed separately without replacing the first.
     """
     require_identity_removal()
     from .retention_windows import HeldArtifact
@@ -42,24 +44,59 @@ def remove_authorized(root: Path, item: ArtifactFingerprint, volume,
         raise ValueError("retention parts directory is not empty")
     if os.path.lexists(private):
         raise ValueError("retention private quarantine name is occupied")
-    with HeldArtifact(original, item) as held:
-        # The kernel refuses an occupied destination atomically, including a
-        # collision after lexists. The same exclusive handle owns the whole step.
-        held.rename(private)
-        sync_parent(private)
-        moved = fingerprint(root, private, directory=item.kind == "directory", volume=volume)
-        if not _same_moved_identity(item, moved):
-            raise ValueError("retention quarantined artifact identity changed")
-        held.prove(digest)
-        if os.path.lexists(original):
-            raise ValueError("retention original path reappeared after quarantine")
-        # Hashing and reversible quarantine do not delay config promotion. Only
-        # the final policy/job recheck and exact-handle removal share authority.
-        with mutation_guard():
-            held.delete()
-            sync_parent(private)
-            if os.path.lexists(private) or os.path.lexists(original):
-                raise ValueError("retention pathname reappeared after removal")
+
+    first_error: BaseException | None = None
+    later_errors: list[BaseException] = []
+
+    # Python context exits can replace an active exception, so capture by identity.
+    def remember(error: BaseException) -> None:
+        nonlocal first_error
+        if first_error is None:
+            first_error = error
+        elif error is not first_error and all(error is not later for later in later_errors):
+            later_errors.append(error)
+
+    held_artifact = HeldArtifact(original, item)
+    try:
+        with held_artifact as held:
+            try:
+                # The kernel refuses an occupied destination atomically, including a
+                # collision after lexists. The same exclusive handle owns the whole step.
+                held.rename(private)
+                sync_parent(private)
+                moved = fingerprint(root, private, directory=item.kind == "directory",
+                                    volume=volume)
+                if not _same_moved_identity(item, moved):
+                    raise ValueError("retention quarantined artifact identity changed")
+                held.prove(digest)
+                if os.path.lexists(original):
+                    raise ValueError("retention original path reappeared after quarantine")
+                # Hashing and reversible quarantine do not delay config promotion. Only
+                # the final policy/job recheck and exact-handle removal share authority.
+                with mutation_guard():
+                    try:
+                        held.delete()
+                        sync_parent(private)
+                        if os.path.lexists(private) or os.path.lexists(original):
+                            raise ValueError("retention pathname reappeared after removal")
+                    except BaseException as error:
+                        # Capture the body fault before policy cleanup can replace it.
+                        remember(error)
+                        raise
+            except BaseException as error:
+                # Capture the operation or policy fault before the held handle exits.
+                remember(error)
+                raise
+    except BaseException as error:
+        remember(error)
+        if held_artifact.enter_cleanup_error is not None:
+            remember(held_artifact.enter_cleanup_error)
+        if cleanup_errors is not None:
+            cleanup_errors.extend(later_errors)
+        if error is first_error:
+            raise
+        # Re-raise the original type for the failed event and public result.
+        raise first_error from error
 
 
 def _same_moved_identity(before: ArtifactFingerprint,

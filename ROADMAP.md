@@ -1293,6 +1293,17 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #45 correction complete (2026-09-29):** The first inner artifact,
+proof, removal, or handle-entry fault is preserved before policy or held-handle
+cleanup can replace it. The public incomplete result keeps the first cause;
+the `failed` audit event keeps its type. Later inner cleanup faults are secondary.
+Native Windows focused tests passed 435 (five skipped), the isolated full suite
+passed 1,690 (seven skipped, 19 subtests), and applicable WSL checks passed
+143 (five skipped). No real media was deleted. The single next task is a NEW
+fresh-context independent public retention CLI review; the gate remains
+NOT READY before separately authorized real-media validation. #30 stays queued;
+v0.10.0 remains released and v0.11.0 unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-28;
 reviewed `1b38b65`; issue #45):** A native Windows disposable probe found
 that held-artifact cleanup can replace the first post-intent proof fault

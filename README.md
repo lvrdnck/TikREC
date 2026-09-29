@@ -542,9 +542,11 @@ proven completion (#44). The correction retains that first diagnostic cause,
 reports later cleanup faults separately when possible, and keeps `COMPLETE`/0.
 A NEW public review at `1b38b65` found that cleanup inside held-artifact
 mutation can replace the first post-intent proof/removal fault before it is
-recorded (#45). The public CLI gate remains NOT READY pending that bounded
-correction and another NEW fresh review before separately authorized
-real-media validation.
+recorded (#45). Issue #45 now preserves the first inner fault in the
+incomplete result and `failed` audit event, with later cleanup faults reported
+separately. The single next v0.11 task is the NEW fresh-context review; the
+gate remains NOT READY until it passes, before separately authorized real-media
+validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
