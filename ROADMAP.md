@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #46 correction complete (2026-09-29):** Policy-lock teardown captures
+the first body or cleanup fault before later close/owner/notification faults
+can replace it. The public incomplete reason and failed.error_type retain the
+first cause; later inner faults remain secondary in order. An audit cleanup
+fault before completion is now also preserved before later lifecycle cleanup.
+Native Windows retention/lifecycle/policy passed 446 tests (five skipped);
+isolated full offline passed 1,701 (seven skipped, 19 subtests); applicable
+WSL planning/refusal/direct audit/policy passed 186 (38 skipped). No real
+media was deleted. The single next v0.11 task is a NEW fresh-context
+independent public CLI review; the gate remains NOT READY until it passes,
+before separately authorized real-media validation. #30 stays queued;
+v0.10.0 remains released and v0.11.0 unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-29;
 reviewed 2ccf464; issue #46):** A disposable native Windows combined-fault
 probe found that policy-lock descriptor close can fail first, then condition

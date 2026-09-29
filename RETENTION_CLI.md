@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; ISSUE #46 NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -42,8 +42,11 @@ two faults within policy-lock cleanup can still replace the first known cause
 before inner preservation runs: the incomplete public reason and persisted
 failed.error_type can name the later fault. Audit cleanup can also be lost
 from secondary diagnostics when lifecycle cleanup subsequently fails.
-Issue #46 is the bounded correction. The public CLI gate remains NOT READY
-until another NEW fresh independent review passes. Separately authorized
+Issue #46 now captures the first body or policy-lock cleanup fault before
+later close, owner-release, or notification faults; later cleanup errors are
+secondary diagnostics. Audit cleanup before completion is retained when
+lifecycle cleanup also fails. The public CLI gate remains NOT READY until
+another NEW fresh independent review passes. Separately authorized
 real-media validation follows that gate. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
@@ -198,7 +201,7 @@ The private executor returns an operation ID on success and fills a caller-owned
 progress record after intent, including audit path, sync-started and durable-intent
 states, proven completed sync, known deletion count, possible removal or journal
 uncertainty, the first operation fault before context cleanup, and secondary
-inner cleanup faults when present. The CLI keeps
+inner and outer cleanup faults when present. The CLI keeps
 that original failure authoritative and performs no second mutation to improve
 the message. If the journal itself is unavailable, it says its state is
 uncertain rather than promising an audit record exists. A failed intent write

@@ -38,7 +38,7 @@ class RetentionProgress:
     audit_uncertain: bool = False
     operation_error: BaseException | None = None
     inner_cleanup_errors: list[BaseException] = field(default_factory=list)
-    post_completion_cleanup_errors: list[BaseException] = field(default_factory=list)
+    outer_cleanup_errors: list[BaseException] = field(default_factory=list)
 
     def mark_intent_sync_started(self) -> None:
         """Record the boundary after writing intent and before calling fsync."""
@@ -80,7 +80,8 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
 
         @contextmanager
         def mutation_authority():
-            with policy_lock(configuration_store.path) as policy:
+            with policy_lock(configuration_store.path,
+                             cleanup_errors=progress.inner_cleanup_errors) as policy:
                 lease.assert_held()
                 check_policy(auth, configuration_store, clock())
                 check_jobs(auth, job_paths)
@@ -88,7 +89,7 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
                 yield
 
         operation_id = str(uuid.uuid4())
-        with (_preserve_post_completion_failure(progress),
+        with (_preserve_outer_failure(progress),
               RetentionAudit(scope, audit_path) as audit,
               _preserve_operation_failure(progress)):
             progress.operation_id, progress.audit_path = operation_id, audit.path
@@ -179,16 +180,15 @@ def _preserve_operation_failure(progress: RetentionProgress):
 
 
 @contextmanager
-def _preserve_post_completion_failure(progress: RetentionProgress):
+def _preserve_outer_failure(progress: RetentionProgress):
     """Capture an audit-exit fault before lifecycle cleanup can replace it."""
     try:
         yield
     except BaseException as error:
-        if progress.completed_durable:
-            if progress.operation_error is None:
-                progress.operation_error = error
-            elif error is not progress.operation_error:
-                progress.post_completion_cleanup_errors.append(error)
+        if progress.operation_error is None:
+            progress.operation_error = error
+        elif error is not progress.operation_error:
+            progress.outer_cleanup_errors.append(error)
         raise
 
 

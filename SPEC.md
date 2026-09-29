@@ -1150,6 +1150,17 @@ afterward. The public CLI gate is NOT READY pending #46 correction and
 another NEW fresh-context review before separately authorized real-media
 validation. No production code or real media was changed in this review.
 
+Issue #46 now preserves the first body or policy-lock cleanup fault at its
+origin, before later close/owner/notification faults can replace it. The
+first known fault remains the public incomplete reason and the type in a
+persisted failed event; later inner cleanup faults are separate diagnostics
+in occurrence order. Before completion, audit cleanup is also retained as
+secondary evidence when lifecycle cleanup fails later. These reporting
+changes do not reauthorize, retry, resume, repair, or add any deletion.
+The public CLI gate remains NOT READY pending a NEW fresh-context independent
+review before separately authorized real-media retention validation.
+No real media was deleted.
+
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
 Unreadable or ambiguous immediate claims prevent a uniqueness proof for the

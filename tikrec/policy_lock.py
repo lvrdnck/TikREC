@@ -30,8 +30,9 @@ class PolicyLease:
 
 
 @contextmanager
-def policy_lock(configuration_path: Path, mode: str = "retention"):
-    """Serialize config promotion and removal, leaving ordinary reads unlocked."""
+def policy_lock(configuration_path: Path, mode: str = "retention", *,
+                cleanup_errors: list[BaseException] | None = None):
+    """Serialize config promotion and removal, collecting secondary close faults."""
     if mode not in {"write", "retention"}:
         raise ValueError("invalid retention policy lock mode")
     source = Path(os.path.abspath(configuration_path))
@@ -67,6 +68,7 @@ def policy_lock(configuration_path: Path, mode: str = "retention"):
         yield nested
         return
     descriptor = None
+    primary_error: BaseException | None = None
     try:
         parent.mkdir(parents=True, exist_ok=True)
         flags = os.O_RDWR | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -86,15 +88,39 @@ def policy_lock(configuration_path: Path, mode: str = "retention"):
         with _condition:
             _owners[key] = (owner, mode, lease)
         yield lease
+    except BaseException as error:
+        # A body or acquisition fault precedes every teardown fault.
+        primary_error = error
+        raise
     finally:
-        # Closing releases both flock and Windows byte-range ownership.
+        # Closing releases both flock and Windows byte-range ownership. Keep
+        # its fault before owner/notification faults, while attempting each
+        # remaining cleanup action exactly once.
+        faults: list[BaseException] = []
         try:
             if descriptor is not None:
                 os.close(descriptor)
-        finally:
+        except BaseException as error:
+            faults.append(error)
+        try:
             with _condition:
-                _owners.pop(key, None)
-                _condition.notify_all()
+                try:
+                    _owners.pop(key, None)
+                except BaseException as error:
+                    faults.append(error)
+                try:
+                    _condition.notify_all()
+                except BaseException as error:
+                    faults.append(error)
+        except BaseException as error:
+            faults.append(error)
+        if primary_error is not None:
+            if cleanup_errors is not None:
+                cleanup_errors.extend(faults)
+        elif faults:
+            if cleanup_errors is not None:
+                cleanup_errors.extend(faults[1:])
+            raise faults[0]
 
 
 def _identity(details, *, allow_empty=False):

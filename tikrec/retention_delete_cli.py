@@ -60,20 +60,18 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
             clock=clock, media_inspector=media_inspector,
             preview_guard=preview.guard, progress=progress)
     except BaseException as error:
+        secondary = list(progress.outer_cleanup_errors)
+        primary = progress.operation_error if progress.operation_error is not None else error
+        if error is not primary and all(error is not item for item in secondary):
+            secondary.append(error)
         if progress.completed_durable:
-            primary = progress.operation_error if progress.operation_error is not None else error
-            secondary = list(progress.post_completion_cleanup_errors)
-            if error is not primary and all(error is not item for item in secondary):
-                secondary.append(error)
             return _completed_after_cleanup(session_id, preview, progress, primary,
                                             secondary, stderr)
         # The executor publishes the body fault before context cleanup can
         # replace it; a later cleanup error is only secondary evidence.
-        primary = progress.operation_error if progress.operation_error is not None else error
-        cleanup_error = error if primary is not error else None
         if progress.intent_sync_started:
             return _incomplete(progress, session_id, root, primary, stderr,
-                               cleanup_error=cleanup_error)
+                               cleanup_errors=secondary)
         if isinstance(primary, KeyboardInterrupt):
             _diagnose(stderr, [f"tikrec retention delete: interrupted before intent; "
                                f"session={session_id}; root={root or '<unconfigured>'}"])
@@ -179,16 +177,15 @@ def _refused(session_id: str, root: Path | None, error: Exception,
 
 def _incomplete(progress: RetentionProgress, session_id: str, root: Path | None,
                 error: BaseException, stderr: TextIO, *,
-                cleanup_error: BaseException | None = None) -> int:
+                cleanup_errors: list[BaseException] | None = None) -> int:
     """Report after-intent uncertainty without changing or repairing artifacts."""
     state = "PARTIAL" if progress.deleted_count or progress.removal_uncertain else "FAILED"
     lines = [f"{state}: session={session_id}; root={root}; reason={_one_line(error)}",
              f"Operation ID: {progress.operation_id or 'unknown'}"]
     lines.extend(f"Inner cleanup error: {type(later).__name__}: {_one_line(later)}"
                  for later in progress.inner_cleanup_errors)
-    if cleanup_error is not None:
-        lines.append(f"Cleanup error: {type(cleanup_error).__name__}: "
-                     f"{_one_line(cleanup_error)}")
+    lines.extend(f"Cleanup error: {type(later).__name__}: {_one_line(later)}"
+                 for later in cleanup_errors or ())
     if progress.audit_path is not None:
         lines.append(f"Audit: {progress.audit_path}")
     if not progress.intent_durable:

@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #46 cleanup fault correction complete (2026-09-29):** Policy-lock
+  teardown now preserves a body fault or its own first close/release fault
+  before later cleanup faults, exposing the latter in order as secondary
+  diagnostics. Before completion, audit cleanup is retained separately from
+  later lifecycle cleanup. The public incomplete result and persisted failed
+  event keep the first known cause; proven completion remains COMPLETE/0.
+  Native Windows retention/lifecycle/policy: 446 passed, five skipped;
+  isolated full offline suite: 1,701 passed, seven skipped, 19 subtests;
+  applicable WSL planning/refusal/direct audit/policy: 186 passed, 38 skipped.
+  **State:** #46 correction complete; the single next v0.11 task is a NEW
+  fresh-context independent public retention CLI review. The gate remains
+  NOT READY until that review passes, before separately authorized real-media
+  validation. No owner decision is pending; #30 stays queued and #8/#13/#28
+  remain non-blocking evidence work. v0.10.0 remains released and v0.11.0
+  unreleased. No real media was deleted.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-29;
   reviewed 2ccf464; issue #46):** Disposable native Windows probes found that
   a first policy-lock descriptor-close fault can be replaced by a later

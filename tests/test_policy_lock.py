@@ -1,5 +1,6 @@
 """Policy authority serializes across threads/processes without blocking reads."""
 
+import importlib
 import os
 import subprocess
 import sys
@@ -116,3 +117,60 @@ def test_short_filename_alias_uses_same_policy_authority(tmp_path):
         with pytest.raises(ValueError, match="inside retention"):
             with policy_lock(alias, "write"):
                 pass
+
+
+@pytest.mark.parametrize("first_type", [OSError, KeyboardInterrupt])
+@pytest.mark.parametrize("body_fault", [False, True])
+def test_teardown_keeps_first_fault_and_orders_later_faults(
+        tmp_path, monkeypatch, first_type, body_fault):
+    """Closing and notifying may both fail; neither may erase an earlier fault."""
+    module = importlib.import_module("tikrec.policy_lock")
+    original_init = module.PolicyLease.__init__
+    original_close = os.close
+    original_condition = module._condition
+    state = {"descriptor": None, "closed": False, "notified": False}
+    later = []
+
+    def capture_descriptor(self, path, descriptor):
+        state["descriptor"] = descriptor
+        original_init(self, path, descriptor)
+
+    def fail_after_close(descriptor):
+        if descriptor == state["descriptor"] and not state["closed"]:
+            state["closed"] = True
+            original_close(descriptor)
+            raise first_type("first descriptor close fault")
+        return original_close(descriptor)
+
+    class NotificationFault:
+        def __enter__(self):
+            return original_condition.__enter__()
+
+        def __exit__(self, *exc):
+            return original_condition.__exit__(*exc)
+
+        def wait(self):
+            return original_condition.wait()
+
+        def notify_all(self):
+            original_condition.notify_all()
+            if not state["notified"]:
+                state["notified"] = True
+                raise SystemExit("second notification fault")
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(module.PolicyLease, "__init__", capture_descriptor)
+        scoped.setattr(module.os, "close", fail_after_close)
+        scoped.setattr(module, "_condition", NotificationFault())
+        expected = ValueError if body_fault else first_type
+        with pytest.raises(expected) as caught:
+            with policy_lock(tmp_path / "config.json", cleanup_errors=later):
+                if body_fault:
+                    raise ValueError("earlier body fault")
+    assert str(caught.value) == ("earlier body fault" if body_fault
+                                 else "first descriptor close fault")
+    assert [type(error).__name__ for error in later] == (
+        [first_type.__name__, "SystemExit"] if body_fault else ["SystemExit"])
+    # The registry and OS lease were released despite both cleanup failures.
+    with policy_lock(tmp_path / "config.json") as lease:
+        lease.assert_held()
