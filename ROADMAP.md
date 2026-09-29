@@ -1293,6 +1293,21 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Fresh independent public retention CLI gate NOT READY (2026-09-29;
+reviewed 2ccf464; issue #46):** A disposable native Windows combined-fault
+probe found that policy-lock descriptor close can fail first, then condition
+notification can fail and replace it before the inner mutation boundary
+records the cause. The public PARTIAL/3 result keeps operation/audit context,
+but its reason and failed.error_type name the later fault. Another probe found
+that audit cleanup can be omitted from secondary diagnostics when lifecycle
+cleanup also fails. Native retention/lifecycle/policy passed 435 tests (five
+skipped); isolated full offline passed 1,690 (seven skipped, 19 subtests);
+applicable WSL planning/refusal/direct audit passed 176 (37 skipped).
+No production code or real media changed. Correct #46 as the single next
+v0.11 task, then run another NEW fresh-context public CLI review before
+separately authorized real-media validation. The gate remains NOT READY;
+#30 stays queued, v0.10.0 remains released, and v0.11.0 remains unreleased.
+
 **Issue #45 correction complete (2026-09-29):** The first inner artifact,
 proof, removal, or handle-entry fault is preserved before policy or held-handle
 cleanup can replace it. The public incomplete result keeps the first cause;

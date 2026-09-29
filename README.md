@@ -544,9 +544,11 @@ A NEW public review at `1b38b65` found that cleanup inside held-artifact
 mutation can replace the first post-intent proof/removal fault before it is
 recorded (#45). Issue #45 now preserves the first inner fault in the
 incomplete result and `failed` audit event, with later cleanup faults reported
-separately. The single next v0.11 task is the NEW fresh-context review; the
-gate remains NOT READY until it passes, before separately authorized real-media
-validation.
+separately. The NEW review at 2ccf464 found a remaining cleanup-reporting
+defect (#46): a later policy-lock cleanup fault can replace the first fault
+before the failed audit event records its type. Issue #46 is the single next
+v0.11 correction. The public CLI gate remains NOT READY pending another
+fresh-context review, before separately authorized real-media validation.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.

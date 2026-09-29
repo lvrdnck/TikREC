@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-29;
+  reviewed 2ccf464; issue #46):** Disposable native Windows probes found that
+  a first policy-lock descriptor-close fault can be replaced by a later
+  condition-notification fault inside the same cleanup block. The public
+  PARTIAL/3 reason and persisted failed.error_type then name the later fault.
+  Audit cleanup can also disappear from secondary diagnostics when lifecycle
+  cleanup fails afterward. Native retention/lifecycle/policy: 435 passed, five
+  skipped; isolated full offline suite: 1,690 passed, seven skipped, 19
+  subtests; applicable WSL planning/refusal/direct audit checks: 176 passed,
+  37 skipped. **State:** #46 is the single next bounded v0.11 correction;
+  repeat a NEW fresh-context public CLI review afterward. The gate remains
+  NOT READY before separately authorized real-media validation. No owner
+  decision is pending; #30 stays queued and #8/#13/#28 remain non-blocking
+  evidence work. v0.10.0 remains released and v0.11.0 unreleased. No
+  production code or real media was changed in this review.
+
 - **Issue #45 inner artifact fault correction complete (2026-09-29):**
   The mutation boundary now captures the first proof/removal or handle-entry
   fault before policy or held-handle cleanup can replace it. The original

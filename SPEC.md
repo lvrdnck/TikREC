@@ -1140,6 +1140,16 @@ inner cleanup errors are secondary diagnostics. The public CLI gate remains
 NOT READY pending a NEW fresh-context independent review before separately
 authorized real-media validation. No real media was deleted.
 
+The NEW independent public CLI review at 2ccf464 found a remaining nested
+policy-lock cleanup fault-precedence gap (#46). A first descriptor-close
+fault can be replaced by a later condition-notification fault before the
+inner mutation boundary captures it; the public PARTIAL/3 reason and durable
+failed.error_type then name the wrong cause. An earlier audit cleanup fault
+can also be omitted from secondary diagnostics when lifecycle cleanup fails
+afterward. The public CLI gate is NOT READY pending #46 correction and
+another NEW fresh-context review before separately authorized real-media
+validation. No production code or real media was changed in this review.
+
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
 Unreadable or ambiguous immediate claims prevent a uniqueness proof for the

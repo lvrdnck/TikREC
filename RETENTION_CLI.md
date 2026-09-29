@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; ISSUE #46 NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -37,8 +37,13 @@ bounded correction for that finding. It now preserves the first inner
 artifact, proof, removal, or handle-entry fault before held-handle or
 policy cleanup can replace it. The original type reaches the failed audit
 event and the public incomplete reason; later inner cleanup faults are
-reported separately when stderr works. The public CLI gate remains
-NOT READY until a NEW fresh independent review passes. Separately authorized
+reported separately when stderr works. The NEW review at 2ccf464 found that
+two faults within policy-lock cleanup can still replace the first known cause
+before inner preservation runs: the incomplete public reason and persisted
+failed.error_type can name the later fault. Audit cleanup can also be lost
+from secondary diagnostics when lifecycle cleanup subsequently fails.
+Issue #46 is the bounded correction. The public CLI gate remains NOT READY
+until another NEW fresh independent review passes. Separately authorized
 real-media validation follows that gate. The local CLI
 workflow below exists in the development checkout; it is not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
