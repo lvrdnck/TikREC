@@ -7,6 +7,25 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Fresh independent public retention CLI gate NOT READY (2026-09-29;
+  reviewed `75ffb1d`; issue #47):** Disposable native Windows probes found
+  that audit-entry cleanup can replace a first pre-intent validation fault,
+  letting a later `SystemExit` escape without `REFUSED`/1. Lifecycle unlock
+  can likewise be replaced by later handle-close failure; after proven
+  completion the result stays `COMPLETE`/0 but names the wrong first fault,
+  and the in-process lifecycle registry remains occupied after the OS handle
+  closes. A combined artifact/policy/held/failed-event/audit/lifecycle probe
+  retained the first mutation fault and its `failed.error_type`, but lost the
+  first lifecycle cleanup fault. Native Windows retention/lifecycle/policy:
+  446 passed, five skipped; isolated full offline: 1,701 passed, seven
+  skipped, 19 subtests; applicable WSL/POSIX: 169 passed, four skipped.
+  **State:** #47 is the single next bounded v0.11 correction. Repeat a NEW
+  fresh-context independent public CLI review afterward; the gate remains
+  NOT READY before separately authorized real-media validation. No owner
+  decision is pending; #30 stays queued and #8/#13/#28 remain non-blocking
+  evidence work. v0.10.0 remains released and v0.11.0 unreleased. No
+  production code or real media was changed in this review.
+
 - **Issue #46 cleanup fault correction complete (2026-09-29):** Policy-lock
   teardown now preserves a body fault or its own first close/release fault
   before later cleanup faults, exposing the latter in order as secondary

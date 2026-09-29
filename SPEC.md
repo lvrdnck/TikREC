@@ -1161,6 +1161,18 @@ The public CLI gate remains NOT READY pending a NEW fresh-context independent
 review before separately authorized real-media retention validation.
 No real media was deleted.
 
+The NEW independent review at `75ffb1d` found a remaining audit/lifecycle
+teardown fault-precedence and ownership gap (#47). An audit-entry cleanup
+fault can replace a first pre-intent validation failure and escape as
+`SystemExit` instead of `REFUSED`/1. Lifecycle handle close can replace an
+earlier unlock fault; after synced completion `COMPLETE`/0 remains truthful,
+but the first diagnostic cause is lost and the in-process registry remains
+occupied. Combined mutation faults still preserved the first operation cause
+and persisted `failed.error_type`. The public CLI gate is NOT READY pending
+#47 correction and another NEW fresh-context review before separately
+authorized real-media retention validation. No production code or real media
+was changed in this review.
+
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
 Unreadable or ambiguous immediate claims prevent a uniqueness proof for the
