@@ -1173,6 +1173,15 @@ and persisted `failed.error_type`. The public CLI gate is NOT READY pending
 authorized real-media retention validation. No production code or real media
 was changed in this review.
 
+Issue #47 now preserves a first audit-entry or lifecycle teardown fault before
+later close faults. It attempts the remaining cleanup actions once and releases
+the in-process lifecycle registry and writer slot even when unlock or close
+fails. Acquisition rollback also removes partly registered ownership. True
+pre-intent refusal/interruption, incomplete uncertainty, and proven completion
+retain their established results. The public CLI gate remains NOT READY until
+a separate NEW fresh-context independent review passes before separately
+authorized real-media validation. No real media was deleted.
+
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
 Unreadable or ambiguous immediate claims prevent a uniqueness proof for the

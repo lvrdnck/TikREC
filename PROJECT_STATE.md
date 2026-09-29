@@ -7,6 +7,24 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #47 audit/lifecycle teardown correction complete (2026-09-29):**
+  Audit-entry validation and acquisition faults now survive later handle-close
+  faults, preserving genuine pre-intent `REFUSED`/1 and interruption/130.
+  Lifecycle unlock, handle close, registry decrement, and writer-slot release
+  are attempted once; the first fault stays authoritative and later faults
+  remain secondary. Acquisition rollback also releases a partly registered
+  writer slot before closing its handle. Disposable combined-fault tests
+  preserve incomplete/3, persisted `failed.error_type`, and proven
+  `COMPLETE`/0. Native Windows retention/lifecycle/policy/audit: 466 passed,
+  five skipped; isolated full offline: 1,721 passed, seven skipped, 19
+  subtests; applicable WSL/POSIX: 185 passed, 15 skipped. **State:** #47
+  correction complete; the single next v0.11 task is a NEW fresh-context
+  independent public retention CLI review. The
+  gate remains NOT READY until that review passes, before separately
+  authorized real-media validation. No owner decision is pending; #30 stays
+  queued and #8/#13/#28 remain non-blocking evidence work. v0.10.0 remains
+  released and v0.11.0 unreleased. No real media was deleted.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-29;
   reviewed `75ffb1d`; issue #47):** Disposable native Windows probes found
   that audit-entry cleanup can replace a first pre-intent validation fault,

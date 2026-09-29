@@ -60,8 +60,8 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
             clock=clock, media_inspector=media_inspector,
             preview_guard=preview.guard, progress=progress)
     except BaseException as error:
-        secondary = list(progress.outer_cleanup_errors)
         primary = progress.operation_error if progress.operation_error is not None else error
+        secondary = [item for item in progress.outer_cleanup_errors if item is not primary]
         if error is not primary and all(error is not item for item in secondary):
             secondary.append(error)
         if progress.completed_durable:
@@ -73,12 +73,17 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
             return _incomplete(progress, session_id, root, primary, stderr,
                                cleanup_errors=secondary)
         if isinstance(primary, KeyboardInterrupt):
-            _diagnose(stderr, [f"tikrec retention delete: interrupted before intent; "
-                               f"session={session_id}; root={root or '<unconfigured>'}"])
+            lines = [f"tikrec retention delete: interrupted before intent; "
+                     f"session={session_id}; root={root or '<unconfigured>'}; "
+                     f"reason={_one_line(primary)}"]
+            lines.extend(f"Cleanup error: {type(item).__name__}: {_one_line(item)}"
+                         for item in secondary)
+            _diagnose(stderr, lines)
             return 130
         if isinstance(primary, Exception):
             _refused(session_id, root, primary, stderr,
-                     intent_attempted=progress.intent_attempted)
+                     intent_attempted=progress.intent_attempted,
+                     cleanup_errors=secondary)
             return 1
         raise primary
     # The executor has returned only after the completed event synced. Display
@@ -163,7 +168,8 @@ def _typed_confirmation(stdin: TextIO, stdout: TextIO, session_id: str) -> bool:
 
 
 def _refused(session_id: str, root: Path | None, error: Exception,
-             stderr: TextIO, *, intent_attempted: bool = False) -> None:
+             stderr: TextIO, *, intent_attempted: bool = False,
+             cleanup_errors: list[BaseException] | None = None) -> None:
     """Report a pre-intent refusal without implying a journaled operation."""
     lines = []
     if intent_attempted:
@@ -172,6 +178,8 @@ def _refused(session_id: str, root: Path | None, error: Exception,
     lines.extend((f"REFUSED: session={session_id}; root={root or '<unconfigured>'}; "
                   f"reason={_one_line(error)}",
                   "No deletion operation was started."))
+    lines.extend(f"Cleanup error: {type(later).__name__}: {_one_line(later)}"
+                 for later in cleanup_errors or ())
     _diagnose(stderr, lines)
 
 

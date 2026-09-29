@@ -1293,6 +1293,21 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #47 correction complete (2026-09-29):** Audit-entry faults now remain
+primary across later close failures. Lifecycle teardown preserves its first
+unlock/close fault, attempts each remaining cleanup action once, and releases
+the in-process registry and writer slot even when cleanup fails. Acquisition
+rollback also releases partly registered ownership. Disposable Windows
+regressions cover pre-intent refusal/130, incomplete/3 with the first durable
+`failed.error_type`, proven `COMPLETE`/0, combined inner/outer faults, and
+broken diagnostics. No real media was deleted. The single next v0.11 task is
+a NEW fresh-context independent public retention CLI review; the gate stays
+NOT READY until it passes, before separately authorized real-media validation.
+Native Windows retention/lifecycle/policy/audit: 466 passed, five skipped;
+isolated full offline: 1,721 passed, seven skipped, 19 subtests; applicable
+WSL/POSIX: 185 passed, 15 skipped. #30 stays queued; v0.10.0 remains released
+and v0.11.0 unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-29;
 reviewed `75ffb1d`; issue #47):** New disposable Windows fault probes found
 that audit-entry close can mask a first pre-intent validation fault and let

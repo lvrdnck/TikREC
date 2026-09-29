@@ -554,9 +554,11 @@ validation.
 That NEW review at `75ffb1d` found an audit/lifecycle teardown blocker
 (#47): later close faults can hide first validation or unlock faults, and a
 lifecycle close fault can leave the process registry occupied. The public
-CLI gate remains NOT READY; #47 is the single next correction, followed by
-another NEW independent review before separately authorized real-media
-validation. No production code or real media was changed in the review.
+CLI gate remained NOT READY. Issue #47 now keeps first audit/lifecycle faults
+through cleanup, releases process ownership once, and preserves pre-intent,
+incomplete, and proven-completion results. The single next v0.11 task is
+another NEW independent public CLI review before separately authorized
+real-media validation. No real media was deleted.
 Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.

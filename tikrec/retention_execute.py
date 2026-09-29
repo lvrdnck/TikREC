@@ -71,7 +71,8 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
         raise ValueError("retention target must be a canonical session UUID")
     scope = local_path(Path(root), directory=True)
     progress = progress if progress is not None else RetentionProgress()
-    with acquire_lifecycle(scope, "retention") as lease:
+    with acquire_lifecycle(scope, "retention",
+                           cleanup_errors=progress.outer_cleanup_errors) as lease:
         auth, evidence, config = _fresh_authorization(
             scope, session_id, configuration_store, job_paths, clock, media_inspector)
         if preview_guard is not None and preview_guard != _preview_signature(
@@ -90,7 +91,8 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
 
         operation_id = str(uuid.uuid4())
         with (_preserve_outer_failure(progress),
-              RetentionAudit(scope, audit_path) as audit,
+              RetentionAudit(scope, audit_path,
+                             cleanup_errors=progress.outer_cleanup_errors) as audit,
               _preserve_operation_failure(progress)):
             progress.operation_id, progress.audit_path = operation_id, audit.path
             # The intent is synced before any artifact is even attempted.

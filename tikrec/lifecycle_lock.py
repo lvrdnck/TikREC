@@ -27,16 +27,23 @@ class LifecycleLease:
     """One open OS-backed writer or exclusive retention lease."""
 
     def __init__(self, root: Path, mode: str, handle, slot: int | None,
-                 identity: tuple, key: str) -> None:
+                 identity: tuple, key: str, *,
+                 cleanup_errors: list[BaseException] | None = None) -> None:
         self.root, self.mode, self.handle = root, mode, handle
         self.slot, self.identity, self.key = slot, identity, key
         self.closed = False
+        self.cleanup_errors = cleanup_errors if cleanup_errors is not None else []
 
     def __enter__(self) -> LifecycleLease:
         return self
 
     def __exit__(self, *_exc) -> None:
-        self.close()
+        try:
+            self.close()
+        except BaseException:
+            if len(_exc) < 2 or _exc[1] is None:
+                raise
+            # The active body fault predates every lease teardown fault.
 
     def assert_held(self) -> None:
         """Reject a lost descriptor or replaced persistent lock file."""
@@ -51,21 +58,40 @@ class LifecycleLease:
             if self.closed:
                 return
             self.closed = True
+            faults: list[BaseException] = []
             try:
                 if not self.handle.closed:
                     _unlock(self.handle, self.mode, self.slot)
-            finally:
+            except BaseException as error:
+                faults.append(error)
+            try:
                 self.handle.close()
+            except BaseException as error:
+                faults.append(error)
+            active = None
+            try:
                 active = _registry[self.key]
                 active[self.mode] -= 1
+            except BaseException as error:
+                faults.append(error)
+            try:
                 if self.slot is not None and self.mode == "writer":
                     _occupied[self.key].remove(self.slot)
-                if not any(active.values()):
+            except BaseException as error:
+                faults.append(error)
+            try:
+                if active is not None and not any(active.values()):
                     del _registry[self.key]
                     _occupied.pop(self.key, None)
+            except BaseException as error:
+                faults.append(error)
+            self.cleanup_errors.extend(faults)
+            if faults:
+                raise faults[0]
 
 
-def acquire_lifecycle(root: Path, mode: str) -> LifecycleLease:
+def acquire_lifecycle(root: Path, mode: str, *,
+                      cleanup_errors: list[BaseException] | None = None) -> LifecycleLease:
     """Acquire a nonblocking shared writer or exclusive retention root lease."""
     if mode not in {"writer", "retention"}:
         raise ValueError("unsupported lifecycle lease mode")
@@ -77,21 +103,42 @@ def acquire_lifecycle(root: Path, mode: str) -> LifecycleLease:
         active = _registry.get(key, {"writer": 0, "retention": 0})
         if active["retention"] or (mode == "retention" and active["writer"]):
             raise LifecycleBusy("recording root has a conflicting lifecycle lease")
-        handle = _open_lock(scope)
+        handle = _open_lock(scope, cleanup_errors)
+        registered = False
         try:
             slot = _lock(handle, mode, _occupied.get(key, set()))
             identity = _identity(handle)
             if (identity is None or _identity(scope / LOCK_NAME) != identity
                     or local_volume(scope / LOCK_NAME) != local_volume(scope)):
                 raise ValueError("lifecycle lock file changed during acquisition")
+            lease = LifecycleLease(scope, mode, handle, slot, identity, key,
+                                   cleanup_errors=cleanup_errors)
+            active[mode] += 1
+            registered = True
+            _registry[key] = active
+            if slot is not None and mode == "writer":
+                _occupied.setdefault(key, set()).add(slot)
+            return lease
         except BaseException:
-            handle.close()
+            if registered:
+                try:
+                    # A slot insertion may raise after adding it; this slot was
+                    # proven unoccupied before the OS lock was acquired.
+                    active[mode] -= 1
+                    if slot is not None and mode == "writer":
+                        _occupied.get(key, set()).discard(slot)
+                    if not any(active.values()):
+                        _registry.pop(key, None)
+                        _occupied.pop(key, None)
+                except BaseException as cleanup:
+                    if cleanup_errors is not None:
+                        cleanup_errors.append(cleanup)
+            try:
+                handle.close()
+            except BaseException as cleanup:
+                if cleanup_errors is not None:
+                    cleanup_errors.append(cleanup)
             raise
-        active[mode] += 1
-        _registry[key] = active
-        if slot is not None and mode == "writer":
-            _occupied.setdefault(key, set()).add(slot)
-        return LifecycleLease(scope, mode, handle, slot, identity, key)
 
 
 @contextmanager
@@ -104,7 +151,7 @@ def acquire_writer_roots(*roots: Path):
         yield
 
 
-def _open_lock(root: Path):
+def _open_lock(root: Path, cleanup_errors: list[BaseException] | None = None):
     path = root / LOCK_NAME
     flags = os.O_RDWR | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
     created = False
@@ -125,11 +172,22 @@ def _open_lock(root: Path):
             parent = os.open(root, os.O_RDONLY)
             try:
                 os.fsync(parent)
-            finally:
+            except BaseException as error:
+                try:
+                    os.close(parent)
+                except BaseException as cleanup:
+                    if cleanup_errors is not None:
+                        cleanup_errors.append(cleanup)
+                raise
+            else:
                 os.close(parent)
         return os.fdopen(descriptor, "r+b", buffering=0)
     except BaseException:
-        os.close(descriptor)
+        try:
+            os.close(descriptor)
+        except BaseException as cleanup:
+            if cleanup_errors is not None:
+                cleanup_errors.append(cleanup)
         raise
 
 

@@ -220,3 +220,87 @@ def test_audit_directory_sync_failure_preserves_session(tmp_path, monkeypatch, f
     run()
     assert synced == expected_posix_syncs(audit.parent)
     assert not parts.exists() and not (root / "alpha.mp4").exists()
+
+
+def test_entry_validation_fault_precedes_handle_close_fault(tmp_path, monkeypatch):
+    root = tmp_path / "recordings"
+    root.mkdir()
+    path = tmp_path / "audit" / "history.jsonl"
+    real_fdopen = audit_module.os.fdopen
+    cleanup = []
+
+    class ClosingFault:
+        def __init__(self, handle):
+            self.handle = handle
+
+        def __getattr__(self, name):
+            return getattr(self.handle, name)
+
+        def close(self):
+            self.handle.close()
+            raise SystemExit("second audit handle close fault")
+
+    def fdopen(*args, **kwargs):
+        return ClosingFault(real_fdopen(*args, **kwargs))
+
+    def first_validation(*_args):
+        raise ValueError("first audit history validation fault")
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(audit_module.os, "fdopen", fdopen)
+        scoped.setattr(audit_module, "_validate_history", first_validation)
+        with pytest.raises(ValueError, match="first audit history validation fault"):
+            with RetentionAudit(root, path, cleanup_errors=cleanup):
+                pass
+    assert path.read_bytes() == b""
+    assert len(cleanup) == 1 and isinstance(cleanup[0], SystemExit)
+
+
+def test_entry_descriptor_fault_precedes_descriptor_close_fault(tmp_path, monkeypatch):
+    root = tmp_path / "recordings"
+    root.mkdir()
+    path = tmp_path / "audit" / "history.jsonl"
+    real_fstat, real_close = audit_module.os.fstat, audit_module.os.close
+    cleanup = []
+    audit_descriptor = []
+
+    def first_fstat(descriptor):
+        audit_descriptor.append(descriptor)
+        raise ValueError("first audit descriptor validation fault")
+
+    def close_then_fault(descriptor):
+        real_close(descriptor)
+        if descriptor in audit_descriptor:
+            raise SystemExit("second audit descriptor close fault")
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(audit_module.os, "fstat", first_fstat)
+        scoped.setattr(audit_module.os, "close", close_then_fault)
+        with pytest.raises(ValueError, match="first audit descriptor validation fault"):
+            with RetentionAudit(root, path, cleanup_errors=cleanup):
+                pass
+    assert path.read_bytes() == b""
+    assert len(cleanup) == 1 and isinstance(cleanup[0], SystemExit)
+
+
+def test_audit_directory_sync_fault_precedes_close_fault(tmp_path, monkeypatch):
+    real_open, real_close = audit_module.os.open, audit_module.os.close
+    sentinel = tmp_path / "sync-descriptor"
+    sentinel.write_bytes(b"")
+
+    def first_sync(*_args):
+        raise KeyboardInterrupt("first audit directory sync fault")
+
+    def close_then_fault(descriptor):
+        real_close(descriptor)
+        raise SystemExit("second audit directory close fault")
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(audit_module.os, "open",
+                       lambda _path, _flags: real_open(sentinel, os.O_RDONLY))
+        scoped.setattr(audit_module.os, "fsync", first_sync)
+        scoped.setattr(audit_module.os, "close", close_then_fault)
+        with pytest.raises(KeyboardInterrupt, match="first audit directory sync fault") as caught:
+            audit_module._sync_directory(tmp_path)
+    assert any("second audit directory close fault" in note
+               for note in caught.value.__notes__)

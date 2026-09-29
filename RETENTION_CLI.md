@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; #47 CORRECTION NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -50,10 +50,14 @@ audit/lifecycle teardown gap (#47): audit-entry close can mask the first
 pre-intent validation fault and let a later `SystemExit` escape, while a
 lifecycle unlock fault can be replaced by later handle-close failure. The
 same close fault can leave the process lifecycle registry occupied after
-the OS handle closes. The public CLI gate remains NOT READY pending #47
-correction and another NEW fresh independent review. Separately authorized
-real-media validation follows a passing gate. The local CLI
-workflow below exists in the development checkout; it is not in the current
+the OS handle closes. Issue #47 now preserves the first audit-entry or
+lifecycle teardown fault and records later close faults separately. The
+in-process lifecycle registry and writer slot are released once even when
+cleanup fails; acquisition rollback also releases partly registered ownership.
+The public CLI gate remains NOT READY until another NEW fresh independent
+review passes. Separately authorized real-media validation follows a passing
+gate. The local CLI workflow below exists in the development checkout; it is
+not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 

@@ -27,7 +27,8 @@ def default_audit_path(root: Path) -> Path:
 class RetentionAudit:
     """Append and sync every event without placing an audit artifact in the root."""
 
-    def __init__(self, root: Path, path: Path | None = None) -> None:
+    def __init__(self, root: Path, path: Path | None = None, *,
+                 cleanup_errors: list[BaseException] | None = None) -> None:
         self.root = Path(root)
         self.path = Path(path) if path is not None else default_audit_path(root)
         root_abs, path_abs = Path(os.path.abspath(root)), Path(os.path.abspath(self.path))
@@ -38,6 +39,7 @@ class RetentionAudit:
             raise ValueError("retention audit must be outside recording root")
         self.handle = None
         self.identity = None
+        self.cleanup_errors = cleanup_errors if cleanup_errors is not None else []
 
     def __enter__(self) -> RetentionAudit:
         _prepare_parent(self.path.parent)
@@ -68,10 +70,14 @@ class RetentionAudit:
                 _sync_directory(self.path.parent)
             return self
         except BaseException:
-            if self.handle is not None:
-                self.handle.close()
-            else:
-                os.close(descriptor)
+            try:
+                if self.handle is not None:
+                    self.handle.close()
+                else:
+                    os.close(descriptor)
+            except BaseException as cleanup:
+                # Entry failed before intent; a later close cannot replace its cause.
+                self.cleanup_errors.append(cleanup)
             raise
 
     def __exit__(self, *_exc) -> None:
@@ -132,8 +138,13 @@ def _sync_directory(directory: Path) -> None:
     descriptor = os.open(directory, flags)
     try:
         os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
+    except BaseException as error:
+        try:
+            os.close(descriptor)
+        except BaseException as cleanup:
+            error.add_note(f"Secondary audit directory close fault: {cleanup!r}")
+        raise
+    os.close(descriptor)
 
 
 def _validate_history(handle, root: Path) -> None:
