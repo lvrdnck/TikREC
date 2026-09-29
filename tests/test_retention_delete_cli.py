@@ -131,6 +131,56 @@ def test_completed_output_and_diagnostic_failure_keep_exit_zero(tmp_path):
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+@pytest.mark.parametrize("output_fault", ["write", "flush"])
+@pytest.mark.parametrize("diagnostic_fault", ["none", "write", "flush"])
+def test_pre_intent_system_exit_from_preview_output_is_refusal(
+        tmp_path, output_fault, diagnostic_fault):
+    case = fixture(tmp_path)
+    root, parts, session_id, config, jobs, audit, _ = case
+    arguments = argparse.Namespace(
+        config_path=str(config.path), retention_action="delete",
+        session_id=session_id, root=os.path.relpath(root),
+        confirm=session_id if output_fault == "write" else None)
+
+    class OutputFault(StringIO):
+        def write(self, value):
+            if output_fault == "write":
+                raise SystemExit("original preview output fault")
+            return super().write(value)
+
+        def flush(self):
+            if output_fault == "flush":
+                raise SystemExit("original preview output fault")
+            return super().flush()
+
+    class DiagnosticFault(StringIO):
+        def write(self, value):
+            if diagnostic_fault == "write":
+                raise OSError("broken stderr write")
+            return super().write(value)
+
+        def flush(self):
+            if diagnostic_fault == "flush":
+                raise OSError("broken stderr flush")
+            return super().flush()
+
+    stderr = DiagnosticFault()
+    code = run_retention_command(
+        arguments, OutputFault(), stderr, Terminal(session_id + "\n"),
+        clock=lambda: NOW, media_inspector=inspect, job_paths=jobs,
+        audit_path=audit)
+    assert code == 1
+    if diagnostic_fault != "write":
+        message = stderr.getvalue()
+        assert f"REFUSED: session={session_id}; root={root}" in message
+        assert "reason=original preview output fault" in message
+        assert "No deletion operation was started." in message
+        assert "Operation ID:" not in message
+    assert not audit.exists()
+    assert parts.exists() and (root / "alpha.mp4").exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
 def test_configured_root_and_interactive_exact_uuid(tmp_path):
     case = fixture(tmp_path)
     root, parts, session_id, config, _, audit, _ = case

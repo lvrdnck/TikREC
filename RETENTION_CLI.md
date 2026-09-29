@@ -1,6 +1,6 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; ISSUE #50 NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE NOT READY; NEW REVIEW NEXT.**
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -59,8 +59,11 @@ gap (#50): a first `SystemExit` during preview output or audit-entry validation
 escapes the public command instead of returning `REFUSED`/1. Later cleanup
 faults do not replace that first cause, but the owner receives no refusal
 diagnostic. No intent or removal occurred in the disposable reproductions.
-The public CLI gate remains NOT READY pending #50 and another NEW independent
-review. Separately authorized real-media validation follows a passing gate.
+Issue #50 now classifies a pre-intent `SystemExit` as `REFUSED`/1, retaining
+its reason, selected UUID and absolute root, and the no-operation notice.
+Later audit/lifecycle faults remain secondary; broken stderr does not alter
+the exit. The public CLI gate remains NOT READY until another NEW independent
+review passes. Separately authorized real-media validation follows a passing gate.
 The local CLI workflow below exists in the development checkout; it is
 not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit

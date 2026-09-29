@@ -52,7 +52,8 @@ class _Diagnostic(StringIO):
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
-@pytest.mark.parametrize("first,expected", [(ValueError, 1), (KeyboardInterrupt, 130)])
+@pytest.mark.parametrize("first,expected", [
+    (ValueError, 1), (KeyboardInterrupt, 130), (SystemExit, 1)])
 def test_public_audit_entry_preserves_first_preintent_fault(
         tmp_path, monkeypatch, first, expected):
     case = fixture(tmp_path)
@@ -72,9 +73,47 @@ def test_public_audit_entry_preserves_first_preintent_fault(
     monkeypatch.setattr(audit_module, "_validate_history", first_validation)
     code, err = _invoke(case)
     assert code == expected and "first audit entry fault" in err
+    if first is SystemExit:
+        assert "REFUSED:" in err and "No deletion operation was started." in err
     assert "second handle close fault" in err
     assert "Operation ID:" not in err and audit.read_bytes() == b""
     assert parts.exists() and (root / "alpha.mp4").exists()
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")
+@pytest.mark.parametrize("diagnostic", ["none", "write", "flush"])
+def test_preintent_system_exit_stays_primary_through_outer_cleanup(
+        tmp_path, monkeypatch, diagnostic):
+    case = fixture(tmp_path)
+    root, parts, session_id, _, _, audit, _ = case
+    real_enter, real_fdopen = RetentionAudit.__enter__, audit_module.os.fdopen
+
+    def entering(self):
+        with monkeypatch.context() as scoped:
+            scoped.setattr(audit_module.os, "fdopen",
+                           lambda *a, **kw: _CloseFault(real_fdopen(*a, **kw)))
+            return real_enter(self)
+
+    def first_validation(*_args):
+        raise SystemExit("first audit entry SystemExit")
+
+    monkeypatch.setattr(RetentionAudit, "__enter__", entering)
+    monkeypatch.setattr(audit_module, "_validate_history", first_validation)
+    _fault_lifecycle_cleanup(monkeypatch)
+    code, err = _invoke(case, _Diagnostic(diagnostic))
+    assert code == 1
+    if diagnostic != "write":
+        assert f"REFUSED: session={session_id}; root={root}" in err
+        assert "reason=first audit entry SystemExit" in err
+        assert "No deletion operation was started." in err
+        assert err.index("first audit entry SystemExit") < err.index(
+            "second handle close fault") < err.index(
+                "first lifecycle unlock fault") < err.index(
+                    "second handle close fault", err.index("first lifecycle unlock fault"))
+        assert "Operation ID:" not in err
+    assert audit.read_bytes() == b""
+    assert parts.exists() and (root / "alpha.mp4").exists()
+    assert os.path.normcase(str(root)) not in lifecycle_module._registry
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows exact-object deletion only")

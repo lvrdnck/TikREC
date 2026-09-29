@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #50 correction complete (2026-09-29):** A pre-intent `SystemExit` now
+returns `REFUSED`/1 with its original reason, selected UUID, absolute root,
+and no-operation notice. Later audit/lifecycle cleanup remains secondary;
+broken stderr does not change the exit. Pre-intent Ctrl-C, after-intent
+uncertainty, and proven completion keep 130/3/0 respectively. Native Windows
+retention/lifecycle/policy: 477 passed, five skipped; isolated full offline:
+1,731 passed, seven skipped, 19 subtests; applicable WSL/POSIX:
+117 passed, 60 skipped, plus 15 direct audit/history passes. No real media
+was deleted. The single next v0.11 task is a NEW independent public CLI
+review; the gate stays NOT READY until it passes, before separately
+authorized real-media validation. #30, #48, #49, #28, #13, and #8 remain
+outside this task. v0.10.0 is released and v0.11.0 unreleased.
+
 **Fresh independent public retention CLI gate NOT READY (2026-09-29;
 reviewed `72996a7`; issue #50):** A first pre-intent `SystemExit` from preview
 output or audit-entry validation escapes the public command instead of

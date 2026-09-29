@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 import uuid
@@ -35,7 +36,7 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
                audit_path: Path | None = None) -> int:
     """Preview, confirm, freshly execute, and classify one retention attempt."""
     session_id = arguments.session_id
-    root = Path(arguments.root) if arguments.root is not None else None
+    root = Path(os.path.abspath(arguments.root)) if arguments.root is not None else None
     progress = RetentionProgress()
     try:
         # Platform refusal precedes even a read-only preview, lock, or audit.
@@ -48,10 +49,13 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
         root = root if root is not None else config.output_directory
         if root is None:
             raise ValueError("retention delete requires ROOT or configured output_directory")
+        # Report the same lexical absolute root used by the no-follow preview.
+        root = Path(os.path.abspath(root))
         if arguments.confirm is not None and arguments.confirm != session_id:
             raise ValueError("confirmation UUID does not exactly match target")
         preview = prepare_preview(root, session_id, store, job_paths=job_paths,
                                   clock=clock, media_inspector=media_inspector)
+        root = preview.root
         _show_preview(preview, stdout)
         if arguments.confirm is None and not _typed_confirmation(stdin, stdout, session_id):
             raise ValueError("exact session UUID confirmation was not provided")
@@ -80,7 +84,8 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
                          for item in secondary)
             _diagnose(stderr, lines)
             return 130
-        if isinstance(primary, Exception):
+        if isinstance(primary, (Exception, SystemExit)):
+            # Only SystemExit joins normal pre-intent refusals; Ctrl-C keeps 130.
             _refused(session_id, root, primary, stderr,
                      intent_attempted=progress.intent_attempted,
                      cleanup_errors=secondary)
@@ -167,7 +172,7 @@ def _typed_confirmation(stdin: TextIO, stdout: TextIO, session_id: str) -> bool:
     return value == session_id
 
 
-def _refused(session_id: str, root: Path | None, error: Exception,
+def _refused(session_id: str, root: Path | None, error: BaseException,
              stderr: TextIO, *, intent_attempted: bool = False,
              cleanup_errors: list[BaseException] | None = None) -> None:
     """Report a pre-intent refusal without implying a journaled operation."""

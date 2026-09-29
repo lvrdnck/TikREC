@@ -7,6 +7,22 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #50 pre-intent `SystemExit` correction complete (2026-09-29):**
+  The public retention delete CLI now returns `REFUSED`/1 with the first
+  `SystemExit` reason, selected UUID, absolute root, and no-operation notice
+  when intent sync has not begun. Later audit/lifecycle cleanup faults remain
+  secondary; broken stderr cannot alter exit 1. Pre-intent Ctrl-C remains 130,
+  after-intent uncertainty remains 3, and durable completion remains 0.
+  Native Windows retention/lifecycle/policy: 477 passed, five skipped;
+  isolated full offline: 1,731 passed, seven skipped, 19 subtests;
+  applicable WSL/POSIX: 117 passed, 60 skipped, plus 15 direct audit/history
+  passes. **State:** #50 correction complete; the single next v0.11 task is
+  a NEW fresh-context independent public retention CLI review. The gate
+  remains NOT READY before separately authorized real-media validation.
+  No owner decision is pending. #30, #48, #49, #28, #13, and #8 remain outside
+  this task. v0.10.0 is released and v0.11.0 unreleased. No real media was
+  deleted.
+
 - **Fresh independent public retention CLI gate NOT READY (2026-09-29;
   reviewed `72996a7`; issue #50):** Disposable Windows probes found that a
   first pre-intent `SystemExit` from preview stdout or audit-entry validation

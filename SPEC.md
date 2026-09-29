@@ -1187,6 +1187,12 @@ validation escapes instead of reporting `REFUSED`/1, even when later cleanup
 faults leave the first cause intact. The gate remains NOT READY pending #50
 and another NEW independent review before separately authorized real-media
 validation. No production code or real media changed in this review.
+Issue #50 now classifies a first pre-intent `SystemExit` as `REFUSED`/1 with
+its cause, selected UUID, absolute root, and no-operation notice. Later
+audit/lifecycle cleanup faults stay secondary and broken diagnostics do not
+change that exit. The public CLI gate remains NOT READY pending a NEW
+independent review before separately authorized real-media validation.
+No real media was deleted in this correction.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.
