@@ -1293,6 +1293,20 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Temporary #49 forensic comparison complete; #51 paused (2026-09-30):**
+The exact problematic Gracie LIVE was captured by both old/current recorders,
+with different video renditions and an old capture gap covering the reported
+10:15 corruption. Bounded old-style normalization retains the damaged imagery;
+`discardcorrupt` drops no examined packet or decoded frame. Publisher push-size
+announcements support a transition association, while missing original HTTP/old
+FLV evidence leaves #28 attribution unresolved. See
+[ISSUE_49_GRACIE_COMPARISON.md](ISSUE_49_GRACIE_COMPARISON.md).
+No product behavior or release gate changed. #51 remains paused until the root
+is naturally idle/stable; its age rule is unset and deletion allowance unused.
+After that condition, resume its approved public-plan validation. #48 remains
+queued to supply future watcher raw evidence; #13 remains separate rendition
+policy work. v0.10.0 is released and v0.11.0 remains unreleased.
+
 **Issue #51 evidence segregation PASSED; deletion not attempted (2026-09-30):**
 The six approved manifestless evidence sets and three exact sibling MP4s are
 preserved outside the recording root, with all 19 files/806,859,876 bytes verified

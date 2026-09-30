@@ -7,6 +7,19 @@ or durable job/automation evidence was changed by this investigation.
 
 ## 2026-09-28 Gracie recurrence (open issue #28)
 
+**2026-09-30 comparison update:** The same LIVE was found in old local TikREC.
+Shared AAC packet hashes put current MP4 10:15 inside a 16.43-second old capture
+gap. Current retained SEI announces changed publisher push dimensions at IDRs
+(source 653.925, 654.461, 656.645 and 660.309 seconds), exactly matching old
+rejection events, although current AVC configuration stays 640x1280. This
+strengthens the transition association without proving a CDN geometry change
+or source-versus-writer attribution. Old retained video uses different renditions;
+its raw FLVs are absent. Old-style NVENC replay with/without `discardcorrupt`
+preserves all 1,124 excerpt frames and visible columns while making output
+decoder-clean. See [ISSUE_49_GRACIE_COMPARISON.md](ISSUE_49_GRACIE_COMPARISON.md)
+for the measured boundaries, healthy raw-input control, hashes and limitations.
+The historical findings below remain valid; #28 stays open and non-blocking.
+
 The owner reports severe vertical columns/smearing during at least some battles
 in `gracie.kf-20260928-014356.mp4`, around MP4 10:11. This is **intermittent**:
 ordinary non-battle footage and other LIVEs can be clean, and the evidence does

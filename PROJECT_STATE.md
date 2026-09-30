@@ -7,15 +7,26 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #49 temporarily active; #51 paused on external idle-root condition (2026-09-30):**
-  #51 remains authorized but paused while the recording root is naturally active;
-  its one-deletion allowance is unused, the age rule is unset, and its preserved
-  evidence archive stays in place. #49 is now the single active task: perform a
-  read-only forensic comparison of the same Gracie LIVE recorded by old local
-  TikREC (`C:\Users\Leandro\Desktop\antigravity\TikREC`) and current TikREC
-  (`C:\Users\Leandro\Videos`) to test the battle/resolution-transition corruption
-  hypothesis. No production fix or media mutation is authorized. Resume #51 only
-  after #49 completes and the root is naturally idle/stable.
+- **Issue #49 comparison complete; #51 still paused (2026-09-30):** The exact
+  issue-#28 Gracie room was captured by both recorders, but with different video
+  renditions. Shared AAC hashes place current MP4 10:15 inside an old capture
+  gap of 16.43 seconds, after the old recorder rejected an IDR's push-dimensions
+  announcement without a new AVC header. Old-style NVENC normalization preserves
+  the current damaged excerpt's 1,124 frames and visible columns; `discardcorrupt`
+  changes neither examined packets nor decoded output pixels. Re-encoding produces
+  decoder-clean files containing damaged imagery. The old raw FLVs for this LIVE
+  are absent; surviving remuxed inputs are clean around the gap, and source-versus-
+  writer attribution remains open/non-blocking #28. See
+  [ISSUE_49_GRACIE_COMPARISON.md](ISSUE_49_GRACIE_COMPARISON.md).
+  No current defect was proven or fix implemented; 42 original files passed
+  repeated hashes/metadata checks. No implementation task is active. #51 remains
+  authorized but paused awaiting a naturally idle/stable root; no owner action
+  is pending, its one-deletion allowance is unused, the age rule is unset, and
+  its evidence archive stays in place. Safe next action: resume only #51's public
+  age-unset plan after natural inactivity; preserve its existing stop boundaries.
+  #48 remains queued for opt-in watcher raw evidence, with #13 separate rendition
+  policy work. v0.10.0 remains released; v0.11.0 is unreleased and its real-media
+  retention gate remains unpassed.
 
 - **Issue #51 segregation complete; validation awaiting a stable idle root
   (2026-09-30):** Only the six approved manifestless `test*.parts` directories
