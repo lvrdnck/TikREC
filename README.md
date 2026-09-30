@@ -505,6 +505,11 @@ validation notes in SPEC.md for why.
 
 ## Scope
 
+Issue #53 corrects Fedora Btrfs locality using no-follow descriptor mount/type
+proof. Safe native Linux deletion still requires an enforceable ownership
+architecture and independent review; it remains refused. Fedora remains the
+target runtime. See [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
+
 **Current checkout:** Local standalone commands record one public LIVE per
 invocation. The persistent service owns a fixed pool of two independent jobs,
 each with its own worker, stop event, durable intent, recovery, retained media,

@@ -1293,6 +1293,22 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #53 Fedora locality correction; native deletion architecture blocked
+(2026-10-01):** Fedora is the target runtime. Held no-follow mount/type evidence
+corrects the Btrfs subvolume-device mismatch and the public age-unset plan now
+succeeds on the configured root. Disposable cross-process tests establish that
+ordinary Linux pathname deletion does not satisfy the current exact-object
+contract in owner-writable storage. Mutation therefore remains refused; Windows
+behavior is unchanged. A storage broker with enforced ownership/isolation is a
+documented design direction requiring an owner architecture decision, not an
+implemented backend. See [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
+Full isolated-config suite: 1,552 passed, 278 skipped, 19 passed subtests.
+#53 is the single active blocker, awaiting fresh independent retention review
+and resolution of the destructive architecture. #51 remains paused / NOT PASSED,
+its allowance unused and age unset. No real-media deletion or service restart
+occurred. Earlier Windows-resume guidance is superseded; returning to Windows
+is not the resolution. v0.11.0 remains unreleased.
+
 **Issue #51 Fedora public-plan refusal (2026-10-01):** The empty configured
 Linux root `/home/leandro/Videos/TikREC` was naturally idle across matching
 five-second snapshots, with both service slots idle. One age-unset public plan

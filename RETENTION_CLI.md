@@ -1,7 +1,7 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
-VALIDATION WAITING FOR A STABLE IDLE ROOT.**
+VALIDATION PAUSED BEHIND #53 FEDORA MUTATION ARCHITECTURE AND INDEPENDENT REVIEW.**
 Under issue #51's owner approval on 2026-09-30, the six manifestless test evidence
 sets and three matching MP4s were preserved in an external archive with verified
 hashes and metadata. The age-unset public plan still reported root-wide conflict
@@ -18,6 +18,20 @@ when all UUID/output claims are readable. Destructive execution also needs an
 exclusive root lifecycle lease and refuses while a cooperative writer owns it.
 Wait for natural inactivity and a stable fresh plan; do not stop recordings to
 manufacture eligibility.
+
+## Current Fedora correction (#53, 2026-10-01)
+
+Fedora remains the target runtime. The configured Btrfs root now passes the
+read-only public plan through held no-follow descriptor mount/type evidence;
+the earlier locality refusal is corrected. Linux destructive retention remains
+refused because ordinary name-based mutation cannot meet the current exact-object
+contract in owner-writable storage. Native disposable counterexamples and the
+required ownership/isolation architecture are documented in
+[ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
+#53 remains open and blocks #51. A fresh independent retention review and a safe
+Linux architecture are required before #51 resumes on Fedora. Returning to
+Windows is not the resolution; prior Windows-resume guidance below is historical.
+No real-media deletion occurred; #51's allowance is unused and age remains unset.
 
 ## 2026-10-01 Fedora validation limit
 

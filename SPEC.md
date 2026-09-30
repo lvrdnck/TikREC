@@ -1248,6 +1248,21 @@ not tighten ordinary schema-1 loading/recovery.
 Linux locality additionally requires a coherent visible mount parent chain and
 matching artifact device identity where the platform provides it; a lexical
 local child hidden under a remote overmount is unproven.
+Linux native locality now also binds every no-follow held path to the selected
+kernel mount ID. Btrfs reports a per-subvolume anonymous `st_dev`, which can
+legitimately differ from mountinfo's superblock device; only matching kernel
+mount identity and Btrfs `fstatfs` evidence justify that difference. Native volume
+identity includes the observed device to distinguish nested subvolumes. Named
+components and mount tables are rechecked; unavailable/changed evidence refuses.
+Other filesystem device mismatches remain unproven.
+
+Issue #53 targets native Fedora retention. Its locality correction does not
+authorize Linux mutation: held dirfds plus rename/unlink still allow same-UID
+name substitution after proof. The current destructive gate remains intact until
+an enforceable storage isolation/ownership architecture can meet the full
+contract. An independent fresh-context retention review is required before #51
+can resume on Fedora. Returning to Windows is not the resolution. See
+[ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
 
 Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
 24 ASCII letters, digits, underscores, or internal periods. List order is

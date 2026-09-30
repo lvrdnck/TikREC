@@ -60,11 +60,12 @@ def local_volume(path: Path, *, platform_name: str | None = None,
         except (OSError, AttributeError, ValueError):
             return None
     if platform_name.startswith("linux"):
+        native = linux_mountinfo is None and isinstance(path, Path)
         if linux_mountinfo is None:
             try:
-                with Path("/proc/self/mountinfo").open(encoding="utf-8") as handle:
-                    linux_mountinfo = handle.read(1_000_001)
-            except OSError:
+                from .retention_linux_locality import read_mountinfo
+                linux_mountinfo = read_mountinfo()
+            except (OSError, ValueError):
                 return None
         if len(linux_mountinfo) > 1_000_000:
             return None
@@ -85,7 +86,13 @@ def local_volume(path: Path, *, platform_name: str | None = None,
             mounts.append(_LinuxMount(fields[0], fields[1],
                                       tuple(map(int, fields[2].split(":"))),
                                       PurePosixPath(point), detail[0]))
-        return _linux_volume(path, mounts, actual_device)
+        evidence = None
+        if native:
+            from .retention_linux_locality import linux_path_evidence
+            evidence = linux_path_evidence(path, linux_mountinfo)
+            if evidence is None:
+                return None
+        return _linux_volume(path, mounts, actual_device, evidence=evidence)
     if platform_name == "darwin":
         if mac_mounts is None:
             try:
@@ -124,7 +131,7 @@ def _selected_volume(path: Path, mounts: list[tuple[str, str, str]],
 
 
 def _linux_volume(path: Path, mounts: list[_LinuxMount],
-                  actual_device: tuple[int, int] | None) -> LocalVolume | None:
+                  actual_device: tuple[int, int] | None, *, evidence=None) -> LocalVolume | None:
     """Require the selected local mount to follow the visible covering ancestry."""
     target = PurePosixPath(str(path))
     matching = [mount for mount in mounts
@@ -156,6 +163,15 @@ def _linux_volume(path: Path, mounts: list[_LinuxMount],
     if any(mount.ident != selected[0].ident and mount.ident not in ancestors
            for mount in matching):
         return None
+    if evidence is not None:
+        if (evidence.mount_id != selected[0].ident
+                or actual_device is not None and actual_device != evidence.device):
+            return None
+        from .retention_linux_locality import BTRFS_SUPER_MAGIC
+        if (selected[0].kind == "btrfs"
+                and evidence.filesystem_type != BTRFS_SUPER_MAGIC):
+            return None
+        actual_device = evidence.device
     if actual_device is None and sys.platform.startswith("linux") and isinstance(path, Path):
         try:
             actual = path.stat().st_dev
@@ -163,5 +179,15 @@ def _linux_volume(path: Path, mounts: list[_LinuxMount],
         except (OSError, ValueError):
             return None
     if actual_device is not None and selected[0].device != actual_device:
-        return None
-    return LocalVolume("linux", str(selected[0].point), selected[0].ident)
+        from .retention_linux_locality import BTRFS_SUPER_MAGIC
+        # Btrfs getattr exposes a per-subvolume anonymous device, whereas
+        # mountinfo uses the superblock device. Only held kernel mount/type
+        # evidence can justify that difference; the filesystem label cannot.
+        if (selected[0].kind != "btrfs" or evidence is None
+                or evidence.filesystem_type != BTRFS_SUPER_MAGIC):
+            return None
+    identity = selected[0].ident
+    if evidence is not None:
+        # Bind nested Btrfs subvolumes independently even inside one mount.
+        identity += f":{actual_device[0]}:{actual_device[1]}"
+    return LocalVolume("linux", str(selected[0].point), identity)

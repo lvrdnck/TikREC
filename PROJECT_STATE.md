@@ -7,6 +7,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #53 active; Fedora locality fixed, destructive architecture blocked
+  (2026-10-01):** Fedora remains the target runtime; returning to Windows is not
+  the resolution. Btrfs subvolume `st_dev` differs from mountinfo's superblock
+  device. No-follow descriptor mount/type evidence now proves the configured
+  root conservatively; the public age-unset plan exits 0 with no sessions.
+  Native disposable tests demonstrate that held descriptors and advisory locks
+  cannot make name-based rename/unlink conditional on the authorized object in
+  the current owner-writable namespace. Linux deletion remains refused; Windows
+  behavior is unchanged. See [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
+  **Remaining:** independent fresh-context retention review and an owner decision
+  on enforceable Linux storage ownership/isolation before a destructive backend.
+  No broker or ownership migration was implemented. #53 stays open as the single
+  active blocker; #51 remains paused / NOT PASSED and its deletion allowance is
+  unused. No age-policy change, real-media deletion, or service restart occurred.
+  Full isolated-config offline suite: 1,552 passed, 278 skipped, 19 passed subtests.
+  Unrelated Fedora work remains uncommitted; no other roadmap task was started.
+
 - **Issue #51 Fedora resume stopped at public-plan refusal (2026-10-01):**
   The configured root is now `/home/leandro/Videos/TikREC`, an empty Fedora root,
   rather than the original Windows validation root. Matching snapshots five
