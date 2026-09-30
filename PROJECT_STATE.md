@@ -7,6 +7,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #51 owner unblock approved (2026-09-30):** The owner approved
+  preserving/segregating only the six manifestless `test*.parts` evidence sets
+  (including any same-stem sibling MP4s) to a dedicated archive outside
+  `C:\Users\Leandro\Videos`, with before/after metadata and hashes, and approved a
+  temporary `retention_max_age_days=1` solely for this validation. All Gracie
+  recordings are categorically excluded, along with active/job-linked,
+  raw-copy/forensic/diagnostic, ambiguous, or protected sessions. After a fresh
+  public plan, at most one clearly safe non-Gracie ordinary session may be
+  deleted under the existing #51 authorization. No second deletion is authorized.
+  Restore the age rule to its prior unset state after the validation attempt unless
+  an incomplete/uncertain result makes any further mutation unsafe, in which case
+  stop and preserve evidence. #51 is the single active task; v0.11.0 remains
+  unreleased.
+
 - **Issue #51 read-only root-conflict investigation complete (2026-09-30):**
   A stable snapshot now contains 53 immediate `.parts` directories. Six
   `test.parts`/`test2.parts`–`test6.parts` lack `session.json`; their claims are
