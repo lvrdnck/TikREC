@@ -7,10 +7,35 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #51 real-media retention validation BLOCKED without deletion
-  (2026-09-30):** The public `retention plan --json` completed twice against the
-  configured `C:\Users\Leandro\Videos` root. `retention_max_age_days` is unset,
-  and all 52 immediate sessions are `needs_attention` / `evidence_conflict`;
+- **Issue #51 read-only root-conflict investigation complete (2026-09-30):**
+  A stable snapshot now contains 53 immediate `.parts` directories. Six
+  `test.parts`/`test2.parts`–`test6.parts` lack `session.json`; their claims are
+  uncertain, and `retention_plan.py` deliberately promotes any uncertain
+  claimant to root-wide `evidence_conflict`. No duplicate known UUID, lexical
+  output, or physical output was observed; no claimant directory or known output
+  was a reparse point. Before that override, 16 current completed sessions
+  classify `retained` (age rule disabled), 27
+  older/legacy sessions classify `ineligible` (creator absent; 18 completed,
+  six interrupted, three failed), and 10 classify individually
+  `needs_attention`: the six manifestless directories, three raw-copy
+  diagnostic sessions with extra evidence, and one active Eliss writer partial.
+  The public plan confirms all 53 display `evidence_conflict`.
+  This is intended fail-closed behavior, not a demonstrated planner defect.
+  No media, configuration, policy, service, or production code changed.
+  **State:** investigation complete; #51 real-media validation remains blocked
+  and its CLI review gate remains PASSED. The owner must choose how to preserve
+  and segregate the six manifestless directories (or identify an existing clean
+  recording root) and separately choose an age rule. No in-place subset filter
+  exists; no clean direct-child root was found under `Videos`. Then rerun the
+  public plan, exclude the active/job-linked/diagnostic/forensic sessions, and
+  consider one already-eligible ordinary session. #30, #48, #49, #28, #13, and
+  #8 remain outside #51; v0.10.0 is released and v0.11.0 unreleased.
+
+- **Prior #51 validation checkpoint — BLOCKED without deletion
+  (2026-09-30; superseded by the investigation above):** The public
+  `retention plan --json` completed twice against the configured
+  `C:\Users\Leandro\Videos` root. `retention_max_age_days` was unset, and all
+  52 immediate sessions were `needs_attention` / `evidence_conflict`;
   there is no already-`eligible` candidate. The service was reachable with
   `active_count=0` and two available slots; both durable jobs reference completed
   Gracie sessions. No delete command, audit operation, policy change, service

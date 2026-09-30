@@ -3,11 +3,17 @@
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
 VALIDATION BLOCKED ON ELIGIBILITY.**
 The 2026-09-30 issue #51 read-only attempt used the normal public plan against
-the configured Windows root. The age rule was disabled, and all 52 immediate
-sessions were `needs_attention` / `evidence_conflict`, so no session was already
-`eligible`. No deletion was attempted. Real-media validation is NOT PASSED;
-the planner conflict needs read-only investigation and any age-policy change
-needs owner direction before one candidate can be reconsidered.
+the configured Windows root. It initially found 52 immediate sessions with
+`needs_attention` / `evidence_conflict`; a later snapshot found 53 after a new
+Eliss recording began. Six manifestless `test*.parts` directories make root
+claims uncertain, which intentionally promotes every immediate session to
+`evidence_conflict` regardless of its individual classification. A separate
+read-only pass found 16 current completed sessions otherwise `retained` by the
+disabled age rule, 27 older/legacy sessions `ineligible` because creator
+identity is absent, and four other individually conflicting sessions (three
+raw-copy diagnostics and an active writer partial). No deletion was attempted. Real-media
+validation is NOT PASSED; safe segregation or a clean existing root and any
+age-policy change need owner direction before one candidate can be reconsidered.
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent

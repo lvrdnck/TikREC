@@ -1293,7 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
-**Issue #51 real-media validation blocked without deletion (2026-09-30):**
+**Issue #51 root-conflict cause identified (2026-09-30):** Six manifestless
+`test*.parts` directories in the mixed recording root create uncertain claims;
+the planner intentionally marks all immediate sessions `evidence_conflict` to
+avoid deleting across an unknown UUID/output claim. A read-only per-session
+pass also found 16 current completed sessions retained by the disabled age
+rule, 27 older/legacy sessions ineligible because creator identity is absent,
+three raw-copy diagnostic sessions with extra evidence, and one active writer
+partial. No planner defect was demonstrated and no media changed. Real-media
+validation remains blocked under #51 pending owner direction on preserving and
+segregating the manifestless directories (or an existing clean root) and on
+the age rule; the public CLI review gate remains PASSED. v0.11.0 is unreleased.
+
+**Prior #51 real-media validation checkpoint (2026-09-30):**
 The configured root's public retention plan returned no eligible session:
 `retention_max_age_days` is disabled and all 52 immediate sessions reported
 `needs_attention` / `evidence_conflict`. No deletion, service restart, or policy
