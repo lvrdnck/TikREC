@@ -1293,6 +1293,16 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #51 real-media validation blocked without deletion (2026-09-30):**
+The configured root's public retention plan returned no eligible session:
+`retention_max_age_days` is disabled and all 52 immediate sessions reported
+`needs_attention` / `evidence_conflict`. No deletion, service restart, or policy
+change was attempted. The public CLI review gate remains PASSED; the real-media
+gate is NOT PASSED. Keep #51 as the single blocked task. Investigate the
+planner conflict read-only, then obtain owner direction before any age-policy
+change and repeat candidate discovery. v0.10.0 remains released and v0.11.0
+unreleased.
+
 **Fresh independent public retention CLI gate PASSED (2026-09-29;
 reviewed `f3dd917`):** Full source, history, and fault-result review found no
 blocker after corrections #39–#50. Six new disposable Windows fault probes

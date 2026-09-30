@@ -1,7 +1,13 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
-**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; SEPARATELY
-AUTHORIZED REAL-MEDIA VALIDATION NEXT.**
+**Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
+VALIDATION BLOCKED ON ELIGIBILITY.**
+The 2026-09-30 issue #51 read-only attempt used the normal public plan against
+the configured Windows root. The age rule was disabled, and all 52 immediate
+sessions were `needs_attention` / `evidence_conflict`, so no session was already
+`eligible`. No deletion was attempted. Real-media validation is NOT PASSED;
+the planner conflict needs read-only investigation and any age-policy change
+needs owner direction before one candidate can be reconsidered.
 Issue #39 corrected the post-append intent reporting gap found in the 2026-09-28
 review. Audit append marks progress immediately after successful intent sync;
 faults after append returns report an after-intent outcome. A new independent
@@ -68,8 +74,8 @@ review passes. Separately authorized real-media validation follows a passing gat
 The NEW independent review of `f3dd917` found no blocker after corrections
 #39–#50. Six fresh disposable Windows fault probes and the native Windows,
 isolated full offline, and applicable WSL/POSIX suites passed. The public CLI
-gate is PASSED; real-media retention deletion has not been performed and needs
-separate authorization.
+gate is PASSED; that review preceded the owner authorization now recorded in
+issue #51. No real-media retention deletion has been performed.
 The local CLI workflow below exists in the development checkout; it is
 not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit

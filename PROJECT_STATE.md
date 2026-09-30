@@ -1,16 +1,32 @@
 # TikREC current state
 
-Last reviewed: 2026-09-29. This is a short handoff record, not a replacement
+Last reviewed: 2026-09-30. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Owner-authorized real-media retention validation active (2026-09-30; issue #51):**
+- **Issue #51 real-media retention validation BLOCKED without deletion
+  (2026-09-30):** The public `retention plan --json` completed twice against the
+  configured `C:\Users\Leandro\Videos` root. `retention_max_age_days` is unset,
+  and all 52 immediate sessions are `needs_attention` / `evidence_conflict`;
+  there is no already-`eligible` candidate. The service was reachable with
+  `active_count=0` and two available slots; both durable jobs reference completed
+  Gracie sessions. No delete command, audit operation, policy change, service
+  restart, or media mutation was attempted. The public CLI gate remains PASSED,
+  but real-media validation is NOT PASSED. #51 remains the single blocked task.
+  **Safe resume:** first investigate the root-wide planner conflict read-only;
+  owner direction is needed before enabling an age rule. Rerun the public plan
+  and reconsider one ordinary candidate only after it is already `eligible`
+  under configured policy. #30, #48, #49, #28, #13, and #8 remain outside this
+  task; v0.10.0 is released and v0.11.0 unreleased.
+
+- **Owner authorization recorded (2026-09-30; issue #51; superseded by the
+  blocked checkpoint above):**
   The public retention CLI gate passed at `7724e21`. The owner has now explicitly
   authorized deletion of exactly one real Windows recording for validation.
-  #51 is the single active task. Candidate selection must exclude active,
+  #51 became the single active task. Candidate selection must exclude active,
   protected, ambiguous, raw-copy, forensic, and issue-linked evidence; do not
   stop/restart the service to force eligibility. Use only the public CLI with
   exact confirmation, never the private executor. On refusal/incomplete/uncertain
