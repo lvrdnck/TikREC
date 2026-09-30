@@ -1,5 +1,57 @@
 # Issue #51 real-media retention validation evidence
 
+## 2026-10-01 Fedora resume checkpoint
+
+**Real-media deletion validation: NOT PASSED. No deletion attempted.**
+The requested `git pull --rebase --autostash` reported already up to date at
+`0cc59ba`. Issue #49 is closed; #51 remains open and paused. Existing Fedora
+portability/workflow changes are unrelated and remain uncommitted.
+
+The current Fedora configuration points to `/home/leandro/Videos/TikREC`, not
+the prior Windows root `C:\Users\Leandro\Videos`. This empty Linux root is
+not evidence that the Windows root's conflict has cleared. Before planning,
+two root snapshots five seconds apart matched (directory identity, mode, size,
+mtime, and child inventory); both service health observations reported zero
+active recordings, two available slots, and no shutdown. Configuration bytes
+were unchanged throughout that idle check.
+
+The normal public `.venv/bin/tikrec retention plan --json` was invoked once
+with `retention_max_age_days` still unset. It exited **1** with:
+
+```text
+tikrec: retention root locality could not be proven
+```
+
+No plan JSON or eligibility result was produced, so root-wide conflict clearance
+was not established. This refusal triggered the stop boundary. No retry,
+locality workaround, policy mutation, candidate selection, deletion command,
+repair, quarantine operation, or media/archive change followed. No deletion
+operation was initiated and the one-session authorization remains unused.
+The root was still empty afterward; configuration still showed age unset.
+Aggregate service status still showed both slots idle, health/storage OK, and
+PID 15870 / invocation `a110217800574d858df22dac886890f8` unchanged from preflight.
+No service stop/restart was performed during this #51 task.
+
+Destructive retention remains Windows-only; the intentional POSIX refusal must
+not be weakened. This result does not establish a production defect or validate
+the original Windows recording root. No implementation or tests were changed.
+The existing Windows archive was not accessed or re-verified; its previously
+recorded preservation result remains historical evidence.
+
+**Safe resume:** use the intended native Windows runtime and recording root when
+naturally idle/stable, without stopping recordings. First run the public plan
+with age unset and require root-wide conflict clearance. Only then reconsider
+the previously approved temporary one-day rule and at most one ordinary eligible
+non-Gracie session satisfying every active/job-linked/raw-copy/forensic/
+diagnostic/ambiguous/protected/evidence exclusion. Preserve the one-attempt,
+exact-confirmation, stop-on-refusal, and restoration boundaries. No other roadmap
+issue is started; v0.11.0 remains unreleased.
+
+No vault location or vault connector was available in this Fedora workspace.
+This repository evidence log and the #51 issue comment preserve the checkpoint;
+copying it into the established vault remains outstanding when that vault is
+accessible. Do not invent a replacement vault or modify the Windows archive.
+
 ## 2026-09-30 authorized segregation checkpoint
 
 **Archive preservation: PASSED. Real-media deletion validation: NOT PASSED.**

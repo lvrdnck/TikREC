@@ -19,6 +19,17 @@ exclusive root lifecycle lease and refuses while a cooperative writer owns it.
 Wait for natural inactivity and a stable fresh plan; do not stop recordings to
 manufacture eligibility.
 
+## 2026-10-01 Fedora validation limit
+
+Issue #51 remains paused and real-media validation is NOT PASSED. The newly
+configured empty Fedora root was naturally idle, but one public age-unset plan
+exited 1: `retention root locality could not be proven`. No retry, workaround,
+policy change, deletion, or service restart followed. The original Windows root
+was not inspected and its conflict clearance is unproven. Destructive retention
+remains Windows-only. The one-session authorization is unused; resume on the
+intended native Windows root only under all existing #51 restrictions. See
+[ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+
 ## Earlier #51 discovery checkpoint
 
 The 2026-09-30 issue #51 read-only attempt used the normal public plan against

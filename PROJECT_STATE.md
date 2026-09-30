@@ -1,11 +1,26 @@
 # TikREC current state
 
-Last reviewed: 2026-09-30. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-01. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
+
+- **Issue #51 Fedora resume stopped at public-plan refusal (2026-10-01):**
+  The configured root is now `/home/leandro/Videos/TikREC`, an empty Fedora root,
+  rather than the original Windows validation root. Matching snapshots five
+  seconds apart and service health showed natural inactivity (both slots idle).
+  One public age-unset `retention plan --json` exited 1: `retention root locality
+  could not be proven`. No root-conflict clearance or candidate was established.
+  No retry, policy mutation, deletion, service restart, or archive/media change
+  occurred. Age remains unset and the one-deletion authorization is unused.
+  #51 remains paused / real-media NOT PASSED. Safe resume requires the intended
+  native Windows root naturally idle/stable, followed by the age-unset public
+  plan and all original exclusions, including every Gracie session. See
+  [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+  Vault synchronization is outstanding because no established vault is available
+  here. No other roadmap task was started; v0.11.0 remains unreleased.
 
 - **Issue #49 comparison complete; #51 still paused (2026-09-30):** The exact
   issue-#28 Gracie room was captured by both recorders, but with different video

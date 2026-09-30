@@ -1293,6 +1293,20 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #51 Fedora public-plan refusal (2026-10-01):** The empty configured
+Linux root `/home/leandro/Videos/TikREC` was naturally idle across matching
+five-second snapshots, with both service slots idle. One age-unset public plan
+exited 1 because root locality could not be proven. Stop boundary honored: no
+retry, age change, deletion, service restart, or archive change. This does not
+validate the original Windows root or clear its recorded evidence conflict.
+Destructive retention remains Windows-only. #51 remains paused / NOT PASSED;
+its one-deletion allowance is unused. Resume only on the intended native Windows
+root when naturally idle/stable, through the approved public CLI procedure and
+all non-Gracie/evidence exclusions. See
+[ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+Vault synchronization remains outstanding until the established vault is
+accessible. No other roadmap task was started; v0.11.0 remains unreleased.
+
 **Temporary #49 forensic comparison complete; #51 paused (2026-09-30):**
 The exact problematic Gracie LIVE was captured by both old/current recorders,
 with different video renditions and an old capture gap covering the reported
