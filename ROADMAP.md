@@ -1293,6 +1293,19 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #51 evidence segregation PASSED; deletion not attempted (2026-09-30):**
+The six approved manifestless evidence sets and three exact sibling MP4s are
+preserved outside the recording root, with all 19 files/806,859,876 bytes verified
+by hashes, sizes, identities, and timestamps. The age-unset public plan still
+reported root-wide conflict while recording evidence changed. A later snapshot
+had no uncertain claims but showed active Eliss/Gracie partials growing. Stop
+before policy/deletion as authorized; configuration remains unchanged and the
+one-deletion allowance is unused. Resume #51 only after natural root inactivity
+and a stable public plan. No owner decision is pending and no production defect
+was demonstrated. Details: [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+The CLI gate remains PASSED; real-media deletion validation is NOT PASSED.
+v0.11.0 remains unreleased.
+
 **Issue #51 root-conflict cause identified (2026-09-30):** Six manifestless
 `test*.parts` directories in the mixed recording root create uncertain claims;
 the planner intentionally marks all immediate sessions `evidence_conflict` to

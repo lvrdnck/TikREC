@@ -1,7 +1,26 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
-VALIDATION BLOCKED ON ELIGIBILITY.**
+VALIDATION WAITING FOR A STABLE IDLE ROOT.**
+Under issue #51's owner approval on 2026-09-30, the six manifestless test evidence
+sets and three matching MP4s were preserved in an external archive with verified
+hashes and metadata. The age-unset public plan still reported root-wide conflict
+while live writer evidence changed. Zero uncertain claims remained afterward,
+but initial/final root snapshots differed as active Eliss/Gracie partials grew.
+The task stopped before setting the age rule or issuing a delete command.
+The one-deletion authorization remains unused and real-media validation is
+NOT PASSED; see [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+
+Whole-root stability is required even for advisory eligibility: changing evidence
+in one immediate claimant can invalidate the complete observation. A growing
+recording may therefore make every session display `evidence_conflict` even
+when all UUID/output claims are readable. Destructive execution also needs an
+exclusive root lifecycle lease and refuses while a cooperative writer owns it.
+Wait for natural inactivity and a stable fresh plan; do not stop recordings to
+manufacture eligibility.
+
+## Earlier #51 discovery checkpoint
+
 The 2026-09-30 issue #51 read-only attempt used the normal public plan against
 the configured Windows root. It initially found 52 immediate sessions with
 `needs_attention` / `evidence_conflict`; a later snapshot found 53 after a new

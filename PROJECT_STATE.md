@@ -7,6 +7,28 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #51 segregation complete; validation awaiting a stable idle root
+  (2026-09-30):** Only the six approved manifestless `test*.parts` directories
+  and existing `test3.mp4`/`test5.mp4`/`test6.mp4` siblings were moved to
+  `C:\Users\Leandro\TikREC-evidence\issue-51-manifestless`. All 19 files
+  (806,859,876 bytes) passed before/after SHA256, size, identity, and timestamp
+  checks; the nine original paths are absent. No Gracie path was moved.
+  The public age-unset plan exited 0 but still marked all 47 remaining sessions
+  `evidence_conflict`, triggering the approved stop boundary. Later read-only
+  snapshots had 48 claims and zero uncertain claims, but differed as the active
+  Eliss and naturally started Gracie writer partials grew. This is expected
+  whole-root stability refusal; active writers also conflict with the exclusive
+  retention lifecycle lease. No age rule was set and no deletion command was
+  issued; configuration bytes are unchanged and the one-deletion authorization
+  remains unused. See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+  **Safe resume:** #51 remains the single active task, awaiting natural root
+  inactivity/stability; no owner action is pending. Leave the archive in place
+  and do not repeat segregation. First rerun the public plan with age unset;
+  only if the root-wide conflict clears may the approved temporary one-day rule
+  and one safe ordinary non-Gracie candidate be reconsidered. Preserve all
+  diagnostic/forensic/job-linked/active media. #30/#48/#49/#28/#13/#8 remain
+  outside this task; v0.11.0 remains unreleased.
+
 - **Issue #51 owner unblock approved (2026-09-30):** The owner approved
   preserving/segregating only the six manifestless `test*.parts` evidence sets
   (including any same-stem sibling MP4s) to a dedicated archive outside
