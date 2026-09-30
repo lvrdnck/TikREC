@@ -91,24 +91,33 @@ automatically produce a better result. If selecting a stronger model or higher
 effort than the obvious baseline, state the specific complexity or risk that
 justifies it.
 
-Practical model-and-effort ladder:
+Practical model-and-effort ladder for the current Codex picker:
 
    | Model and effort | Suitable work |
    | --- | --- |
-   | GPT-6 Luna - Low | Tiny mechanical edits and formatting |
-   | GPT-6 Luna - Medium | Straightforward documentation, repetitive maintenance, and narrow deterministic cleanup |
-   | GPT-6.1 Sol - Low | Obvious localized low-risk code work and small contained fixes |
-   | GPT-6.1 Sol - Medium | Default for normal TikREC features and ordinary multi-file implementation |
+   | GPT-6 Luna - Low | Tiny mechanical edits, formatting, and trivial deterministic changes |
+   | GPT-6 Luna - Medium | Straightforward documentation, repetitive maintenance, and bounded low-risk cleanup |
+   | GPT-6.1 Sol - Low | Localized low-risk code work and small contained fixes |
+   | GPT-6.1 Sol - Medium | Default for normal TikREC feature development and ordinary multi-file implementation |
    | GPT-6.1 Sol - High | Difficult debugging, cross-cutting changes, concurrency/recovery state machines, codec/media work, and important independent reviews |
-   | GPT-6 Astra - Low/Medium | Only when GPT-6.1 Sol High is materially insufficient, previous strong-model work failed, or the evidence/architecture is exceptionally difficult |
-   | GPT-6 Astra - High | Reserve for repeated strong-model failure, contradictory evidence with severe correctness risk, or exceptional architecture decisions |
+   | GPT-6 Astra - Medium | Exceptional work where model capability matters more than routine efficiency, including architecture-sensitive investigation after Sol High is not comfortably sufficient |
+   | GPT-6 Astra - High | Repeated strong-model failure, contradictory evidence with severe correctness risk, or exceptionally difficult architecture/debugging work |
 
-GPT-6.1 Sol supersedes GPT-6 Sol for normal TikREC model gating. Use GPT-6 Sol
-at the same reasoning level only as a fallback when GPT-6.1 Sol is not available
-in the current Codex model picker. Reasoning levels above High (for example
-XHigh, Max, or a product surface that labels maximum reasoning as Ultra) are
-escalation-only: use them only after a failed High-effort attempt or when
-ChatGPT explicitly recommends the escalation for exceptional correctness risk.
+Always name an exact model and reasoning effort in the MODEL GATE. Do not
+recommend Codex `Default` for TikREC tasks because it does not make the chosen
+model/effort explicit and reproducible.
+
+GPT-6.1 Sol is the primary TikREC engineering model and supersedes GPT-6 Sol in
+normal gating. GPT-6 Sol remains an older compatibility option only; do not
+choose it when GPT-6.1 Sol is available. GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6
+Luna, and GPT-5.5 are legacy fallback options only and should not be selected for
+new TikREC work unless current-model access is unavailable for an unusual reason.
+
+Reasoning above High (for example XHigh or Max when exposed by the selected
+model) is escalation-only. Prefer moving from GPT-6.1 Sol High to GPT-6 Astra
+Medium/High when the problem is capability-limited; use XHigh/Max only after a
+failed strong-model attempt or when ChatGPT explicitly identifies exceptional
+correctness risk that justifies the extra reasoning budget.
 
 Do not select a stronger model merely because it is available. If the current
 model and reasoning setting are reliably visible, compare them with the
