@@ -7,6 +7,18 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Owner-authorized real-media retention validation active (2026-09-30; issue #51):**
+  The public retention CLI gate passed at `7724e21`. The owner has now explicitly
+  authorized deletion of exactly one real Windows recording for validation.
+  #51 is the single active task. Candidate selection must exclude active,
+  protected, ambiguous, raw-copy, forensic, and issue-linked evidence; do not
+  stop/restart the service to force eligibility. Use only the public CLI with
+  exact confirmation, never the private executor. On refusal/incomplete/uncertain
+  result, stop with no retry, repair, manual cleanup, or second deletion. On
+  proven COMPLETE/0, verify audit order, exact filesystem scope, fresh plan, and
+  unaffected service ownership. #30, #48, #49, #28, #13, and #8 remain queued or
+  non-blocking outside this task. v0.11.0 remains unreleased.
+
 - **Fresh independent public retention CLI gate PASSED (2026-09-29;
   reviewed `f3dd917`):** Rechecked the full preview, consent, authorization,
   audit, lifecycle, policy, held-artifact, and result paths against corrections
