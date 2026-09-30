@@ -7,6 +7,16 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #49 temporarily active; #51 paused on external idle-root condition (2026-09-30):**
+  #51 remains authorized but paused while the recording root is naturally active;
+  its one-deletion allowance is unused, the age rule is unset, and its preserved
+  evidence archive stays in place. #49 is now the single active task: perform a
+  read-only forensic comparison of the same Gracie LIVE recorded by old local
+  TikREC (`C:\Users\Leandro\Desktop\antigravity\TikREC`) and current TikREC
+  (`C:\Users\Leandro\Videos`) to test the battle/resolution-transition corruption
+  hypothesis. No production fix or media mutation is authorized. Resume #51 only
+  after #49 completes and the root is naturally idle/stable.
+
 - **Issue #51 segregation complete; validation awaiting a stable idle root
   (2026-09-30):** Only the six approved manifestless `test*.parts` directories
   and existing `test3.mp4`/`test5.mp4`/`test6.mp4` siblings were moved to
