@@ -96,12 +96,19 @@ Practical model-and-effort ladder:
    | Model and effort | Suitable work |
    | --- | --- |
    | GPT-6 Luna - Low | Tiny mechanical edits and formatting |
-   | GPT-6 Luna - Medium | Straightforward documentation and repetitive maintenance |
-   | GPT-6 Sol - Low | Obvious localized low-risk code work |
-   | GPT-6 Sol - Medium | Normal TikREC features and ordinary multi-file work |
-   | GPT-6 Sol - High | Difficult debugging, cross-cutting changes, concurrency/recovery state machines, codec/media work, and important reviews |
-   | GPT-6 Astra - Low/Medium | Only when Sol High is materially insufficient, previous strong-model work failed, or evidence/architecture is exceptionally difficult |
+   | GPT-6 Luna - Medium | Straightforward documentation, repetitive maintenance, and narrow deterministic cleanup |
+   | GPT-6.1 Sol - Low | Obvious localized low-risk code work and small contained fixes |
+   | GPT-6.1 Sol - Medium | Default for normal TikREC features and ordinary multi-file implementation |
+   | GPT-6.1 Sol - High | Difficult debugging, cross-cutting changes, concurrency/recovery state machines, codec/media work, and important independent reviews |
+   | GPT-6 Astra - Low/Medium | Only when GPT-6.1 Sol High is materially insufficient, previous strong-model work failed, or the evidence/architecture is exceptionally difficult |
    | GPT-6 Astra - High | Reserve for repeated strong-model failure, contradictory evidence with severe correctness risk, or exceptional architecture decisions |
+
+GPT-6.1 Sol supersedes GPT-6 Sol for normal TikREC model gating. Use GPT-6 Sol
+at the same reasoning level only as a fallback when GPT-6.1 Sol is not available
+in the current Codex model picker. Reasoning levels above High (for example
+XHigh, Max, or a product surface that labels maximum reasoning as Ultra) are
+escalation-only: use them only after a failed High-effort attempt or when
+ChatGPT explicitly recommends the escalation for exceptional correctness risk.
 
 Do not select a stronger model merely because it is available. If the current
 model and reasoning setting are reliably visible, compare them with the
