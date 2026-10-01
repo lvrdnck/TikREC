@@ -2,17 +2,32 @@
 
 Windows is the sole active and planned runtime. The owner's 2026-10-01 decision
 supersedes #53/#54; their unreleased Fedora/Linux additions are removed and no
-Fedora gate remains. #51 is again the single active/next task on Windows, with
-the age policy unset and the one-real-deletion authorization unused. Begin with
-the public age-unset plan only after natural root inactivity/stability. All
+Fedora gate remains. #51 remains the single active Windows task, with age unset
+again and its single-deletion attempt consumed. Its latest full validation is
+NOT PASSED pending read-only reconciliation of a later unrelated root change;
+no retry or second deletion is authorized. All
 Gracie, forensic, diagnostic, raw-copy, protected, ambiguous, active/recoverable
-and durable-job-linked sessions remain excluded. This rollback performs no #51
+and durable-job-linked sessions remain excluded. The platform rollback performed no #51
 deletion. Earlier dated evidence below describes prior validation attempts.
 
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
-VALIDATION WAITING FOR A STABLE IDLE ROOT.**
+VALIDATION NOT PASSED; POST-DELETE ROOT CHANGE NEEDS RECONCILIATION.**
 
-Latest Windows #51 check (2026-10-01, 20:22–20:23 CEST): configuration selects
+Latest Windows #51 check (2026-10-01, 21:05–21:24 CEST): the naturally idle root
+cleared the public age-unset plan. The approved temporary age-1 rule allowed one
+ordinary non-Gracie Eliss deletion through the exact-confirmation public CLI.
+It returned COMPLETE/0 with a 12-event durable audit, final MP4 last, and exact
+immediate scope verification. During the later public plan, an unrelated Gracie
+output disappeared from the root; all 48 remaining sessions then reported
+`evidence_conflict`. Its source/destination/actor is unproven; no repair was
+attempted. The deleted target is absent, but full validation remains NOT PASSED.
+Age was restored to unset through the normal public config command after proven
+completion. Service ownership and durable jobs remain unchanged. The attempt
+allowance is consumed; safe next work is read-only reconciliation, never another
+delete under the existing authorization. Details and hashes:
+[ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+
+Earlier Windows #51 check (2026-10-01, 20:22–20:23 CEST): configuration selects
 `C:\Users\Leandro\Videos` with age unset. An active Gracie writer makes the
 five-second root observations differ; the one public `retention plan --json`
 exits 0 with all 49 sessions `needs_attention / evidence_conflict`. This is a
@@ -122,7 +137,8 @@ The NEW independent review of `f3dd917` found no blocker after corrections
 #39–#50. Six fresh disposable Windows fault probes and the native Windows,
 isolated full offline, and applicable WSL/POSIX suites passed. The public CLI
 gate is PASSED; that review preceded the owner authorization now recorded in
-issue #51. No real-media retention deletion has been performed.
+issue #51. No real-media retention deletion occurred in that review; the later
+#51 attempt and its verification limitation are recorded above.
 The local CLI workflow below exists in the development checkout; it is
 not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit

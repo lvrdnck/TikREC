@@ -7,6 +7,39 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #51 deletion COMPLETE; full validation NOT PASSED (2026-10-01,
+  21:05–21:24 CEST):** Fresh native Windows checks found both slots naturally
+  idle, completed durable jobs and matching five-second root snapshots. The
+  public age-unset plan cleared the root-wide conflict (19 retained, 27
+  ineligible, three excluded raw diagnostics). The approved public temporary
+  age-1 update and fresh plan allowed one ordinary Eliss candidate,
+  `044cc8c0-9be6-4da6-8d0d-fef8e85dbf79`, the smallest safe non-Gracie session
+  (four files / 196,673,543 bytes). One exact-confirmation public delete returned
+  **COMPLETE/0**, operation `29d6d5a2-34cc-4420-91cf-324b29ba8cec`.
+  Its 12-event durable audit proves retained FLV, connection log, manifest,
+  empty parts directory, then final MP4 removal, ending `completed`.
+  Immediate verification found exactly those five paths removed and all 753
+  other observed entries unchanged, with both jobs/service ownership unaffected.
+  During the subsequent public plan, however, unrelated
+  `gracie.kf-20261001-201956.mp4` disappeared from the root. That plan exits 0
+  with 48 root-wide conflicts and no deleted target. Final preservation also
+  observes changed `Unsorted` directory metadata. No attribution, move or
+  destruction of that Gracie media is inferred; its path was present at the
+  immediate post-delete verification and is outside the retention operation.
+  **State:** #51 remains open, single active, waiting for separate read-only
+  reconciliation of the later root change; the complete validation is NOT PASSED.
+  No defect is proven, no retry/repair/second deletion is authorized, and the
+  **single-attempt allowance is consumed**. Age was safely restored through the
+  public config path after proven completion, byte-for-byte to this resume's
+  original SHA256 `2ac169bd603d6675b87ac9b9f875699d6f1872536354f393cc12d3bf6081dfa1`.
+  Service PID 37772/creation time and both completed jobs remain unchanged;
+  no stop/restart, production-code change, archive segregation or release work.
+  Evidence, exact limitations and safe resume are in
+  [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+  No owner action is needed for the read-only reconciliation; any further
+  destructive validation would require new explicit owner authorization.
+  Older checkpoints below retain their historical unused-allowance status.
+
 - **Issue #51 Windows resume NOT PASSED (2026-10-01, 20:22–20:23 CEST):**
   The public configuration confirms `C:\Users\Leandro\Videos` and age unset;
   configuration SHA256 remains `02e4b5fe9fcb106d3c6b593ec7c596fc5e7eaa09976bbed33d0befc721ece507`.

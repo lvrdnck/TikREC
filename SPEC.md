@@ -6,8 +6,12 @@ Windows is the sole active and planned recording/service runtime under the
 owner's 2026-10-01 platform decision. The unreleased Fedora/Linux managed-storage
 and Btrfs detour is removed; #53/#54 are superseded with no pending Fedora gate.
 Existing portable helpers retain their pre-detour behavior. Windows retention
-and lifecycle code matches `0cc59bac`; #51 remains the next real-media gate,
-with age unset, one deletion maximum and all recorded evidence exclusions.
+and lifecycle code matches `0cc59bac`. #51's one authorized real deletion
+returned COMPLETE/0 with the expected audit and immediate scope verification;
+its attempt allowance is consumed and age is restored to unset. Full validation
+is NOT PASSED pending read-only reconciliation of a later unrelated root change.
+All recorded evidence exclusions remain; no retry or second deletion is authorized.
+See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 
 Record public TikTok LIVE streams to disk reliably and completely. Local commands
 remain one recording per invocation; the persistent service has a fixed two-job

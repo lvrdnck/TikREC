@@ -1,5 +1,162 @@
 # Issue #51 real-media retention validation evidence
 
+## 2026-10-01 Windows single deletion and later root-change checkpoint
+
+**Deletion: proven COMPLETE/0. Full #51 validation: NOT PASSED.**
+**The one-attempt allowance is consumed; no retry or second deletion is authorized.**
+Source was synchronized by `git pull --rebase --autostash` at `014f997`.
+Native Windows/Python 3.12.10 used the normal `.venv\Scripts\tikrec.exe`.
+No production code or tests changed, no service stop/restart/deployment occurred,
+and no other roadmap issue, release or tag work started.
+
+### Natural inactivity and admission
+
+Public configuration confirmed `C:\Users\Leandro\Videos` and unset age.
+At 21:05:39.474 and 21:05:44.677 CEST, both service slots were naturally idle,
+health/storage OK, no shutdown/recovery pending, and both durable jobs completed
+with finalization complete. Slot 1 retained Gracie
+`ffcc2566-2085-4faa-940e-2bc177b5288c`; slot 2 retained Gracie
+`05f3e981-b713-403c-9bef-198282ec5766`. Neither was a deletion candidate.
+Root snapshots matched, with 49 claims, zero uncertain claimants and no partials.
+The public age-unset plan (21:06:13.192–21:07:06.232) exited 0, empty stderr:
+19 retained (`retention_disabled`), 27 ineligible (`creator_unknown`), and only
+three known raw diagnostic sessions with individual `evidence_conflict`.
+The root-wide conflict had cleared; those three diagnostics stayed excluded.
+
+The approved public `config set retention-max-age-days 1` exited 0 at
+21:07:42.950. A fresh public plan (21:07:42.956–21:08:29.052) exited 0 and
+showed six eligible ordinary Eliss sessions. Every Gracie was excluded regardless
+of its classification, as were legacy/unknown, raw-copy, forensic, diagnostic,
+protected, active/recoverable, ambiguous and job/evidence-linked sessions.
+
+### Exact selected evidence
+
+Selected the smallest of the six eligible non-Gracie recordings to minimize
+validation impact (end time breaks size ties). Older alternatives were larger.
+No exact UUID/stem reference appeared in repository documentation/implementation
+or issue #8/#13/#28/#48/#49/#52 bodies/comments. Its artifact inventory was ordinary
+completed capture, without raw, forensic, diagnostic or recovery evidence;
+neither durable job referenced its UUID or paths. Service was still idle.
+
+- UUID: `044cc8c0-9be6-4da6-8d0d-fef8e85dbf79`; creator: `eliss4r.n`.
+- End: `1790661733.390538` / `2026-09-29T06:02:13.390538Z`.
+- Final MP4: `C:\Users\Leandro\Videos\eliss4r.n-20260929-074924.mp4`.
+- Parts: `C:\Users\Leandro\Videos\eliss4r.n-20260929-074924.parts`.
+- Classification: `eligible / age_threshold_reached`, unprotected.
+- Four regular files: final 98,273,270 bytes; retained 98,400,273 bytes;
+  total **196,673,543 bytes**, one FLV.
+- Manifest: schema 1, `tiktok_live`, room `7690829544403864333`, matching UUID,
+  creator/output/parts/end, completed capture/finalization, no error/interruption
+  or recovery. Full manifest plus identities/modes/sizes/timestamps/link counts,
+  attributes and four SHA256 values were preserved before invocation.
+
+| File | Bytes | SHA256 |
+| --- | ---: | --- |
+| Final MP4 | 98,273,270 | `16472ea65e28996c3b6e7f5f7483dbc826d7fbdae55ac3a34560f4f6d939f9e5` |
+| `part-0001.flv` | 98,397,652 | `d9b0993b251186eb6154b42f690bf7307cc140a59f17abc11bb4faf0fc0af04b` |
+| `connections.jsonl` | 1,619 | `393a9418a91b9e2499e34b37dad5d328b70717b1253dc0324ce62bd459870cb2` |
+| `session.json` | 1,002 | `7e5bf5a1b91b251ea0a42be19f7aa90be87234394e53aa2221edaad0726737e4` |
+
+### Single public attempt and immediate verification
+
+Exactly one invocation ran at **21:10:47.162–21:20:26.715 CEST**:
+
+```text
+tikrec retention delete 044cc8c0-9be6-4da6-8d0d-fef8e85dbf79 --confirm 044cc8c0-9be6-4da6-8d0d-fef8e85dbf79
+```
+
+No private executor call or bypass occurred. The command displayed its normal
+preview, returned **COMPLETE/0**, empty stderr, operation
+`29d6d5a2-34cc-4420-91cf-324b29ba8cec`. The long duration includes public
+whole-root byte binding; the observed inventory had about 78 GB of regular files.
+No interruption, failure, uncertainty, retry or second attempt occurred.
+
+Audit path:
+`%LOCALAPPDATA%\TikREC\retention-audit\d07cc58e2ea6cb6def5786ab70847a39ef0e205bdb7775a9304fff3175dbf331.jsonl`.
+It was absent before invocation. It now has exactly **12 events**, one operation:
+`intent`, five exact `attempt`/`deleted` pairs, then `completed` with count 5.
+The pairs are ordered:
+
+1. `eliss4r.n-20260929-074924.parts\part-0001.flv`
+2. `eliss4r.n-20260929-074924.parts\connections.jsonl`
+3. `eliss4r.n-20260929-074924.parts\session.json`
+4. Empty `eliss4r.n-20260929-074924.parts`
+5. **Final MP4 last:** `eliss4r.n-20260929-074924.mp4`
+
+The intent's artifact hashes match all four pre-delete hashes. No other target,
+failed event or incomplete operation appears. CLI COMPLETE/0 proves the completed
+sync callback was reached; read-back audit ends in `completed`. No power-loss
+test was performed against real media.
+
+At 21:21:41.729, immediate filesystem verification found exactly those five
+paths gone, no new entries, and all **753 unrelated observed entries unchanged**.
+Comparison covered immediate root entries and each session subtree by identity,
+size, mode, timestamps, links and attributes, plus SHA256 of session/connection
+controls. Unrelated media were not rehashed. Remaining 48 claims matched the
+pre-delete claims minus this target. Both jobs/slot identities were unchanged;
+service remained idle and healthy. The latest Gracie MP4 still existed then.
+
+### Later verification limitation and stop
+
+The fresh post-delete public plan ran **21:21:41.739–21:22:28.568**, exited 0
+with empty stderr, and no longer presented the deleted UUID. However, all
+48 sessions were `needs_attention / evidence_conflict`. At 21:22:57.092 the
+root stamp differed, and the only changed session claim was latest Gracie:
+its `gracie.kf-20261001-201956.mp4` output stamp/physical identity changed from
+present to absent. Its parts/control evidence was unchanged. At 21:24:47.670,
+final inventory comparison against immediate verification still found only
+that unrelated MP4 path missing, plus changed `C:\Users\Leandro\Videos\Unsorted`
+directory metadata; no added immediate entry. Both jobs and service slots stayed
+completed, healthy and available. PID 37772 / creation 11:35:56.463 CEST persisted.
+
+This later namespace change is **not attributed** to a process or classified as
+a move/deletion. No archive/destination search or repair was attempted. The
+retention audit contains only the exact Eliss operation and remained byte-for-byte
+unchanged. Initial exact-scope verification passed, but continued unrelated-media
+stability is not established; an unconditional full-validation PASS is withheld.
+No production defect is demonstrated. Stop and preserve; do not retry, repair,
+clean quarantine, manually delete, alter Gracie or start another roadmap task.
+
+Because retention mutation itself was proven complete, with no incomplete or
+uncertain removal, the documented public policy restoration was safe:
+`tikrec config unset retention-max-age-days` exited 0 at **21:23:38.786**.
+Age is unset/disabled again. Configuration SHA256 exactly matches this resume's
+original bytes: `2ac169bd603d6675b87ac9b9f875699d6f1872536354f393cc12d3bf6081dfa1`.
+This differs from the earlier 20:22 checkpoint; current settings were read fresh
+and unrelated owner configuration was preserved. Original manifestless evidence
+archive remains in place; segregation was not repeated and its media was not opened.
+
+**Safe resume:** #51 remains open/single active for a bounded read-only
+reconciliation of the later Gracie output/`Unsorted` namespace change and its
+effect on the verification gate. Preserve the completed operation and all
+evidence. The old authorization is consumed; neither another deletion nor a
+retry is allowed. Any new destructive validation requires new explicit owner
+authorization. No owner decision is needed to inspect the existing evidence.
+No production fix belongs in this validation session. v0.11.0 remains unreleased.
+
+### Evidence storage and checks
+
+Metadata only (no media copies) is in
+`C:\Users\Leandro\TikREC-evidence\issue-51-windows-resume-20261001-210539-3c037abb`.
+`evidence-sha256.json` lists 29 preserved files; its SHA256 is
+`44372d94e2eacf989921c114edb8fa8694721f0d93f324c20a289b80cd22f395`.
+Key checksums:
+
+| Evidence | SHA256 |
+| --- | --- |
+| `candidate-pre-delete.json` | `04c359b780aede8ede081118e0d994bfdb216059210f869e27dd161f460a9159` |
+| `deletion-outcome.json` | `7b191392b192241cfdbe25ac19d78464125d92c17559a472e246ba25e428f127` |
+| `audit-copy.jsonl` | `b719586ef87e503c0e344cf7f1fe63fc8a73e61685da3b43a1acece00e641996` |
+| `post-delete-verification.json` | `19b5c08758390e46a1d0a0cc36363821b2f592c6c76f2a437ca7adcaf7b85a34` |
+| `public-plan-post-delete-outcome.json` | `003fcac19b96e59071727b25e766ae747245df90817d077d233de4e065a6e43c` |
+| `policy-restored.json` | `1e40d2af06e41b90d809e4f3e92b84bfb0f9c4bfc45b588b1efc27f1feaaa94f` |
+| `final-read-only-checkpoint.json` | `49377497b3fc7a5849f669da995ca98a20da1f90439d945b0057bad7dba74f15` |
+
+Runtime checks, three normal public plans, one public deletion, public policy
+set/unset, exact audit progression/hash comparisons and filesystem scope checks
+were run as described. Offline tests were not rerun: no implementation changed,
+and the later verification conflict triggered the preservation stop boundary.
+
 ## 2026-10-01 Windows public-plan stop checkpoint
 
 **Real-media deletion validation: NOT PASSED. No deletion attempted.**

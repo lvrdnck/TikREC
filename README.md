@@ -5,8 +5,12 @@ A command-line recorder and small remote-control service for public TikTok LIVE 
 Windows is the sole active and planned recording/service runtime. The owner
 ended the unreleased Fedora/Linux detour on 2026-10-01; #53/#54 are superseded
 and no Fedora deployment gate remains. Pre-existing portable helpers and remote
-clients remain available. #51 is the next Windows retention validation task;
-v0.11.0 is unreleased and its one-real-deletion authorization remains unused.
+clients remain available. #51's single authorized Windows retention deletion
+returned COMPLETE/0; the full validation remains NOT PASSED pending read-only
+reconciliation of a later unrelated root change. Age is restored to unset and
+the attempt allowance is consumed; no retry or second deletion is authorized.
+See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+v0.11.0 remains unreleased.
 
 Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops. Each recording produces one MP4.

@@ -1293,6 +1293,20 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Latest #51 outcome (2026-10-01, 21:05–21:24 CEST):** The naturally idle
+Windows root cleared the age-unset conflict. One approved ordinary Eliss deletion
+returned COMPLETE/0, with exact 12-event final-MP4-last audit and immediate scope
+verification. Full validation remains **NOT PASSED**: an unrelated Gracie MP4
+disappeared during the later public plan, causing 48 root-wide conflicts; later
+`Unsorted` directory metadata also changed. The deleted Eliss UUID is absent.
+Attribution is unproven; no production defect or extra retention deletion is
+claimed. Age is restored to unset, service/jobs are unaffected, and the original
+archive is preserved. **The single attempt is consumed: no retry or second
+deletion.** #51 stays open as the single active task, pending read-only
+reconciliation of the later namespace change. No next roadmap issue or release
+work starts. See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+Earlier checkpoints below are historical; v0.11.0 remains unreleased.
+
 **Issue #51 Windows resume NOT PASSED (2026-10-01):** The intended Windows
 root and unset age rule are confirmed, but slot 1 is actively recording Gracie
 and five-second whole-root observations differ. One public age-unset plan exits
