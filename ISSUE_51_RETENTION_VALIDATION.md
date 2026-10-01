@@ -1,5 +1,53 @@
 # Issue #51 real-media retention validation evidence
 
+## Final project-manager decision — PASSED / #51 completed (2026-10-01)
+
+ChatGPT/project-manager review is complete. **The public retention CLI independent
+review gate and Windows real-media retention validation are PASSED. Issue #51
+is completed.** This records the explicit project-manager decision on the
+existing evidence; no validation was repeated in the closure task.
+
+Accepted basis:
+
+- Exactly one authorized ordinary Eliss session
+  `044cc8c0-9be6-4da6-8d0d-fef8e85dbf79` was deleted through the normal public
+  owner-facing retention CLI with exact confirmation, returning proven COMPLETE/0.
+- The durable 12-event audit contains only operation
+  `29d6d5a2-34cc-4420-91cf-324b29ba8cec`, with retained/control artifacts first,
+  final MP4 last and durable completed. It contains no Gracie target.
+- Immediate verification found exactly the five intended Eliss paths removed,
+  all 753 unrelated observed entries unchanged, and unaffected service health,
+  recording-slot ownership and durable jobs. Subsequent planning omitted the
+  deleted UUID.
+- Age was safely restored through the public configuration path to its original
+  unset state, with byte-for-byte original configuration identity preserved.
+- The later Gracie disappearance was independently reconciled as a separate
+  owner-initiated hash-checked Drive move after retention completion and immediate
+  scope proof. Existing command history and current hashes corroborate that
+  workflow and its later restoration. It is unrelated to retention.
+- The `Unsorted` discrepancy establishes differing directory-size observations
+  from read-only Windows APIs, with identity/timestamps unchanged; it establishes
+  no content mutation or retention involvement. The historical query cause
+  remains unproven, but no production retention defect is demonstrated.
+
+**The original one-deletion authorization is consumed and remains consumed.
+This PASS authorizes no further destructive validation, deletion, retry or
+repair.** Recordings, evidence archives, policy, service and production code
+were untouched by the closure/bookkeeping task.
+
+v0.10.0 remains the current released/package version. v0.11.0 remains unreleased
+until normal release readiness/bookkeeping is completed; closing #51 creates
+no tag or GitHub Release and does not begin another feature implementation.
+Earlier checkpoints below preserve the evidence and what was known at each
+time; their NOT PASSED, pending-review and safe-resume instructions are
+superseded by this final decision and consumed-authorization boundary.
+
+Issue #51 is closed as completed. After closure, the remaining open issues and
+ROADMAP.md were reconciled: **#30, monitored-creator hot reload, is the single
+next queued task, not started here**. #48/#52 remain queued and #8/#13/#28 remain
+separate non-blocking evidence/investigation work. Release readiness/bookkeeping
+also remains unexecuted; closure alone does not authorize v0.11 publication.
+
 ## 2026-10-01 read-only reconciliation — A, explained unrelated change
 
 **Investigation COMPLETE. #51 stays OPEN for ChatGPT/project-manager review.**

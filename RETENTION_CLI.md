@@ -2,17 +2,19 @@
 
 Windows is the sole active and planned runtime. The owner's 2026-10-01 decision
 supersedes #53/#54; their unreleased Fedora/Linux additions are removed and no
-Fedora gate remains. #51 remains the single active Windows task, with age unset
-again and its single-deletion attempt consumed. Its latest full validation is
-awaiting project-manager review after reconciliation explained the later Gracie
-change as a separate owner chat's Drive offload/restoration;
-no retry or second deletion is authorized. All
+Fedora gate remains. **Issue #51 is completed / PASSED** under the 2026-10-01
+project-manager decision. The public retention CLI independent review gate and
+Windows real-media retention validation are both PASSED. Age is restored to its
+original unset state and the one-deletion authorization is consumed; #51
+authorizes no further destructive validation, retry, repair or second deletion. All
 Gracie, forensic, diagnostic, raw-copy, protected, ambiguous, active/recoverable
 and durable-job-linked sessions remain excluded. The platform rollback performed no #51
-deletion. Earlier dated evidence below describes prior validation attempts.
+deletion. v0.10.0 remains the current released version; v0.11.0 is unreleased
+pending normal release readiness/bookkeeping. Earlier dated evidence below
+describes historical validation attempts, not current authorization.
 
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
-VALIDATION AWAITS PROJECT-MANAGER REVIEW; ROOT CHANGE RECONCILED AS A.**
+VALIDATION PASSED; #51 COMPLETED; ROOT CHANGE RECONCILED AS A.**
 
 Read-only reconciliation (2026-10-01) identifies the exact offload command at
 21:22:09.857–21:22:23.268 CEST, after retention completed and immediate scope
@@ -21,8 +23,11 @@ and mounted Drive copies match its source hash. Audit remains byte-for-byte
 unchanged and targets only Eliss. `Unsorted` differed only in directory size;
 identity/timestamps stayed unchanged, and read-only APIs reproduce both sizes.
 Its historical query cause is unresolved; no content mutation is established.
-Classification **A — Explained unrelated change**; #51 stays open for review,
-without an unconditional full PASS, another deletion or a new roadmap task.
+Classification **A — Explained unrelated change**. The project manager accepted
+the exact Eliss audit/scope proof and this reconciliation as a full #51 PASS.
+No production retention defect is demonstrated. No further deletion is authorized.
+
+### Historical validation checkpoints (superseded by the final PASS)
 
 Earlier Windows #51 check (2026-10-01, 21:05–21:24 CEST): the naturally idle root
 cleared the public age-unset plan. The approved temporary age-1 rule allowed one
@@ -149,7 +154,7 @@ The NEW independent review of `f3dd917` found no blocker after corrections
 isolated full offline, and applicable WSL/POSIX suites passed. The public CLI
 gate is PASSED; that review preceded the owner authorization now recorded in
 issue #51. No real-media retention deletion occurred in that review; the later
-#51 attempt and its verification limitation are recorded above.
+#51 attempt, reconciliation and final project-manager PASS are recorded above.
 The local CLI workflow below exists in the development checkout; it is
 not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit

@@ -5,13 +5,16 @@ A command-line recorder and small remote-control service for public TikTok LIVE 
 Windows is the sole active and planned recording/service runtime. The owner
 ended the unreleased Fedora/Linux detour on 2026-10-01; #53/#54 are superseded
 and no Fedora deployment gate remains. Pre-existing portable helpers and remote
-clients remain available. #51's single authorized Windows retention deletion
-returned COMPLETE/0. Read-only reconciliation explains the later Gracie change
-as a separate owner chat's Drive offload/restoration; #51 remains open for
-project-manager review of the full validation. Age is restored to unset and
-the attempt allowance is consumed; no retry or second deletion is authorized.
+clients remain available. The public retention CLI independent review gate and
+Windows real-media retention validation are **PASSED**; #51 is completed under
+the 2026-10-01 project-manager decision. Its one ordinary Eliss deletion returned
+COMPLETE/0 with exact audit/scope verification. The later Gracie move was an
+unrelated owner-initiated Drive workflow. Age is restored to unset and the
+one-deletion authorization is consumed; #51 authorizes no further destructive
+validation, retry, repair or second deletion.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
-v0.11.0 remains unreleased.
+v0.10.0 remains the current released version; v0.11.0 remains unreleased until
+normal release readiness/bookkeeping is completed.
 
 Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops. Each recording produces one MP4.
@@ -570,7 +573,12 @@ through cleanup, releases process ownership once, and preserves pre-intent,
 incomplete, and proven-completion results. The single next v0.11 task is
 another NEW independent public CLI review before separately authorized
 real-media validation. No real media was deleted.
-Automatic cleanup remains unavailable.
+The subsequent independent public CLI review of `f3dd917` PASSED after #50's
+correction. Windows real-media validation #51 is now PASSED by the project
+manager after exact Eliss audit/scope proof and reconciliation of the separate
+Gracie Drive move. Earlier NOT READY statements describe historical checkpoints.
+The single authorization is consumed and age is restored to unset; no further
+destructive validation is authorized by #51. Automatic cleanup remains unavailable.
 
 **Release state and future product:** v0.10.0 is the current published release.
 Its reviewed release commit passed real simultaneous deployed validation,

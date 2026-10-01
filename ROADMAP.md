@@ -1293,7 +1293,34 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
-**Latest #51 outcome (2026-10-01):** Read-only reconciliation is COMPLETE,
+**Final #51 outcome — COMPLETED / PASSED (2026-10-01 project-manager decision):**
+The public retention CLI independent review gate and Windows real-media retention
+validation are both **PASSED**. The one ordinary authorized Eliss deletion
+returned COMPLETE/0 with a durable 12-event audit: retained/control artifacts
+first, final MP4 last, then completed. Immediate verification found exactly five
+intended paths removed and all 753 unrelated observed entries unchanged; service
+health, slot ownership and durable jobs were unaffected. Subsequent planning
+omitted the deleted UUID. Age was safely restored to its original unset state.
+The later Gracie move was a separate owner-initiated hash-checked Drive workflow
+after retention completion and immediate scope proof; audit contains no Gracie
+target. `Unsorted`'s size-only API discrepancy establishes no content mutation
+or retention involvement, and no production defect is demonstrated.
+**The authorization is consumed: #51 authorizes no further destructive
+validation, retry, repair or second deletion.** v0.10.0 remains the current
+released version; v0.11.0 remains unreleased until normal release readiness/
+bookkeeping is completed. No feature implementation, tag or release starts here.
+See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+
+**Single next task (queued, not started): #30 — Hot-reload monitored creators
+without restarting recording service.** This follows the roadmap's existing
+post-retention operational sequence. #48 (opt-in watcher raw-copy) and #52
+(finalization resource isolation) remain queued; #8/#13/#28 remain separate
+non-blocking evidence/investigation work. #52's reported GPU event was attributed
+to old TikREC, not the current finalizer, and is not a demonstrated current-code
+blocker. No next-task implementation or v0.11 release preparation/publication
+is performed by this closure task; normal release readiness remains outstanding.
+
+**Earlier reconciliation checkpoint (2026-10-01):** Read-only reconciliation is COMPLETE,
 classification **A — Explained unrelated change**. A separate owner chat's
 hash-checked Drive offload of the exact Gracie file ran 21:22:09.857–21:22:23.268
 CEST, after proven retention completion and immediate scope verification. That
@@ -1970,7 +1997,9 @@ state is otherwise independent. Normal use has now exposed an avoidable coupling
 a whole-service restart and therefore an unnecessary capture interruption/recovery
 boundary for active recordings. Preserve the single-process two-slot manager for
 now; do not split slots into separately launched services merely to solve this.
-After the current retention-executor safety gate, implement a bounded atomic
+The public retention CLI independent review and Windows real-media gates are
+now PASSED; #51 is completed. #30 is the single next queued task, not started
+by this bookkeeping. In its separately preflighted task, implement a bounded atomic
 live reload of the monitored-creator list so monitoring/coordinator state can
 adopt additions/removals without stopping active recordings. A bad replacement
 configuration must keep the last known-good runtime snapshot. Other startup

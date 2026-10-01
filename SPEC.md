@@ -6,13 +6,17 @@ Windows is the sole active and planned recording/service runtime under the
 owner's 2026-10-01 platform decision. The unreleased Fedora/Linux managed-storage
 and Btrfs detour is removed; #53/#54 are superseded with no pending Fedora gate.
 Existing portable helpers retain their pre-detour behavior. Windows retention
-and lifecycle code matches `0cc59bac`. #51's one authorized real deletion
-returned COMPLETE/0 with the expected audit and immediate scope verification;
-its attempt allowance is consumed and age is restored to unset. Full validation
-awaits project-manager review after read-only reconciliation classified the
-later Gracie change as A, explained unrelated Drive offload/restoration. #51
-remains open; this investigation does not declare an unconditional full PASS.
-All recorded evidence exclusions remain; no retry or second deletion is authorized.
+and lifecycle code matches `0cc59bac`. The public retention CLI independent
+review gate and Windows real-media validation are **PASSED**. The project manager
+completed #51 on 2026-10-01 after its one ordinary Eliss deletion returned
+COMPLETE/0 with exact durable audit and immediate scope verification. The later
+Gracie move was an unrelated owner-initiated, hash-checked Drive workflow after
+completion and scope proof; the size-only `Unsorted` API discrepancy establishes
+no content mutation or retention involvement. No production defect is demonstrated.
+Age is restored to its original unset state and the one-deletion authorization
+is consumed. All evidence exclusions remain; #51 authorizes no further destructive
+validation, retry, repair or second deletion. v0.10.0 remains the current released
+version; v0.11.0 is unreleased pending normal release readiness/bookkeeping.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 
 Record public TikTok LIVE streams to disk reliably and completely. Local commands
@@ -1210,9 +1214,11 @@ The NEW independent public CLI review of `f3dd917` found no blocker after
 corrections #39–#50. Six fresh disposable Windows fault probes passed alongside
 native Windows retention/lifecycle/policy/audit, the isolated full offline
 suite, and applicable WSL/POSIX read-only/refusal/audit-history coverage. The
-public retention CLI gate is PASSED. Separately authorized real-media retention
-validation is the next retention step; none occurred in this review. v0.11 is
-still unreleased.
+public retention CLI gate is PASSED. No real-media deletion occurred in that
+review. The later Windows real-media validation #51 is now PASSED under the
+2026-10-01 project-manager decision, after reconciliation of the unrelated Gracie
+move. Its single authorization is consumed and age is restored to unset; no
+further destructive validation is authorized by #51. v0.11 remains unreleased.
 
 Retention planning first discovers safely readable immediate UUID/output claims,
 including claims from protected, incomplete, or otherwise rejected sessions.

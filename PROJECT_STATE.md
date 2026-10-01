@@ -7,6 +7,45 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #51 COMPLETED / PASSED (project-manager decision, 2026-10-01):**
+  #51 is closed as completed. The public retention CLI independent review gate
+  and native Windows real-media retention validation are both **PASSED**.
+  Exactly one authorized ordinary
+  Eliss session returned COMPLETE/0; its 12-event durable audit records retained/
+  control artifacts first, final MP4 last, and durable completion. Immediate
+  verification proved exactly five intended paths removed, all 753 unrelated
+  observed entries unchanged, and unaffected service/slot/job ownership. The
+  deleted UUID was absent from subsequent planning. Age was safely restored to
+  its original unset state. The later Gracie move was a separate owner-initiated,
+  hash-checked Drive workflow after retention completion and immediate scope
+  verification; the audit contains no Gracie target. `Unsorted`'s size-only API
+  discrepancy establishes no content mutation or retention involvement.
+  No production retention defect is demonstrated. **The one-deletion
+  authorization is consumed; #51 authorizes no further destructive validation,
+  retry, repair or second deletion.** Evidence and final decision:
+  [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+  v0.10.0 remains the current released/package version; v0.11.0 remains
+  unreleased pending normal release readiness/bookkeeping. This closure task
+  changes documentation/issues only, without touching media, evidence, policy,
+  service or production code. No feature implementation or release action starts.
+
+- **Single next task (queued, not started): #30 — Hot-reload monitored creators
+  without restarting recording service.** The roadmap already places this
+  bounded operational follow-up after the retention gate, which is now passed.
+  Preserve the single-process two-slot manager and active recordings; a future
+  task must preflight/gate the implementation separately. No implementation is
+  currently active and no owner action is pending for this completed bookkeeping.
+  #48 (opt-in automatic raw-copy) and #52 (finalization resource isolation) stay
+  queued; #8/#13/#28 remain separate non-blocking evidence/investigation work.
+  #52's reported GPU spike was attributed to old TikREC, not the current
+  finalizer, so it does not establish a current-code blocker or displace #30.
+  Normal v0.11 release readiness/bookkeeping remains separate and unexecuted.
+
+### Historical coordination checkpoints (superseded)
+
+The entries below preserve what was known then. Their pending-review, active-task
+and unused-authorization statements do not override the final decision above.
+
 - **Issue #51 read-only reconciliation COMPLETE — A, explained unrelated
   change (2026-10-01):** The separate owner chat “Restore latest TikREC
   recording” executed a hash-checked `Move-Item` of the exact Gracie MP4 to the
@@ -1893,8 +1932,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   three connections, 303,564 complete raw tags and all durable part timings
   contain zero timestamp replays. No fault was manufactured.
 - **Pending owner action:** None. Publication and synchronization are complete.
-- **Next queued task:** ChatGPT/project management selects the next bounded
-  roadmap task. The next planned version is v0.11.0 smart storage, retention,
+- **Next queued task at that release checkpoint:** ChatGPT/project management
+  selects the next bounded roadmap task. The next planned version is v0.11.0 smart storage, retention,
   and disk protection, but it has not started. #8, #13, and #28 remain separate
   non-blocking evidence work.
 
@@ -1914,10 +1953,11 @@ new work; calendar entries are reminders only.
 - **Current released version:** v0.10.0; release-commit package metadata,
   immutable annotated tag, and GitHub Release are synchronized. Historical
   releases, including v0.9.0, remain published from their existing tags.
-- **Development target:** No next release is active. v0.11.0 smart storage,
-  retention, and disk protection is the next planned roadmap version, subject
-  to ChatGPT/project-management selection. Conditional v0.6.5 redundant
-  capture is not selected.
+- **Development target:** v0.11.0 smart storage, retention, and disk protection
+  remains unreleased development. Public retention CLI review and
+  Windows real-media validation are PASSED; #51 is completed. Normal release
+  readiness/bookkeeping remains outstanding; no v0.11.0 tag or GitHub Release
+  is created by this task. Conditional v0.6.5 redundant capture is not selected.
 
 ## Issue #13 rendition investigation
 
