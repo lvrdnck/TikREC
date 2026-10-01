@@ -4,16 +4,27 @@ Windows is the sole active and planned runtime. The owner's 2026-10-01 decision
 supersedes #53/#54; their unreleased Fedora/Linux additions are removed and no
 Fedora gate remains. #51 remains the single active Windows task, with age unset
 again and its single-deletion attempt consumed. Its latest full validation is
-NOT PASSED pending read-only reconciliation of a later unrelated root change;
+awaiting project-manager review after reconciliation explained the later Gracie
+change as a separate owner chat's Drive offload/restoration;
 no retry or second deletion is authorized. All
 Gracie, forensic, diagnostic, raw-copy, protected, ambiguous, active/recoverable
 and durable-job-linked sessions remain excluded. The platform rollback performed no #51
 deletion. Earlier dated evidence below describes prior validation attempts.
 
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
-VALIDATION NOT PASSED; POST-DELETE ROOT CHANGE NEEDS RECONCILIATION.**
+VALIDATION AWAITS PROJECT-MANAGER REVIEW; ROOT CHANGE RECONCILED AS A.**
 
-Latest Windows #51 check (2026-10-01, 21:05–21:24 CEST): the naturally idle root
+Read-only reconciliation (2026-10-01) identifies the exact offload command at
+21:22:09.857–21:22:23.268 CEST, after retention completed and immediate scope
+verification passed. The other chat restored Videos afterwards; current local
+and mounted Drive copies match its source hash. Audit remains byte-for-byte
+unchanged and targets only Eliss. `Unsorted` differed only in directory size;
+identity/timestamps stayed unchanged, and read-only APIs reproduce both sizes.
+Its historical query cause is unresolved; no content mutation is established.
+Classification **A — Explained unrelated change**; #51 stays open for review,
+without an unconditional full PASS, another deletion or a new roadmap task.
+
+Earlier Windows #51 check (2026-10-01, 21:05–21:24 CEST): the naturally idle root
 cleared the public age-unset plan. The approved temporary age-1 rule allowed one
 ordinary non-Gracie Eliss deletion through the exact-confirmation public CLI.
 It returned COMPLETE/0 with a 12-event durable audit, final MP4 last, and exact

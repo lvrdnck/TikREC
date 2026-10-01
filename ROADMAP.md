@@ -1293,7 +1293,21 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
-**Latest #51 outcome (2026-10-01, 21:05–21:24 CEST):** The naturally idle
+**Latest #51 outcome (2026-10-01):** Read-only reconciliation is COMPLETE,
+classification **A — Explained unrelated change**. A separate owner chat's
+hash-checked Drive offload of the exact Gracie file ran 21:22:09.857–21:22:23.268
+CEST, after proven retention completion and immediate scope verification. That
+chat restored the local path; current local/Drive hashes match. Audit remains
+unchanged and targets only Eliss. `Unsorted` differed only in directory size,
+with identity/timestamps unchanged; differing read-only APIs reproduce both
+sizes, but the historical query cause is unproven. No content mutation there or
+production defect is established. #51 remains OPEN/single active, **awaiting
+ChatGPT/project-manager review**, without an unconditional full validation PASS.
+Age is unset and the one attempt is consumed: no retry/repair/second deletion.
+No new roadmap issue or release work starts. See
+[ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+
+**Earlier #51 outcome (2026-10-01, 21:05–21:24 CEST):** The naturally idle
 Windows root cleared the age-unset conflict. One approved ordinary Eliss deletion
 returned COMPLETE/0, with exact 12-event final-MP4-last audit and immediate scope
 verification. Full validation remains **NOT PASSED**: an unrelated Gracie MP4

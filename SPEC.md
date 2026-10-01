@@ -9,7 +9,9 @@ Existing portable helpers retain their pre-detour behavior. Windows retention
 and lifecycle code matches `0cc59bac`. #51's one authorized real deletion
 returned COMPLETE/0 with the expected audit and immediate scope verification;
 its attempt allowance is consumed and age is restored to unset. Full validation
-is NOT PASSED pending read-only reconciliation of a later unrelated root change.
+awaits project-manager review after read-only reconciliation classified the
+later Gracie change as A, explained unrelated Drive offload/restoration. #51
+remains open; this investigation does not declare an unconditional full PASS.
 All recorded evidence exclusions remain; no retry or second deletion is authorized.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 

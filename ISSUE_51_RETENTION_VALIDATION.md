@@ -1,5 +1,138 @@
 # Issue #51 real-media retention validation evidence
 
+## 2026-10-01 read-only reconciliation — A, explained unrelated change
+
+**Investigation COMPLETE. #51 stays OPEN for ChatGPT/project-manager review.**
+The Eliss operation remains proven COMPLETE/0. This reconciliation does not
+declare the entire validation PASSED or authorize further destructive work.
+The single attempt is consumed; age remains unset. Source was pulled/reconciled
+at `1e6d4a2`; all 29 preserved metadata evidence checksums still match.
+
+### Direct attribution and timeline
+
+The separate owner chat **“Restore latest TikREC recording”**, thread
+`01a0f8db-5a5a-7111-96d4-0a9f1b60a1d8`, worked in
+`C:\Users\Leandro\Desktop\antigravity\TikREC`. Its owner messages requested
+import, transcription/thumbnail and Drive offload, then corrected the requested
+location to both standard Windows Videos and Drive. Read-only app history and
+its existing local command-completion records corroborate the actual mechanism.
+Historical commands were inspected as evidence and never executed again.
+
+All times below are **2026-10-01 CEST (UTC+02:00)**. Command intervals are
+recorded start/completion bounds, not an inferred exact instant of NTFS mutation.
+
+| Time | Evidence |
+| --- | --- |
+| 21:06:58.762–21:06:59.654 | Other chat copied the Gracie source to its manual-import `runs/.../final/original.mp4`; source remained present. |
+| 21:20:26.715526 | Eliss public retention command returned COMPLETE/0. |
+| 21:21:41.729159 | Immediate scope check: Gracie still present; exactly five Eliss paths removed, 753 unrelated entries unchanged. |
+| 21:21:41.739461–21:22:28.568189 | Post-delete public plan; deleted Eliss absent, all 48 remaining claims conflicted. |
+| **21:22:09.857–21:22:23.268** | **Separate chat's successful hash-checked `Move-Item` of the exact Gracie Videos path to mounted Drive. Output explicitly reports `SourceVideoStillOnPC=False` and destination present.** |
+| 21:22:57.092342 | #51's first explicit read-only observation of Gracie output absence. |
+| 21:24:47.670232 | Prior final checkpoint: Gracie absent; `Unsorted` directory size 0 instead of 4096, other identity/timestamp fields unchanged. |
+| 21:25:49.397–21:25:50.103 | Other chat copied its `runs` original back to the exact standard Videos path and verified hash equality. |
+| 21:26:35.072–21:26:42.387 | Other chat verified all three hashes and moved the runs duplicate onto Videos; Videos/Drive present, runs duplicate absent. |
+| 21:40:13.654606 | This investigation's read-only hash checks match current Videos and mounted Drive bytes to that chat's recorded source/archive hash. |
+| 21:47:36.356990 | Final checks: original evidence intact; audit/config unchanged; both service slots idle and durable jobs completed. |
+
+Decisive offload command-completion record:
+`exec-06774b1e-fef7-4356-b654-2e4ca784c849`, exit 0, PowerShell through
+Codex's separate task (recorded process/session identifier 91275). It explicitly
+sets the source to `C:\Users\Leandro\Videos\gracie.kf-20261001-201956.mp4`,
+compares source/destination SHA256 and executes `Move-Item -LiteralPath` to:
+
+`G:\My Drive\03 Projects & Tech\TikREC & TikTok\TikREC-Archive\gracie.kf\2026-10-01_20-19-56_manual-import\final\original.mp4`.
+
+This directly identifies the actor workflow and destination. It is not a move
+inferred merely from matching filenames or timestamps. Its completion window
+falls inside the later plan and after retention completed. No evidence connects
+it to TikREC retention, a service action or the selected Eliss operation.
+
+### Present media and identity corroboration
+
+The exact Videos path exists again; both it and the mounted Drive archive have
+**261,535,909 bytes**, SHA256
+`7091fb26252bb305e3c7d9f7d4819c3a5c31e06c78d7104c514fdc53e244b9ed`.
+This matches the separate command's recorded source/archive hash; each file's
+size/mtime/identity stayed stable across this investigation's hash read.
+The original Videos object had NTFS identity `0xc000000070a85`; the restored
+object is `0x9d000000009854` on the same volume, created at
+21:25:49.479675 CEST. This supports restoration of bytes to a new local object,
+not uninterrupted survival of the original object. The runs duplicate is absent,
+matching the separate cleanup record. Mounted Drive readability does not by
+itself prove remote server durability; no sync settings/state were changed.
+
+### What the Unsorted evidence actually establishes
+
+The only differing field in the earlier inventory is **directory `st_size`
+4096 versus 0**. Its volume/identity (`0x50000000e420e`), mode, links,
+attributes, creation (2026-07-24) and modification (2026-08-04) are unchanged.
+Current enumeration contains only two older files, `clip.mp4` (30,533,941 bytes)
+and a July 6 Gracie LibreWolf trim (20,914,986 bytes), not the investigated
+session. No selected history command targets `Unsorted`.
+
+On the same directory without mutation, read-only
+`GetFileInformationByHandleEx(FileStandardInfo)` reports 4096 bytes;
+`FindFirstFileW` size fields report 0; Python `lstat` currently reports 4096.
+This demonstrates that both observed size values can occur without a namespace
+change. **The historical query/API cause is not proven.** A size discrepancy
+alone does not establish altered contents, a move into Unsorted or retention
+involvement. The earlier “metadata changed” observation should be read with
+this narrower qualification, not as an established content/timestamp change.
+
+### Retention separation, limits and safe handoff
+
+The audit remains SHA256
+`b719586ef87e503c0e344cf7f1fe63fc8a73e61685da3b43a1acece00e641996`, exactly
+12 events for only Eliss operation `29d6d5a2-34cc-4420-91cf-324b29ba8cec`,
+with final MP4 last and durable completion. It contains no Gracie target.
+Immediate scope proof precedes the directly attributed separate offload.
+Together with the command/history/hash/identity evidence this supports
+**A — Explained unrelated change**, with no evidence of retention involvement.
+The Unsorted historical query cause remains a limited uncertainty; no actual
+namespace mutation there is established. No production defect was exposed.
+
+NTFS USN journal query succeeded, but read returned **Error 5 / access denied**;
+that is unavailable evidence, not a negative journal search. Task Scheduler
+Operational history was disabled; inaccessible Security history was not treated
+as absence of activity. Process/startup/task/history checks identified the
+already-running separate library/Drive workflows; direct completed command
+records made broader searches unnecessary. No journal/log/sync configuration
+was changed, no service was interrupted, no media was copied/restored/moved/
+deleted, and no policy, audit or service state was written by this investigation.
+No retention plan or deletion was repeated. Existing archives were preserved.
+
+Final age is null and configuration SHA256 remains
+`2ac169bd603d6675b87ac9b9f875699d6f1872536354f393cc12d3bf6081dfa1`.
+Both completed Gracie durable jobs and idle service ownership remain intact.
+**Safe next action:** ChatGPT/project manager reviews this factual reconciliation
+and the original completed validation evidence. Keep #51 open until that review;
+do not reuse the consumed authorization, retry/repair, start another issue,
+perform release work or convert this classification into another destructive test.
+
+### New metadata-only evidence
+
+Directory:
+`C:\Users\Leandro\TikREC-evidence\issue-51-reconciliation-20261001-213857-6198075d`.
+`evidence-sha256.json` lists 10 task-owned files; inventory SHA256:
+`2978f2df71b8b00139e65ec6f452a200e82e4563ac28945da6eb815def931c64`.
+It preserves baseline/current metadata, hash checks, exact historical command
+records and owner context, read-only API comparison, USN access limitation and
+final verification. Original command source:
+`C:\Users\Leandro\.codex\sessions\2026\10\01\rollout-2026-10-01T21-05-20-01a0f8db-5a5a-7111-96d4-0a9f1b60a1d8.jsonl`;
+its path/bytes/hash are recorded separately in `source-history-identity.json`.
+
+| Evidence | SHA256 |
+| --- | --- |
+| `other-task-history-excerpts.json` | `30ad3aa140d85ddc18ee4799f144e27a6e1c5f8e089ab07e7d68c022637f243c` |
+| `current-file-hashes.json` | `57307d9e330ccb7b97d402e6de510cd5df5db7b179ff83fb40ea598fc09f1f48` |
+| `unsorted-read-only-api-comparison.json` | `3f8d0e6ac917be281098e69586026c09e8039cb50c27f1b6899b356adf2fd927` |
+| `final-read-only-check.json` | `528e8fe6326db4251396fda104ea0223d45187883d201223c732bacf42a661f5` |
+
+Verification was read-only evidence/checksum/metadata/runtime checking; no
+production code changed, so offline tests and destructive validation were not
+rerun. Earlier checkpoints below retain what was known at their respective times.
+
 ## 2026-10-01 Windows single deletion and later root-change checkpoint
 
 **Deletion: proven COMPLETE/0. Full #51 validation: NOT PASSED.**

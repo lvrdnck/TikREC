@@ -7,6 +7,29 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #51 read-only reconciliation COMPLETE — A, explained unrelated
+  change (2026-10-01):** The separate owner chat “Restore latest TikREC
+  recording” executed a hash-checked `Move-Item` of the exact Gracie MP4 to the
+  mounted Drive archive at 21:22:09.857–21:22:23.268 CEST, after Eliss retention
+  completed and immediate scope verification passed. That chat subsequently
+  restored the standard Videos path. Current local/Drive copies match its
+  recorded SHA256; the restored local file has a new identity. The unchanged
+  12-event audit contains only the Eliss operation and no Gracie target.
+  `Unsorted`'s historical discrepancy is directory size only (4096 versus 0),
+  with identity/timestamps unchanged; both values are reproduced by different
+  read-only Windows APIs. The historical query cause remains unproven, and no
+  content mutation there is established. No retention involvement or production
+  defect is demonstrated. All 29 prior evidence checksums still match.
+  **State:** #51 remains OPEN/single active, awaiting ChatGPT/project-manager
+  review of the reconciled validation evidence; no unconditional full PASS or
+  issue closure is claimed here. Age remains unset, its one deletion attempt
+  remains consumed, and no retry/repair/second deletion is authorized.
+  Investigation changed no media, sync settings, policy, service or audit.
+  Detailed timeline, checksums and limitations are in
+  [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+  **Next:** project-manager review of #51, without further destructive testing
+  or starting another roadmap issue. Historical checkpoints follow.
+
 - **Issue #51 deletion COMPLETE; full validation NOT PASSED (2026-10-01,
   21:05–21:24 CEST):** Fresh native Windows checks found both slots naturally
   idle, completed durable jobs and matching five-second root snapshots. The

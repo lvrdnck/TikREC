@@ -6,8 +6,9 @@ Windows is the sole active and planned recording/service runtime. The owner
 ended the unreleased Fedora/Linux detour on 2026-10-01; #53/#54 are superseded
 and no Fedora deployment gate remains. Pre-existing portable helpers and remote
 clients remain available. #51's single authorized Windows retention deletion
-returned COMPLETE/0; the full validation remains NOT PASSED pending read-only
-reconciliation of a later unrelated root change. Age is restored to unset and
+returned COMPLETE/0. Read-only reconciliation explains the later Gracie change
+as a separate owner chat's Drive offload/restoration; #51 remains open for
+project-manager review of the full validation. Age is restored to unset and
 the attempt allowance is consumed; no retry or second deletion is authorized.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 v0.11.0 remains unreleased.
