@@ -394,7 +394,7 @@ def test_posix_refuses_before_preview_lock_or_audit(tmp_path):
               for path in root.rglob("*") if path.is_file()}
     code, out, err = call(case, confirm=session_id)
     assert code == 1 and not out
-    assert "unmanaged POSIX destructive retention is refused" in err
+    assert "v0.11 destructive retention is Windows-only" in err
     assert "retention plan remains available" in err
     assert not audit.exists() and not (root / ".tikrec-lifecycle.lock").exists()
     assert before == {str(path.relative_to(root)): path.read_bytes()

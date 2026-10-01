@@ -2,6 +2,13 @@
 
 ## Current implementation goal
 
+Windows is the sole active and planned recording/service runtime under the
+owner's 2026-10-01 platform decision. The unreleased Fedora/Linux managed-storage
+and Btrfs detour is removed; #53/#54 are superseded with no pending Fedora gate.
+Existing portable helpers retain their pre-detour behavior. Windows retention
+and lifecycle code matches `0cc59bac`; #51 remains the next real-media gate,
+with age unset, one deletion maximum and all recorded evidence exclusions.
+
 Record public TikTok LIVE streams to disk reliably and completely. Local commands
 remain one recording per invocation; the persistent service has a fixed two-job
 bound for explicit or opt-in monitored creators. Each stops independently when
@@ -961,23 +968,20 @@ age threshold (`ended_at <= now - days * 86400`). Only a supported completed
 TikTok session with canonical creator, completed finalization, proven regular
 output directly beside its `.parts` directory, stable known evidence, and an
 unprotected creator can be `eligible`. Unknown, changing, extra, symlinked,
-recoverable, and conflicting evidence is not eligible. The local Windows
-`retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]` workflow, protected
-Linux `--server` delegation, and
+recoverable, and conflicting evidence is not eligible. The local Windows-only
+`retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]` workflow and
 expanded advisory plan are specified in [RETENTION_CLI.md](RETENTION_CLI.md).
 They are implemented in unreleased v0.11 development; no automatic cleanup
 exists. Viewing a plan cannot authorize deletion.
 
 The unreleased internal executor accepts one explicit root and canonical session
 UUID, never a saved planner result. Under the owner-approved issue #37 platform
-scope, local destructive execution is Windows-only. Unmanaged POSIX refuses before creating a
+scope, destructive execution is Windows-only. POSIX refuses before creating a
 lifecycle lock or audit, or changing any recording artifact; advisory planning
 and historical schema-1 journal reading remain supported. POSIX `unlinkat`
 still resolves a final filename and cannot provide exact-object removal against
 private-name substitution through the available unprivileged interface. There
-is no unmanaged pathname-deletion fallback. Issue #53's owner-approved managed
-Linux extension establishes dedicated-UID namespace/data exclusion and service
-quiescence before enabling its separate backend; see the managed section below.
+is no pathname-deletion fallback.
 On Windows it takes an exclusive OS-backed root lease,
 reloads current configuration, replans the full root, and refuses any target
 referenced by either durable service job slot, including a completed job. The
@@ -1039,9 +1043,8 @@ follow. On POSIX, audit ancestors are synced root-to-leaf on every attempt;
 each new directory entry is synced before creating its child, and the journal
 entry is synced before use. This also covers a visible entry left by a failed
 prior sync.
-Older POSIX execution synced removals before deleted records; unmanaged POSIX
-execution remains refused. Managed Linux publishes each change with its pinned
-parent descriptor before `deleted`. Existing
+Older POSIX execution synced removals before deleted records; new POSIX
+execution is refused. Existing
 audit history is checked for complete schema-1 JSONL framing, unique JSON
 fields and operation IDs, event-specific fields, this journal's canonical root,
 the child/control/directory/final-MP4 destructive order, paired recovery evidence
@@ -1053,9 +1056,9 @@ without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #35
 corrected the plan-to-authorization and audit-history gaps found at `3ff83bc`.
 A fresh independent review of `ef8d01b` passed the Windows-only private
-executor gate under this cooperative-filesystem boundary. The unreleased CLI
-exposes one explicit session deletion through local Windows execution or protected
-Linux service delegation; [RETENTION_CLI.md](RETENTION_CLI.md) specifies confirmation,
+executor gate under this cooperative-filesystem boundary. The unreleased local
+CLI now exposes one explicit Windows-only session deletion through the private
+executor; [RETENTION_CLI.md](RETENTION_CLI.md) specifies its confirmation,
 status, audit, and exit contract.
 Root-level persistent lifecycle locks use
 POSIX shared/exclusive `flock` or Windows bounded byte-range leases; process exit
@@ -1065,7 +1068,7 @@ TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata
 guarantees. The executor and its local CLI caller remain unreleased.
 An `attempt` without `deleted` can mean no rename, a preserved quarantine, or
-actual removal before the result could be journaled. On Windows, process death before
+actual removal before the result could be journaled. Process death before
 setting disposition leaves the quarantine; death after setting it closes the
 handle and may complete removal. `failed` can likewise follow actual removal,
 including a failed result write/sync; the existing same-path `deleted` then
@@ -1252,71 +1255,6 @@ not tighten ordinary schema-1 loading/recovery.
 Linux locality additionally requires a coherent visible mount parent chain and
 matching artifact device identity where the platform provides it; a lexical
 local child hidden under a remote overmount is unproven.
-Linux native locality now also binds every no-follow held path to the selected
-kernel mount ID. Btrfs reports a per-subvolume anonymous `st_dev`, which can
-legitimately differ from mountinfo's superblock device; only matching kernel
-mount identity and Btrfs `fstatfs` evidence justify that difference. Native volume
-identity includes the observed device to distinguish nested subvolumes. Named
-components and mount tables are rechecked; unavailable/changed evidence refuses.
-Other filesystem device mismatches remain unproven.
-
-Issue #53 targets native Fedora retention. Locality alone never authorizes Linux
-mutation: held dirfds/rename/unlink still allow substitution in owner-writable
-storage. The owner approved dedicated-UID managed storage in the existing service;
-the bounded implementation is specified below. A fresh independent backend review
-and disposable Fedora end-to-end validation are required before #51 resume or
-real-media deletion. See [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
-
-### Dedicated-UID managed Linux storage (issue #53, unreleased)
-
-`serve --managed-storage ROOT_OWNED_DEFINITION --token-file ROOT_OWNED_TOKEN`
-uses the existing two-slot service as sole mutation authority. Definition schema 1
-contains `service_uid`, `recording_root`, `state_directory`, `code_directory` and
-`storage_id`. These canonical disjoint paths sit beneath administrator-owned,
-non-group/other-writable ancestors. Recordings/state belong to the dedicated
-non-login UID; the matching root-owned genesis marker identifies freshly
-provisioned storage. Runtime, installed code, imports, unit and definition are
-administrator controlled. Python must be isolated; UID/capability/dumpability/
-new-privilege checks and protected no-follow component identities fail closed.
-Access/default ACLs and writable aliases are unsupported. Administrator/kernel
-integrity and trusted service code are prerequisites. Ownership supplies exclusion;
-advisory lifecycle/policy/singleton locks only coordinate trusted participants.
-
-All managed outputs are immediate visible MP4s in the fixed root. Starts reserve
-mutation before job persistence/worker launch; recovery/finalization writer leases,
-both job stores, configuration promotion and automation share one process gate.
-Monitoring cycles skip mutation while retention owns exclusion. Direct owner
-writes refuse through kernel permissions, while read-only evidence inspection or
-external copying remains possible. Ordinary service behavior is unchanged.
-
-Owner `retention delete UUID --server URL --token-file FILE [--confirm UUID]`
-requests an authenticated exact preview, confirms the exact UUID and submits
-one request. ROOT is not caller selectable. The preview digest is only a veto
-against changed evidence; fresh root, policy, both jobs, claims, identities,
-locality and every file/recovery byte hash still authorize each operation.
-Preview and executor proof each hold exclusive managed admission. Both slots and
-worker threads must be naturally idle; service-UID peers/children, writable media
-descriptors or mappings refuse before proof. No active recording is stopped.
-
-Under this enforced exclusion, Linux holds no-follow artifact and parent
-descriptors, uses same-parent `renameat2(RENAME_NOREPLACE)`, reproves identity/bytes
-and empty directories, then removes by pinned parent/name. This relies on protected
-ownership plus quiescence, not an expected-inode Linux syscall. Pinned-parent fsync
-precedes deleted audit. Intent/attempt durability, first failure, quarantine
-preservation, retained/control-first and final-MP4-last ordering remain unchanged.
-Schema-1 root-bound audit is outside media under protected state; old histories
-are not rewritten. Windows handle removal remains unchanged. A lost managed
-deletion response is uncertain/3 without automatic retry.
-
-Only bounded age/protection policy promotions are exposed by the managed API.
-Legacy owner-writable sessions are ineligible; provisioning refuses existing roots.
-A later verified fresh-object copy/import protocol must preserve originals,
-manifests, session identity, path/hash ledger and old-root audit, adapt only copied
-paths/job references, and create independent destination audit history. No import
-API or migration is implemented. Details, deployment templates and validation
-limits are in [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md). #53 remains
-open pending independent backend review and disposable Fedora validation; #51
-remains paused / NOT PASSED and its one-deletion authorization is unused.
 
 Each `monitored_creators` entry is a unique lowercase TikTok handle of 1 through
 24 ASCII letters, digits, underscores, or internal periods. List order is

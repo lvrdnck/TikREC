@@ -7,83 +7,33 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #53 approved managed-storage implementation complete (2026-10-01):**
-  The owner approved the review's smallest architecture: the existing two-slot
-  service is the sole authority under a dedicated non-login Linux UID, with
-  protected root/ancestors/runtime/config/state and read-only owner evidence
-  access. Opt-in managed startup, fresh provisioning and Fedora unit templates,
-  bounded authenticated preview/delete/policy controls, shared mutation admission
-  and native Linux retention are implemented. Deletion requires naturally idle
-  slots/workers, no service-UID peers/children or writable media resources, pinned
-  ownership/locality, fresh authorization/hashes, no-replace quarantine and durable
-  audit/parent publication. Unmanaged POSIX deletion remains refused; Windows
-  behavior is preserved. See [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md)
-  and [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
-  **Next single task:** fresh independent backend review plus disposable Fedora
-  end-to-end validation of installed trusted runtime, provisioning, both slots,
-  owner-mediated controls, refusal/fault paths and audit. #53 stays open/active
-  for those gates; no owner architecture decision is pending. WSL native two-UID
-  tests are implementation evidence, not Fedora/Btrfs deployment validation.
-  Final isolated full suites: Windows Python 3.11 — 1,752 passed / 91 skipped;
-  native WSL Linux Python 3.14 — 1,563 passed / 280 skipped; both 19 subtests.
-  #51 remains paused / NOT PASSED, real age policy unchanged/unset and its
-  one-deletion authorization unused. No existing media import/chown/deletion,
-  real service stop/restart/replacement or release occurred. This Windows clone
-  preserves its pre-existing untracked test artifacts; unrelated changes on the
-  Fedora clone were not accessed. v0.10.0 remains released, v0.11.0 unreleased.
-
-- **Issue #53 fresh independent review complete (2026-10-01):**
-  Review of `f712eb2` independently confirms the Btrfs locality correction as a
-  bounded read-only observation and the Linux pathname-mutation gap. No introduced
-  code blocker was reproduced; production code/tests were not changed. The
-  expanded API survey includes available directory delegations: own deletion
-  breaks their revocable protection and releasing it reopens substitution.
-  Matching sampled mount tables do not prove uninterrupted stability (ABA).
-  See [ISSUE_53_FEDORA_RETENTION_REVIEW.md](ISSUE_53_FEDORA_RETENTION_REVIEW.md).
-  Recommended smallest Fedora architecture: existing TikREC service under a
-  dedicated non-login UID, protected recording root/ancestors/code/config/state,
-  mediated writes and exclusive quiescence, with read-only owner evidence access.
-  A standalone broker is not required by this review. Existing owner-writable
-  evidence needs verified copy/import preserving originals, durable paths and
-  separate root-bound audit history; no migration was performed.
-  **Next:** bounded managed-storage architecture/backend work within #53, then
-  fresh backend review and disposable validation before #51 can resume.
-  #53 remains open as the single blocker; #51 remains paused / NOT PASSED, age
-  unset and deletion allowance unused. Full isolated suite: 1,552 passed,
-  278 skipped, 19 subtests. No real-media deletion or service restart occurred;
-  unrelated uncommitted Fedora corrections remain intact.
-
-- **Issue #53 active; Fedora locality fixed, destructive architecture blocked
-  (2026-10-01):** Fedora remains the target runtime; returning to Windows is not
-  the resolution. Btrfs subvolume `st_dev` differs from mountinfo's superblock
-  device. No-follow descriptor mount/type evidence now proves the configured
-  root conservatively; the public age-unset plan exits 0 with no sessions.
-  Native disposable tests demonstrate that held descriptors and advisory locks
-  cannot make name-based rename/unlink conditional on the authorized object in
-  the current owner-writable namespace. Linux deletion remains refused; Windows
-  behavior is unchanged. See [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
-  **Remaining:** independent fresh-context retention review and an owner decision
-  on enforceable Linux storage ownership/isolation before a destructive backend.
-  No broker or ownership migration was implemented. #53 stays open as the single
-  active blocker; #51 remains paused / NOT PASSED and its deletion allowance is
-  unused. No age-policy change, real-media deletion, or service restart occurred.
-  Full isolated-config offline suite: 1,552 passed, 278 skipped, 19 passed subtests.
-  Unrelated Fedora work remains uncommitted; no other roadmap task was started.
-
-- **Issue #51 Fedora resume stopped at public-plan refusal (2026-10-01):**
-  The configured root is now `/home/leandro/Videos/TikREC`, an empty Fedora root,
-  rather than the original Windows validation root. Matching snapshots five
-  seconds apart and service health showed natural inactivity (both slots idle).
-  One public age-unset `retention plan --json` exited 1: `retention root locality
-  could not be proven`. No root-conflict clearance or candidate was established.
-  No retry, policy mutation, deletion, service restart, or archive/media change
-  occurred. Age remains unset and the one-deletion authorization is unused.
-  #51 remains paused / real-media NOT PASSED. Safe resume requires the intended
-  native Windows root naturally idle/stable, followed by the age-unset public
-  plan and all original exclusions, including every Gracie session. See
-  [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
-  Vault synchronization is outstanding because no established vault is available
-  here. No other roadmap task was started; v0.11.0 remains unreleased.
+- **Windows platform restored by owner decision (2026-10-01):** Windows
+  `main-pc` is the sole active and planned recording/service runtime. The four
+  unreleased Fedora commits after `0cc59bac` were reversed through an ordinary
+  history-preserving cleanup; production code, tests and packaging match that
+  pre-Fedora baseline. Managed Linux storage, backend, service integrations,
+  deployment templates, tests and active Fedora reports are removed. #53/#54
+  are superseded and closed as not planned; no Fedora validation gate remains.
+  The interrupted backend review did not approve `12052e5` or validate Fedora.
+  Its disposable WSL installation, identity and temporary unit were removed.
+  **Single active/next task: #51**, Windows real-media retention validation,
+  awaiting natural root inactivity/stability. No owner action is pending.
+  First recheck the intended Windows root through the public age-unset plan;
+  only after conflict clearance reconsider the existing temporary age-1 approval
+  and at most one ordinary eligible non-Gracie session. All Gracie, forensic,
+  diagnostic, raw-copy, protected, active/recoverable, ambiguous and job-linked
+  exclusions remain. Real-media validation is NOT PASSED, age remains unset
+  and the one-deletion allowance is unused. This rollback accessed no real
+  media, evidence archive, owner configuration or service state and performed
+  no deployment, service interruption or release. v0.10.0 remains released;
+  v0.11.0 remains unreleased. Verification on Windows Python 3.12.10 / pytest
+  9.1.1: focused retention/lifecycle/policy/service/recording/automation tests
+  **674 passed / 5 skipped**; full isolated offline suite **1,731 passed /
+  7 skipped / 19 subtests**, 67.62 s. APPDATA and LOCALAPPDATA were isolated
+  under a fresh external temporary root; pytest used separate basetemps with
+  `-p no:cacheprovider`. Removed-module import checks, CLI help checks and
+  `git diff --check` passed. Unrelated untracked test artifacts are preserved.
+  Earlier dated entries are historical checkpoints.
 
 - **Issue #49 comparison complete; #51 still paused (2026-09-30):** The exact
   issue-#28 Gracie room was captured by both recorders, but with different video

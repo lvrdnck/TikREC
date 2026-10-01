@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import time
-import hashlib
-from contextlib import nullcontext
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,18 +36,6 @@ def prepare_preview(root: Path, session_id: str,
                     media_inspector: Callable[[Path], MediaInfo | None] = inspect_media
                     ) -> RetentionPreview:
     """Prove display facts without acquiring a lease or creating audit intent."""
-    from .managed_registry import current
-    authority = current()
-    reservation = authority.retention_scope(root) if authority is not None else nullcontext()
-    with reservation:
-        if authority is not None:
-            authority.check_retention_inputs(configuration_store.path, job_paths, None)
-        return _prepare_preview(root, session_id, configuration_store,
-                                job_paths=job_paths, clock=clock, media_inspector=media_inspector)
-
-
-def _prepare_preview(root, session_id, configuration_store, *, job_paths, clock, media_inspector):
-    """Observe an exact preview under managed exclusion when required."""
     require_identity_removal()
     scope = local_path(Path(root), directory=True)
     auth, evidence, config = _fresh_authorization(
@@ -63,8 +49,3 @@ def _prepare_preview(root, session_id, configuration_store, *, job_paths, clock,
         parts=scope / auth.parts.relative_path, file_count=len(files),
         total_file_bytes=sum(item.size for item in files),
         guard=_preview_signature(auth, evidence, config))
-
-
-def preview_digest(preview: RetentionPreview) -> str:
-    """Bind the remote preview to a restrictive veto, never saved delete authority."""
-    return hashlib.sha256(repr(preview.guard).encode("utf-8")).hexdigest()

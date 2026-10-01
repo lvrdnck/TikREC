@@ -20,7 +20,6 @@ from .lifecycle_lock import acquire_lifecycle
 from .recording_safety import normalize_live_url, safe_error
 from .recording_worker import run_recording_worker
 from .tiktok_identity import canonical_room_id
-from .managed_registry import managed_start
 
 
 class RecordingBusy(ValueError):
@@ -104,7 +103,6 @@ class RecordingController:
                     "room_id": self._job.get("room_id"), "output_path": self._job.get("output_path"),
                     "parts_directory": self._job.get("parts_directory")}
 
-    @managed_start
     def start(self, url: str, output: str, *, raw_copy: bool = False,
               expected_room_id: str | None = None) -> dict:
         """Accept one job and launch it independently of the requesting connection."""

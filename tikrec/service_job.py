@@ -10,9 +10,6 @@ from .job_state import JobState, JobStateError
 
 def default_job_state_path() -> Path:
     """Use a stable per-user location independent of Task Scheduler working directory."""
-    from .managed_registry import current
-    if current() is not None:
-        return current().job_paths[0]
     if os.name == "nt":
         base = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
     else:

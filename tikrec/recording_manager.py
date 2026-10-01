@@ -11,7 +11,6 @@ from .recording_ownership import (OwnerCache, page_identity, same_page,
                                   same_path, same_room)
 from .recording_safety import normalize_live_url
 from .tiktok_identity import canonical_room_id
-from .managed_registry import managed_start
 
 
 RECORDING_CAPACITY = 2
@@ -114,7 +113,6 @@ class RecordingManager:
             latest = max(non_idle, key=lambda entry: _started_at(entry[1]))
             return _with_slot(latest[0], latest[1])
 
-    @managed_start
     def start(self, url: str, output: str, **options) -> dict:
         """Atomically claim one free slot without duplicating a current LIVE."""
         page = normalize_live_url(url)
@@ -163,17 +161,6 @@ class RecordingManager:
                                canonical_page, expected_room,
                                str(output_path), str(parts_path))
             return _with_slot(slot_id, started)
-
-    def quiescent(self) -> bool:
-        """Require both slots and their finalizer/recovery threads to be naturally idle."""
-        with self._lock:
-            for controller in self._controllers:
-                health = controller.health()
-                worker = getattr(controller, "_worker", None)
-                if (health.get("active") is not False or health.get("available") is not True
-                        or worker is not None and worker.is_alive()):
-                    return False
-            return True
 
     def stop(self, session_id: str | None = None) -> dict:
         """Stop one explicit session, or the sole current owner for legacy calls."""

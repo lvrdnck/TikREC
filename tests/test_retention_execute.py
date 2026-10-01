@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import os
 import uuid
 from pathlib import Path
 
@@ -17,8 +16,6 @@ from tikrec.retention_plan import plan_retention
 
 def fixture(tmp_path):
     """Keep audit and durable job stores outside the selected recording root."""
-    if os.name != "nt":
-        pytest.skip("Windows destructive fixture; native managed Linux uses managed_fixture")
     root = tmp_path / "recordings"
     root.mkdir()
     parts = session(root, "alpha")

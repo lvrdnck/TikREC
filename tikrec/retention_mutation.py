@@ -11,12 +11,10 @@ from .retention_authorization import (ArtifactFingerprint,
 
 
 def require_identity_removal() -> None:
-    """Require Windows handle exclusion or the approved managed Linux authority."""
+    """Refuse platforms without the approved exact-object removal primitive."""
     if os.name != "nt":
-        from .managed_registry import current
-        if current() is None:
-            raise ValueError("destructive retention requires managed Linux service authority; "
-                             "unmanaged POSIX retention is read-only")
+        raise ValueError("destructive retention requires Windows handle-based removal; "
+                         "POSIX retention is read-only")
 
 
 def quarantine_relative(item: ArtifactFingerprint, operation_id: str,
@@ -37,10 +35,7 @@ def remove_authorized(root: Path, item: ArtifactFingerprint, volume,
     Later inner cleanup faults are exposed separately without replacing the first.
     """
     require_identity_removal()
-    if os.name == "nt":
-        from .retention_windows import HeldArtifact
-    else:
-        from .retention_linux import HeldArtifact
+    from .retention_windows import HeldArtifact
 
     original = root / item.relative_path
     private = root / quarantine_relative(item, operation_id, index)
@@ -64,12 +59,11 @@ def remove_authorized(root: Path, item: ArtifactFingerprint, volume,
     held_artifact = HeldArtifact(original, item)
     try:
         with held_artifact as held:
-            publish = (held.sync_parent if os.name != "nt" else lambda: sync_parent(private))
             try:
-                # Both backends atomically refuse occupied destinations. Windows
-                # holds an exclusive handle; Linux holds enforced service exclusion.
+                # The kernel refuses an occupied destination atomically, including a
+                # collision after lexists. The same exclusive handle owns the whole step.
                 held.rename(private)
-                publish()
+                sync_parent(private)
                 moved = fingerprint(root, private, directory=item.kind == "directory",
                                     volume=volume)
                 if not _same_moved_identity(item, moved):
@@ -77,12 +71,12 @@ def remove_authorized(root: Path, item: ArtifactFingerprint, volume,
                 held.prove(digest)
                 if os.path.lexists(original):
                     raise ValueError("retention original path reappeared after quarantine")
-                # Windows shares policy authority only at final removal. Managed
-                # Linux additionally excludes all promotions throughout proof.
+                # Hashing and reversible quarantine do not delay config promotion. Only
+                # the final policy/job recheck and exact-handle removal share authority.
                 with mutation_guard():
                     try:
                         held.delete()
-                        publish()
+                        sync_parent(private)
                         if os.path.lexists(private) or os.path.lexists(original):
                             raise ValueError("retention pathname reappeared after removal")
                     except BaseException as error:

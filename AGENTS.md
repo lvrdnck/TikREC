@@ -301,6 +301,10 @@ A release is not complete until all of the following are true and recorded:
 
 ## Environment
 
+- Windows `main-pc` is the sole active and planned recording/service runtime
+  (owner decision 2026-10-01). Fedora/Linux runtime work is no longer planned;
+  #53/#54 are superseded. Preserve pre-existing portable helpers and MacBook
+  remote-client/offline-development use without creating a Linux deployment gate.
 - Windows PC: RTX 4080; test NVENC/GPU paths there.
 - MacBook: CPU only; GPU-specific behavior must degrade gracefully or be skipped
   with a clear message.

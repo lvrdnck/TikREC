@@ -1,7 +1,16 @@
 # Owner-facing retention CLI (unreleased v0.11 development)
 
+Windows is the sole active and planned runtime. The owner's 2026-10-01 decision
+supersedes #53/#54; their unreleased Fedora/Linux additions are removed and no
+Fedora gate remains. #51 is again the single active/next task on Windows, with
+the age policy unset and the one-real-deletion authorization unused. Begin with
+the public age-unset plan only after natural root inactivity/stability. All
+Gracie, forensic, diagnostic, raw-copy, protected, ambiguous, active/recoverable
+and durable-job-linked sessions remain excluded. This rollback performs no #51
+deletion. Earlier dated evidence below describes prior validation attempts.
+
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
-VALIDATION PAUSED BEHIND #53 INDEPENDENT BACKEND REVIEW AND DISPOSABLE FEDORA VALIDATION.**
+VALIDATION WAITING FOR A STABLE IDLE ROOT.**
 Under issue #51's owner approval on 2026-09-30, the six manifestless test evidence
 sets and three matching MP4s were preserved in an external archive with verified
 hashes and metadata. The age-unset public plan still reported root-wide conflict
@@ -18,34 +27,6 @@ when all UUID/output claims are readable. Destructive execution also needs an
 exclusive root lifecycle lease and refuses while a cooperative writer owns it.
 Wait for natural inactivity and a stable fresh plan; do not stop recordings to
 manufacture eligibility.
-
-## Current Fedora correction (#53, 2026-10-01)
-
-Fedora remains the target runtime. The configured Btrfs root now passes the
-read-only public plan through held no-follow descriptor mount/type evidence;
-the earlier locality refusal is corrected. Unmanaged Linux destructive retention remains
-refused because ordinary name-based mutation cannot meet the current exact-object
-contract in owner-writable storage. Native disposable counterexamples and the
-required ownership/isolation architecture are documented in
-[ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
-#53's approved dedicated-UID service architecture and bounded backend are now
-implemented as unreleased opt-in managed mode. See
-[FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md). #53 remains open and blocks
-#51 pending fresh independent backend review and disposable Fedora end-to-end
-validation. Returning to
-Windows is not the resolution; prior Windows-resume guidance below is historical.
-No real-media deletion occurred; #51's allowance is unused and age remains unset.
-
-## Historical #51 Fedora validation limit (superseded by #53)
-
-Issue #51 remains paused and real-media validation is NOT PASSED. The newly
-configured empty Fedora root was naturally idle, but one public age-unset plan
-exited 1: `retention root locality could not be proven`. No retry, workaround,
-policy change, deletion, or service restart followed. The original Windows root
-was not inspected and its conflict clearance is unproven. Destructive retention
-remains Windows-only. The one-session authorization is unused; resume on the
-intended native Windows root only under all existing #51 restrictions. See
-[ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 
 ## Earlier #51 discovery checkpoint
 
@@ -132,34 +113,28 @@ issue #51. No real-media retention deletion has been performed.
 The local CLI workflow below exists in the development checkout; it is
 not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
-Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md),
-plus explicit protected Linux service delegation under enforced ownership.
+Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 
 ## Commands and scope
 
 ```text
 tikrec retention plan [ROOT] [--json]
 tikrec retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]
-tikrec retention delete SESSION_UUID --server URL --token-file FILE [--confirm SESSION_UUID]
 ```
 
 `plan` retains its existing name and root selection: `ROOT` is the selected
 recording directory, or the configured `output_directory` when omitted. It works
 on Windows and POSIX. `delete` uses the same root selection, accepts exactly one
-canonical lowercase session UUID, and is the explicit destructive entry
+canonical lowercase session UUID, and is the only planned destructive entry
 point. It accepts neither a plan file/token nor a session directory, creator,
 date range, wildcard, or multiple UUIDs. `--confirm` is a confirmation value,
 not a target selector. The global `--config FILE` keeps its existing meaning.
 The root and UUID are printed back before any confirmation, so an implicit
 configured root cannot be mistaken for another location.
 
-Protected Linux delegation uses the existing service's fixed managed root and
-refuses an explicit ROOT. It presents an authenticated preview and repeats fresh
-authorization after exact confirmation. A preview digest can only veto changes;
-it never supplies saved authority. The client submits one request and never retries
-a lost response, which is uncertain/3. Ordinary services expose no managed route.
-Web UI, automatic/background/scheduled, disk-pressure, bulk and unmanaged POSIX
-destructive operations remain outside this implementation.
+There is no HTTP, remote CLI, Web UI, service-triggered, background, scheduled,
+disk-pressure-triggered, bulk, or POSIX destructive operation in this
+implementation.
 Automatic cleanup and release/tag work are separate future decisions.
 
 ## Read-only plan
@@ -252,15 +227,10 @@ Windows execution must fail closed on changed eligibility or protection,
 active/recoverable/referenced sessions or durable jobs, changed evidence,
 unsafe root/volume/artifact identity, unsafe audit history or location,
 conflicting lifecycle ownership, unsupported filesystem behavior, or a failed
-preview comparison. Unmanaged POSIX/macOS/Linux local `delete` refuses before
-lifecycle-lock creation, audit creation, or recording mutation with:
-`unmanaged POSIX destructive retention is refused; use the dedicated managed
-Linux service; retention plan remains available`. Do not fall back
-to unmanaged pathname deletion. Managed Linux also requires enforced dedicated-UID
-ownership, protected root/ancestors/runtime/state, and natural quiescence of both
-slots and mutating resources through proof/removal. Native no-replace quarantine
-and pinned-parent publication preserve the same destructive/audit order.
-A refusal before intent sync begins reports `REFUSED`,
+preview comparison. POSIX/macOS/Linux `delete` refuses before lifecycle-lock
+creation, audit creation, or recording mutation with: `v0.11 destructive
+retention is Windows-only; retention plan remains available`. Do not fall back
+to pathname deletion. A refusal before intent sync begins reports `REFUSED`,
 the reason, the target UUID/root, and `No deletion operation was started`.
 
 The executor records a durable intent before any artifact attempt and retains

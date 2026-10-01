@@ -2,6 +2,12 @@
 
 A command-line recorder and small remote-control service for public TikTok LIVE streams.
 
+Windows is the sole active and planned recording/service runtime. The owner
+ended the unreleased Fedora/Linux detour on 2026-10-01; #53/#54 are superseded
+and no Fedora deployment gate remains. Pre-existing portable helpers and remote
+clients remain available. #51 is the next Windows retention validation task;
+v0.11.0 is unreleased and its one-real-deletion authorization remains unused.
+
 Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops. Each recording produces one MP4.
 
@@ -505,13 +511,6 @@ validation notes in SPEC.md for why.
 
 ## Scope
 
-Issue #53 adds opt-in dedicated-UID managed storage to the existing Fedora/Linux
-service and a bounded Linux retention backend. Fresh independent backend review
-and disposable Fedora end-to-end validation remain required before real-media
-deletion or #51 resume. Legacy owner-writable Linux roots still refuse deletion.
-See [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md) and
-[ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
-
 **Current checkout:** Local standalone commands record one public LIVE per
 invocation. The persistent service owns a fixed pool of two independent jobs,
 each with its own worker, stop event, durable intent, recovery, retained media,
@@ -520,12 +519,11 @@ the configurable per-start reserve (10 GiB by default), room binding, collision-
 same-room suppression. It does not authenticate to TikTok, notify the owner,
 automatically delete media, or provide a library/Web UI/playback. Unreleased
 v0.11 development adds a read-only age-retention plan, explicit creator
-protection, and exact-UUID deletion of one eligible session: local Windows
-execution or `--server` delegation to protected Linux managed storage.
-Ordinary services expose no managed deletion endpoint. Issue #37's
+protection, and a local Windows-only command to delete one eligible session
+with exact-UUID confirmation. The service has no deletion endpoint. Issue #37's
 correction uses verified Windows handles for removal and serializes policy
 updates with each destructive
-step. Unmanaged POSIX destructive execution refuses before changing the root;
+step. POSIX destructive execution refuses before changing the recording root;
 read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
 cooperative-filesystem scope. The owner-facing CLI contract is in
@@ -595,9 +593,8 @@ previews one exact UUID and requires typing it on an interactive terminal or
 passing the same value with `--confirm`. It then reauthorizes under an exclusive
 recording-root lease and refuses changed evidence. Retained artifacts are
 removed first and the final MP4 last; any failed or uncertain operation stops
-with its audit context and requires a fresh later decision. Linux managed
-execution also requires dedicated service authority and naturally quiescent
-storage; unmanaged POSIX deletion refuses. A saved plan is never permission to delete.
+with its audit context and requires a fresh later decision. POSIX deletion
+refuses before mutation. A saved plan is never permission to delete.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

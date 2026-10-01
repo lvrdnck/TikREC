@@ -11,7 +11,6 @@ from uuid import UUID
 
 from .creator_identity import validate_creator_handle
 from .tiktok_identity import canonical_room_id
-from .managed_registry import current, state_write
 
 
 AUTOMATION_SCHEMA_VERSION = 1
@@ -113,12 +112,9 @@ class AutomationStateStore:
         except (TypeError, ValueError):
             raise AutomationStateError("invalid automation state") from None
 
-    @state_write
     def save(self, state: AutomationState) -> None:
         """Flush a complete state document before atomic replacement."""
         state.validate()
-        if current() is not None and state.pending_claim is not None:
-            current().check_output(state.pending_claim.output_path)
         document = {
             "schema_version": state.schema_version,
             "consumed_rooms": state.consumed(),

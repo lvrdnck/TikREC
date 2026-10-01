@@ -13,7 +13,6 @@ from .configuration_path import default_config_path
 from .configuration_json import unique_fields as _unique_fields
 from .configuration_atomic import write_document
 from .policy_lock import policy_lock
-from .managed_registry import current, state_write
 
 CONFIG_SCHEMA_VERSION = 1
 MIN_RECOVERY_WINDOW_SECONDS = 60
@@ -97,8 +96,6 @@ class ConfigurationStore:
 
     def load(self) -> Configuration:
         """Return defaults when absent and reject malformed committed configuration."""
-        if current() is not None and self.path != current().config_path:
-            raise ConfigurationError("managed service requires its authoritative configuration")
         try:
             with self.path.open("r", encoding="utf-8") as handle:
                 document = json.load(handle, object_pairs_hook=_unique_fields)
@@ -142,19 +139,14 @@ class ConfigurationStore:
                 retention_max_age_days=document.get("retention_max_age_days"),
             )
             configuration.validate()
-            if current() is not None and configuration.output_directory != current().root:
-                raise ConfigurationError("managed configuration must preserve its recording root")
             return configuration
         except (OSError, TypeError, ValueError) as error:
             detail = str(error) or "invalid document"
             raise ConfigurationError(f"invalid configuration at {self.path}: {detail}") from None
 
-    @state_write
     def save(self, configuration: Configuration) -> None:
         """Flush a complete document before atomically replacing committed configuration."""
         configuration.validate()
-        if current() is not None and configuration.output_directory != current().root:
-            raise ConfigurationError("managed configuration must preserve its recording root")
         document: dict[str, object] = {"schema_version": configuration.schema_version}
         if configuration.output_directory is not None:
             document["output_directory"] = str(configuration.output_directory)
@@ -174,7 +166,6 @@ class ConfigurationStore:
             document["retention_max_age_days"] = configuration.retention_max_age_days
         write_document(self.path, document)
 
-    @state_write
     def update(self, transform) -> Configuration:
         """Apply one change to the latest document without reverting newer policy."""
         with policy_lock(self.path, "write"):

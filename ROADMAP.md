@@ -1293,76 +1293,22 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
-**Issue #53 owner-approved managed service/backend implemented (2026-10-01):**
-The existing two-slot service now has opt-in dedicated non-login UID authority,
-protected runtime/config/state and freshly provisioned recording storage beneath
-administrator-controlled ancestors. Read-only owner access and authenticated
-bounded preview/delete/policy operations preserve ownership exclusion. Shared
-mutation admission spans starts, capture/recovery/finalization and authoritative
-state promotion; retention refuses occupied slots, live workers/UID children or
-writable media resources. Native no-follow/pinned Linux mutation retains hashes,
-fresh policy/jobs, no-replace quarantine, durable audit/parent sync, first failure
-and final MP4 last. Unmanaged POSIX roots still refuse; Windows remains compatible.
-Deployment and limits: [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md);
-evidence: [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
-**Next gate:** fresh independent backend review plus disposable Fedora end-to-end
-validation, including the actual trusted installation and service sandbox.
-Native WSL two-UID tests do not replace that gate. #53 remains the single active
-issue; no owner architecture decision is pending. #51 stays paused / NOT PASSED,
-real age policy unset and one-deletion allowance unused.
-Final isolated full suites: Windows 1,752 passed / 91 skipped; native WSL Linux
-1,563 passed / 280 skipped; both 19 passed subtests.
-No legacy adoption,
-real-media deletion, production restart/replacement or release was performed.
-v0.10.0 remains released and v0.11.0 remains unreleased.
-
-**Issue #53 fresh independent review PASSED with documentation qualifications
-(2026-10-01):** Btrfs locality correction and the Linux pathname-mutation gap in
-`f712eb2` are independently confirmed. No introduced code blocker was reproduced.
-Read-only locality uses sampled observations, not uninterrupted stability;
-newer directory delegations remain revocable and do not permit deletion through
-unbroken exclusion. The smallest recommended Fedora architecture is the existing
-TikREC service under a dedicated non-login UID with protected root/ancestors,
-trusted code/config/state, mediated writes, exclusive quiescence and read-only
-owner evidence access. A separate broker is optional, not required. Legacy
-imports must preserve originals, durable references and old root-bound audit
-history. See [ISSUE_53_FEDORA_RETENTION_REVIEW.md](ISSUE_53_FEDORA_RETENTION_REVIEW.md).
-No architecture or migration was implemented. #53 remains open for managed
-storage/backend work, requiring another independent backend review and disposable
-validation before #51 resumes on Fedora. #51 remains paused / NOT PASSED with
-age unset and allowance unused. Full isolated suite: 1,552 passed, 278 skipped,
-19 subtests. No real-media deletion, service restart or other roadmap work.
-v0.11.0 remains unreleased.
-
-**Issue #53 Fedora locality correction; native deletion architecture blocked
-(2026-10-01):** Fedora is the target runtime. Held no-follow mount/type evidence
-corrects the Btrfs subvolume-device mismatch and the public age-unset plan now
-succeeds on the configured root. Disposable cross-process tests establish that
-ordinary Linux pathname deletion does not satisfy the current exact-object
-contract in owner-writable storage. Mutation therefore remains refused; Windows
-behavior is unchanged. A storage broker with enforced ownership/isolation is a
-documented design direction requiring an owner architecture decision, not an
-implemented backend. See [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
-Full isolated-config suite: 1,552 passed, 278 skipped, 19 passed subtests.
-#53 is the single active blocker, awaiting fresh independent retention review
-and resolution of the destructive architecture. #51 remains paused / NOT PASSED,
-its allowance unused and age unset. No real-media deletion or service restart
-occurred. Earlier Windows-resume guidance is superseded; returning to Windows
-is not the resolution. v0.11.0 remains unreleased.
-
-**Issue #51 Fedora public-plan refusal (2026-10-01):** The empty configured
-Linux root `/home/leandro/Videos/TikREC` was naturally idle across matching
-five-second snapshots, with both service slots idle. One age-unset public plan
-exited 1 because root locality could not be proven. Stop boundary honored: no
-retry, age change, deletion, service restart, or archive change. This does not
-validate the original Windows root or clear its recorded evidence conflict.
-Destructive retention remains Windows-only. #51 remains paused / NOT PASSED;
-its one-deletion allowance is unused. Resume only on the intended native Windows
-root when naturally idle/stable, through the approved public CLI procedure and
-all non-Gracie/evidence exclusions. See
-[ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
-Vault synchronization remains outstanding until the established vault is
-accessible. No other roadmap task was started; v0.11.0 remains unreleased.
+**Windows platform restored (2026-10-01):** The owner ended Fedora/Linux as an
+active or planned runtime target. An ordinary revert of the four Fedora commits
+after `0cc59bac` restores the exact pre-detour production code/tests/packaging;
+Linux managed storage/backend, deployment artifacts and active reports are gone.
+#53/#54 are closed as not planned, superseded by this decision. No Fedora gate
+remains. #51 is again the single active/next task on Windows: await natural root
+inactivity/stability, then run the public age-unset plan before reconsidering the
+existing temporary age-1 approval and at most one safe ordinary non-Gracie
+deletion. All forensic/diagnostic/raw-copy/protected/ambiguous/active/recoverable/
+job-linked exclusions and failure stop boundaries remain. Age is unset, the
+one-deletion authorization is unused and real-media validation is NOT PASSED.
+This cleanup performed no real-media validation, deployment, service interruption
+or release. Windows focused tests: 674 passed / 5 skipped; full isolated offline
+suite: 1,731 passed / 7 skipped / 19 subtests. Removed-module and CLI checks,
+exact baseline comparison and diff checks passed. v0.10.0 remains released;
+v0.11.0 remains unreleased. Older entries below record prior checkpoints.
 
 **Temporary #49 forensic comparison complete; #51 paused (2026-09-30):**
 The exact problematic Gracie LIVE was captured by both old/current recorders,

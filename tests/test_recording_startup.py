@@ -108,7 +108,7 @@ def test_resumed_worker_reuses_job_and_handles_normal_remote_stop(tmp_path):
         entered.set()
         assert options["stop_event"].wait(2)
         options["state"]("finalizing")
-        keep_finalizer(tuple(sorted((tmp_path / "out.parts").glob("*.flv"))), options["output_path"])
+        keep_finalizer(tuple((tmp_path / "out.parts").glob("*.flv")), options["output_path"])
         return CaptureResult((), options["output_path"], True, resumed=True)
     controller = RecordingController(store=store, reconciler=reconciler(
         store, resolver=lambda _: LiveResolution("123", SIGNED), resume_capture=resume))

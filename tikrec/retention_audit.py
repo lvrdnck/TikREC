@@ -51,9 +51,7 @@ class RetentionAudit:
         flags = os.O_RDWR | os.O_APPEND | getattr(os, "O_BINARY", 0)
         flags |= getattr(os, "O_NOFOLLOW", 0)
         try:
-            from .managed_registry import current
-            mode = 0o640 if current() is not None else 0o600
-            descriptor = os.open(self.path, flags | os.O_CREAT | os.O_EXCL, mode)
+            descriptor = os.open(self.path, flags | os.O_CREAT | os.O_EXCL, 0o600)
         except FileExistsError:
             descriptor = os.open(self.path, flags)
         try:

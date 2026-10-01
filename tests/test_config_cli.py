@@ -366,7 +366,6 @@ def test_finalize_remote_and_recover_paths_are_not_reinterpreted(tmp_path: Path)
     # These command surfaces must not consult a malformed local recording config.
     stderr = StringIO()
     assert main(["--config", str(config), "finalize", "missing", "--output", "relative.mp4"],
-                finalizer=lambda *_args, **_options: pytest.fail("missing parts reached finalizer"),
                 stderr=stderr) == 1
     assert "parts directory does not exist" in stderr.getvalue()
     stdout = StringIO()
