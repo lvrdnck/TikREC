@@ -132,8 +132,10 @@ def test_failed_audit_sync_does_not_poison_complete_existing_history(tmp_path, m
     monkeypatch.setattr(audit_module.os, "fsync", real_sync)
     with RetentionAudit(root, path) as audit:
         audit.append("intent", third, **intent_fields(root))
-    assert [json.loads(line)["operation_id"] for line in path.read_text().splitlines()] == [
-        first, second, third]
+    # POSIX publishes the directory/journal entry before entering append, so
+    # that injected failure precedes the second write on native Linux.
+    expected = [first, second, third] if os.name == "nt" else [first, third]
+    assert [json.loads(line)["operation_id"] for line in path.read_text().splitlines()] == expected
 
 
 def test_posix_first_use_syncs_each_new_directory_entry_before_journal(

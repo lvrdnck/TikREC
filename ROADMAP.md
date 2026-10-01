@@ -1293,6 +1293,29 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #53 owner-approved managed service/backend implemented (2026-10-01):**
+The existing two-slot service now has opt-in dedicated non-login UID authority,
+protected runtime/config/state and freshly provisioned recording storage beneath
+administrator-controlled ancestors. Read-only owner access and authenticated
+bounded preview/delete/policy operations preserve ownership exclusion. Shared
+mutation admission spans starts, capture/recovery/finalization and authoritative
+state promotion; retention refuses occupied slots, live workers/UID children or
+writable media resources. Native no-follow/pinned Linux mutation retains hashes,
+fresh policy/jobs, no-replace quarantine, durable audit/parent sync, first failure
+and final MP4 last. Unmanaged POSIX roots still refuse; Windows remains compatible.
+Deployment and limits: [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md);
+evidence: [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
+**Next gate:** fresh independent backend review plus disposable Fedora end-to-end
+validation, including the actual trusted installation and service sandbox.
+Native WSL two-UID tests do not replace that gate. #53 remains the single active
+issue; no owner architecture decision is pending. #51 stays paused / NOT PASSED,
+real age policy unset and one-deletion allowance unused.
+Final isolated full suites: Windows 1,752 passed / 91 skipped; native WSL Linux
+1,563 passed / 280 skipped; both 19 passed subtests.
+No legacy adoption,
+real-media deletion, production restart/replacement or release was performed.
+v0.10.0 remains released and v0.11.0 remains unreleased.
+
 **Issue #53 fresh independent review PASSED with documentation qualifications
 (2026-10-01):** Btrfs locality correction and the Linux pathname-mutation gap in
 `f712eb2` are independently confirmed. No introduced code blocker was reproduced.

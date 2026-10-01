@@ -505,10 +505,12 @@ validation notes in SPEC.md for why.
 
 ## Scope
 
-Issue #53 corrects Fedora Btrfs locality using no-follow descriptor mount/type
-proof. Safe native Linux deletion still requires an enforceable ownership
-architecture and independent review; it remains refused. Fedora remains the
-target runtime. See [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
+Issue #53 adds opt-in dedicated-UID managed storage to the existing Fedora/Linux
+service and a bounded Linux retention backend. Fresh independent backend review
+and disposable Fedora end-to-end validation remain required before real-media
+deletion or #51 resume. Legacy owner-writable Linux roots still refuse deletion.
+See [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md) and
+[ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
 
 **Current checkout:** Local standalone commands record one public LIVE per
 invocation. The persistent service owns a fixed pool of two independent jobs,
@@ -518,11 +520,12 @@ the configurable per-start reserve (10 GiB by default), room binding, collision-
 same-room suppression. It does not authenticate to TikTok, notify the owner,
 automatically delete media, or provide a library/Web UI/playback. Unreleased
 v0.11 development adds a read-only age-retention plan, explicit creator
-protection, and a local Windows-only command to delete one eligible session
-with exact-UUID confirmation. The service has no deletion endpoint. Issue #37's
+protection, and exact-UUID deletion of one eligible session: local Windows
+execution or `--server` delegation to protected Linux managed storage.
+Ordinary services expose no managed deletion endpoint. Issue #37's
 correction uses verified Windows handles for removal and serializes policy
 updates with each destructive
-step. POSIX destructive execution refuses before changing the recording root;
+step. Unmanaged POSIX destructive execution refuses before changing the root;
 read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
 cooperative-filesystem scope. The owner-facing CLI contract is in
@@ -592,8 +595,9 @@ previews one exact UUID and requires typing it on an interactive terminal or
 passing the same value with `--confirm`. It then reauthorizes under an exclusive
 recording-root lease and refuses changed evidence. Retained artifacts are
 removed first and the final MP4 last; any failed or uncertain operation stops
-with its audit context and requires a fresh later decision. POSIX deletion
-refuses before mutation. A saved plan is never permission to delete.
+with its audit context and requires a fresh later decision. Linux managed
+execution also requires dedicated service authority and naturally quiescent
+storage; unmanaged POSIX deletion refuses. A saved plan is never permission to delete.
 
 **Permanent boundary:** TikREC will not bypass authentication, CAPTCHA,
 entitlements, access controls, or private request signing, and will not support

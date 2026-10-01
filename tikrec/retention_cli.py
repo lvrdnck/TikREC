@@ -28,11 +28,14 @@ def add_retention_command(subcommands) -> argparse.ArgumentParser:
     plan = actions.add_parser("plan", help="read-only preview of immediate sessions")
     plan.add_argument("root", nargs="?", metavar="ROOT")
     plan.add_argument("--json", action="store_true", help="print structured results")
-    delete = actions.add_parser("delete", help="permanently delete one eligible session on Windows")
+    delete = actions.add_parser("delete", help="delete one eligible local Windows or managed Linux session")
     delete.add_argument("session_id", type=_uuid_argument, metavar="SESSION_UUID")
     delete.add_argument("root", nargs="?", metavar="ROOT")
     delete.add_argument("--confirm", metavar="SESSION_UUID",
                         help="exact noninteractive confirmation UUID")
+    delete.add_argument("--server", metavar="URL", help="delegate to the protected Linux service")
+    delete.add_argument("--token-file", metavar="FILE", help="managed service bearer secret")
+    delete.add_argument("--timeout", type=float, default=60, help="managed request timeout; never retried")
     return retention
 
 
@@ -51,6 +54,9 @@ def run_retention_command(arguments: argparse.Namespace, stdout: TextIO,
     store = ConfigurationStore(path)
     action = arguments.retention_action
     if action == "delete":
+        if getattr(arguments, "server", None) is not None:
+            from .managed_retention_cli import run_managed_delete
+            return run_managed_delete(arguments, stdout, stderr, stdin)
         return run_delete(arguments, store, stdout, stderr, stdin, **delete_options)
     config = store.load()
     if action == "protected":

@@ -1,0 +1,37 @@
+[Unit]
+Description=TikREC protected managed-storage service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tikrec
+Group=tikrec-readers
+WorkingDirectory=/opt/tikrec
+ExecStart=/opt/tikrec/venv/bin/python -I -B -m tikrec.cli serve --host 127.0.0.1 --port 8766 --managed-storage /etc/tikrec/managed.json --token-file /etc/tikrec/token
+Environment=PATH=/usr/bin:/bin
+UMask=0027
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/tikrec/recordings /var/lib/tikrec/state
+PrivateTmp=yes
+PrivateMounts=yes
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+KillSignal=SIGINT
+KillMode=mixed
+TimeoutStopSec=infinity
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

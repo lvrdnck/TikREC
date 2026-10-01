@@ -7,6 +7,31 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #53 approved managed-storage implementation complete (2026-10-01):**
+  The owner approved the review's smallest architecture: the existing two-slot
+  service is the sole authority under a dedicated non-login Linux UID, with
+  protected root/ancestors/runtime/config/state and read-only owner evidence
+  access. Opt-in managed startup, fresh provisioning and Fedora unit templates,
+  bounded authenticated preview/delete/policy controls, shared mutation admission
+  and native Linux retention are implemented. Deletion requires naturally idle
+  slots/workers, no service-UID peers/children or writable media resources, pinned
+  ownership/locality, fresh authorization/hashes, no-replace quarantine and durable
+  audit/parent publication. Unmanaged POSIX deletion remains refused; Windows
+  behavior is preserved. See [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md)
+  and [ISSUE_53_FEDORA_RETENTION.md](ISSUE_53_FEDORA_RETENTION.md).
+  **Next single task:** fresh independent backend review plus disposable Fedora
+  end-to-end validation of installed trusted runtime, provisioning, both slots,
+  owner-mediated controls, refusal/fault paths and audit. #53 stays open/active
+  for those gates; no owner architecture decision is pending. WSL native two-UID
+  tests are implementation evidence, not Fedora/Btrfs deployment validation.
+  Final isolated full suites: Windows Python 3.11 — 1,752 passed / 91 skipped;
+  native WSL Linux Python 3.14 — 1,563 passed / 280 skipped; both 19 subtests.
+  #51 remains paused / NOT PASSED, real age policy unchanged/unset and its
+  one-deletion authorization unused. No existing media import/chown/deletion,
+  real service stop/restart/replacement or release occurred. This Windows clone
+  preserves its pre-existing untracked test artifacts; unrelated changes on the
+  Fedora clone were not accessed. v0.10.0 remains released, v0.11.0 unreleased.
+
 - **Issue #53 fresh independent review complete (2026-10-01):**
   Review of `f712eb2` independently confirms the Btrfs locality correction as a
   bounded read-only observation and the Linux pathname-mutation gap. No introduced

@@ -30,7 +30,7 @@ def test_default_config_path_uses_windows_roaming_convention() -> None:
         environ={"APPDATA": r"C:\Users\person\AppData\Roaming"},
         home=Path(r"C:\Users\ignored"),
     )
-    assert str(path) == r"C:\Users\person\AppData\Roaming\TikREC\config.json"
+    assert path == Path(r"C:\Users\person\AppData\Roaming") / "TikREC" / "config.json"
 
 
 def test_default_config_path_uses_xdg_and_posix_fallback() -> None:

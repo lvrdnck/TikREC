@@ -23,6 +23,8 @@ def add_control_commands(subcommands) -> None:
     server.add_argument("--host", default=DEFAULT_HOST, help="explicit loopback/LAN/Tailscale IP")
     server.add_argument("--port", type=int, default=DEFAULT_PORT)
     server.add_argument("--token-file", metavar="FILE", help="bearer secret; overrides TIKREC_TOKEN")
+    server.add_argument("--managed-storage", metavar="FILE",
+                        help="use a root-owned Linux managed-storage definition")
     server.add_argument("--recovery-window-seconds", type=recovery_window_argument,
                         metavar="SECONDS", help="override the 60-3600 second recovery window")
     remote = subcommands.add_parser("remote", help="control a trusted TikREC service")
@@ -34,8 +36,9 @@ def add_control_commands(subcommands) -> None:
         "monitor-status": "show sanitized creator monitoring observations",
         "start": "start one manual recording",
         "stop": "stop the sole active or one specified recording",
+        "retention-policy": "change protected managed retention age/protection",
     }
-    for name in ("health", "status", "recordings", "monitor-status", "start", "stop"):
+    for name in ("health", "status", "recordings", "monitor-status", "start", "stop", "retention-policy"):
         action = actions.add_parser(name, help=help_text[name])
         action.add_argument("--server", required=True, metavar="URL")
         action.add_argument("--token-file", metavar="FILE", help="overrides TIKREC_TOKEN")
@@ -48,6 +51,9 @@ def add_control_commands(subcommands) -> None:
         elif name == "stop":
             action.add_argument("--session-id", metavar="UUID",
                                 help="target one active session when multiple are recording")
+        elif name == "retention-policy":
+            action.add_argument("policy_action", choices=("age", "protect", "unprotect"))
+            action.add_argument("value", help="age in days or disabled; creator for protection")
 
 
 def read_token(token_file: str | None) -> str | None:
@@ -73,6 +79,10 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         host = validate_bind(arguments.host, token)
         if not 1 <= arguments.port <= 65535:
             raise ValueError("port must be between 1 and 65535")
+        if getattr(arguments, "managed_storage", None) is not None:
+            from .managed_service import run_managed_service
+            run_managed_service(arguments, token, service_runner)
+            return 0
         path = Path(arguments.config_path) if arguments.config_path else default_config_path()
         configuration = load_service_configuration(
             path, validate_all=arguments.recovery_window_seconds is None
@@ -96,6 +106,12 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
                           timeout=arguments.timeout)
     if arguments.action == "start":
         result = client.start(arguments.url, arguments.output, raw_copy=arguments.raw_copy)
+    elif arguments.action == "retention-policy":
+        value = arguments.value
+        if arguments.policy_action == "age":
+            from .configuration import configured_retention_max_age_days
+            value = None if value == "disabled" else configured_retention_max_age_days(value)
+        result = client.managed_policy(arguments.policy_action, value)
     elif arguments.action == "monitor-status":
         result = client.monitoring()
     elif arguments.action == "stop":

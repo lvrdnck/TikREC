@@ -21,13 +21,11 @@ from .job_state import JobStateStore
 from .service_job import (default_job_state_path, independent_job_stores,
                           second_job_state_path)
 from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, StorageStatus
-
-
+from .managed_registry import current
+from .managed_http import handle_managed
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 MAX_BODY = 8192
-
-
 def validate_bind(host: str, token: str | None) -> str:
     """Require explicit IP binding and a secret for all non-loopback addresses."""
     host = DEFAULT_HOST if host == "localhost" else host
@@ -41,8 +39,6 @@ def validate_bind(host: str, token: str | None) -> str:
     if not address.is_loopback and token is None:
         raise ValueError("non-loopback binding requires TIKREC_TOKEN or --token-file")
     return str(address)
-
-
 class RecordingHTTPServer(ThreadingHTTPServer):
     """Serve requests separately from the bounded recording workers."""
 
@@ -60,6 +56,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                  token: str | None = None, retry_policy: RetryPolicy = RetryPolicy(),
                  bind_and_activate: bool = True) -> None:
         host = validate_bind(host, token)
+        if current() is not None and token is None:
+            raise ValueError("managed storage requires authentication on every bind")
         if not 0 <= port <= 65535:
             raise ValueError("port must be between 0 and 65535")
         self.token = token
@@ -91,6 +89,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
             self.storage_status = storage_status or StorageStatus(
                 output_directory, minimum_free_space_gib
             )
+            if current() is not None:
+                current().quiescent = self.controller.quiescent
             self.admission = admission if admission is not None else RecordingAdmission(
                 output_directory, self.controller.health, storage_status=self.storage_status
             )
@@ -124,8 +124,6 @@ class RecordingHTTPServer(ThreadingHTTPServer):
             self.controller.shutdown()
         finally:
             self.monitor.join()
-
-
 class RecordingHandler(BaseHTTPRequestHandler):
     """Handle only narrow JSON routes; never serve files or execute caller commands."""
 
@@ -171,6 +169,8 @@ class RecordingHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         """Validate a bounded JSON object and delegate lifecycle to the controller."""
         if not self._authorized():
+            return
+        if handle_managed(self):
             return
         if self.path not in {"/recording/start", "/recording/stop"}:
             self._json(404, {"error": "unknown endpoint"})

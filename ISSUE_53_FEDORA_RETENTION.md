@@ -1,5 +1,138 @@
 # Issue #53 Fedora retention locality and mutation contract
 
+## Approved implementation checkpoint (2026-10-01)
+
+**The bounded managed-storage architecture/backend slice is implemented;
+#53 stays open for fresh independent backend review and disposable Fedora
+end-to-end validation.** Earlier checkpoints below describe the historical
+unmanaged namespace investigation and its review, not a review of this backend.
+
+### Owner decision and enforceable boundary
+
+The owner approved the independent review's smallest architecture: reuse the
+existing two-slot TikREC service as the sole authority under a dedicated non-login
+Linux UID. A standalone broker is outside this slice. Fresh service-owned media
+and state live below administrator-owned, non-writable ancestors; ordinary owner
+accounts receive evidence read/traverse access without namespace/data writes.
+Deployed code, Python runtime/imports, definition and token are administrator
+controlled. Startup refuses an editable owner checkout, login/root identity,
+non-isolated Python, capabilities, unsafe permissions/ACLs/links, ambiguous
+locality or missing root-owned storage genesis. Administrator/kernel integrity
+is an explicit prerequisite; matching mount snapshots are never claimed as
+uninterrupted exclusion. The dedicated UID cannot mount/impersonate another UID
+under the supplied unit restrictions.
+
+`managed_provision.py` creates only new objects and refuses every existing base
+or definition before mutation. Root and state are 0750, service-created files
+have no group/other write permission, definition/token/code are root controlled,
+and a storage UUID binds genesis to the canonical root. No legacy adoption or
+ownership conversion exists. See [FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md)
+for the layout, administrator preparation, unit/sysusers templates and eventual
+verified-copy/import constraints. Original media, manifests/session identity,
+old/new path/hash ledger, durable job references and old root-bound audit history
+must be preserved by that separate future protocol.
+
+### Service coordination and Linux mutation
+
+- Opt-in `serve --managed-storage` wires protected config, both durable slot jobs,
+  automation and audit before service recovery/monitoring. Output is limited to
+  immediate visible MP4 children of the fixed root. Existing capture/recovery/
+  finalization lifecycle leases and state promotion reserve a shared service gate.
+  Starts reserve admission before job persistence/worker launch; monitoring skips
+  a blocked cycle without disabling future automation.
+- Retention obtains exclusive admission and requires both slots/workers naturally
+  quiescent, no other process using the service UID, and no writable media file
+  descriptor or mapping. It never stops a recording to permit deletion. The
+  singleton lock, pinned root/ancestor identities, permissions, state/root trees
+  and locality are rechecked throughout mutation; policy/jobs/root/audit paths
+  are fixed to the protected authority. Advisory locks coordinate trusted code;
+  kernel ownership and service admission provide the exclusion boundary.
+- Linux holds no-follow artifact and parent descriptors, verifies authorized
+  identities and SHA256 bytes/empty membership, quarantines with
+  `renameat2(RENAME_NOREPLACE)`, then checks identity/proof again before pinned-parent
+  unlink/rmdir. No-replace protects destination occupancy; ownership plus service
+  exclusion protect the source name through removal. Parent fsync precedes
+  `deleted`. The original schema-1 outside-root audit, first-failure precedence,
+  retained/control-files-first and final-MP4-last order remain. An interrupted or
+  failed operation preserves remaining/original/private evidence and cannot
+  silently retry, repair or claim completion.
+- Authenticated bounded POST preview/delete/policy routes reuse the existing
+  service. The public `retention delete UUID --server URL --token-file FILE`
+  displays exact target facts, requires exact UUID consent and submits once.
+  The preview digest only vetoes changed fresh authorization. Policy requests
+  accept age/protect/unprotect values without selectable roots/commands/state.
+  A missing/interrupted/malformed delete response yields uncertainty/3 and no
+  retry; display failure preserves a proven service result. Ordinary services
+  expose no managed endpoint; unmanaged Linux/macOS deletion still refuses.
+
+### Verification and limits
+
+Tests exercise actual native Linux kernel permissions and mutation primitives
+in WSL Ubuntu, using exclusively disposable `/var/lib/tikrec-53-disposable-*`
+roots and separate service UID 60031 / ordinary reader UID 60032. The fixture
+injects installed-runtime verification because the test checkout is deliberately
+untrusted deployment code; all actual ownership, exclusion, locality, process/
+resource, pinned mutation and durability checks remain active. Runtime rejection
+is separately tested. No test accesses configured real media or needs LIVE/network.
+
+Native probes prove the reader can read evidence but cannot write, unlink,
+rename/substitute files/directories, create late children, replace root/ancestors,
+impersonate the service UID, signal it or access its process descriptors.
+Owner attempts run before every mutation and after held-byte proof. Tests cover
+unsafe root/state/definition/artifact ownership, missing genesis, state redirects,
+pinned root replacement, both real controller slots capturing fresh disposable
+parts under the service UID, writer/policy/lifecycle exclusion, UID children,
+writable descriptors/mappings, occupied file/directory quarantine destinations,
+wrong bytes, late children, private substitution after proof, original/private
+reappearance, job/policy changes, interruption, failed parent sync, first error
+versus native close fault, audited order and final MP4 last. Remote/API tests cover
+strict bounded JSON, authentication integration, exact consent, preview veto,
+fixed authoritative paths, single submission, lost responses and truthful output.
+
+The full cross-platform run exposed existing Windows-only destructive fixtures
+and four POSIX test assumptions: path separators, audit entry sync occurring
+before append, directory enumeration order, and an unrelated finalize test that
+attempted filesystem inspection before its intended malformed-config assertion.
+Tests now preserve Windows assertions and use the separate native managed fixture
+for Linux destruction; no production behavior was weakened to pass those cases.
+The configured Windows temporary directory also refused pytest cleanup, so all
+runs use unique disposable basetemps and isolated APPDATA/XDG_CONFIG_HOME.
+
+Final isolated offline results on the completed source:
+
+| Runtime | Full suite | Focused final verification |
+| --- | --- | --- |
+| Windows Python 3.11.15 / pytest 9.1.1 | 1,752 passed, 91 skipped, 19 subtests, 75.91 s | CLI outcome/delete/automation: 68 passed, 1 skipped |
+| WSL Ubuntu native Linux Python 3.14.4 / pytest 9.1.1 | 1,563 passed, 280 skipped, 19 subtests, 34.41 s | Managed native mutation + owner CLI: 30 passed |
+
+Windows full command: `python -m pytest -q --tb=short -p no:cacheprovider
+--basetemp=.tmp/issue53-win-full-final`, with APPDATA set to
+`.tmp/issue53-config-full-final` for this process only. Native command: WSL root,
+`/var/tmp/tikrec-53-test-runtime/bin/python -m pytest
+/mnt/c/Users/Leandro/dev/TikREC/tests -q --tb=short -p no:cacheprovider
+--basetemp=/var/tmp/tikrec-53-linux-full-final`, with
+`XDG_CONFIG_HOME=/var/tmp/tikrec-53-isolated-config`. The Linux run reads the same
+Windows checkout; no repository synchronization by folder copying occurs.
+The disposable pytest runtime adds no TikREC package dependency.
+
+The WSL unit parser reported only expected development-checkout permissions and
+the absent `/opt/tikrec/venv/bin/python`; full `systemd-analyze verify` is not
+passed because this task did not install/activate a production runtime. A real
+root-owned isolated installation, Fedora/Btrfs and systemd sandbox integration,
+SELinux policy if needed, FFmpeg/FFprobe child behavior, real-LIVE recording and
+power-loss behavior remain unverified. Existing offline Windows handle/mutation
+tests run on Windows. No physical storage-durability claim is made.
+
+**Safe next action:** review the exact pushed backend commit independently in a
+fresh context, then provision a purely disposable Fedora managed installation and
+exercise both slots, owner controls, refusal/fault paths and audit end to end.
+Do not restart/replace the real service or import existing media. #51 remains
+paused / NOT PASSED, its real age policy untouched/unset and deletion allowance
+unused; all Gracie/forensic/evidence exclusions remain. v0.10.0 is released,
+v0.11.0 unreleased. This Windows clone was initially tracked-clean and retains
+its pre-existing untracked test directories; unrelated Fedora clone changes were
+not touched. No other roadmap issue, release/tag, or real-media deletion occurred.
+
 ## Independent review checkpoint (2026-10-01)
 
 Fresh independent review of `f712eb2` confirms the locality correction as a

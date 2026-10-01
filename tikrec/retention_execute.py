@@ -6,7 +6,7 @@ import time
 import uuid
 import os
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -66,6 +66,22 @@ def execute_retention(root: Path, session_id: str, configuration_store: Configur
     This private API never accepts a saved plan. An interrupted or partially failed
     operation has no resume path; a later call must pass fresh eligibility again.
     """
+    from .managed_registry import current
+    authority = current()
+    reservation = nullcontext()
+    if authority is not None:
+        authority.check_retention_inputs(configuration_store.path, job_paths, audit_path)
+        reservation = authority.retention_scope(root)
+    with reservation:
+        return _execute_retention(
+            root, session_id, configuration_store, audit_path=audit_path,
+            job_paths=job_paths, clock=clock, media_inspector=media_inspector,
+            before_mutation=before_mutation, preview_guard=preview_guard, progress=progress)
+
+
+def _execute_retention(root, session_id, configuration_store, *, audit_path, job_paths,
+                       clock, media_inspector, before_mutation, preview_guard, progress):
+    """Execute only after native managed authority, or the original Windows gate."""
     require_identity_removal()  # Unsupported systems refuse even before lock/audit creation.
     if type(session_id) is not str or str(uuid.UUID(session_id)) != session_id:
         raise ValueError("retention target must be a canonical session UUID")

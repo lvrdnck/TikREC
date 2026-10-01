@@ -15,7 +15,7 @@ from .configuration import ConfigurationStore
 from .media import MediaInfo, inspect_media
 from .retention_execute import RetentionProgress, execute_retention
 from .retention_mutation import require_identity_removal
-from .retention_preview import RetentionPreview, prepare_preview
+from .retention_preview import RetentionPreview, prepare_preview, preview_digest
 
 
 def canonical_uuid(value: str) -> str:
@@ -33,7 +33,9 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
                clock: Callable[[], float] = time.time,
                media_inspector: Callable[[Path], MediaInfo | None] = inspect_media,
                job_paths: tuple[Path, Path] | None = None,
-               audit_path: Path | None = None) -> int:
+               audit_path: Path | None = None,
+               expected_preview_digest: str | None = None,
+               display_preview: bool = True) -> int:
     """Preview, confirm, freshly execute, and classify one retention attempt."""
     session_id = arguments.session_id
     root = Path(os.path.abspath(arguments.root)) if arguments.root is not None else None
@@ -43,7 +45,8 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
         try:
             require_identity_removal()
         except ValueError as error:
-            raise ValueError("v0.11 destructive retention is Windows-only; "
+            raise ValueError("unmanaged POSIX destructive retention is refused; "
+                             "use the dedicated managed Linux service; "
                              "retention plan remains available") from error
         config = store.load()
         root = root if root is not None else config.output_directory
@@ -56,7 +59,10 @@ def run_delete(arguments, store: ConfigurationStore, stdout: TextIO,
         preview = prepare_preview(root, session_id, store, job_paths=job_paths,
                                   clock=clock, media_inspector=media_inspector)
         root = preview.root
-        _show_preview(preview, stdout)
+        if expected_preview_digest is not None and preview_digest(preview) != expected_preview_digest:
+            raise ValueError("retention evidence changed after owner preview")
+        if display_preview:
+            _show_preview(preview, stdout)
         if arguments.confirm is None and not _typed_confirmation(stdin, stdout, session_id):
             raise ValueError("exact session UUID confirmation was not provided")
         operation_id = execute_retention(

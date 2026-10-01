@@ -11,6 +11,9 @@ def default_config_path(*, os_name: str | None = None,
                         environ: Mapping[str, str] | None = None,
                         home: Path | None = None) -> Path:
     """Return the deterministic platform configuration path for the current user."""
+    from .managed_registry import current
+    if os_name is None and environ is None and home is None and current() is not None:
+        return current().config_path
     platform = os.name if os_name is None else os_name
     variables = os.environ if environ is None else environ
     user_home = Path.home() if home is None else Path(home)

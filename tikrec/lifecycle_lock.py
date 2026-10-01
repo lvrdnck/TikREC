@@ -85,6 +85,12 @@ class LifecycleLease:
                     _occupied.pop(self.key, None)
             except BaseException as error:
                 faults.append(error)
+            try:
+                reservation = getattr(self, "managed_reservation", None)
+                if reservation is not None:
+                    reservation.__exit__(None, None, None)
+            except BaseException as error:
+                faults.append(error)
             self.cleanup_errors.extend(faults)
             if faults:
                 raise faults[0]
@@ -93,6 +99,20 @@ class LifecycleLease:
 def acquire_lifecycle(root: Path, mode: str, *,
                       cleanup_errors: list[BaseException] | None = None) -> LifecycleLease:
     """Acquire a nonblocking shared writer or exclusive retention root lease."""
+    from .managed_registry import reserve_root
+    reservation = reserve_root(root, mode)
+    reservation.__enter__()
+    try:
+        lease = _acquire_lifecycle(root, mode, cleanup_errors=cleanup_errors)
+        lease.managed_reservation = reservation
+        return lease
+    except BaseException:
+        reservation.__exit__(None, None, None)
+        raise
+
+
+def _acquire_lifecycle(root: Path, mode: str, *, cleanup_errors=None) -> LifecycleLease:
+    """Acquire the existing platform lease after managed mutation admission."""
     if mode not in {"writer", "retention"}:
         raise ValueError("unsupported lifecycle lease mode")
     scope = local_path(Path(root), directory=True)

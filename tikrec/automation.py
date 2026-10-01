@@ -21,7 +21,7 @@ from .automation_status import automation_snapshot, _result
 from .recording import RecordingBusy
 from .recording_manager import RecordingDuplicate
 from .tiktok_identity import canonical_room_id
-
+from .managed_registry import managed_cycle
 
 class AutomationCoordinator:
     """Sequentially claim admitted LIVEs up to current bounded capacity."""
@@ -46,6 +46,7 @@ class AutomationCoordinator:
         with self._lock:
             self._stopping = True
 
+    @managed_cycle
     def cycle_completed(self, monitoring: dict) -> None:
         """Consume one complete cycle and sequentially fill available capacity."""
         with self._lock:
@@ -289,7 +290,6 @@ class AutomationCoordinator:
     def _disable(self, reason: str) -> None:
         self._operational = False
         self._blocked_reason = reason
-
 
 def _creator(snapshot: dict, creator: str) -> dict | None:
     return next(

@@ -1,23 +1,30 @@
 # TikREC remote recording and startup recovery
 
-Mac -> Tailscale -> main-pc -> TikREC service -> files on main-pc.
+Owner CLI -> trusted LAN/Tailscale -> TikREC service -> recording storage.
 
 Two bounded workers record independently of HTTP clients and of each other.
 Launch the service independently of SSH so disconnecting the remote shell does
 not end capture.
 
-This document describes the released v0.10.0 service plus unreleased v0.11.0 storage-status development.
+This document describes the released v0.10.0 service plus unreleased v0.11.0
+storage status and opt-in Fedora managed-storage development.
 Per-user recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can own and automatically fill a fixed capacity of two independent recordings.
-Library, download, public retention execution, notification, and browser-control capabilities
-remain outside this slice. v0.10.0 is the current published release.
+Library, download, notification and browser-control capabilities remain outside
+this slice. Managed mode adds explicit mediated retention/policy; see
+[FEDORA_MANAGED_STORAGE.md](FEDORA_MANAGED_STORAGE.md). Fresh backend review and
+disposable Fedora validation precede real-media deletion or #51 resume.
+v0.10.0 is the current published release; this task does not deploy managed mode.
 
 In unreleased v0.11 development, each service capture/finalization worker and
 startup reconciliation/resume holds a root-scoped writer lease while it may
 mutate session or output artifacts. Two service slots can hold compatible writer
-leases in one output root. The private, currently unexposed retention executor
-requires the exclusive lease; it fails closed while either worker owns one.
+leases in one output root. The retention executor requires the exclusive lease;
+it fails closed while either worker owns one. Managed mode also enforces a
+dedicated UID, protected ancestors/runtime/configuration/state, and one service
+mutation gate spanning acceptance, both slots, recovery/finalization, automation
+and policy.
 The persistent root lock file is never a retention target. Durable completed
 job references still block that executor even after their writer lease ends.
 
@@ -71,8 +78,9 @@ secret in a server URL. `--timeout SECONDS` controls remote requests (default 10
 This is a small trusted LAN/tailnet service. Use Tailscale ACLs and a Windows
 Firewall rule restricted to intended tailnet clients; do not forward its port
 to the internet. Plain HTTP relies on Tailscale for encrypted transport. The
-token authorizes recording to any unused MP4 path writable by the task account;
-there are no per-user permissions. The client disables environment proxies and
+token authorizes recording to any unused MP4 path writable by the task account
+in ordinary mode; managed mode restricts output to its fixed protected root.
+There are no per-user permissions. The client disables environment proxies and
 redirects so bearer secrets stay with the explicit server. Browser-origin
 requests are refused. The current service has no accounts, TLS termination,
 TikTok credentials, shell commands, executable-path options, or file serving.

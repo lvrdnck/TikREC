@@ -74,6 +74,22 @@ class RemoteClient:
         body = {} if session_id is None else {"session_id": _session_id(session_id)}
         return self._request("POST", "/recording/stop", body)
 
+    def managed_preview(self, session_id: str) -> dict:
+        """Request exact read-only facts from protected service storage."""
+        return self._request("POST", "/managed/retention/preview",
+                             {"session_id": _session_id(session_id)})
+
+    def managed_delete(self, session_id: str, preview_digest: str) -> dict:
+        """Submit one confirmed deletion, with a fresh-proof preview veto."""
+        session_id = _session_id(session_id)
+        return self._request("POST", "/managed/retention/delete",
+                             dict(session_id=session_id, confirm=session_id,
+                                  preview_digest=preview_digest))
+
+    def managed_policy(self, action: str, value) -> dict:
+        """Promote only retention age or protection through the service authority."""
+        return self._request("POST", "/managed/retention/policy", dict(action=action, value=value))
+
     def _request(self, method: str, path: str, body: dict | None = None) -> dict:
         data = None if body is None else json.dumps(body).encode("utf-8")
         headers = {"Accept": "application/json"}

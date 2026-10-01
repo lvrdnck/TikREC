@@ -12,6 +12,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from .tiktok_identity import canonical_room_id
+from .managed_registry import current, state_write
 
 
 JOB_SCHEMA_VERSION = 1
@@ -124,13 +125,19 @@ class JobStateStore:
                 raise ValueError("unexpected fields")
             job = JobState(**values)
             job.validate()
+            if current() is not None:
+                current().check_state_path(self.path)
+                current().check_output(job.output_path)
         except (TypeError, ValueError):
             raise JobStateError("invalid durable job state; preserve artifacts") from None
         return job
 
+    @state_write
     def save(self, job: JobState, *, expected=_UNCONDITIONAL) -> None:
         """Flush complete intent before replacement; propagate storage failure."""
         job.validate()
+        if current() is not None:
+            current().check_output(job.output_path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary: Path | None = None
         try:
