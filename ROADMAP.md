@@ -1293,6 +1293,18 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Issue #51 Windows resume NOT PASSED (2026-10-01):** The intended Windows
+root and unset age rule are confirmed, but slot 1 is actively recording Gracie
+and five-second whole-root observations differ. One public age-unset plan exits
+0 with all 49 sessions `needs_attention / evidence_conflict`. No policy change,
+candidate selection or deletion attempt followed. The allowance remains unused,
+the evidence archive is preserved and the service continues normally. No code
+defect was demonstrated. #51 remains the single active task awaiting natural
+root inactivity/stability, followed by fresh age-unset public-plan checks and
+all original exclusions/stop boundaries. Details and evidence checksums:
+[ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+v0.10.0 remains released; v0.11.0 remains unreleased.
+
 **Windows platform restored (2026-10-01):** The owner ended Fedora/Linux as an
 active or planned runtime target. An ordinary revert of the four Fedora commits
 after `0cc59bac` restores the exact pre-detour production code/tests/packaging;

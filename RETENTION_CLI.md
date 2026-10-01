@@ -11,6 +11,19 @@ deletion. Earlier dated evidence below describes prior validation attempts.
 
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
 VALIDATION WAITING FOR A STABLE IDLE ROOT.**
+
+Latest Windows #51 check (2026-10-01, 20:22–20:23 CEST): configuration selects
+`C:\Users\Leandro\Videos` with age unset. An active Gracie writer makes the
+five-second root observations differ; the one public `retention plan --json`
+exits 0 with all 49 sessions `needs_attention / evidence_conflict`. This is a
+blocked advisory result, not conflict clearance or deletion authorization.
+No age rule was set, candidate selected or delete command issued; no restoration
+is needed. The single-deletion allowance is unused and real-media validation is
+NOT PASSED. Resume only after natural inactivity/stability through fresh checks;
+keep the archive and all Gracie/forensic/diagnostic/job-linked exclusions intact.
+See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+
+Earlier checkpoint:
 Under issue #51's owner approval on 2026-09-30, the six manifestless test evidence
 sets and three matching MP4s were preserved in an external archive with verified
 hashes and metadata. The age-unset public plan still reported root-wide conflict

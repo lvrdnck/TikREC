@@ -1,5 +1,89 @@
 # Issue #51 real-media retention validation evidence
 
+## 2026-10-01 Windows public-plan stop checkpoint
+
+**Real-media deletion validation: NOT PASSED. No deletion attempted.**
+`git pull --rebase --autostash` reported already up to date at `f6f7023`.
+The approved task ran on native Windows / Python 3.12.10 through the existing
+`.venv\Scripts\tikrec.exe`. The real public configuration selects the intended
+`C:\Users\Leandro\Videos`; `retention_max_age_days` is unset/disabled and the
+protected-creator list is empty. Configuration SHA256 before and after planning
+is `02e4b5fe9fcb106d3c6b593ec7c596fc5e7eaa09976bbed33d0befc721ece507`,
+also matching the previously preserved configuration. No policy was changed.
+
+Authenticated health and aggregate recordings show two slots, one active,
+one available, no shutdown and storage OK. Both durable job documents load and
+match the service observations:
+
+| Slot | Session UUID | State / retained ownership |
+| --- | --- | --- |
+| 1 | `ffcc2566-2085-4faa-940e-2bc177b5288c` | Recording Gracie room `7691765274030164766`; `gracie.kf-20261001-201956.mp4` / matching `.parts`; non-terminal recording intent, no stop request |
+| 2 | `05f3e981-b713-403c-9bef-198282ec5766` | Completed Gracie room `7691214478142212895`; `gracie.kf-20260930-084426.mp4` / matching `.parts`; finalization completed, `room_ended`, no reconciliation required |
+
+The jobs are in `%LOCALAPPDATA%\TikREC\job.json` and `job-2.json`.
+The service listener PID remains 37772 with creation time 2026-10-01
+11:35:56.463 CEST. Executable-path inspection was unavailable for that process;
+the configured Scheduled Task action points to this checkout's existing CLI.
+No service deployment, stop or restart was performed.
+
+Read-only claim observations at **20:22:09.818 and 20:22:14.959 CEST** each
+contain 49 immediate claims, zero uncertain claimants and internally stable
+membership. The complete snapshots differ only for
+`gracie.kf-20261001-201956.parts`. Its `.part-0001.flv.partial` grows from
+17,471,314 to 18,173,651 filesystem bytes; nearby service counters grow from
+17,523,342 to 18,181,334 bytes. Snapshot and service reads occur sequentially,
+so those counters describe separate observation instants. Natural inactivity
+and whole-root stability are **not established**.
+
+One normal public `tikrec retention plan --json`, with age still unset, runs
+from **20:22:15.007 to 20:23:03.100 CEST**. It exits **0**, with empty stderr,
+and all **49 sessions** classified `needs_attention / evidence_conflict`.
+Exit 0 means the advisory plan completed; its classifications do not clear the
+root conflict. The active writer explains the observed instability, consistent
+with the documented whole-root safety boundary. No production defect was shown.
+
+The stop boundary was honored. No candidate was selected; no temporary age
+rule, deletion attempt, retry, repair, quarantine cleanup, manual deletion or
+second attempt occurred. Age restoration is inapplicable because policy was
+never changed. After planning the same slot 1 continues recording, now at
+24,602,318 reported bytes; slot 2 remains completed with the same UUID.
+Health/storage remain OK. The persistent lifecycle lock's identity and metadata
+are unchanged. The root-bound audit remains absent at
+`%LOCALAPPDATA%\TikREC\retention-audit\d07cc58e2ea6cb6def5786ab70847a39ef0e205bdb7775a9304fff3175dbf331.jsonl`.
+No deletion operation or audit intent was initiated. The preserved
+`C:\Users\Leandro\TikREC-evidence\issue-51-manifestless` archive remains in
+place; segregation was not repeated and its media was not opened or changed.
+
+**Safe resume:** #51 stays open as the single active task, waiting for natural
+root inactivity/stability; no owner action is pending. On the next approved
+resume, recheck current configuration, service, both jobs and repeated root
+observations, then require conflict clearance from a fresh public age-unset plan.
+Only afterward reconsider the recorded temporary age-1 approval and at most one
+ordinary eligible non-Gracie session under every original exclusion. Preserve
+the exact-consent, one-attempt, no-retry and policy-restoration boundaries. The
+allowance is unused. No other roadmap work, production code/test change or
+release/tag action occurred. v0.10.0 is released; v0.11.0 is unreleased.
+
+### Local metadata evidence
+
+New metadata only (no media copies) is stored separately from the preserved
+archive in `C:\Users\Leandro\TikREC-evidence\issue-51-windows-resume-20261001-202209-aed23b9a`.
+The summary above is the durable GitHub resume record; the local JSON retains
+the full read-only observations. SHA256 values:
+
+| File | SHA256 |
+| --- | --- |
+| `observation-1.json` | `15db119608fa0d4eded7bbf232febfba0f0ddb750fa3682180a67eed50823d38` |
+| `observation-2.json` | `7df3325e9d1c9ecd2fe67ab67b3e57eab0729195fa2d9aaf7efdd0c62bba2f61` |
+| `observation-summary.json` | `7da12a4c8ecbe06d39b66b7cfa15fb93c79fc74985336a56b9d81d05c066df38` |
+| `durable-jobs.json` | `8433474c6d633e9b33d525b395eede0936abe23f4362eabac620171e378c9ca3` |
+| `control-before-plan.json` | `8cc9f6e2dcb54094d48c2ca6946df4f350c9e05b26eafa62db8b26bfd3a33ddc` |
+| `public-plan-age-unset.json` | `5573676977f6b3bfbd71531041f9317090ac0021a00b6714675635701fe23688` |
+| `public-plan-outcome.json` | `672f0db1daba02f025b803e85a2f50fddc12d96a2391bae807f633c76186e177` |
+| `public-plan-stderr.txt` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `runtime.json` | `4e6df66a69adfea2b5595c6a361d92db19223be1a0f1032cd629821fe7952a75` |
+| `runtime-after.json` | `25b513868ff89929db835bf8c7e59c78cc17f3f879c0a5327b595774f80fd7f7` |
+
 ## 2026-10-01 Windows resume checkpoint
 
 The owner returned TikREC fully to Windows and ended Fedora/Linux runtime work.

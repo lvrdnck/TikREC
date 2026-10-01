@@ -7,6 +7,29 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #51 Windows resume NOT PASSED (2026-10-01, 20:22–20:23 CEST):**
+  The public configuration confirms `C:\Users\Leandro\Videos` and age unset;
+  configuration SHA256 remains `02e4b5fe9fcb106d3c6b593ec7c596fc5e7eaa09976bbed33d0befc721ece507`.
+  Slot 1 is recording Gracie session `ffcc2566-2085-4faa-940e-2bc177b5288c`;
+  slot 2 holds completed Gracie `05f3e981-b713-403c-9bef-198282ec5766`.
+  Both durable jobs match; slot 1 retains non-terminal recording intent.
+  Five-second read-only root observations have 49 claims and zero uncertain
+  claims, but differ as the active Gracie writer partial grows. One normal
+  age-unset public plan exits 0 with all 49 sessions
+  `needs_attention / evidence_conflict`. Stop boundary honored: no policy
+  change, candidate selection, deletion attempt, retry, repair or service
+  interruption. Age restoration is unnecessary because age was never changed;
+  the one-deletion allowance remains unused. Service PID 37772 / creation
+  2026-10-01 11:35:56 CEST and both slot UUIDs persist; health/storage remain OK.
+  The lifecycle file is unchanged and the root-bound audit remains absent.
+  Original archive untouched; new read-only evidence and checksums are recorded
+  in [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
+  **State:** #51 is the single active task, waiting for natural root
+  inactivity/stability; no owner action is pending. Resume with fresh service,
+  job, root and age-unset public-plan checks; retain all original exclusions
+  and the one-attempt/restoration boundaries. No defect was demonstrated,
+  production code/tests are unchanged and no other task or release was started.
+
 - **Windows platform restored by owner decision (2026-10-01):** Windows
   `main-pc` is the sole active and planned recording/service runtime. The four
   unreleased Fedora commits after `0cc59bac` were reversed through an ordinary
