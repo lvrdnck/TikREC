@@ -1,5 +1,16 @@
 # Issue #53 Fedora retention locality and mutation contract
 
+## Independent review checkpoint (2026-10-01)
+
+Fresh independent review of `f712eb2` confirms the locality correction as a
+bounded read-only observation and the Linux pathname-mutation gap, with no
+introduced code blocker reproduced. The expanded investigation covers available
+file/directory delegations and sampled mount ABA limits. The smallest recommended
+architecture is the existing TikREC service under a protected dedicated identity;
+a standalone broker is optional. See
+[ISSUE_53_FEDORA_RETENTION_REVIEW.md](ISSUE_53_FEDORA_RETENTION_REVIEW.md).
+No architecture was implemented. #53 remains open and #51 remains paused.
+
 ## Outcome (2026-10-01)
 
 **Locality correction implemented; native Linux destructive retention remains
@@ -33,7 +44,9 @@ The correction retains visible mount ancestry, stacking/duplicate/cycle checks,
 and the supported local-filesystem restriction. Native Linux observations now
 open every component relative to a held parent with `O_PATH | O_NOFOLLOW`, reject
 non-file/non-directory endpoints, and compare the opened identities with the
-named components. The mount table must remain unchanged during the observation.
+named components. Sampled mount tables must agree; observed changes refuse.
+This does not prove uninterrupted stability or detect mount/unmount ABA between
+samples.
 The descriptor's [kernel mount ID](https://man7.org/linux/man-pages/man5/proc_pid_fdinfo.5.html)
 must match the selected visible mount. Only actual Btrfs `fstatfs` evidence can
 justify Btrfs's distinct subvolume device; other device mismatches still refuse.
@@ -94,6 +107,13 @@ regular-file open/truncate and can be forcibly broken; they do not supply a
 file-and-directory conditional namespace deletion primitive.
 [linkat AT_EMPTY_PATH](https://man7.org/linux/man-pages/man2/link.2.html) can add a
 file link, not remove its original name; directory hard links are unavailable.
+Newer file/directory delegations are also available on this Fedora kernel.
+Independent native review confirms they provide revocable namespace exclusion,
+but the holder's own unlink breaks protection; releasing it before deletion
+reopens substitution, and forced break can revoke it. See the
+[delegation interface](https://man7.org/linux/man-pages/man2/F_GETDELEG.2const.html)
+and the independent review's native counterexample. They do not provide atomic
+release-and-expected-object removal.
 A same-UID 0700 quarantine directory does not exclude another same-UID process.
 Notifications and private unpredictable names are detection/privacy tools, not
 an atomic identity predicate.
@@ -112,9 +132,12 @@ Linux deletion behavior.
 
 Retain the corrected read-only public workflow and the mutation refusal now.
 A possible future native backend needs enforceable exclusion of other writers
-for the entire proof/mutation interval. One route is a dedicated storage broker
-under a distinct security identity, owning the root and its mutation-controlling
-ancestors in a protected mount namespace. It would create recordings under that
+for the entire proof/mutation interval. The independent review recommends using
+the existing TikREC service under a dedicated non-login identity, owning the root
+and protected mutation-controlling ancestors, with trusted code/configuration/
+state and read-only owner access. A standalone broker remains an optional larger
+design. A protected mount namespace is additional hardening, not a replacement
+for ownership. The service would create recordings under that
 ownership from inception, mediate all namespace/data writes, quiesce/revoke
 writers before proof, prevent leaked writable descriptors and alternate links,
 and hold exclusive authority through final policy/job/root revalidation and
