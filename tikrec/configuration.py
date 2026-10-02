@@ -21,7 +21,7 @@ DEFAULT_VALIDATION_MODE = "standard"
 VALIDATION_MODES = frozenset({"standard", "deep"})
 _FIELDS = {"schema_version", "output_directory", "recovery_window_seconds", "validation_mode",
            "debug_tracebacks", "monitored_creators", "minimum_free_space_gib",
-           "retention_protected_creators", "retention_max_age_days"}
+           "retention_protected_creators", "retention_max_age_days", "automatic_raw_copy_creators"}
 
 
 class ConfigurationError(ValueError):
@@ -41,6 +41,7 @@ class Configuration:
     retention_protected_creators: tuple[str, ...] = ()
     retention_max_age_days: int | None = None
     schema_version: int = CONFIG_SCHEMA_VERSION
+    automatic_raw_copy_creators: tuple[str, ...] = ()
 
     def validate(self) -> None:
         """Reject unsupported versions and invalid optional setting values."""
@@ -59,6 +60,9 @@ class Configuration:
         if self.minimum_free_space_gib is not None:
             validate_minimum_free_space_gib(self.minimum_free_space_gib)
         validate_monitored_creators(self.monitored_creators)
+        validate_monitored_creators(
+            self.automatic_raw_copy_creators, field="automatic_raw_copy_creators"
+        )
         validate_monitored_creators(
             self.retention_protected_creators, field="retention_protected_creators"
         )
@@ -123,6 +127,9 @@ class ConfigurationStore:
             if type(raw_creators) is not list:
                 raise ConfigurationError("monitored_creators must be an ordered list")
             raw_protected = document.get("retention_protected_creators", [])
+            raw_copy_creators = document.get("automatic_raw_copy_creators", [])
+            if type(raw_copy_creators) is not list:
+                raise ConfigurationError("automatic_raw_copy_creators must be an ordered list")
             if type(raw_protected) is not list:
                 raise ConfigurationError("retention_protected_creators must be an ordered list")
             if "retention_max_age_days" in document and document["retention_max_age_days"] is None:
@@ -138,6 +145,7 @@ class ConfigurationStore:
                 debug_tracebacks=document.get("debug_tracebacks"),
                 minimum_free_space_gib=document.get("minimum_free_space_gib"),
                 monitored_creators=tuple(raw_creators),
+                automatic_raw_copy_creators=tuple(raw_copy_creators),
                 retention_protected_creators=tuple(raw_protected),
                 retention_max_age_days=document.get("retention_max_age_days"),
             )
@@ -163,6 +171,8 @@ class ConfigurationStore:
             document["minimum_free_space_gib"] = configuration.minimum_free_space_gib
         if configuration.monitored_creators:
             document["monitored_creators"] = list(configuration.monitored_creators)
+        if configuration.automatic_raw_copy_creators:
+            document["automatic_raw_copy_creators"] = list(configuration.automatic_raw_copy_creators)
         if configuration.retention_protected_creators:
             document["retention_protected_creators"] = list(configuration.retention_protected_creators)
         if configuration.retention_max_age_days is not None:

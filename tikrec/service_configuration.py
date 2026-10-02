@@ -16,6 +16,7 @@ _FIELDS = {
     "schema_version", "output_directory", "recovery_window_seconds",
     "validation_mode", "debug_tracebacks", "monitored_creators", "minimum_free_space_gib",
     "retention_protected_creators", "retention_max_age_days",
+    "automatic_raw_copy_creators",
 }
 
 
@@ -27,6 +28,7 @@ class ServiceConfiguration:
     monitored_creators: tuple[str, ...] = ()
     recovery_window_seconds: int = DEFAULT_RECOVERY_WINDOW_SECONDS
     minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB
+    automatic_raw_copy_creators: tuple[str, ...] = ()
 
 
 def load_service_configuration(
@@ -39,6 +41,7 @@ def load_service_configuration(
         return ServiceConfiguration(
             output_directory=configuration.output_directory,
             monitored_creators=configuration.monitored_creators,
+            automatic_raw_copy_creators=configuration.automatic_raw_copy_creators,
             recovery_window_seconds=configuration.effective_recovery_window_seconds,
             minimum_free_space_gib=configuration.effective_minimum_free_space_gib,
         )
@@ -63,12 +66,16 @@ def load_service_configuration(
         if raw_directory is not None and not isinstance(raw_directory, str):
             raise ConfigurationError("output_directory must be an absolute path string")
         raw_creators = document.get("monitored_creators", [])
+        raw_copy_creators = document.get("automatic_raw_copy_creators", [])
+        if type(raw_copy_creators) is not list:
+            raise ConfigurationError("automatic_raw_copy_creators must be an ordered list")
         if type(raw_creators) is not list:
             raise ConfigurationError("monitored_creators must be an ordered list")
         selected = Configuration(
             schema_version=version,
             output_directory=Path(raw_directory) if raw_directory is not None else None,
             monitored_creators=tuple(raw_creators),
+            automatic_raw_copy_creators=tuple(raw_copy_creators),
             minimum_free_space_gib=document.get("minimum_free_space_gib"),
         )
         if "minimum_free_space_gib" in document and document["minimum_free_space_gib"] is None:
@@ -77,6 +84,7 @@ def load_service_configuration(
         return ServiceConfiguration(
             output_directory=selected.output_directory,
             monitored_creators=selected.monitored_creators,
+            automatic_raw_copy_creators=selected.automatic_raw_copy_creators,
             minimum_free_space_gib=selected.effective_minimum_free_space_gib,
         )
     except (OSError, TypeError, ValueError) as error:

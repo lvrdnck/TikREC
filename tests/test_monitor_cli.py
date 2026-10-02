@@ -132,14 +132,14 @@ def test_malformed_add_never_creates_configuration(
     assert not path.exists()
 
 
-def test_monitor_help_describes_service_restart_and_command_boundaries(capsys) -> None:
+def test_monitor_help_describes_configuration_and_command_boundaries(capsys) -> None:
     for arguments in (("monitor", "--help"), ("monitor", "add", "--help"),
                       ("monitor", "remove", "--help"), ("monitor", "list", "--help")):
         assert main(list(arguments)) == 0
     output = capsys.readouterr().out
     help_text = " ".join(output.split())
-    assert "Configure creators observed after the TikREC service restarts" in help_text
-    assert "does not contact TikTok or start recording" in help_text
+    assert "Configure monitored creators and startup-selected raw-copy opt-ins" in help_text
+    assert "do not contact TikTok or start recording" in help_text
     assert "add one monitored creator" in help_text
     assert "remove one monitored creator" in help_text
     assert "list configured monitored creators" in help_text

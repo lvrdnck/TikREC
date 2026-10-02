@@ -20,13 +20,18 @@ from .automation_jobs import (
 from .automation_status import automation_snapshot, _result, _creator
 from .recording import RecordingBusy
 from .recording_manager import RecordingDuplicate
+from .creator_identity import validate_monitored_creators
 from .tiktok_identity import canonical_room_id
 
 
 class AutomationCoordinator:
     """Sequentially claim admitted LIVEs up to current bounded capacity."""
 
-    def __init__(self, controller, admission, store: AutomationStateStore) -> None:
+    def __init__(self, controller, admission, store: AutomationStateStore, *,
+                 automatic_raw_copy_creators: tuple[str, ...] = ()) -> None:
+        # Freeze startup policy; the accepted job owns its raw-copy flag thereafter.
+        self._raw_copy_creators = frozenset(validate_monitored_creators(
+            automatic_raw_copy_creators, field="automatic_raw_copy_creators"))
         self._controller = controller
         self._admission = admission
         self._store = store
@@ -214,7 +219,8 @@ class AutomationCoordinator:
         page = f"https://www.tiktok.com/@{creator}/live"
         try:
             started = self._controller.start(
-                page, claim.output_path, expected_room_id=room_id
+                page, claim.output_path, expected_room_id=room_id,
+                raw_copy=creator in self._raw_copy_creators,
             )
         except RecordingDuplicate:
             # This candidate never owned the room; later creators may use free capacity.

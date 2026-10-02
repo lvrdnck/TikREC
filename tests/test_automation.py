@@ -104,7 +104,7 @@ def test_one_ready_creator_starts_once_after_complete_cycle(tmp_path: Path):
     url, output, options = controller.starts[0]
     assert url == "https://www.tiktok.com/@creator/live"
     assert output.endswith("creator-20260922-120000.mp4")
-    assert options == {"expected_room_id": "123"}
+    assert options == {"expected_room_id": "123", "raw_copy": False}
     assert admission.calls == 2
     assert store.load().consumed() == {"creator": "123"}
     assert store.load().pending_claim is None

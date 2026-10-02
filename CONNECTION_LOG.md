@@ -554,6 +554,15 @@ that diagnostic, and never interrupts recording. Existing files are never
 overwritten; a sidecar collision disables only the sidecar while the raw copy
 may continue. Partial or unreferenced diagnostic files remain evidence.
 
+Unreleased #48 automatic starts select the same diagnostics from independent
+startup-selected `automatic_raw_copy_creators` preferences, configured through
+`tikrec monitor raw-copy enable/disable/list`. The default is OFF. Opted-in
+automatic recordings use their normal matching `.parts` directory and the same
+raw bytes, arrival sidecars, connection references and error handling described
+here. Their durable job owns the selected flag through recovery; monitor removal
+does not alter it. No new evidence format or writer behavior is introduced.
+One owner-authorized natural deployed watcher recording remains outstanding.
+
 For a service-owned validation session, `tikrec remote start --raw-copy` opts in
 without accepting an arbitrary remote diagnostic directory. The service writes
 the numbered raw and arrival files directly beside the session's retained FLVs,

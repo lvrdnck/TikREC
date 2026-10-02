@@ -2009,7 +2009,22 @@ history; other startup-selected settings remain fixed. Offline tests and the
 process/session/slot/jobs, continuing bytes and no duplicate after restoration.
 Intended production monitoring remains **`wardsimons`, `gracie.kf`**;
 do not restore Eliss. ISSUE_30_DEPLOYED_VALIDATION.md carries the tests, deployment
-and continuity evidence. #48 is the next recommended queued task, not started.
+and continuity evidence. #48 is the single active task as recorded below.
+
+**Per-creator automatic raw-copy (issue #48; OPEN / deployed gate pending):**
+Implementation/offline verification is complete. Independent canonical
+`automatic_raw_copy_creators` preferences default OFF, persist through monitor
+removal, and use normal locked atomic `monitor raw-copy enable/disable/list`
+updates. The service snapshots this policy at startup; accepted jobs retain
+their own flag through recovery and reuse normal `.parts` raw/arrival evidence.
+#30 continues to reload only monitored creators. Isolated Windows verification:
+166 focused, 634 broader / 2 subtests, 1,783 full / 19 subtests, seven platform
+skips. No production opt-in/deployment/restart or retention change occurred;
+intended production tuple remains `wardsimons`, `gracie.kf`.
+Owner authorization for safe deployment/one creator opt-in and one naturally
+automatic evidence recording remains required before #48 can close. Deploy
+supporting code before saving the new field; do not interrupt an active capture.
+#52 remains queued after #48; no other roadmap slice or release work starts.
 
 ### v0.12.0 — Notifications and integrations
 

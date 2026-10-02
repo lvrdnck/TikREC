@@ -107,6 +107,9 @@ when invoked, that is an error, not a wait state.
     tikrec config set debug-tracebacks true|false
     tikrec config unset debug-tracebacks
     tikrec monitor add CREATOR
+    tikrec monitor raw-copy enable CREATOR
+    tikrec monitor raw-copy disable CREATOR
+    tikrec monitor raw-copy list
     tikrec monitor remove CREATOR
     tikrec monitor list
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
@@ -875,7 +878,9 @@ Manual, recovery, finalization, blocked, and shutdown ownership wins
 through the admission view and the manager/controller authoritative locks.
 
 The selected start carries the monitor's canonical room ID through the internal
-controller guard described above and never enables raw copy. Acceptance consumes
+controller guard described above. Raw copy defaults OFF; unreleased #48 selects
+it from the startup snapshot of `automatic_raw_copy_creators` and passes an
+explicit boolean into the existing accepted start/job path. Acceptance consumes
 that creator/room even if capture later fails. The same room remains suppressed
 through completion, failure, manual stop, and process restart; explicit offline
 re-arms it, unknown does not, and a different canonical room is immediately new.
@@ -906,14 +911,16 @@ remain compatible.
 
 ### tikrec/service_configuration.py — service startup snapshot
 
-The service snapshots `output_directory`, the initial `monitored_creators`, and the effective
+The service snapshots `output_directory`, the initial `monitored_creators`,
+`automatic_raw_copy_creators` (unreleased #48), and the effective
 recovery window once at startup. Only the creator list subsequently reloads in
 unreleased #30 development, through the cycle-boundary contract above. Other
 startup settings remain fixed; existing dynamic retention semantics are unchanged.
 Normal startup validates the complete strict
 schema. When the recovery window is explicitly overridden, malformed unrelated
 known validation/debug preferences stay lazy, while JSON syntax, duplicate and
-unknown fields, schema version, output storage, and monitored creators remain
+unknown fields, schema version, output storage, monitored creators, and automatic
+raw-copy preferences remain
 strict because the running service uses them. Missing output storage is valid.
 
 ### tikrec/remote.py and tikrec/control_cli.py — remote client and CLI wiring
@@ -946,6 +953,19 @@ each successful HTTP body read plus the observed read end. Both diagnostics are
 best-effort; their failure is a warning, never a capture failure. Arrival logs
 add small variable storage and per-read JSON/flush work only when raw copying is
 explicitly enabled.
+
+Automatic diagnostic capture (unreleased #48) uses a strict optional schema-1
+`automatic_raw_copy_creators` ordered list of unique canonical handles. Missing
+or empty is OFF; null, non-list, duplicate or noncanonical entries fail loading.
+CLI enable/disable/list commands normalize the existing creator input forms and
+use locked atomic updates. Preferences are independent of monitoring and survive
+removal/re-addition. The startup snapshot governs future accepted automatic
+starts only; #30 reloads no raw policy. The durable job flag governs continuation
+and recovery despite later policy changes. Evidence stays in the normal matching
+`.parts` through existing capture code. Capacity, expected-room guards, consumed
+room/rearm, admission, shutdown and manual-start contracts are unchanged.
+Deployed natural automatic validation remains outstanding with owner
+authorization required; no production opt-in has been set.
 
 Remote diagnostic capture uses the boolean `remote start --raw-copy` opt-in
 rather than accepting an arbitrary diagnostic path. The service co-locates raw

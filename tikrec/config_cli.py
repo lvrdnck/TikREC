@@ -89,6 +89,7 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
                 else "built_in_default"
             ),
             "monitored_creators": list(configuration.monitored_creators),
+            "automatic_raw_copy_creators": list(configuration.automatic_raw_copy_creators),
             "retention_protected_creators": list(configuration.retention_protected_creators),
             "retention_max_age_days": configuration.retention_max_age_days,
             "effective_retention_max_age_days": configuration.retention_max_age_days,
@@ -144,6 +145,8 @@ def run_config_command(arguments: argparse.Namespace, stdout: TextIO) -> int:
             print(f"Minimum free space source: {result['minimum_free_space_source']}", file=stdout)
             creators = ", ".join(f"@{item}" for item in configuration.monitored_creators)
             print(f"Monitored creators: {creators or '(none)'}", file=stdout)
+            raw_creators = ", ".join(f"@{item}" for item in configuration.automatic_raw_copy_creators)
+            print(f"Automatic raw-copy creators (service startup): {raw_creators or '(none)'}", file=stdout)
             protected = ", ".join(f"@{item}" for item in configuration.retention_protected_creators)
             print(f"Retention protected creators: {protected or '(none)'}", file=stdout)
             age = configuration.retention_max_age_days

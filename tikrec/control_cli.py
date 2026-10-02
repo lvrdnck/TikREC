@@ -89,6 +89,7 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         service_runner(host=host, port=arguments.port, token=token,
                        retry_policy=retry_policy,
                        monitored_creators=configuration.monitored_creators,
+                       automatic_raw_copy_creators=configuration.automatic_raw_copy_creators,
                        creator_loader=lambda: ConfigurationStore(path).load(
                            missing_ok=False).monitored_creators,
                        output_directory=configuration.output_directory,

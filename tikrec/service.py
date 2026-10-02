@@ -38,6 +38,7 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                  automation: AutomationCoordinator | None = None,
                  automation_store: AutomationStateStore | None = None,
                  monitored_creators: tuple[str, ...] = (),
+                 automatic_raw_copy_creators: tuple[str, ...] = (),
                  creator_loader: Callable[[], tuple[str, ...]] | None = None,
                  output_directory: Path | None = None,
                  minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB,
@@ -83,7 +84,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                 job_store.path.with_name("automation.json")
             )
             self.automation = automation if automation is not None else AutomationCoordinator(
-                self.controller, self.admission, state_store
+                self.controller, self.admission, state_store,
+                automatic_raw_copy_creators=automatic_raw_copy_creators,
             )
             self.monitor = monitor if monitor is not None else CreatorMonitor(
                 monitored_creators, cycle_completed=self.automation.cycle_completed,
@@ -260,6 +262,7 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           manager: RecordingManager | None = None,
           retry_policy: RetryPolicy = RetryPolicy(),
           monitored_creators: tuple[str, ...] = (),
+          automatic_raw_copy_creators: tuple[str, ...] = (),
           creator_loader: Callable[[], tuple[str, ...]] | None = None,
           output_directory: Path | None = None,
           minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB,
@@ -273,6 +276,7 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
                              admission=admission, automation=automation,
                              automation_store=automation_store,
                              monitored_creators=monitored_creators, creator_loader=creator_loader,
+                             automatic_raw_copy_creators=automatic_raw_copy_creators,
                              output_directory=output_directory,
                              minimum_free_space_gib=minimum_free_space_gib) as server:
         try:

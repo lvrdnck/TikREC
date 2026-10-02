@@ -27,6 +27,34 @@ exposes no retention deletion or policy API.
 The persistent root lock file is never a retention target. Durable completed
 job references still block that executor even after their writer lease ends.
 
+## Automatic raw-copy preferences (unreleased #48)
+
+The optional schema-1 `automatic_raw_copy_creators` field is an ordered list of
+unique canonical handles, separate from `monitored_creators`. Missing/empty means
+OFF for all creators. Use `tikrec monitor raw-copy enable CREATOR`, `disable
+CREATOR`, or `list` with the normal global `--config FILE` option. CLI updates
+use the existing locked atomic configuration path; monitor removal preserves
+the preference until explicitly disabled. `config show` reports the saved list.
+
+`serve` snapshots these preferences at startup. Each accepted automatic start
+binds one boolean to its durable job through the existing recording manager.
+Only opted-in creators produce co-located `connection-NNNN.raw` and arrival
+sidecars in the matching `.parts`; capture/connection evidence follows
+CONNECTION_LOG.md. Raw capture roughly doubles storage. Recovery uses the
+accepted job's flag even if a subsequent startup has different preferences.
+Manual local/remote starts retain their existing explicit opt-ins.
+
+#30 continues to reload only the ordered monitored tuple at cycle boundaries.
+Raw preference changes require a safe subsequent service startup and do not
+alter active workers/jobs. A pre-#48 runtime rejects a nonempty new field during
+strict reload, so deploy supporting code before setting an opt-in.
+
+#48 implementation/offline verification is complete; deployment and one natural
+automatic recording remain unvalidated and require owner authorization. This
+task did not restart PID 18660 or enable raw capture for any production creator.
+Production remains `wardsimons`, `gracie.kf`, using the proven service-visible
+`\\localhost\C$\Users\Leandro\AppData\Roaming\TikREC\config.json` path.
+
 ## Bind and secret
 
 `tikrec serve` defaults to `127.0.0.1:8765`. `--host` accepts an explicit IPv4 or

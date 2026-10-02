@@ -24,6 +24,7 @@ def test_serve_defaults_and_existing_commands(monkeypatch, tmp_path):
     assert callable(loader)
     assert calls == [{"host": "127.0.0.1", "port": 8765, "token": None,
                       "retry_policy": RetryPolicy(), "monitored_creators": (),
+                      "automatic_raw_copy_creators": (),
                       "output_directory": None, "minimum_free_space_gib": 10}]
     parser = _parser()
     for command, args in [("live", ["page", "--output", "out.mp4"]),
@@ -60,8 +61,8 @@ def test_help_guides_normal_live_recording_and_advanced_sources(capsys):
 
     assert main(["monitor", "--help"]) == 0
     monitor_help = capsys.readouterr().out
-    assert "service restarts" in monitor_help
-    assert "does not contact TikTok or start recording" in monitor_help.replace("\n", " ")
+    assert "startup-selected raw-copy opt-ins" in monitor_help
+    assert "do not contact TikTok or start recording" in monitor_help.replace("\n", " ")
 
     assert main(["record", "--help"]) == 0
     record_help = capsys.readouterr().out

@@ -57,6 +57,9 @@ See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
     tikrec config set debug-tracebacks true|false
     tikrec config unset debug-tracebacks
     tikrec monitor add CREATOR
+    tikrec monitor raw-copy enable CREATOR
+    tikrec monitor raw-copy disable CREATOR
+    tikrec monitor raw-copy list
     tikrec monitor remove CREATOR
     tikrec monitor list
     tikrec retention protect CREATOR
@@ -198,6 +201,22 @@ this preference only after an unexpected exception when neither flag was given,
 so successful commands, help/version, and known operational errors do not start
 depending on configuration merely for diagnostics. This does not change normal
 progress, warning, validation, service, or remote output.
+
+**Unreleased #48:** `tikrec monitor raw-copy enable CREATOR`, `disable`, and
+`list` manage independent automatic raw-copy preferences. Raw capture defaults
+OFF, and roughly doubles recording storage when enabled. These commands accept
+the same creator forms as `monitor add`; they do not add a monitored creator or
+start a recording. Preferences survive monitor removal and re-addition.
+`config show` reports `automatic_raw_copy_creators`.
+
+The service selects raw-copy preferences at startup. Future automatic starts
+for selected creators use the existing raw/arrival diagnostics in their matching
+`.parts` directory. Existing accepted jobs retain their own raw-copy flag during
+recovery. #30 still hot-reloads only monitored creators; editing raw preferences
+does not change a running service's raw policy. Deploy supporting code before
+saving a nonempty preference: older strict configuration readers reject the new
+field. Production deployment/opt-in and a natural watcher recording remain
+outstanding for #48; do not interrupt an active recording to activate it.
 
 `tikrec monitor add CREATOR`, `remove`, and `list` manage an ordered opt-in list
 of public TikTok creator handles in the same configuration file. `CREATOR` may

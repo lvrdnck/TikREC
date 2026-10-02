@@ -7,6 +7,33 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #48 ACTIVE / OPEN (2026-10-02):** Implementation and isolated Windows
+  offline verification are complete. Independent schema-1
+  `automatic_raw_copy_creators` preferences default OFF, survive monitor removal,
+  and use normal `monitor raw-copy enable/disable/list` locked atomic CLI updates.
+  Service startup selects the policy; each accepted automatic start persists its
+  boolean in the existing durable job, which governs recovery. #30 still reloads
+  only monitored creators. Existing capture/evidence, capacity and admission
+  paths are reused. Focused: 166 passed; broader: 634 passed / 2 subtests;
+  full: **1,783 passed, 7 platform skips, 19 subtests**, Python 3.12.10 Windows,
+  with fresh external config/test roots and no production token.
+  **Pending owner action:** authorize safe deployment and opt-in for one intended
+  creator, followed by one natural automatic recording proving co-located raw /
+  arrivals / connection references. Do not restart an active recording; do not
+  manually start a LIVE to manufacture the gate. Deploy supporting code before
+  saving a nonempty new field, which older strict readers reject. No deployment,
+  production opt-in, restart, retention or release action occurred. PID 18660
+  and creation time and exact host-visible config bytes remain unchanged;
+  production monitoring stays **`wardsimons`, `gracie.kf`**, never Eliss.
+  Final read-only check: Ward remains the original slot-1 UUID
+  `9d3720f4-0123-4fcf-917d-4546d754be9d`, recording at 367,802,920 bytes,
+  raw-copy OFF, no stop request or recovery state. Configuration health is `ok`;
+  SHA256 stays `8f35fd61beb58fc35ae4d824598454dc3623cd9315464085ee195764c6303d10`.
+  Local isolated results and before/after metadata:
+  `C:\Users\Leandro\TikREC-tests\issue48-20261002-implementation`.
+  #48 remains the single active task. #52 is queued afterward; #13/#28/#8 remain
+  separate. v0.10.0 remains released/package version; v0.11.0 is unreleased.
+
 - **Issue #51 COMPLETED / PASSED (project-manager decision, 2026-10-01):**
   #51 is closed as completed. The public retention CLI independent review gate
   and native Windows real-media retention validation are both **PASSED**.
@@ -51,9 +78,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   no suite rerun was needed for this configuration/documentation-only gate.
   Evidence, hashes and earlier checkpoints:
   [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-  **No implementation task is active. Next recommended queued task: #48 —
-  opt-in per-creator raw-copy for automatic recordings**, pending project-manager
-  review and fresh preflight/model gate. No owner action is pending for #30.
+  **#48 is now the single active task**, with implementation/offline tests complete
+  and its authorized deployed validation pending as recorded above.
+  No owner action is pending for #30.
   #52 remains queued; #8/#28 remain opportunistic non-blocking evidence work,
   and #13 is separate queued rendition-policy work. None was started.
   v0.10.0 remains current released/package version; v0.11.0 remains unreleased.
