@@ -1319,10 +1319,16 @@ config. Empty lists can later adopt additions. Active workers/jobs and existing
 capacity/duplicate-LIVE/consumed-room behavior remain intact; other startup
 settings remain fixed. Native Windows focused tests: **120 passed**; broader
 service/config/automation/recording: **422 passed**; final isolated full offline:
-**1,754 passed / 7 skipped / 19 subtests**, 79.11 seconds. The old running
-Windows process was checked read-only and left unchanged; no new-code reload
-during a naturally active session has been proven. #30 remains OPEN until that
-deployed continuity/adoption gate is established; no completion checkbox or
+**1,754 passed / 7 skipped / 19 subtests**, 79.11 seconds. The single authorized
+unchanged-task restart after repeated natural idle checks loaded the new code on
+2026-10-02 at 10:48 CEST (PID 18660). Health/reload diagnostics are good; task,
+native config, both durable jobs and automation state are unchanged. No natural
+active recording occurred through cycle 10 (10:53:18 CEST); no creator-list
+mutation or new-code reload during an active session has been proven. Resume that natural gate with
+the proven host-visible config; no repeat restart is needed. Exact evidence:
+[ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
+#30 remains OPEN until that deployed continuity/adoption gate is established;
+no completion checkbox or
 release readiness is inferred from offline tests. #48/#52 remain queued and
 #8/#13/#28 separate non-blocking work. Do not advance another issue or release.
 
@@ -2012,9 +2018,10 @@ missing or unreadable documents keep the last good tuple and fixed diagnostic;
 a later valid document recovers normally. Removing a creator neither stops its
 active worker nor erases consumed-room history. Other startup-selected settings
 remain fixed; existing separately documented dynamic retention behavior remains.
-#30 stays open for new-code, real active-session continuity/adoption proof at a
-safe natural opportunity. The old production service has not been restarted or
-configured for validation. Issue #30 carries the tests and precise safe resume.
+#30 stays open for real active-session continuity/adoption proof at a safe
+natural opportunity. The new implementation is loaded after the single safe
+idle restart on 2026-10-02; production configuration is unchanged. Issue #30 and
+ISSUE_30_DEPLOYED_VALIDATION.md carry the tests, load evidence and safe resume.
 
 ### v0.12.0 — Notifications and integrations
 

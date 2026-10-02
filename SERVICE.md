@@ -69,6 +69,15 @@ an explicit UNC spelling of the same host file and verified the restarted
 service listed both creators. Do not compensate by editing JSON or by changing
 the task definition.
 
+The 2026-10-02 #30 deployment safely restarted the unchanged task once after
+repeated natural idle checks. PID 18660 now reports healthy reload diagnostics;
+task/config/durable jobs/automation state remained unchanged. The host-visible
+UNC config lists exactly `eliss4r.n`, `gracie.kf`; the redirected desktop view
+differs. Active-session removal/restoration proof remains outstanding, so #30
+is still open. See [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md)
+for exact evidence and the resume boundary; loading this code needs no repeat
+restart.
+
 Use `--token-file FILE` or `TIKREC_TOKEN`. Files override the environment and may
 end with a newline. Tokens must be 16–512 printable ASCII characters without
 spaces; use a randomly generated secret with at least 32 characters. Empty or

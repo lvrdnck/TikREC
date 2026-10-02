@@ -47,21 +47,32 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   roots; pytest used separate basetemps and `-p no:cacheprovider`. Tests prove
   list adoption/fallback/recovery, serialization through observation/arbitration,
   stopped-read handling, active one/two-slot durable job preservation and frozen
-  unrelated settings. Source-size and diff checks passed. No production
-  configuration, recording/evidence or service was
-  changed, and no other issue or release work started.
-  **Deployment gate:** read-only production observations around 10:14 CEST found
-  PID 37772, created 2026-10-01 11:35:56 CEST, with both slots naturally idle,
-  healthy storage, completed Gracie `55dc7b01-4a85-45c1-aa63-0cec1a0ab0c4` and
-  Eliss `268a8cbd-34be-4b9b-ba84-6c848f69ad47`. Monitoring had no new reload
-  diagnostic, consistent with the old process. It was left running unchanged.
-  The required proof of new-code reload during an already-active natural session
-  is not established; #30 stays OPEN and remains the sole active task.
-  **Safe resume:** load the committed implementation at a safe maintenance
-  opportunity without interrupting active captures; then, during a naturally
-  occurring authorized recording, use normal monitor add/remove commands and
-  verify adoption with unchanged service PID/creation and session/job ownership.
-  Use the same host filesystem view as the service, as described in SERVICE.md.
+  unrelated settings. Source-size and diff checks passed. At the implementation
+  checkpoint, production configuration, recording/evidence and service were
+  unchanged. The subsequent authorized load is recorded below; no other issue
+  or release work started.
+  **Deployment checkpoint (2026-10-02): safe load PASSED; active-session gate
+  still outstanding.** Repeated naturally idle checks across monitor cycles,
+  byte-identical completed jobs/config/automation and a fresh immediate idle
+  check allowed the single authorized unchanged-task restart at 10:48 CEST.
+  PID **18660**, created **10:48:25.158 CEST**, now loads `e3864589` and reports
+  `/monitoring.configuration` healthy. Task definition, native config, both jobs
+  and automation state are unchanged; storage is good, historical session
+  ownership preserved, and no capture/recovery was created by startup. The
+  proven host-visible config is the UNC spelling of the native APPDATA file:
+  `\\localhost\C$\Users\Leandro\AppData\Roaming\TikREC\config.json`.
+  It and the new service report exactly `eliss4r.n`, `gracie.kf`; the desktop's
+  redirected conventional-path document differs and must not be used for this
+  validation. Through 10:53:18/cycle 10 both slots were still idle: Eliss was
+  LIVE in its already-consumed room and suppressed; Gracie was offline. No creator-list
+  mutation was performed. Evidence and hashes:
+  [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
+  **Safe resume:** the new code is already loaded; do not repeat the restart.
+  During a naturally occurring authorized automatic recording, use normal
+  monitor remove/add commands against that host-visible config and verify list
+  adoption with unchanged PID/creation, session/slot/job and continuing bytes;
+  restore the exact original ordered tuple and verify no duplicate start.
+  No active-session proof is established; #30 stays OPEN/single active.
   Do not start/stop a LIVE to manufacture evidence or restart during an active
   recording solely for this gate. No implementation decision is awaiting the
   owner; deployment must respect that safety boundary.
