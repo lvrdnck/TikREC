@@ -98,3 +98,9 @@ def job_matches_observation(job: dict, observation: dict) -> bool:
         room_id == saved_room
         and job.get("source_url") == f"https://www.tiktok.com/@{creator}/live"
     )
+
+def prior_session_id_for_start(controller) -> str | None:
+    """Fingerprint the selected slot while preserving single-controller use."""
+    fingerprint = getattr(controller, "prior_session_id_for_start", None)
+    return (fingerprint() if callable(fingerprint)
+            else prior_session_id_for_jobs(controller_jobs(controller)))

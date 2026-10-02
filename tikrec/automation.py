@@ -15,9 +15,9 @@ from .automation_jobs import (
     jobs_match_claim,
     jobs_match_observation,
     jobs_prove_no_claimed_start,
-    prior_session_id_for_jobs,
+    prior_session_id_for_start,
 )
-from .automation_status import automation_snapshot, _result
+from .automation_status import automation_snapshot, _result, _creator
 from .recording import RecordingBusy
 from .recording_manager import RecordingDuplicate
 from .tiktok_identity import canonical_room_id
@@ -186,10 +186,7 @@ class AutomationCoordinator:
 
     def _attempt(self, creator: str, observation: dict | None, admission: dict) -> bool:
         try:
-            fingerprint = getattr(self._controller, "prior_session_id_for_start", None)
-            previous_session = (fingerprint() if callable(fingerprint)
-                                else prior_session_id_for_jobs(
-                                    controller_jobs(self._controller)))
+            previous_session = prior_session_id_for_start(self._controller)
         except Exception:
             self._cycle_results[creator] = _result(
                 "blocked", "controller_state_unavailable"
@@ -289,11 +286,3 @@ class AutomationCoordinator:
     def _disable(self, reason: str) -> None:
         self._operational = False
         self._blocked_reason = reason
-
-
-def _creator(snapshot: dict, creator: str) -> dict | None:
-    return next(
-        (item for item in snapshot.get("creators", [])
-         if item.get("creator") == creator),
-        None,
-    )

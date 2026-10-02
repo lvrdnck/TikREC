@@ -81,3 +81,11 @@ def _status_item(
 
 def _result(state: str, reason: str | None = None) -> dict:
     return {"state": state, "reason": reason}
+
+
+def _creator(snapshot: dict, creator: str) -> dict | None:
+    return next(
+        (item for item in snapshot.get("creators", [])
+         if item.get("creator") == creator),
+        None,
+    )

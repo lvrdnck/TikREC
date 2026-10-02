@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hmac
-import ipaddress
 import json
 import socket
 from collections.abc import Callable
@@ -21,27 +20,12 @@ from .retry_policy import RetryPolicy
 from .job_state import JobStateStore
 from .service_job import (default_job_state_path, independent_job_stores,
                           second_job_state_path)
+from .service_bind import DEFAULT_HOST, validate_bind
 from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, StorageStatus
 
 
-DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 MAX_BODY = 8192
-
-def validate_bind(host: str, token: str | None) -> str:
-    """Require explicit IP binding and a secret for all non-loopback addresses."""
-    host = DEFAULT_HOST if host == "localhost" else host
-    try:
-        address = ipaddress.ip_address(host)
-    except ValueError:
-        raise ValueError("host must be a loopback, LAN, or Tailscale IP address") from None
-    if token is not None and (not 16 <= len(token) <= 512
-                              or any(not 33 <= ord(c) <= 126 for c in token)):
-        raise ValueError("token must contain 16–512 printable ASCII characters without spaces")
-    if not address.is_loopback and token is None:
-        raise ValueError("non-loopback binding requires TIKREC_TOKEN or --token-file")
-    return str(address)
-
 
 class RecordingHTTPServer(ThreadingHTTPServer):
     """Serve requests separately from the bounded recording workers."""
