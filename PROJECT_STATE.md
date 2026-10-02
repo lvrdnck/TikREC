@@ -61,17 +61,30 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   ownership preserved, and no capture/recovery was created by startup. The
   proven host-visible config is the UNC spelling of the native APPDATA file:
   `\\localhost\C$\Users\Leandro\AppData\Roaming\TikREC\config.json`.
-  It and the new service report exactly `eliss4r.n`, `gracie.kf`; the desktop's
-  redirected conventional-path document differs and must not be used for this
+  At that load checkpoint it and the service reported `eliss4r.n`, `gracie.kf`;
+  the desktop's redirected conventional-path document differs and must not be used for this
   validation. Through 10:53:18/cycle 10 both slots were still idle: Eliss was
   LIVE in its already-consumed room and suppressed; Gracie was offline. No creator-list
   mutation was performed. Evidence and hashes:
   [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
+  **Owner configuration update PASSED (11:42–11:45 CEST):** normal monitor CLI
+  commands against the proven UNC file replaced Eliss with Ward, preserving the
+  new intended ordered tuple **`wardsimons`, `gracie.kf`**. Cycle 103 adopted it
+  with healthy configuration and unchanged PID/creation; unrelated config is
+  identical. Both prior jobs were completed before the change. Ward naturally
+  auto-started in slot-1 at 11:42:52, UUID
+  `9d3720f4-0123-4fcf-917d-4546d754be9d`, room `7692001759392418593`, output/parts
+  `C:\Users\Leandro\Videos\wardsimons-20261002-114252.mp4` / `.parts`.
+  Its authoritative job matches; bytes grew 15,379,770 to 27,479,204 with no
+  stop/recovery or duplicate. Slot 2's completed job is byte-identical; slot 1's
+  old completed reference was normally superseded, with its manifest completed.
+  This proves idle configuration adoption, not active-session removal continuity.
   **Safe resume:** the new code is already loaded; do not repeat the restart.
   During a naturally occurring authorized automatic recording, use normal
   monitor remove/add commands against that host-visible config and verify list
   adoption with unchanged PID/creation, session/slot/job and continuing bytes;
-  restore the exact original ordered tuple and verify no duplicate start.
+  restore exactly **`wardsimons`, `gracie.kf`** and verify no duplicate start.
+  Do not restore Eliss. Freshly recheck Ward's natural session before validation.
   No active-session proof is established; #30 stays OPEN/single active.
   Do not start/stop a LIVE to manufacture evidence or restart during an active
   recording solely for this gate. No implementation decision is awaiting the

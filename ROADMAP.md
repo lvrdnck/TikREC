@@ -1321,10 +1321,14 @@ settings remain fixed. Native Windows focused tests: **120 passed**; broader
 service/config/automation/recording: **422 passed**; final isolated full offline:
 **1,754 passed / 7 skipped / 19 subtests**, 79.11 seconds. The single authorized
 unchanged-task restart after repeated natural idle checks loaded the new code on
-2026-10-02 at 10:48 CEST (PID 18660). Health/reload diagnostics are good; task,
-native config, both durable jobs and automation state are unchanged. No natural
-active recording occurred through cycle 10 (10:53:18 CEST); no creator-list
-mutation or new-code reload during an active session has been proven. Resume that natural gate with
+2026-10-02 at 10:48 CEST (PID 18660). At that checkpoint health/reload diagnostics
+were good; task, native config, jobs and automation remained unchanged. No natural
+active recording occurred through cycle 10 (10:53:18 CEST). The later owner
+configuration change to **`wardsimons`, `gracie.kf`** passed adoption by cycle 103
+without restart or unrelated config changes; Ward naturally auto-started in
+slot 1 and continued growing under one session/job. Removing a creator during
+an already-active session remains unproven. Preserve the new ordered tuple;
+do not restore Eliss. Resume that natural gate with
 the proven host-visible config; no repeat restart is needed. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
 #30 remains OPEN until that deployed continuity/adoption gate is established;
@@ -2020,7 +2024,10 @@ active worker nor erases consumed-room history. Other startup-selected settings
 remain fixed; existing separately documented dynamic retention behavior remains.
 #30 stays open for real active-session continuity/adoption proof at a safe
 natural opportunity. The new implementation is loaded after the single safe
-idle restart on 2026-10-02; production configuration is unchanged. Issue #30 and
+idle restart on 2026-10-02. The subsequent owner-requested production tuple
+`wardsimons`, `gracie.kf` passed normal cycle adoption without restart and allowed
+one natural Ward automatic recording. That new tuple must be restored after the
+outstanding active-session validation, never Eliss. Issue #30 and
 ISSUE_30_DEPLOYED_VALIDATION.md carry the tests, load evidence and safe resume.
 
 ### v0.12.0 — Notifications and integrations

@@ -72,8 +72,13 @@ the task definition.
 The 2026-10-02 #30 deployment safely restarted the unchanged task once after
 repeated natural idle checks. PID 18660 now reports healthy reload diagnostics;
 task/config/durable jobs/automation state remained unchanged. The host-visible
-UNC config lists exactly `eliss4r.n`, `gracie.kf`; the redirected desktop view
-differs. Active-session removal/restoration proof remains outstanding, so #30
+UNC config initially listed `eliss4r.n`, `gracie.kf`; the redirected desktop view
+differs. On 2026-10-02 the owner changed the intended production tuple to
+**`wardsimons`, `gracie.kf`** using normal monitor commands against that UNC path.
+Cycle-boundary adoption and healthy configuration were verified without restart;
+Ward then naturally auto-started in slot 1. Preserve this new ordered tuple and
+do not restore Eliss during later validation. Active-session removal/restoration
+proof remains outstanding, so #30
 is still open. See [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md)
 for exact evidence and the resume boundary; loading this code needs no repeat
 restart.

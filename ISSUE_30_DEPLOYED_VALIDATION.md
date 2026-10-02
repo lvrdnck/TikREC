@@ -8,7 +8,56 @@ and isolated offline verification at `e3864589` are complete; this checkpoint
 changes no production code. v0.10.0 remains the current released/package version;
 v0.11.0 remains unreleased.
 
-## Phase 1 — safe load established
+## Owner configuration update — PASSED (2026-10-02, 11:42–11:45 CEST)
+
+The owner replaced Eliss with Ward and retained Gracie. The intended production
+tuple is now **`wardsimons`, `gracie.kf`**, in that order. Do not restore Eliss
+after future validation. Normal CLI commands used the proven UNC config below:
+`monitor remove eliss4r.n`, `monitor remove gracie.kf`, `monitor add wardsimons`,
+then `monitor add gracie.kf`. The temporary Gracie removal/re-add was needed
+because the public add command appends; all four commands completed normally.
+No manual JSON edit or service restart occurred; unrelated config fields match.
+
+- At 11:42:24/cycle 101, both slots were inactive with completed jobs. PID
+  **18660**, creation **10:48:25.158312 CEST**, matches the deployment checkpoint.
+- By 11:43:49/cycle 103, `/monitoring` reported exactly the new ordered tuple,
+  no Eliss, and `configuration: {state: "ok", reason: null}`. The same process
+  creation time was verified using normalized UTC timestamps.
+- Ward was naturally LIVE and automatic policy started one new recording at
+  **11:42:52.033 CEST**, session `9d3720f4-0123-4fcf-917d-4546d754be9d`,
+  **slot-1**, room **`7692001759392418593`**. Output is
+  `C:\Users\Leandro\Videos\wardsimons-20261002-114252.mp4`; parts are
+  `C:\Users\Leandro\Videos\wardsimons-20261002-114252.parts`.
+- Slot 1's authoritative `job.json` now owns that automatic session, recording
+  with `stop_requested=false`, `resume_count=0`, no recovery reason and no end.
+  Its old completed Gracie reference was normally superseded by a new job;
+  Gracie's matching media manifest remains completed. Slot 2's completed Eliss
+  durable job is byte-identical. There was no active pre-change worker to stop.
+- At 11:44:58 the same Ward session/job/slot remained active, increasing from
+  **15,379,770** to **27,479,204 bytes**; no stop request or recovery transition.
+  One active recording and consumed-room suppression establish no duplicate
+  Ward start during these observations. PID and creation remain identical.
+
+The initial comparison script flagged ISO-string versus parsed-date comparison
+and expected new-job/automation updates; normalized creation ticks match exactly,
+and inspection confirms those state updates belong to the normal Ward start.
+Raw snapshots and corrected final checks are preserved in
+`C:\Users\Leandro\TikREC-evidence\issue-30-owner-config-20261002`
+(`before.json`, `after.json`, `commands.txt`, initial `checks.json`, corrected
+`final.json`, `checksums.json`). No secret, signed media URL or recording bytes
+were archived.
+
+**#30 remains OPEN/single active.** This idle-to-new-recording configuration
+adoption does not prove removal continuity during an already-active session.
+For the next bounded validation, freshly recheck the natural Ward recording,
+capture all ownership/progress evidence, remove its creator through the normal
+CLI, prove adoption and same active session/job progress, then restore exactly
+**`wardsimons`, `gracie.kf`** through normal CLI commands and verify adoption/no
+duplicate. Do not restart, manually start/stop a LIVE, or restore Eliss. If this
+session has naturally ended, wait for another natural recording; do not
+manufacture one. No other issue, retention operation or release work started.
+
+## Phase 1 — safe load established (historical checkpoint)
 
 All times below are CEST (UTC+02:00). Public authenticated `remote health`,
 `remote recordings` and `remote monitor-status` were used, alongside read-only
@@ -72,7 +121,7 @@ Token, bind, output root, recovery settings and configuration were unchanged.
 Comparisons included document bytes, size and modification timestamp for all four
 state/config files. Existing job history was not rewritten by startup.
 
-## Phase 2 — natural active recording still required
+## Phase 2 — natural active recording still required (historical idle checkpoint)
 
 At **10:50:44**/cycle 5 and **10:53:18**/cycle 10 (nearly five minutes after
 startup), monitoring still had no active recording. Eliss was LIVE
