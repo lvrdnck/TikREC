@@ -24,6 +24,13 @@ from tikrec.configuration import (
 )
 
 
+def test_required_load_never_treats_missing_reload_source_as_empty_config(tmp_path):
+    store = ConfigurationStore(tmp_path / "absent.json")
+    assert store.load() == Configuration()
+    with pytest.raises(ConfigurationError, match="configuration unavailable"):
+        store.load(missing_ok=False)
+
+
 def test_default_config_path_uses_windows_roaming_convention() -> None:
     path = default_config_path(
         os_name="nt",

@@ -788,12 +788,24 @@ This service is for trusted LAN/Tailscale use, not public internet hosting.
 
 ### tikrec/monitoring.py — read-only creator observation
 
-`CreatorMonitor` receives the immutable ordered creator tuple selected at service
-startup. An empty tuple starts no worker. Otherwise one worker begins a cycle
-promptly, resolves creators sequentially in configured order, then waits 30
-seconds after the completed cycle before starting another. The single worker
-prevents overlap; each creator failure is contained so later creators are still
-checked. Configuration changes take effect only after service restart.
+`CreatorMonitor` receives the initial ordered creator tuple selected at startup.
+In unreleased #30 development, the `serve` CLI also supplies a narrow creator
+loader bound to that selected configuration path. Before every cycle it reads
+one committed document through `ConfigurationStore.load(missing_ok=False)`,
+strictly validates it and returns only `monitored_creators`. A vanished document
+cannot silently clear a running list. Invalid/unreadable replacements preserve
+the last good tuple; a later valid document is adopted normally. Only creators
+are applied, never the output root, reserve, recovery policy or other settings.
+
+One worker starts promptly and remains available even when the configured list
+is empty, resolving creators sequentially and waiting 30 seconds after each
+completed cycle. Without a loader, explicitly injected static monitors retain
+their previous empty-list/no-worker behavior. Reload replaces creator tuple and
+observation map together under the snapshot lock; changed lists start with fresh
+pending observations. A cycle lock spans reload, observations and the completed
+automation callback, preventing overlapping cycles or mixed-list arbitration.
+Changes published during that span are adopted on the next cycle. Removal does
+not stop active recordings, alter durable jobs or erase consumed-room history.
 
 Each observation is `pending`, `live`, `offline`, or `unknown`. Only
 `TikTokOfflineError` proves `offline`; transient transport errors, permanent or
@@ -801,6 +813,12 @@ malformed public responses, access restrictions, missing identity, unexpected
 failures, and non-structured resolver results remain `unknown` under fixed safe
 categories. Positive LIVE results retain only canonical public `room_id`.
 Signed transport URLs and arbitrary exception text are discarded immediately.
+Reload status adds a fixed `configuration` object to configured monitor snapshots:
+`state: ok, reason: null`, or `state: unavailable, reason: configuration_unavailable`.
+It contains no raw error text or local paths; a valid read clears the diagnostic.
+Config I/O occurs outside the snapshot lock, keeping status and stop responsive.
+Shutdown during a read prevents adopting its returned list; shutdown during the
+last observation also prevents publishing a completed automatic-start cycle.
 Snapshots and cycle timing are protected by a lock, remain memory-only, reset on
 restart, and never extend job/session/connection schemas. After publishing a
 complete cycle, the monitor invokes one injected notification outside its lock;
@@ -888,8 +906,11 @@ remain compatible.
 
 ### tikrec/service_configuration.py — service startup snapshot
 
-The service snapshots `output_directory`, `monitored_creators`, and the effective
-recovery window once at startup. Normal startup validates the complete strict
+The service snapshots `output_directory`, the initial `monitored_creators`, and the effective
+recovery window once at startup. Only the creator list subsequently reloads in
+unreleased #30 development, through the cycle-boundary contract above. Other
+startup settings remain fixed; existing dynamic retention semantics are unchanged.
+Normal startup validates the complete strict
 schema. When the recovery window is explicitly overridden, malformed unrelated
 known validation/debug preferences stay lazy, while JSON syntax, duplicate and
 unknown fields, schema version, output storage, and monitored creators remain

@@ -1,6 +1,6 @@
 # TikREC current state
 
-Last reviewed: 2026-10-01. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-02. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
@@ -29,17 +29,45 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   changes documentation/issues only, without touching media, evidence, policy,
   service or production code. No feature implementation or release action starts.
 
-- **Single next task (queued, not started): #30 — Hot-reload monitored creators
-  without restarting recording service.** The roadmap already places this
-  bounded operational follow-up after the retention gate, which is now passed.
-  Preserve the single-process two-slot manager and active recordings; a future
-  task must preflight/gate the implementation separately. No implementation is
-  currently active and no owner action is pending for this completed bookkeeping.
-  #48 (opt-in automatic raw-copy) and #52 (finalization resource isolation) stay
-  queued; #8/#13/#28 remain separate non-blocking evidence/investigation work.
-  #52's reported GPU spike was attributed to old TikREC, not the current
-  finalizer, so it does not establish a current-code blocker or displace #30.
-  Normal v0.11 release readiness/bookkeeping remains separate and unexecuted.
+- **Single active task: #30 — implemented in unreleased development;
+  deployed active-session validation outstanding (2026-10-02).** `serve`
+  reloads only `monitored_creators` at a serialized cycle boundary using the
+  selected config path. Each observation/automatic-start cycle keeps one tuple;
+  changes during that cycle wait for the next. Changed lists get fresh pending
+  observations, and empty lists keep checking for additions. Invalid, missing or
+  unreadable replacement config preserves the last good tuple and reports fixed
+  `/monitoring.configuration` unavailability; later valid config clears it.
+  Output root, reserve, recovery, auth/bind and other startup settings remain
+  fixed; existing dynamic retention semantics are unchanged. Active recording
+  workers, consumed-room history, two-slot arbitration and durable jobs are
+  preserved. Native Windows Python 3.12.10 verification: focused **120 passed**;
+  broader service/config/automation/recording **422 passed**; final isolated full
+  offline **1,754 passed / 7 skipped / 19 subtests**, 79.11 seconds. APPDATA,
+  LOCALAPPDATA and XDG_CONFIG_HOME were isolated in fresh external temporary
+  roots; pytest used separate basetemps and `-p no:cacheprovider`. Tests prove
+  list adoption/fallback/recovery, serialization through observation/arbitration,
+  stopped-read handling, active one/two-slot durable job preservation and frozen
+  unrelated settings. Source-size and diff checks passed. No production
+  configuration, recording/evidence or service was
+  changed, and no other issue or release work started.
+  **Deployment gate:** read-only production observations around 10:14 CEST found
+  PID 37772, created 2026-10-01 11:35:56 CEST, with both slots naturally idle,
+  healthy storage, completed Gracie `55dc7b01-4a85-45c1-aa63-0cec1a0ab0c4` and
+  Eliss `268a8cbd-34be-4b9b-ba84-6c848f69ad47`. Monitoring had no new reload
+  diagnostic, consistent with the old process. It was left running unchanged.
+  The required proof of new-code reload during an already-active natural session
+  is not established; #30 stays OPEN and remains the sole active task.
+  **Safe resume:** load the committed implementation at a safe maintenance
+  opportunity without interrupting active captures; then, during a naturally
+  occurring authorized recording, use normal monitor add/remove commands and
+  verify adoption with unchanged service PID/creation and session/job ownership.
+  Use the same host filesystem view as the service, as described in SERVICE.md.
+  Do not start/stop a LIVE to manufacture evidence or restart during an active
+  recording solely for this gate. No implementation decision is awaiting the
+  owner; deployment must respect that safety boundary.
+  #48/#52 remain queued; #8/#13/#28 remain separate non-blocking work. Do not
+  advance to them while #30's deployed gate is outstanding. v0.10.0 remains
+  released and v0.11.0 unreleased; normal release readiness remains unexecuted.
 
 ### Historical coordination checkpoints (superseded)
 

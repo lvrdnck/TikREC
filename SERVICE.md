@@ -41,16 +41,23 @@ values are integers from 60 through 3600. Configuration is read once at startup;
 restart the service after changing it. This setting is not part of remote start
 or the HTTP API.
 
-The same startup snapshots `monitored_creators`, `output_directory`, and
+Startup selects the initial `monitored_creators`, `output_directory`, and
 `minimum_free_space_gib` (strict integer 1–1024, default 10). An empty
-creator list and a missing output directory are both valid; the former starts no
-polling worker, while the latter reports unattended admission as blocked. With no
+creator list and a missing output directory are both valid; the latter reports
+unattended admission as blocked. With no
 explicit recovery-window override, normal strict configuration validation applies
 to the whole document. With an explicit override, the service still validates
 JSON/schema/unknown fields plus the creator list, output directory, and reserve, while
 unrelated known validation/debug preferences remain lazy so they cannot
 needlessly defeat the override. Malformed fields needed by the running service
-fail startup explicitly. Configuration changes require a service restart.
+fail startup explicitly. The released v0.10.0 service requires restart for
+creator-list changes. **Unreleased #30 development** reads the committed config
+again at each monitor-cycle boundary and adopts only the monitored creator list.
+An empty configured list keeps the reload worker available for later additions.
+Output storage, reserve, recovery policy, authentication/bind settings and other
+startup-selected defaults remain restart-only; separately documented dynamic
+retention/config-command behavior is unchanged. Updating source cannot upgrade
+an already-running service process.
 
 Run configuration commands in the same host filesystem view used by the
 Scheduled Task. Packaged desktop development environments can redirect writes
@@ -153,7 +160,7 @@ failure appears in job status. These failures do not shut down the service.
 
 ## Creator monitoring status
 
-The service polls the startup creator snapshot sequentially in configured order.
+The service polls one complete creator snapshot sequentially in configured order.
 It starts the first cycle promptly, never overlaps cycles, and waits 30 seconds
 after every completed cycle before beginning the next. Failure for one creator
 does not skip later creators. Configured order is deterministic observation
@@ -174,6 +181,23 @@ recordings are active without reserving or altering recording capacity and
 publishes only complete-cycle notifications outside its lock. Shutdown blocks
 new automatic starts, wakes the cycle wait, and joins the monitor after any
 current bounded resolver call.
+
+In unreleased #30 development, a normal `monitor add/remove` change on the
+service's selected config path becomes active at the next cycle boundary.
+The current observation and automatic-start callback finish with their existing
+snapshot; an in-flight config change does not splice two lists into one cycle.
+Removing a creator stops its future observation/automatic starts after adoption,
+while its already-active session and durable job remain owned and untouched.
+Removal does not erase consumed-room history or re-arm a known LIVE.
+
+Reload reads and strictly validates one committed document, but applies only
+`monitored_creators`. A missing, malformed or unreadable replacement keeps the
+last good tuple and continues detection/capture. `/monitoring` includes bounded
+`configuration: {state: "unavailable", reason: "configuration_unavailable"}`;
+a later valid read clears it to `{state: "ok", reason: null}`. The diagnostic
+contains no paths, document contents or exception text. Shutdown can request stop
+while config is read; the returned tuple is not adopted after that stop, and
+partial/stopped cycles cannot notify automatic-start policy.
 
 Each creator includes a fresh admission object when monitoring status is read.
 Detection states other than `live` are `not_applicable`. A LIVE is
@@ -494,7 +518,8 @@ at expiry. An in-flight HTTP operation still uses its existing bounded timeout.
 Policy/clocks/Event waiter are injectable. Local `live` and `serve` accept the
 same bounded CLI override and otherwise use configuration then 900 seconds. The
 service applies its startup-selected policy to both active capture and startup
-reconciliation; it does not hot-reload configuration. Healthy
+reconciliation; it does not hot-reload recovery policy. Only the monitored
+creator list reloads in unreleased #30 development. Healthy
 media-bearing EOF re-resolves immediately; patient failure waits retain this policy,
 and the three offline checks remain five seconds apart. Initial unresolved capture
 retains its three-failure limit. Patient capture requires an anchored room ID;

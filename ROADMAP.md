@@ -1311,14 +1311,20 @@ released version; v0.11.0 remains unreleased until normal release readiness/
 bookkeeping is completed. No feature implementation, tag or release starts here.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 
-**Single next task (queued, not started): #30 — Hot-reload monitored creators
-without restarting recording service.** This follows the roadmap's existing
-post-retention operational sequence. #48 (opt-in watcher raw-copy) and #52
-(finalization resource isolation) remain queued; #8/#13/#28 remain separate
-non-blocking evidence/investigation work. #52's reported GPU event was attributed
-to old TikREC, not the current finalizer, and is not a demonstrated current-code
-blocker. No next-task implementation or v0.11 release preparation/publication
-is performed by this closure task; normal release readiness remains outstanding.
+**Single active task: #30 — implementation complete in unreleased development;
+deployed active-session validation outstanding (2026-10-02).** The service
+reloads only its monitored creator tuple at a serialized cycle boundary, keeping
+last-known-good creators and a fixed diagnostic on invalid/unreadable replacement
+config. Empty lists can later adopt additions. Active workers/jobs and existing
+capacity/duplicate-LIVE/consumed-room behavior remain intact; other startup
+settings remain fixed. Native Windows focused tests: **120 passed**; broader
+service/config/automation/recording: **422 passed**; final isolated full offline:
+**1,754 passed / 7 skipped / 19 subtests**, 79.11 seconds. The old running
+Windows process was checked read-only and left unchanged; no new-code reload
+during a naturally active session has been proven. #30 remains OPEN until that
+deployed continuity/adoption gate is established; no completion checkbox or
+release readiness is inferred from offline tests. #48/#52 remain queued and
+#8/#13/#28 separate non-blocking work. Do not advance another issue or release.
 
 **Earlier reconciliation checkpoint (2026-10-01):** Read-only reconciliation is COMPLETE,
 classification **A — Explained unrelated change**. A separate owner chat's
@@ -1989,7 +1995,7 @@ PROJECT_STATE.md. Issue #34's corrective work is complete; a fresh independent
 retention gate remains before #30. v0.10.0 remains released and v0.11.0
 unreleased.
 
-**Queued operational follow-up — runtime monitoring reconfiguration (issue #30):**
+**Runtime monitoring reconfiguration (issue #30; implemented, deployed gate open):**
 The released service intentionally owns both recording slots inside one process,
 so a process restart affects both workers even though their recording/session
 state is otherwise independent. Normal use has now exposed an avoidable coupling:
@@ -1998,13 +2004,17 @@ a whole-service restart and therefore an unnecessary capture interruption/recove
 boundary for active recordings. Preserve the single-process two-slot manager for
 now; do not split slots into separately launched services merely to solve this.
 The public retention CLI independent review and Windows real-media gates are
-now PASSED; #51 is completed. #30 is the single next queued task, not started
-by this bookkeeping. In its separately preflighted task, implement a bounded atomic
-live reload of the monitored-creator list so monitoring/coordinator state can
-adopt additions/removals without stopping active recordings. A bad replacement
-configuration must keep the last known-good runtime snapshot. Other startup
-settings remain restart-only unless separately reviewed. Issue #30 carries the
-detailed acceptance criteria and deployed validation requirement.
+PASSED; #51 is completed. The 2026-10-02 implementation now reloads only the
+monitored-creator tuple before each complete cycle, replacing tuple/observations
+atomically and serializing reload through the completed automation callback.
+Config changes during observation/arbitration wait for the next cycle. Invalid,
+missing or unreadable documents keep the last good tuple and fixed diagnostic;
+a later valid document recovers normally. Removing a creator neither stops its
+active worker nor erases consumed-room history. Other startup-selected settings
+remain fixed; existing separately documented dynamic retention behavior remains.
+#30 stays open for new-code, real active-session continuity/adoption proof at a
+safe natural opportunity. The old production service has not been restarted or
+configured for validation. Issue #30 carries the tests and precise safe resume.
 
 ### v0.12.0 — Notifications and integrations
 

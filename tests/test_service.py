@@ -457,7 +457,7 @@ def test_server_builds_monitor_from_startup_creator_snapshot():
                 monitored_creators=("first", "second")
             )
     factory.assert_called_once_with(
-        ("first", "second"), cycle_completed=callback
+        ("first", "second"), cycle_completed=callback, creator_loader=None
     )
     server.shutdown_components()
 

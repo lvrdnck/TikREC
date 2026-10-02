@@ -16,7 +16,7 @@ POLL_INTERVAL_SECONDS = 30.0
 
 
 class CreatorMonitor:
-    """Poll one immutable creator list and publish sanitized in-memory snapshots."""
+    """Poll complete creator snapshots, adopting configured changes between cycles."""
 
     def __init__(
         self,
@@ -27,6 +27,7 @@ class CreatorMonitor:
         clock: Callable[[], float] = time.time,
         waiter: Callable[[float], bool] | None = None,
         cycle_completed: Callable[[dict], None] | None = None,
+        creator_loader: Callable[[], tuple[str, ...]] | None = None,
     ) -> None:
         self._creators = validate_monitored_creators(creators)
         if poll_interval <= 0:
@@ -37,7 +38,11 @@ class CreatorMonitor:
         self._stop = Event()
         self._waiter = waiter or self._stop.wait
         self._cycle_completed = cycle_completed
+        self._creator_loader = creator_loader
+        self._configuration_unavailable = False
         self._lock = Lock()
+        # Includes the completion callback so a second cycle cannot replace its list.
+        self._cycle_lock = Lock()
         self._thread: Thread | None = None
         self._running = False
         self._cycle_in_progress = False
@@ -49,8 +54,8 @@ class CreatorMonitor:
         }
 
     def start(self) -> None:
-        """Start one polling worker, or remain idle for an empty creator list."""
-        if not self._creators:
+        """Start polling; configured empty lists still check for later additions."""
+        if not self._creators and self._creator_loader is None:
             return
         with self._lock:
             if self._thread is not None:
@@ -85,7 +90,7 @@ class CreatorMonitor:
     def snapshot(self) -> dict:
         """Return a thread-safe JSON-safe copy without transport URLs or secrets."""
         with self._lock:
-            return {
+            snapshot = {
                 "poll_interval_seconds": self._poll_interval,
                 "running": self._running,
                 "cycle_in_progress": self._cycle_in_progress,
@@ -94,6 +99,13 @@ class CreatorMonitor:
                 "last_cycle_completed_at": self._last_cycle_completed_at,
                 "creators": [dict(self._observations[item]) for item in self._creators],
             }
+            if self._creator_loader is not None:
+                # Fixed categories expose no config contents, paths or exception text.
+                snapshot["configuration"] = {
+                    "state": "unavailable" if self._configuration_unavailable else "ok",
+                    "reason": "configuration_unavailable" if self._configuration_unavailable else None,
+                }
+            return snapshot
 
     def _run(self) -> None:
         try:
@@ -108,13 +120,41 @@ class CreatorMonitor:
                 self._cycle_in_progress = False
 
     def _poll_cycle(self) -> None:
+        with self._cycle_lock:
+            if self._stop.is_set():
+                return
+            self._reload_creators()
+            if not self._stop.is_set():
+                self._observe_cycle()
+
+    def _reload_creators(self) -> None:
+        if self._creator_loader is None:
+            return
+        try:
+            # Read outside the status lock: slow/unreadable config cannot block status.
+            creators = validate_monitored_creators(self._creator_loader())
+        except Exception:
+            with self._lock:
+                self._configuration_unavailable = True
+            return
+        with self._lock:
+            if self._stop.is_set():
+                return
+            if creators != self._creators:
+                # Replace list and observations together; discard stale LIVE observations.
+                self._creators = creators
+                self._observations = {item: _observation(item, "pending") for item in creators}
+            self._configuration_unavailable = False
+
+    def _observe_cycle(self) -> None:
         started_at = self._clock()
         complete = True
         with self._lock:
             self._cycle_in_progress = True
             self._last_cycle_started_at = started_at
+            creators = self._creators
         try:
-            for creator in self._creators:
+            for creator in creators:
                 if self._stop.is_set():
                     complete = False
                     break
@@ -122,13 +162,15 @@ class CreatorMonitor:
                 with self._lock:
                     self._observations[creator] = observation
         finally:
+            # Shutdown during the final resolver also makes this an incomplete cycle.
+            complete = complete and not self._stop.is_set()
             completed_at = self._clock()
             with self._lock:
                 if complete:
                     self._last_cycle_completed_at = completed_at
                     self._cycle_count += 1
                 self._cycle_in_progress = False
-        if complete and self._cycle_completed is not None:
+        if complete and not self._stop.is_set() and self._cycle_completed is not None:
             try:
                 # Policy runs after the published complete snapshot and outside the lock.
                 self._cycle_completed(self.snapshot())

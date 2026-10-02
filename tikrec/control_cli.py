@@ -9,7 +9,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TextIO
 
-from .configuration import default_config_path
+from .configuration import ConfigurationStore, default_config_path
 from .remote import RemoteClient
 from .recovery_options import effective_retry_policy, recovery_window_argument
 from .retry_policy import RetryPolicy
@@ -89,6 +89,8 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         service_runner(host=host, port=arguments.port, token=token,
                        retry_policy=retry_policy,
                        monitored_creators=configuration.monitored_creators,
+                       creator_loader=lambda: ConfigurationStore(path).load(
+                           missing_ok=False).monitored_creators,
                        output_directory=configuration.output_directory,
                        minimum_free_space_gib=configuration.minimum_free_space_gib)
         return 0

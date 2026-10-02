@@ -20,6 +20,8 @@ def test_serve_defaults_and_existing_commands(monkeypatch, tmp_path):
     config = tmp_path / "missing.json"
     assert main(["--config", str(config), "serve"],
                 service_runner=lambda **kw: calls.append(kw), stdout=StringIO()) == 0
+    loader = calls[0].pop("creator_loader")
+    assert callable(loader)
     assert calls == [{"host": "127.0.0.1", "port": 8765, "token": None,
                       "retry_policy": RetryPolicy(), "monitored_creators": (),
                       "output_directory": None, "minimum_free_space_gib": 10}]
@@ -219,7 +221,7 @@ def test_serve_recovery_window_precedence_and_lazy_configuration(tmp_path, monke
     ], stderr=StringIO(), service_runner=lambda **kw: pytest.fail("must not run")) == 1
 
 
-def test_service_snapshots_configured_creators_at_startup(tmp_path, monkeypatch):
+def test_service_keeps_startup_settings_but_provider_reads_later_creators(tmp_path, monkeypatch):
     monkeypatch.delenv("TIKREC_TOKEN", raising=False)
     config = tmp_path / "config.json"
     config.write_text(json.dumps({
@@ -234,6 +236,8 @@ def test_service_snapshots_configured_creators_at_startup(tmp_path, monkeypatch)
         config.write_text(json.dumps({
             "schema_version": 1, "monitored_creators": ["changed"],
         }), encoding="utf-8")
+        assert kwargs["creator_loader"]() == ("changed",)
+        assert kwargs["output_directory"] == tmp_path / "recordings"
 
     assert main(["--config", str(config), "serve"], service_runner=run,
                 stdout=StringIO()) == 0

@@ -94,12 +94,15 @@ class ConfigurationStore:
     def __init__(self, path: Path) -> None:
         self.path = Path(path)
 
-    def load(self) -> Configuration:
-        """Return defaults when absent and reject malformed committed configuration."""
+    def load(self, *, missing_ok: bool = True) -> Configuration:
+        """Read one document; defaults on absence are optional for startup only."""
         try:
             with self.path.open("r", encoding="utf-8") as handle:
                 document = json.load(handle, object_pairs_hook=_unique_fields)
         except FileNotFoundError:
+            if not missing_ok:
+                # A vanished reload source cannot silently clear a running creator list.
+                raise ConfigurationError("configuration unavailable") from None
             return Configuration()
         except (OSError, UnicodeError, ValueError) as error:
             raise ConfigurationError(f"invalid configuration at {self.path}: {error}") from None

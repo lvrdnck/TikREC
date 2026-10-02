@@ -207,15 +207,31 @@ lowercase handle and never stores the supplied URL. Duplicate additions and
 absent removals fail clearly. Listing an absent configuration reports no
 creators, and adding a creator does not require `output_directory`.
 
-These configuration commands do not contact TikTok or start recording. The
-persistent service snapshots the ordered list, `output_directory`, and the
-automatic minimum free-space reserve (1–1024 GiB, default 10) at startup,
-polls each creator in that order immediately and then 30 seconds after each
-completed cycle, and keeps sanitized observations in memory. Restart the service
-after configuration changes. Observation order is not scheduling priority, and
+These configuration commands themselves do not contact TikTok or start recording.
+The released v0.10.0 service snapshots settings at startup. **Unreleased #30
+development** reloads only `monitored_creators` from the same selected config
+file at the beginning of each monitoring cycle. Add/remove commands then affect
+future cycles without restarting a service running the new implementation.
+Removing a creator never stops an existing recording. A change during observation
+or automatic-start arbitration waits for the next cycle; the current cycle
+finishes with its complete existing snapshot. Even an empty list checks for
+later additions. Invalid, missing or unreadable replacement config preserves the
+last good list; `remote monitor-status` reports fixed `configuration` state
+`unavailable` / reason `configuration_unavailable`, clearing on a later valid
+read. No raw error text is exposed.
+
+`output_directory`, recovery window and automatic free-space reserve remain
+startup snapshots (reserve 1–1024 GiB, default 10); authentication/bind settings
+and other service defaults are not hot-reloaded. Existing separately documented
+retention/config-command behavior is unchanged. The service polls creators in
+configured order promptly, then waits 30 seconds after each completed cycle;
+valid changes may therefore wait for the current bounded calls and interval.
+Editing/updating the checkout does not upgrade an already-running process.
+Observation order is not scheduling priority, and
 simultaneous ready LIVEs use a canonical-handle lexical tie-break. Automatic
-starts require configured output storage; merely managing the list still does
-not contact TikTok or record anything.
+starts require configured output storage. A running monitor may automatically
+start a newly added creator's LIVE on a future complete cycle under normal
+ownership, capacity and storage admission.
 
 The file is strict schema-versioned JSON. Malformed JSON, unsupported versions,
 wrong types, duplicate fields, and unknown top-level settings fail clearly

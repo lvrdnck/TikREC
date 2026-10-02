@@ -6,6 +6,7 @@ import hmac
 import ipaddress
 import json
 import socket
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -26,7 +27,6 @@ from .storage_status import DEFAULT_MINIMUM_FREE_SPACE_GIB, StorageStatus
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 MAX_BODY = 8192
-
 
 def validate_bind(host: str, token: str | None) -> str:
     """Require explicit IP binding and a secret for all non-loopback addresses."""
@@ -54,6 +54,7 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                  automation: AutomationCoordinator | None = None,
                  automation_store: AutomationStateStore | None = None,
                  monitored_creators: tuple[str, ...] = (),
+                 creator_loader: Callable[[], tuple[str, ...]] | None = None,
                  output_directory: Path | None = None,
                  minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB,
                  storage_status: StorageStatus | None = None,
@@ -101,7 +102,8 @@ class RecordingHTTPServer(ThreadingHTTPServer):
                 self.controller, self.admission, state_store
             )
             self.monitor = monitor if monitor is not None else CreatorMonitor(
-                monitored_creators, cycle_completed=self.automation.cycle_completed
+                monitored_creators, cycle_completed=self.automation.cycle_completed,
+                creator_loader=creator_loader,
             )
             self.monitor.start()
         except BaseException:
@@ -274,6 +276,7 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           manager: RecordingManager | None = None,
           retry_policy: RetryPolicy = RetryPolicy(),
           monitored_creators: tuple[str, ...] = (),
+          creator_loader: Callable[[], tuple[str, ...]] | None = None,
           output_directory: Path | None = None,
           minimum_free_space_gib: int = DEFAULT_MINIMUM_FREE_SPACE_GIB,
           monitor: CreatorMonitor | None = None,
@@ -282,11 +285,10 @@ def serve(*, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT,
           automation_store: AutomationStateStore | None = None) -> None:
     """Run until local interruption, then cooperatively finish the current job."""
     with RecordingHTTPServer(host, port, token=token, controller=controller,
-                             manager=manager,
-                             retry_policy=retry_policy, monitor=monitor,
+                             manager=manager, retry_policy=retry_policy, monitor=monitor,
                              admission=admission, automation=automation,
                              automation_store=automation_store,
-                             monitored_creators=monitored_creators,
+                             monitored_creators=monitored_creators, creator_loader=creator_loader,
                              output_directory=output_directory,
                              minimum_free_space_gib=minimum_free_space_gib) as server:
         try:
