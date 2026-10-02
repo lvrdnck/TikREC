@@ -49,9 +49,13 @@ Raw preference changes require a safe subsequent service startup and do not
 alter active workers/jobs. A pre-#48 runtime rejects a nonempty new field during
 strict reload, so deploy supporting code before setting an opt-in.
 
-#48 implementation/offline verification is complete; deployment and one natural
-automatic recording remain unvalidated and require owner authorization. This
-task did not restart PID 18660 or enable raw capture for any production creator.
+#48 implementation/offline verification and owner-authorized deployment/opt-in
+are complete. PID 63796 (created 2026-10-02T11:11:44.4280260Z) selects automatic
+raw-copy for **`gracie.kf` only**, with Ward OFF. Both required restarts were
+performed while naturally idle. One natural automatic Gracie recording's raw /
+arrival / connection evidence remains outstanding; #48 stays open. No further
+restart/config change or authorization is needed for that read-only gate.
+Details: [ISSUE_48_DEPLOYED_VALIDATION.md](ISSUE_48_DEPLOYED_VALIDATION.md).
 Production remains `wardsimons`, `gracie.kf`, using the proven service-visible
 `\\localhost\C$\Users\Leandro\AppData\Roaming\TikREC\config.json` path.
 

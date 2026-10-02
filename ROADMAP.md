@@ -2011,7 +2011,7 @@ Intended production monitoring remains **`wardsimons`, `gracie.kf`**;
 do not restore Eliss. ISSUE_30_DEPLOYED_VALIDATION.md carries the tests, deployment
 and continuity evidence. #48 is the single active task as recorded below.
 
-**Per-creator automatic raw-copy (issue #48; OPEN / deployed gate pending):**
+**Per-creator automatic raw-copy (issue #48; OPEN / natural gate pending):**
 Implementation/offline verification is complete. Independent canonical
 `automatic_raw_copy_creators` preferences default OFF, persist through monitor
 removal, and use normal locked atomic `monitor raw-copy enable/disable/list`
@@ -2019,11 +2019,15 @@ updates. The service snapshots this policy at startup; accepted jobs retain
 their own flag through recovery and reuse normal `.parts` raw/arrival evidence.
 #30 continues to reload only monitored creators. Isolated Windows verification:
 166 focused, 634 broader / 2 subtests, 1,783 full / 19 subtests, seven platform
-skips. No production opt-in/deployment/restart or retention change occurred;
-intended production tuple remains `wardsimons`, `gracie.kf`.
-Owner authorization for safe deployment/one creator opt-in and one naturally
-automatic evidence recording remains required before #48 can close. Deploy
-supporting code before saving the new field; do not interrupt an active capture.
+skips. Owner-authorized deployment and Gracie-only opt-in passed on 2026-10-02
+under PID 63796, after two required naturally idle restarts (supporting code then
+startup-policy activation). Normal CLI changed only the new raw preference;
+task definition, unrelated config bytes/settings and completed jobs remained
+unchanged. Intended production tuple stays `wardsimons`, `gracie.kf`; Ward raw
+stays OFF. Both creators remained offline during the gate. One natural automatic
+Gracie recording's raw/arrival/connection evidence remains outstanding before
+#48 can close. No further restart/config change or owner action is pending.
+See ISSUE_48_DEPLOYED_VALIDATION.md for evidence and safe read-only resume.
 #52 remains queued after #48; no other roadmap slice or release work starts.
 
 ### v0.12.0 — Notifications and integrations

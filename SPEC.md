@@ -964,8 +964,10 @@ starts only; #30 reloads no raw policy. The durable job flag governs continuatio
 and recovery despite later policy changes. Evidence stays in the normal matching
 `.parts` through existing capture code. Capacity, expected-room guards, consumed
 room/rearm, admission, shutdown and manual-start contracts are unchanged.
-Deployed natural automatic validation remains outstanding with owner
-authorization required; no production opt-in has been set.
+Owner-authorized deployed policy activation passed with only `gracie.kf` opted
+in, Ward OFF, and the monitored tuple unchanged. Natural automatic Gracie raw /
+arrival / connection evidence remains outstanding; no further owner action is
+pending. Deployment and safe read-only resume: ISSUE_48_DEPLOYED_VALIDATION.md.
 
 Remote diagnostic capture uses the boolean `remote start --raw-copy` opt-in
 rather than accepting an arbitrary diagnostic path. The service co-locates raw

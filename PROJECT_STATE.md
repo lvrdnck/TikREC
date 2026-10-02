@@ -7,7 +7,28 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #48 ACTIVE / OPEN (2026-10-02):** Implementation and isolated Windows
+- **Issue #48 ACTIVE / OPEN — deployed opt-in PASSED, natural gate outstanding
+  (2026-10-02):** The owner authorized Gracie-only automatic raw capture.
+  Both slots were naturally completed/stable before the two required idle
+  restarts: supporting code first, then saved startup-policy activation.
+  Active PID **63796**, creation **2026-10-02T11:11:44.4280260Z**, runs #48 with
+  **`automatic_raw_copy_creators = ["gracie.kf"]`**. Ward stays OFF; monitored
+  order remains **`wardsimons`, `gracie.kf`**, never Eliss. Only the normal CLI
+  against the proven UNC config saved the preference after supporting code loaded.
+  Unrelated config bytes/settings, task definition, both completed job hashes
+  and automation were unchanged. Health/storage/configuration are good.
+  Both creators remained offline through normal monitoring cycles; no natural
+  Gracie automatic capture/raw evidence was available during this gate.
+  **Pending owner action: None.** Approved policy remains enabled. Safe next step
+  is read-only validation of one natural automatic Gracie recording, preserving
+  media/evidence. No further restart, config change or repeated authorization is
+  needed. Close #48 only when raw/arrival/connection evidence and normal recording
+  ownership/progress pass. Evidence and deployment details:
+  [ISSUE_48_DEPLOYED_VALIDATION.md](ISSUE_48_DEPLOYED_VALIDATION.md).
+  #48 is the single active task; #52 stays queued, #13/#28/#8 separate.
+  v0.10.0 remains released/package version; v0.11.0 remains unreleased.
+
+- **Issue #48 implementation checkpoint (superseded deployment status):** Implementation and isolated Windows
   offline verification are complete. Independent schema-1
   `automatic_raw_copy_creators` preferences default OFF, survive monitor removal,
   and use normal `monitor raw-copy enable/disable/list` locked atomic CLI updates.
@@ -17,7 +38,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   paths are reused. Focused: 166 passed; broader: 634 passed / 2 subtests;
   full: **1,783 passed, 7 platform skips, 19 subtests**, Python 3.12.10 Windows,
   with fresh external config/test roots and no production token.
-  **Pending owner action:** authorize safe deployment and opt-in for one intended
+  **Then pending owner action (now granted/executed above):** authorize safe deployment and opt-in for one intended
   creator, followed by one natural automatic recording proving co-located raw /
   arrivals / connection references. Do not restart an active recording; do not
   manually start a LIVE to manufacture the gate. Deploy supporting code before

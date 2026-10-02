@@ -561,7 +561,9 @@ automatic recordings use their normal matching `.parts` directory and the same
 raw bytes, arrival sidecars, connection references and error handling described
 here. Their durable job owns the selected flag through recovery; monitor removal
 does not alter it. No new evidence format or writer behavior is introduced.
-One owner-authorized natural deployed watcher recording remains outstanding.
+Owner-authorized Gracie-only policy activation is deployed under PID 63796;
+Ward stays OFF. One natural Gracie watcher recording's raw/arrival/connection
+evidence remains outstanding; see ISSUE_48_DEPLOYED_VALIDATION.md.
 
 For a service-owned validation session, `tikrec remote start --raw-copy` opts in
 without accepting an arbitrary remote diagnostic directory. The service writes
