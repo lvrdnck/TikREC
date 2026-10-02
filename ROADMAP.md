@@ -1311,30 +1311,24 @@ released version; v0.11.0 remains unreleased until normal release readiness/
 bookkeeping is completed. No feature implementation, tag or release starts here.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 
-**Single active task: #30 — implementation complete in unreleased development;
-deployed active-session validation outstanding (2026-10-02).** The service
-reloads only its monitored creator tuple at a serialized cycle boundary, keeping
-last-known-good creators and a fixed diagnostic on invalid/unreadable replacement
-config. Empty lists can later adopt additions. Active workers/jobs and existing
-capacity/duplicate-LIVE/consumed-room behavior remain intact; other startup
-settings remain fixed. Native Windows focused tests: **120 passed**; broader
-service/config/automation/recording: **422 passed**; final isolated full offline:
-**1,754 passed / 7 skipped / 19 subtests**, 79.11 seconds. The single authorized
-unchanged-task restart after repeated natural idle checks loaded the new code on
-2026-10-02 at 10:48 CEST (PID 18660). At that checkpoint health/reload diagnostics
-were good; task, native config, jobs and automation remained unchanged. No natural
-active recording occurred through cycle 10 (10:53:18 CEST). The later owner
-configuration change to **`wardsimons`, `gracie.kf`** passed adoption by cycle 103
-without restart or unrelated config changes; Ward naturally auto-started in
-slot 1 and continued growing under one session/job. Removing a creator during
-an already-active session remains unproven. Preserve the new ordered tuple;
-do not restore Eliss. Resume that natural gate with
-the proven host-visible config; no repeat restart is needed. Exact evidence:
+**Issue #30 COMPLETED / PASSED (2026-10-02).** Creator-only serialized
+cycle-boundary reload, last-known-good fallback and frozen unrelated startup
+settings are implemented in unreleased development. Existing offline verification
+passed 120 focused / 422 broader / 1,754 full tests (7 skips, 19 subtests).
+The 11:53–11:56 CEST deployed gate removed Ward during its natural active
+recording, verified adoption and same session/slot/job progress, then restored
+exactly **`wardsimons`, `gracie.kf`** and verified healthy adoption and
+consumed-room duplicate suppression. PID 18660 / creation 10:48:25.158312 CEST,
+both job documents and automation stayed identical; bytes grew from 102,697,695
+to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
+replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-#30 remains OPEN until that deployed continuity/adoption gate is established;
-no completion checkbox or
-release readiness is inferred from offline tests. #48/#52 remain queued and
-#8/#13/#28 separate non-blocking work. Do not advance another issue or release.
+**No active implementation task. Next recommended queued task: #48 —
+opt-in per-creator raw-copy for automatic recordings**, pending fresh preflight
+and project-manager review. #52 remains queued; #8/#28 remain opportunistic
+non-blocking evidence work and #13 remains separate rendition-policy work.
+No other issue was started. v0.10.0 remains released/package version and v0.11.0
+unreleased; completion here does not execute or authorize release/tag work.
 
 **Earlier reconciliation checkpoint (2026-10-01):** Read-only reconciliation is COMPLETE,
 classification **A — Explained unrelated change**. A separate owner chat's
@@ -2005,30 +1999,17 @@ PROJECT_STATE.md. Issue #34's corrective work is complete; a fresh independent
 retention gate remains before #30. v0.10.0 remains released and v0.11.0
 unreleased.
 
-**Runtime monitoring reconfiguration (issue #30; implemented, deployed gate open):**
-The released service intentionally owns both recording slots inside one process,
-so a process restart affects both workers even though their recording/session
-state is otherwise independent. Normal use has now exposed an avoidable coupling:
-`monitored_creators` is a startup snapshot, so changing the creator list requires
-a whole-service restart and therefore an unnecessary capture interruption/recovery
-boundary for active recordings. Preserve the single-process two-slot manager for
-now; do not split slots into separately launched services merely to solve this.
-The public retention CLI independent review and Windows real-media gates are
-PASSED; #51 is completed. The 2026-10-02 implementation now reloads only the
-monitored-creator tuple before each complete cycle, replacing tuple/observations
-atomically and serializing reload through the completed automation callback.
-Config changes during observation/arbitration wait for the next cycle. Invalid,
-missing or unreadable documents keep the last good tuple and fixed diagnostic;
-a later valid document recovers normally. Removing a creator neither stops its
-active worker nor erases consumed-room history. Other startup-selected settings
-remain fixed; existing separately documented dynamic retention behavior remains.
-#30 stays open for real active-session continuity/adoption proof at a safe
-natural opportunity. The new implementation is loaded after the single safe
-idle restart on 2026-10-02. The subsequent owner-requested production tuple
-`wardsimons`, `gracie.kf` passed normal cycle adoption without restart and allowed
-one natural Ward automatic recording. That new tuple must be restored after the
-outstanding active-session validation, never Eliss. Issue #30 and
-ISSUE_30_DEPLOYED_VALIDATION.md carry the tests, load evidence and safe resume.
+**Runtime monitoring reconfiguration (issue #30; COMPLETED / PASSED):**
+The released single-process two-slot manager is preserved. Unreleased development
+reloads only the monitored-creator tuple at a serialized complete-cycle boundary,
+with last-known-good fallback and bounded diagnostics for invalid/unreadable
+config. Removing a creator does not stop its active worker or erase consumed-room
+history; other startup-selected settings remain fixed. Offline tests and the
+2026-10-02 natural active Ward removal/restoration gate passed with unchanged
+process/session/slot/jobs, continuing bytes and no duplicate after restoration.
+Intended production monitoring remains **`wardsimons`, `gracie.kf`**;
+do not restore Eliss. ISSUE_30_DEPLOYED_VALIDATION.md carries the tests, deployment
+and continuity evidence. #48 is the next recommended queued task, not started.
 
 ### v0.12.0 — Notifications and integrations
 

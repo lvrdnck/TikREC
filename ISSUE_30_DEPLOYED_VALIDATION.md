@@ -2,13 +2,74 @@
 
 ## Current result (2026-10-02)
 
-**PARTIAL: safe new-code load PASSED; active-session hot-reload gate NOT YET
-EXERCISED.** Issue #30 stays OPEN and is the single active task. Implementation
-and isolated offline verification at `e3864589` are complete; this checkpoint
-changes no production code. v0.10.0 remains the current released/package version;
-v0.11.0 remains unreleased.
+**COMPLETE / PASSED:** safe new-code load and deployed active-session removal,
+adoption, continuity and restoration gates passed. Issue #30 is completed.
+Implementation and isolated offline verification at `e3864589` are complete;
+this validation changes no production code. v0.10.0 remains the current
+released/package version; v0.11.0 remains unreleased. Intended production
+monitoring remains exactly **`wardsimons`, `gracie.kf`**; do not restore Eliss.
 
-## Owner configuration update — PASSED (2026-10-02, 11:42–11:45 CEST)
+## Active-session continuity gate — PASSED (2026-10-02, 11:53–11:56 CEST)
+
+The fresh precondition captured Ward's existing natural automatic recording,
+not a manufactured LIVE. All observations used public authenticated CLI status,
+CIM process identity, and the proven host-visible UNC config/durable job files.
+Only normal `monitor` commands changed configuration; no JSON was edited manually.
+
+- Service **PID 18660**, created **2026-10-02 10:48:25.158312 CEST**, remained
+  identical throughout, with the already-loaded #30 implementation. No restart.
+- Ward **`wardsimons`**, UUID **`9d3720f4-0123-4fcf-917d-4546d754be9d`**,
+  **slot-1**, room **`7692001759392418593`**, remained active and recording in
+  every snapshot. Output and parts remained
+  `C:\Users\Leandro\Videos\wardsimons-20261002-114252.mp4` and
+  `C:\Users\Leandro\Videos\wardsimons-20261002-114252.parts`.
+- The 576-byte authoritative slot-1 `job.json` remained byte-identical,
+  SHA256 `4d8622388a9a1fe51541781ba67999d37dc41d801bad82e174e8818c2b5131ba`.
+  UUID/room/paths/start time and recording state remained the same, with
+  `stop_requested=false`, `resume_count=0`, no end/finalization and no recovery.
+  Slot 2's completed job and automation bytes were also identical throughout.
+
+| Snapshot (CEST) | Completed cycle | Adopted ordered tuple | Ward bytes written |
+| --- | --- | --- | --- |
+| Before, 11:53:02 | 120 | `wardsimons`, `gracie.kf` | 102,697,695 |
+| Removal adopted, 11:53:57 | 122 | `gracie.kf` | 106,788,455 |
+| Restoration adopted, 11:55:15 | 125 | `wardsimons`, `gracie.kf` | 113,661,646 |
+| Final, 11:56:15 | 126 | `wardsimons`, `gracie.kf` | 118,873,560 |
+
+Normal CLI sequence against the same UNC config was `monitor remove wardsimons`,
+then, after removal adoption/continuity passed, `monitor remove gracie.kf`,
+`monitor add wardsimons`, `monitor add gracie.kf`. Gracie's brief removal/re-add
+restored the requested order because add appends. Original full config bytes
+were restored exactly: SHA256
+`8f35fd61beb58fc35ae4d824598454dc3623cd9315464085ee195764c6303d10`.
+All completed-cycle snapshots reported `configuration: {state: "ok", reason: null}`.
+
+Elapsed recording time and bytes increased across removal and restoration.
+There was one Ward recording, no replacement UUID/slot/path, stop request,
+interruption, shutdown, resume/recovery transition or duplicate automatic start.
+Restored Ward monitoring reported the same room consumed with
+`state=suppressed`, `reason=same_room_consumed`; the durable automation state
+retained that room and no pending claim. Ward did not naturally end during this
+validation, so a terminal-state exception was unnecessary. No manual LIVE
+start/stop, retention action, manual media edit, production-code change, other issue
+implementation, tag or release was performed.
+
+Metadata-only evidence is preserved in
+`C:\Users\Leandro\TikREC-evidence\issue-30-continuity-20261002`: `before.json`,
+`removed-adopted.json`, `restored-adopted.json`, `final.json`, `summary.json`,
+timestamped `commands.txt`, reusable `capture.ps1` and `checksums.json`.
+Snapshots include raw durable-job document bytes, lengths, hashes and timestamps,
+config/automation documents and all public status fields. No token, signed CDN
+URL or recording bytes were copied. Checksum index SHA256:
+`0ba4901670ede0c990648823857511231e8d8d35557e14917390e6ed0428cb48`.
+
+This directly satisfies #30's outstanding deployed acceptance gate. No new
+offline suite was needed for this configuration/documentation-only validation;
+the existing 120 focused, 422 broader and 1,754 full-suite passes remain the
+implementation evidence. Next recommended task is #48, opt-in per-creator raw
+copy for automatic recordings, pending fresh preflight; it has not started.
+
+## Owner configuration update — PASSED (historical 11:42–11:45 checkpoint)
 
 The owner replaced Eliss with Ward and retained Gracie. The intended production
 tuple is now **`wardsimons`, `gracie.kf`**, in that order. Do not restore Eliss
@@ -47,7 +108,7 @@ Raw snapshots and corrected final checks are preserved in
 `final.json`, `checksums.json`). No secret, signed media URL or recording bytes
 were archived.
 
-**#30 remains OPEN/single active.** This idle-to-new-recording configuration
+**At this historical checkpoint #30 remained OPEN/single active.** This idle-to-new-recording configuration
 adoption does not prove removal continuity during an already-active session.
 For the next bounded validation, freshly recheck the natural Ward recording,
 capture all ownership/progress evidence, remove its creator through the normal

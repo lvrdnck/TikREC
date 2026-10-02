@@ -77,11 +77,14 @@ differs. On 2026-10-02 the owner changed the intended production tuple to
 **`wardsimons`, `gracie.kf`** using normal monitor commands against that UNC path.
 Cycle-boundary adoption and healthy configuration were verified without restart;
 Ward then naturally auto-started in slot 1. Preserve this new ordered tuple and
-do not restore Eliss during later validation. Active-session removal/restoration
-proof remains outstanding, so #30
-is still open. See [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md)
-for exact evidence and the resume boundary; loading this code needs no repeat
-restart.
+do not restore Eliss. The 11:53–11:56 CEST deployed gate then removed Ward
+during that natural active recording, proved next-cycle adoption with unchanged
+PID/creation, session/slot and durable jobs, and restored the exact intended
+tuple. Bytes continued increasing; configuration stayed healthy and the restored
+consumed room was suppressed without a duplicate start. Full config bytes were
+restored, with no stop, recovery or restart. **#30 is completed / PASSED** in
+unreleased development. See
+[ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md) for exact evidence.
 
 Use `--token-file FILE` or `TIKREC_TOKEN`. Files override the environment and may
 end with a newline. Tokens must be 16–512 printable ASCII characters without

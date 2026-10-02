@@ -29,69 +29,35 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   changes documentation/issues only, without touching media, evidence, policy,
   service or production code. No feature implementation or release action starts.
 
-- **Single active task: #30 — implemented in unreleased development;
-  deployed active-session validation outstanding (2026-10-02).** `serve`
-  reloads only `monitored_creators` at a serialized cycle boundary using the
-  selected config path. Each observation/automatic-start cycle keeps one tuple;
-  changes during that cycle wait for the next. Changed lists get fresh pending
-  observations, and empty lists keep checking for additions. Invalid, missing or
-  unreadable replacement config preserves the last good tuple and reports fixed
-  `/monitoring.configuration` unavailability; later valid config clears it.
-  Output root, reserve, recovery, auth/bind and other startup settings remain
-  fixed; existing dynamic retention semantics are unchanged. Active recording
-  workers, consumed-room history, two-slot arbitration and durable jobs are
-  preserved. Native Windows Python 3.12.10 verification: focused **120 passed**;
-  broader service/config/automation/recording **422 passed**; final isolated full
-  offline **1,754 passed / 7 skipped / 19 subtests**, 79.11 seconds. APPDATA,
-  LOCALAPPDATA and XDG_CONFIG_HOME were isolated in fresh external temporary
-  roots; pytest used separate basetemps and `-p no:cacheprovider`. Tests prove
-  list adoption/fallback/recovery, serialization through observation/arbitration,
-  stopped-read handling, active one/two-slot durable job preservation and frozen
-  unrelated settings. Source-size and diff checks passed. At the implementation
-  checkpoint, production configuration, recording/evidence and service were
-  unchanged. The subsequent authorized load is recorded below; no other issue
-  or release work started.
-  **Deployment checkpoint (2026-10-02): safe load PASSED; active-session gate
-  still outstanding.** Repeated naturally idle checks across monitor cycles,
-  byte-identical completed jobs/config/automation and a fresh immediate idle
-  check allowed the single authorized unchanged-task restart at 10:48 CEST.
-  PID **18660**, created **10:48:25.158 CEST**, now loads `e3864589` and reports
-  `/monitoring.configuration` healthy. Task definition, native config, both jobs
-  and automation state are unchanged; storage is good, historical session
-  ownership preserved, and no capture/recovery was created by startup. The
-  proven host-visible config is the UNC spelling of the native APPDATA file:
+- **Issue #30 COMPLETED / PASSED (2026-10-02, 11:53–11:56 CEST):**
+  The deployed creator-only cycle-boundary hot reload passed real active-session
+  removal/adoption/continuity/restoration. Ward's natural automatic session
+  `9d3720f4-0123-4fcf-917d-4546d754be9d`, slot-1, room
+  `7692001759392418593`, retained its output/parts paths and authoritative
+  576-byte job unchanged through removal and restoration. Bytes advanced
+  102,697,695 → 106,788,455 → 113,661,646 → 118,873,560 at cycles
+  120/122/125/126. PID **18660**, creation **10:48:25.158312 CEST**,
+  slot/session ownership, both durable jobs and automation bytes were unchanged;
+  no stop, recovery, replacement or duplicate occurred. Configuration stayed
+  healthy; Ward's restored room was suppressed as already consumed.
+  The full original config bytes and intended ordered tuple
+  **`wardsimons`, `gracie.kf`** are restored. Do not restore Eliss.
+  Only normal CLI commands used the proven host-visible UNC config:
   `\\localhost\C$\Users\Leandro\AppData\Roaming\TikREC\config.json`.
-  At that load checkpoint it and the service reported `eliss4r.n`, `gracie.kf`;
-  the desktop's redirected conventional-path document differs and must not be used for this
-  validation. Through 10:53:18/cycle 10 both slots were still idle: Eliss was
-  LIVE in its already-consumed room and suppressed; Gracie was offline. No creator-list
-  mutation was performed. Evidence and hashes:
+  No restart, manual LIVE start/stop, retention, code, other issue implementation
+  or release/tag action. Ward remained active at the final check; service
+  operation continues normally. Implementation `e3864589` already passed
+  120 focused / 422 broader / 1,754 full offline tests (7 skips, 19 subtests);
+  no suite rerun was needed for this configuration/documentation-only gate.
+  Evidence, hashes and earlier checkpoints:
   [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-  **Owner configuration update PASSED (11:42–11:45 CEST):** normal monitor CLI
-  commands against the proven UNC file replaced Eliss with Ward, preserving the
-  new intended ordered tuple **`wardsimons`, `gracie.kf`**. Cycle 103 adopted it
-  with healthy configuration and unchanged PID/creation; unrelated config is
-  identical. Both prior jobs were completed before the change. Ward naturally
-  auto-started in slot-1 at 11:42:52, UUID
-  `9d3720f4-0123-4fcf-917d-4546d754be9d`, room `7692001759392418593`, output/parts
-  `C:\Users\Leandro\Videos\wardsimons-20261002-114252.mp4` / `.parts`.
-  Its authoritative job matches; bytes grew 15,379,770 to 27,479,204 with no
-  stop/recovery or duplicate. Slot 2's completed job is byte-identical; slot 1's
-  old completed reference was normally superseded, with its manifest completed.
-  This proves idle configuration adoption, not active-session removal continuity.
-  **Safe resume:** the new code is already loaded; do not repeat the restart.
-  During a naturally occurring authorized automatic recording, use normal
-  monitor remove/add commands against that host-visible config and verify list
-  adoption with unchanged PID/creation, session/slot/job and continuing bytes;
-  restore exactly **`wardsimons`, `gracie.kf`** and verify no duplicate start.
-  Do not restore Eliss. Freshly recheck Ward's natural session before validation.
-  No active-session proof is established; #30 stays OPEN/single active.
-  Do not start/stop a LIVE to manufacture evidence or restart during an active
-  recording solely for this gate. No implementation decision is awaiting the
-  owner; deployment must respect that safety boundary.
-  #48/#52 remain queued; #8/#13/#28 remain separate non-blocking work. Do not
-  advance to them while #30's deployed gate is outstanding. v0.10.0 remains
-  released and v0.11.0 unreleased; normal release readiness remains unexecuted.
+  **No implementation task is active. Next recommended queued task: #48 —
+  opt-in per-creator raw-copy for automatic recordings**, pending project-manager
+  review and fresh preflight/model gate. No owner action is pending for #30.
+  #52 remains queued; #8/#28 remain opportunistic non-blocking evidence work,
+  and #13 is separate queued rendition-policy work. None was started.
+  v0.10.0 remains current released/package version; v0.11.0 remains unreleased.
+  #30 completion does not perform or authorize release/tag work.
 
 ### Historical coordination checkpoints (superseded)
 
