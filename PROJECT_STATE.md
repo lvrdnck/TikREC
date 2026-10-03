@@ -7,24 +7,25 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 Stage 1 SINGLE ACTIVE task (owner sequencing decision,
-  2026-10-03):** Investigation COMPLETE; issue remains OPEN for the next bounded
-  slice. Twelve sequential synthetic Normal/Below Normal finalizations passed
-  deep decode/packet-DTS checks; outputs were byte-identical within each path.
-  Encode proxy p95 median improved 0.175 ms, FFmpeg elapsed median increased 1.6%;
-  memory/logical I/O were essentially unchanged. No actual gaming benefit proven.
-  Task priority 7 / WMI base 6 already imply Below Normal inheritance; direct
-  service class query denied, production FFmpeg class unmeasured. Explicit Normal
-  was a controlled alternative, not the deployed baseline. Recommended next
-  slice: explicit Windows Below Normal for CPU re-encode children to make
-  Normal-parent/CLI launches consistent, with focused launch/media checks and
-  honest scope; stream-copy/media settings remain unchanged. This is not a proven
-  gaming fix for the current service. No owner decision required for ordinary
-  implementation; the next task still requires MODEL GATE. Historical GPU spike
-  remains attributed to old TikREC NVENC. Focused: **29 passed**. Production PID
-  16480/creation/config unchanged; no restart or media/config mutation.
-  [ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md](ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md)
-  records method, metrics, diagnostics, limitations and longer slot occupancy.
+- **Issue #52 SINGLE ACTIVE — capture availability reproduction/design COMPLETE,
+  project-manager review pending (2026-10-03, comment 5969640467):** Reproduced
+  finalizing-slot/page ownership and automation retries; proposed Windows-local
+  durable per-session handoff/queue,
+  two capture slots and one finalizer. This supersedes the Below Normal-only
+  next-slice recommendation; the earlier resource investigation remains historical
+  evidence, not a remedy for capture availability. Five new deterministic offline
+  characterizations passed: finalization occupies slots, a same-creator/new-room
+  start is rejected despite a free slot, and retry requires a later eligible
+  cycle after release. A return ending before release can be missed in this
+  controlled scenario; no missed production LIVE or #48 cause is established.
+  Related manager/ownership/worker/job/automation regression: **181 passed**.
+  Proposed ownership, crash/restart, raw/retention protection, backlog/storage,
+  shutdown and API phase contracts plus acceptance matrix are in
+  [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+  **Not implemented:** journal, queue, worker, API/schema or scheduling changes.
+  Next: project-manager review of authority, ordering, bounds and API phase
+  semantics before any production implementation. #52 stays OPEN; no new task
+  is executed automatically from this design checkpoint.
 
 - **Issue #48 OPEN / explicitly PAUSED (owner decision, 2026-10-03):**
   Implementation/deployment passed; natural-recording validation did not.

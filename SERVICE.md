@@ -41,6 +41,25 @@ gaming benefit; lower priority can extend slot occupancy. Full method, native
 priority references, metrics and proposed next slice:
 [ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md](ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md).
 
+## Proposed capture/finalization separation (#52; not implemented)
+
+The 2026-10-03 priority correction (issue comment 5969640467) makes capture
+availability the next concern, superseding the Below Normal-only recommendation.
+Current finalization still occupies its slot and creator-page claim; a distinct
+returning room can be rejected even if the other slot is free. Deterministic
+offline tests reproduce this and the later-cycle automatic retry, not a measured
+production miss. No running service or configuration was changed.
+
+The review proposal retains two capture slots, one tracked local finalizer,
+durable per-session queue/intent and separate LIVE/artifact ownership. Slot reuse
+requires a committed closed-source handoff, not a cleared busy flag. Pending/
+failed artifacts remain protected, with explicit restart, backlog/storage,
+shutdown and capture/finalization status contracts. Existing API descriptions
+below remain CURRENT behavior; proposed phase semantics/routes and persistence
+need project-manager review before implementation or deployment. Design and
+acceptance matrix:
+[ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
 ## Automatic raw-copy preferences (unreleased #48)
 
 The optional schema-1 `automatic_raw_copy_creators` field is an ordered list of

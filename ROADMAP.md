@@ -1323,8 +1323,9 @@ both job documents and automation stayed identical; bytes grew from 102,697,695
 to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
 replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-**#48 is OPEN / PAUSED awaiting qualifying natural evidence; #52 Stage 1 is
-the single active investigation** under the owner's 2026-10-03 decision.
+**#48 is OPEN / PAUSED awaiting qualifying natural evidence; #52 is the single
+active issue**, now capture-availability reproduction/design for review under
+the owner's 2026-10-03 priority correction (comment 5969640467).
 #8/#28 remain opportunistic
 non-blocking evidence work and #13 remains separate rendition-policy work.
 No other issue was started. v0.10.0 remains released/package version and v0.11.0
@@ -2041,22 +2042,32 @@ missed-LIVE evidence warrants source-access investigation; unknown/unverifiable
 does not prove offline. Preserve the approved Gracie-only policy. No #48 polling
 or search is part of #52; #28 remains unresolved and no release is authorized.
 
-**Finalization resources (issue #52 Stage 1; SINGLE ACTIVE issue):**
-The 2026-10-03 bounded investigation is complete: 12 sequential synthetic
-Normal/Below Normal comparisons, identical media/thread parameters, all outputs
-deep-decode/packet-DTS clean and byte-identical within each path; 29 focused
-checks passed. Encode proxy p95 median improved 0.175 ms with 1.6% longer FFmpeg
-elapsed median, essentially unchanged memory/logical I/O. No real gaming benefit
-is established. Current task priority 7 / WMI base 6 already imply Below Normal
-inheritance; actual production FFmpeg class could not be measured, so Normal is
-a controlled alternative, not the deployed baseline. Recommend explicit Windows
-Below Normal only for CPU re-encode children as CLI/Normal-parent consistency,
-with focused launch/media checks; keep stream-copy/media settings unchanged.
-Do not advertise a gaming fix or select an arbitrary thread cap. Synchronous
-finalization retains slot/writer ownership longer when slowed. Historical GPU
-spike remains attributed to old TikREC NVENC. Production service/code/config/
-media are unchanged. Both issues stay open, #48 paused; worker setup, transfer,
-#13/#28/#8 and releases are separate. Evidence and limitations:
+**Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
+Priority correction 2026-10-03, issue comment 5969640467, supersedes the prior
+Below Normal-only next-slice recommendation. Recording slots should represent
+capture capacity; safely closed capture must transfer responsibility durably
+before slot reuse. Reproduction/design comes before production implementation.
+Five deterministic characterizations reproduce finalization occupying slots,
+same-creator/new-room page rejection even with another slot free, later-cycle
+retry after ordinary completion/failure, and a returning room ending before
+release. These are offline findings, not attribution of a missed production LIVE.
+Related manager/ownership/worker/job/automation regression: **181 passed**.
+Proposed design: per-session durable local journal/queue, two capture slots,
+one finalizer, distinct LIVE/artifact claims, crash-safe handoff/publication,
+restart, raw/retention pins, bounded backlog/low disk, controlled shutdown and
+compatible routes with explicit capture/finalization phase semantics. Review
+required before implementation; see
+[ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;
+#28 unresolved, #13/#8 and release/remote-worker work are separate.
+
+The earlier bounded resource investigation remains complete within its scope:
+12 synthetic comparisons passed media checks, byte-identical within each path,
+29 focused checks passed, small scheduling-proxy benefit without actual gaming
+proof. Task priority 7 / WMI base 6 imply Below Normal already, with actual child
+class unmeasured. Historical GPU spike remains attributed to old TikREC NVENC.
+No more benchmark is part of the ownership task; scheduling policy is subsequent
+work. Historical evidence:
 [ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md](ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md).
 
 ### v0.12.0 — Notifications and integrations

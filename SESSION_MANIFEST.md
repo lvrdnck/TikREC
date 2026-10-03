@@ -145,6 +145,16 @@ outcome and timing for each numbered attempt.
 
 ## Service intent boundary (v0.5.0)
 
+**Proposed #52 ownership correction, not implemented:** A durable per-session
+local journal would preserve capture/stop/raw intent and queued assembly across
+capture-slot reuse; its handoff does not replace this manifest's media evidence.
+Current job/manifest schemas and synchronous lifecycle below remain unchanged.
+The review design specifies closed-part/control binding, a session ownership
+marker, separate capture-end/status facts, idempotent publication/restart and
+retention pins without retroactively changing historical timing or inventing raw
+evidence. See
+[ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
 The new `job_state.py` storage module uses an independent job schema version 1
 for explicit service intent before media storage exists. It does not change
 `session.json` schema version 1 or replace its media/finalization evidence.

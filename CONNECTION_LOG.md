@@ -5,6 +5,18 @@
 events remain unchanged. Older recordings remain readable; they do not acquire
 new evidence retroactively.
 
+## Proposed queued-finalization boundary (#52; not implemented)
+
+Current connection/raw formats and synchronous finalization remain unchanged.
+The capture-availability review design requires source/raw writers closed and
+last connection/control evidence persisted before durable handoff and slot reuse.
+Queue intent cannot substitute for automatic-start provenance or raw-byte proof.
+The old UUID, selected raw flag, connection numbering, raw/arrival names and
+references remain attached to the original `.parts`; a replacement slot cannot
+alter them. No evidence mutation or #48/#28 validation occurred in this task.
+Proposed ownership/restart contract and acceptance cases:
+[ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
 ## Connection milestones
 
 All wall-clock fields are Unix timestamps in seconds. The new optional fields

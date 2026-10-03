@@ -1617,6 +1617,24 @@ readiness, and exact-release-commit review passed before publication.
 
 ## Design principles
 
+### Proposed #52 capture availability correction (not implemented)
+
+The owner's 2026-10-03 priority correction supersedes the priority-only next task.
+Current service capture and finalization remain synchronous: finalizing occupies
+a slot and page ownership, so even a free second slot cannot admit that creator's
+proven different room. Offline characterization demonstrates the mechanism and
+later-cycle retry; it does not attribute a missed production LIVE.
+
+Review proposal: two capture slots plus one tracked Windows-local finalizer,
+durable per-session handoff/queue, separate LIVE/artifact claims, guarded restart/
+publication, raw/retention preservation, bounded backlog/disk refusal, controlled
+shutdown and explicit status compatibility. No codec/quality/timing, runtime,
+API/schema or production configuration change is made by the design task.
+The design and unexecuted implementation acceptance matrix are in
+[ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
+### Current principles
+
 - Small modules. Generic FLV logic stays generic.
 - One connection is `source`. Resolution is `tiktok`. Reconnect sits above
   both, in orchestration.

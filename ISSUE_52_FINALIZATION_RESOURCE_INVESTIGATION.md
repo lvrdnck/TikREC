@@ -198,6 +198,13 @@ or #48/#28's media-evidence gates.
 
 ## Recommendation and safe next slice
 
+**Superseded next-task recommendation (2026-10-03):**
+[Priority correction, comment 5969640467](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5969640467)
+puts capture availability before process-priority tuning. Measurements/limitations
+above remain valid. The recommendation below is historical; do not implement it
+as the next task. Current reproduction/design and review boundary:
+[ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
 The smallest supported implementation candidate is **explicit Windows Below
 Normal only for the differing-configuration CPU re-encode FFmpeg child**. It
 would make direct CLI / Normal-parent launches consistent with the expected
