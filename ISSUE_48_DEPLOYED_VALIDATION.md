@@ -1,6 +1,6 @@
 # Issue #48 — deployed automatic raw-copy validation
 
-## Current result (2026-10-02)
+## Current result (2026-10-03)
 
 **Deployment and Gracie-only startup opt-in PASSED; natural recording gate
 OUTSTANDING. #48 remains OPEN and the single active task.** Implementation
@@ -13,6 +13,83 @@ The owner explicitly authorized automatic raw-copy for **`gracie.kf` only**, wit
 That authorization remains in force; do not restore Eliss. Raw capture roughly
 doubles storage. No manual LIVE start/stop, media/evidence mutation, retention,
 other roadmap implementation, task-definition change or release/tag action.
+
+## Read-only natural-recording check — PARTIAL (2026-10-03)
+
+Bounded observations ran at **12:30:09–12:31:35 UTC** (14:30–14:31 CEST),
+monitoring cycles **2663 → 2666**, after fresh GitHub synchronization and
+reconciliation. **No qualifying Gracie recording was found; #48 stays OPEN.**
+
+### Runtime and policy reconciliation
+
+- Current listener PID **16480**, creation **2026-10-02T12:32:54.1650210Z**,
+  differs from deployment PID 63796. Scheduled Task last-run time is
+  **2026-10-02T12:32:54Z**, consistent with that later process launch. The task
+  XML hash and host-visible config hash exactly match the deployed checkpoint;
+  no task/config rollback, restart or write was performed in this pass.
+- The reason/initiator of that intervening launch is unproven: Task Scheduler's
+  Operational event log is disabled. This is a provenance limitation, not proof
+  of a #48 regression. The approved saved policy remains only `gracie.kf`, with
+  monitored order `wardsimons`, `gracie.kf`; Ward stays OFF.
+- Storage/configuration are `ok`, automation operational, no pending claim,
+  no active worker, two available slots, no shutdown or current recovery state.
+  Config, task, both current jobs and automation were stable between snapshots.
+  Free storage at the final check: **413,283,373,056 bytes**, reserve 10 GiB.
+- During the persisted bounded check both creators reported
+  `unknown / unverifiable`. No automatic start was selected.
+  This does not establish that Gracie was offline throughout, only that this
+  monitor did not verify a LIVE during those cycles.
+
+### Existing evidence search and Ward negative control
+
+- Read the manifests of **all 54 immediate `.parts` directories** in the
+  configured host-visible Videos root; **zero unreadable/missing manifests**,
+  **zero Gracie sessions with a start after policy activation**. The latest
+  Gracie session is `55dc7b01-4a85-45c1-aa63-0cec1a0ab0c4`, room
+  `7691910970859342623`, started **2026-10-02T03:44:57.478753Z**, completed
+  before activation. It cannot satisfy #48 regardless of existing media files.
+  Search scope is the configured local output root/current jobs, not an archive
+  catalog or proof that no recording could exist elsewhere.
+- Current slot 1 legitimately differs from the deployment's old terminal Ward
+  job. Post-activation Ward session **`712580b5-6b56-4ff6-9306-1fe614f6367a`**,
+  room **`7692051357494151968`**, started **2026-10-02T12:49:43.473980Z**,
+  ended **13:00:06.299413Z**, is failed/inactive with **raw-copy OFF**.
+  Its durable job and manifest UUID/room/output/parts agree; no stop intent,
+  resume, recovery or interruption. No raw/arrival files exist; both numbered
+  connection records have null raw/arrival references. Automation consumed that
+  Ward room. These facts support the negative control; consumed-room history
+  alone is not a complete accepted-start provenance log.
+- Ward's retained manifest identifies anonymous stream unavailability, TikTok
+  status **4003110**, on resolution. Finalization is `not_started`, not completed.
+  This is a recorded source-resolution failure, not evidence of a raw-policy
+  defect or a successful final-output check. No repair or unrelated investigation
+  was performed. Slot 2 remains the historical completed Eliss job; Eliss is not
+  in monitoring and was not restored.
+
+### Unavailable acceptance criteria and safe next action
+
+There is no post-activation Gracie job/session to establish automatic-start
+provenance, accepted `raw_copy_enabled=true`, room/slot ownership, nonempty raw
+and arrival sidecars, connection references, coherent byte ranges or progressing
+Gracie capture. No suitable Gracie artifact exists for this gate's read-only
+`tikrec validate`/finalization checks. None is claimed as passed. Existing older
+Gracie completion and Ward OFF evidence do not substitute for these criteria.
+
+**Next:** keep the approved policy and service untouched. On another bounded
+read-only pass, first look for an ongoing or completed natural automatic Gracie
+recording and use its existing evidence. No restart, config write, forced
+reconnect, manual LIVE, repeated opt-in authorization or terminal wait is needed
+when normal active evidence is sufficient. #52 stays queued; #28 is unresolved.
+
+Local metadata-only evidence:
+`C:\Users\Leandro\TikREC-evidence\issue-48-natural-20261003` contains `before.json`,
+`final.json`, `runtime.json`, `candidate-search.json`, `ward-negative-control.json`,
+`summary.json`, reusable `capture.ps1` and `checksums.json`. No credentials or
+media were copied. Checksum index SHA256:
+`b44f28e0ca019f900b18af93a912015f44136addc15269d76822d4729cfc2597`.
+No production code changed; no offline suite reran. Actual checks were public
+service status, control hashes, all local session manifests and Ward's existing
+connection metadata, with read-only bounded cycle observations.
 
 ## Safe deployment and activation
 

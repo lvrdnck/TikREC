@@ -1,11 +1,33 @@
 # TikREC current state
 
-Last reviewed: 2026-10-02. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-03. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
+
+- **Issue #48 ACTIVE / OPEN — bounded natural gate PARTIAL (2026-10-03):**
+  Deployment and approved Gracie-only policy remain intact. Current PID **16480**,
+  creation **2026-10-02T12:32:54.1650210Z**, matches the task's later launch time;
+  intervening launch reason is unproven because its Operational log is disabled.
+  Task/config hashes match deployment; no rollback or restart was performed.
+  All 54 immediate output-root `.parts` manifests are readable; no Gracie start
+  after policy activation exists there or in current jobs. Latest Gracie began
+  2026-10-02 03:44:57 UTC, before activation. Post-activation Ward job is raw OFF,
+  failed/inactive on anonymous stream unavailability (4003110), with coherent
+  UUID/room/paths and no stop/resume/recovery; no repair was attempted.
+  Read-only 12:30:09–12:31:35 UTC / cycles 2663–2666 found healthy storage/config,
+  two available slots, stable current jobs/automation, creators unknown/unverifiable
+  and no selected automatic start. Current raw list remains **`gracie.kf` only**;
+  monitored tuple **`wardsimons`, `gracie.kf`**, never Eliss.
+  **Pending owner action: None.** Gracie automatic provenance, accepted true flag,
+  raw/arrival/references/ranges/progress and suitable validation/finalization
+  evidence remain unavailable. Next is another bounded read-only existing/natural
+  Gracie evidence check, without restart/config change/manufactured LIVE.
+  [ISSUE_48_DEPLOYED_VALIDATION.md](ISSUE_48_DEPLOYED_VALIDATION.md) records scope,
+  hashes and limitations. #52 stays queued; #13/#28/#8 not started/resolved.
+  v0.10.0 remains released/package version; v0.11.0 remains unreleased.
 
 - **Issue #48 ACTIVE / OPEN — deployed opt-in PASSED, natural gate outstanding
   (2026-10-02):** The owner authorized Gracie-only automatic raw capture.

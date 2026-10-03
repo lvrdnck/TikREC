@@ -1323,9 +1323,9 @@ both job documents and automation stayed identical; bytes grew from 102,697,695
 to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
 replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-**No active implementation task. Next recommended queued task: #48 —
-opt-in per-creator raw-copy for automatic recordings**, pending fresh preflight
-and project-manager review. #52 remains queued; #8/#28 remain opportunistic
+**#48 is the single active task — implementation/deployment complete, natural
+Gracie evidence gate outstanding**; see the current #48 checkpoint below.
+#52 remains queued; #8/#28 remain opportunistic
 non-blocking evidence work and #13 remains separate rendition-policy work.
 No other issue was started. v0.10.0 remains released/package version and v0.11.0
 unreleased; completion here does not execute or authorize release/tag work.
@@ -2028,6 +2028,13 @@ stays OFF. Both creators remained offline during the gate. One natural automatic
 Gracie recording's raw/arrival/connection evidence remains outstanding before
 #48 can close. No further restart/config change or owner action is pending.
 See ISSUE_48_DEPLOYED_VALIDATION.md for evidence and safe read-only resume.
+The 2026-10-03 bounded check reconciled later PID 16480 with unchanged task/config
+hashes. All 54 immediate output-root manifests were readable, with no
+post-activation Gracie session. A later Ward job confirms raw OFF but failed on
+anonymous stream unavailability, not a successful final-output check. Cycles
+2663–2666 remained available/configuration healthy, with unverifiable creator
+observations and no start. #48 stays open for Gracie provenance/raw/arrival/range/
+progress evidence. No further restart/config change or owner action is needed.
 #52 remains queued after #48; no other roadmap slice or release work starts.
 
 ### v0.12.0 — Notifications and integrations

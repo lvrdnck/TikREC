@@ -50,12 +50,19 @@ alter active workers/jobs. A pre-#48 runtime rejects a nonempty new field during
 strict reload, so deploy supporting code before setting an opt-in.
 
 #48 implementation/offline verification and owner-authorized deployment/opt-in
-are complete. PID 63796 (created 2026-10-02T11:11:44.4280260Z) selects automatic
+are complete. Deployment PID 63796 (created 2026-10-02T11:11:44.4280260Z)
+selected automatic
 raw-copy for **`gracie.kf` only**, with Ward OFF. Both required restarts were
 performed while naturally idle. One natural automatic Gracie recording's raw /
 arrival / connection evidence remains outstanding; #48 stays open. No further
 restart/config change or authorization is needed for that read-only gate.
 Details: [ISSUE_48_DEPLOYED_VALIDATION.md](ISSUE_48_DEPLOYED_VALIDATION.md).
+Read-only recheck 2026-10-03 found later PID 16480, created
+2026-10-02T12:32:54.1650210Z, with the same task/config hashes and Gracie-only
+saved policy. Launch cause is unproven; no state was restored or restarted.
+No post-activation Gracie session exists in the inspected output-root manifests
+or current jobs. A newer Ward job remains raw OFF but failed on source resolution.
+Natural Gracie evidence is still outstanding; deployment is not repeated.
 Production remains `wardsimons`, `gracie.kf`, using the proven service-visible
 `\\localhost\C$\Users\Leandro\AppData\Roaming\TikREC\config.json` path.
 
