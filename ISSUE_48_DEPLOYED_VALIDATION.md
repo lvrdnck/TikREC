@@ -3,7 +3,7 @@
 ## Current result (2026-10-03)
 
 **Deployment and Gracie-only startup opt-in PASSED; natural recording gate
-OUTSTANDING. #48 remains OPEN and the single active task.** Implementation
+OUTSTANDING. #48 remains OPEN / explicitly PAUSED.** Implementation
 `3b8d8bf0` and structure extraction `130d495d` are deployed. No capture code was
 changed during this gate. v0.10.0 remains current released/package version;
 v0.11.0 remains unreleased.
@@ -13,6 +13,14 @@ The owner explicitly authorized automatic raw-copy for **`gracie.kf` only**, wit
 That authorization remains in force; do not restore Eliss. Raw capture roughly
 doubles storage. No manual LIVE start/stop, media/evidence mutation, retention,
 other roadmap implementation, task-definition change or release/tag action.
+
+The owner accepted the 2026-10-03 partial checkpoint and explicitly paused #48
+to start #52 Stage 1 as the single active investigation. All natural-recording
+acceptance criteria and the approved policy remain unchanged. Resume when
+qualifying natural evidence exists, or credible missed-LIVE evidence warrants
+source-access investigation. Unknown/unverifiable is not proof of offline.
+Older instructions below to repeat a bounded check are historical and
+superseded by this sequencing decision; #52 performs no #48 search/polling.
 
 ## Read-only natural-recording check — PARTIAL (2026-10-03)
 

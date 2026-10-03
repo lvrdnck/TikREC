@@ -1323,9 +1323,9 @@ both job documents and automation stayed identical; bytes grew from 102,697,695
 to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
 replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-**#48 is the single active task — implementation/deployment complete, natural
-Gracie evidence gate outstanding**; see the current #48 checkpoint below.
-#52 remains queued; #8/#28 remain opportunistic
+**#48 is OPEN / PAUSED awaiting qualifying natural evidence; #52 Stage 1 is
+the single active investigation** under the owner's 2026-10-03 decision.
+#8/#28 remain opportunistic
 non-blocking evidence work and #13 remains separate rendition-policy work.
 No other issue was started. v0.10.0 remains released/package version and v0.11.0
 unreleased; completion here does not execute or authorize release/tag work.
@@ -2009,9 +2009,9 @@ history; other startup-selected settings remain fixed. Offline tests and the
 process/session/slot/jobs, continuing bytes and no duplicate after restoration.
 Intended production monitoring remains **`wardsimons`, `gracie.kf`**;
 do not restore Eliss. ISSUE_30_DEPLOYED_VALIDATION.md carries the tests, deployment
-and continuity evidence. #48 is the single active task as recorded below.
+and continuity evidence. Current #48/#52 sequencing is recorded below.
 
-**Per-creator automatic raw-copy (issue #48; OPEN / natural gate pending):**
+**Per-creator automatic raw-copy (issue #48; OPEN / PAUSED, natural gate pending):**
 Implementation/offline verification is complete. Independent canonical
 `automatic_raw_copy_creators` preferences default OFF, persist through monitor
 removal, and use normal locked atomic `monitor raw-copy enable/disable/list`
@@ -2035,7 +2035,23 @@ anonymous stream unavailability, not a successful final-output check. Cycles
 2663–2666 remained available/configuration healthy, with unverifiable creator
 observations and no start. #48 stays open for Gracie provenance/raw/arrival/range/
 progress evidence. No further restart/config change or owner action is needed.
-#52 remains queued after #48; no other roadmap slice or release work starts.
+The owner's 2026-10-03 sequencing decision explicitly pauses #48 without waiving
+any criterion. Resume when qualifying natural evidence exists, or credible
+missed-LIVE evidence warrants source-access investigation; unknown/unverifiable
+does not prove offline. Preserve the approved Gracie-only policy. No #48 polling
+or search is part of #52; #28 remains unresolved and no release is authorized.
+
+**Finalization resources (issue #52 Stage 1; SINGLE ACTIVE investigation):**
+Map current stream-copy/differing-configuration subprocess and synchronous slot
+lifecycle, then compare Normal versus Below Normal priority on test-owned FFmpeg
+children using short disposable synthetic fixtures outside production roots.
+Keep codec/quality/filter/timing/thread parameters unchanged, measure CPU/memory/
+I/O/elapsed time and a labelled responsiveness proxy under controlled contention,
+validate input/output media, and recommend the smallest justified next slice.
+The historical GPU spike was attributed to old TikREC's NVENC workload, not
+current TikREC's CPU libx264. No production behavior/default/config change,
+service restart, worker setup, transfer, old-project change or release work.
+Both #48 and #52 stay open; Stage 1 investigation is not all of #52.
 
 ### v0.12.0 — Notifications and integrations
 

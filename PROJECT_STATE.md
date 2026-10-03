@@ -7,6 +7,27 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
+- **Issue #52 Stage 1 SINGLE ACTIVE task (owner sequencing decision,
+  2026-10-03):** Bounded Windows-local finalization resource investigation and
+  Normal/Below Normal controlled comparison. Production finalization behavior
+  remains unchanged. Preserve the historical #52 attribution: the observed GPU
+  spike came from old TikREC's NVENC finalizer, not this repository's CPU libx264
+  path. Use disposable synthetic media outside production roots, change priority
+  only for test-owned FFmpeg children, keep commands/media settings/thread counts
+  identical, validate inputs/outputs and report a labelled responsiveness proxy.
+  No service restart, config/media mutation, new dependency, worker setup,
+  transfer, old-TikREC modification or release action. No owner action pending.
+
+- **Issue #48 OPEN / explicitly PAUSED (owner decision, 2026-10-03):**
+  Implementation/deployment passed; natural-recording validation did not.
+  Preserve all acceptance criteria and approved Gracie-only raw policy, Ward
+  OFF, monitored order `wardsimons`, `gracie.kf`. Resume when qualifying natural
+  evidence is available, or credible missed-LIVE evidence warrants source-access
+  investigation. Unknown/unverifiable does not prove offline. Do not repeat
+  polling/searches as part of #52. This sequencing decision supersedes the older
+  active/next-action statements below; it does not close #48, resolve #28 or
+  authorize release. Historical evidence remains intact.
+
 - **Issue #48 ACTIVE / OPEN — bounded natural gate PARTIAL (2026-10-03):**
   Deployment and approved Gracie-only policy remain intact. Current PID **16480**,
   creation **2026-10-02T12:32:54.1650210Z**, matches the task's later launch time;
