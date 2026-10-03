@@ -2041,17 +2041,23 @@ missed-LIVE evidence warrants source-access investigation; unknown/unverifiable
 does not prove offline. Preserve the approved Gracie-only policy. No #48 polling
 or search is part of #52; #28 remains unresolved and no release is authorized.
 
-**Finalization resources (issue #52 Stage 1; SINGLE ACTIVE investigation):**
-Map current stream-copy/differing-configuration subprocess and synchronous slot
-lifecycle, then compare Normal versus Below Normal priority on test-owned FFmpeg
-children using short disposable synthetic fixtures outside production roots.
-Keep codec/quality/filter/timing/thread parameters unchanged, measure CPU/memory/
-I/O/elapsed time and a labelled responsiveness proxy under controlled contention,
-validate input/output media, and recommend the smallest justified next slice.
-The historical GPU spike was attributed to old TikREC's NVENC workload, not
-current TikREC's CPU libx264. No production behavior/default/config change,
-service restart, worker setup, transfer, old-project change or release work.
-Both #48 and #52 stay open; Stage 1 investigation is not all of #52.
+**Finalization resources (issue #52 Stage 1; SINGLE ACTIVE issue):**
+The 2026-10-03 bounded investigation is complete: 12 sequential synthetic
+Normal/Below Normal comparisons, identical media/thread parameters, all outputs
+deep-decode/packet-DTS clean and byte-identical within each path; 29 focused
+checks passed. Encode proxy p95 median improved 0.175 ms with 1.6% longer FFmpeg
+elapsed median, essentially unchanged memory/logical I/O. No real gaming benefit
+is established. Current task priority 7 / WMI base 6 already imply Below Normal
+inheritance; actual production FFmpeg class could not be measured, so Normal is
+a controlled alternative, not the deployed baseline. Recommend explicit Windows
+Below Normal only for CPU re-encode children as CLI/Normal-parent consistency,
+with focused launch/media checks; keep stream-copy/media settings unchanged.
+Do not advertise a gaming fix or select an arbitrary thread cap. Synchronous
+finalization retains slot/writer ownership longer when slowed. Historical GPU
+spike remains attributed to old TikREC NVENC. Production service/code/config/
+media are unchanged. Both issues stay open, #48 paused; worker setup, transfer,
+#13/#28/#8 and releases are separate. Evidence and limitations:
+[ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md](ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md).
 
 ### v0.12.0 — Notifications and integrations
 

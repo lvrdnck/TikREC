@@ -27,6 +27,20 @@ exposes no retention deletion or policy API.
 The persistent root lock file is never a retention target. Durable completed
 job references still block that executor even after their writer lease ends.
 
+## Finalization scheduling observation (#52 investigation)
+
+Finalization runs synchronously inside its recording worker and root writer
+lease; the slot stays occupied until its durable result is persisted. Current
+FFmpeg launch sets no explicit Windows priority class. On 2026-10-03 the existing
+Scheduled Task had priority 7 (Below Normal), with service WMI base priority 6;
+Below Normal child inheritance is expected, but direct service-class access was
+denied and an active production FFmpeg child was unavailable to verify it.
+This is deployment evidence, not a change to service defaults. The bounded
+synthetic comparison showed a small scheduling-proxy improvement and no proven
+gaming benefit; lower priority can extend slot occupancy. Full method, native
+priority references, metrics and proposed next slice:
+[ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md](ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md).
+
 ## Automatic raw-copy preferences (unreleased #48)
 
 The optional schema-1 `automatic_raw_copy_creators` field is an ordered list of
@@ -65,6 +79,10 @@ or current jobs. A newer Ward job remains raw OFF but failed on source resolutio
 Natural Gracie evidence is still outstanding; deployment is not repeated.
 Production remains `wardsimons`, `gracie.kf`, using the proven service-visible
 `\\localhost\C$\Users\Leandro\AppData\Roaming\TikREC\config.json` path.
+Owner sequencing decision 2026-10-03 pauses #48 OPEN while #52 is active; every
+natural-recording criterion and the approved policy remain in force. Resume on
+qualifying natural evidence or credible missed-LIVE evidence, without treating
+unknown/unverifiable as proof of offline. No repeated #48 search is part of #52.
 
 ## Bind and secret
 

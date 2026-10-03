@@ -8,15 +8,23 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 ## Coordination
 
 - **Issue #52 Stage 1 SINGLE ACTIVE task (owner sequencing decision,
-  2026-10-03):** Bounded Windows-local finalization resource investigation and
-  Normal/Below Normal controlled comparison. Production finalization behavior
-  remains unchanged. Preserve the historical #52 attribution: the observed GPU
-  spike came from old TikREC's NVENC finalizer, not this repository's CPU libx264
-  path. Use disposable synthetic media outside production roots, change priority
-  only for test-owned FFmpeg children, keep commands/media settings/thread counts
-  identical, validate inputs/outputs and report a labelled responsiveness proxy.
-  No service restart, config/media mutation, new dependency, worker setup,
-  transfer, old-TikREC modification or release action. No owner action pending.
+  2026-10-03):** Investigation COMPLETE; issue remains OPEN for the next bounded
+  slice. Twelve sequential synthetic Normal/Below Normal finalizations passed
+  deep decode/packet-DTS checks; outputs were byte-identical within each path.
+  Encode proxy p95 median improved 0.175 ms, FFmpeg elapsed median increased 1.6%;
+  memory/logical I/O were essentially unchanged. No actual gaming benefit proven.
+  Task priority 7 / WMI base 6 already imply Below Normal inheritance; direct
+  service class query denied, production FFmpeg class unmeasured. Explicit Normal
+  was a controlled alternative, not the deployed baseline. Recommended next
+  slice: explicit Windows Below Normal for CPU re-encode children to make
+  Normal-parent/CLI launches consistent, with focused launch/media checks and
+  honest scope; stream-copy/media settings remain unchanged. This is not a proven
+  gaming fix for the current service. No owner decision required for ordinary
+  implementation; the next task still requires MODEL GATE. Historical GPU spike
+  remains attributed to old TikREC NVENC. Focused: **29 passed**. Production PID
+  16480/creation/config unchanged; no restart or media/config mutation.
+  [ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md](ISSUE_52_FINALIZATION_RESOURCE_INVESTIGATION.md)
+  records method, metrics, diagnostics, limitations and longer slot occupancy.
 
 - **Issue #48 OPEN / explicitly PAUSED (owner decision, 2026-10-03):**
   Implementation/deployment passed; natural-recording validation did not.
