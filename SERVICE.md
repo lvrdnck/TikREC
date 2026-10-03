@@ -27,6 +27,16 @@ exposes no retention deletion or policy API.
 The persistent root lock file is never a retention target. Durable completed
 job references still block that executor even after their writer lease ends.
 
+
+## Issue #52 isolated journal review boundary (2026-10-03)
+
+Review 5970143137 approves internal DELETE/EXTRA SQLite journal operations only;
+the isolated internal journal is implemented for review, deliberately unused
+by production. [Operations/tests/proof limits](ISSUE_52_SESSION_JOURNAL.md). No service wiring, filesystem closure proof,
+worker, migration, API or media-format change is included. Production remains
+synchronous. Accepted raw policy and evidence remain under their original UUID.
+See [the design and retained integration matrix](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
 ## Finalization scheduling observation (#52 investigation)
 
 Finalization runs synchronously inside its recording worker and root writer
@@ -56,7 +66,8 @@ requires a committed closed-source handoff, not a cleared busy flag. Pending/
 failed artifacts remain protected, with explicit restart, backlog/storage,
 shutdown and capture/finalization status contracts. Existing API descriptions
 below remain CURRENT behavior; proposed phase semantics/routes and persistence
-need project-manager review before implementation or deployment. Design and
+remain unimplemented integration gates. The internal journal alone is implemented;
+project-manager review of that slice precedes integration or deployment. Design and
 acceptance matrix:
 [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
 

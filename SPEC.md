@@ -1,5 +1,15 @@
 # TikREC — a recorder for public TikTok LIVE streams
 
+
+## Issue #52 isolated journal review boundary (2026-10-03)
+
+Review 5970143137 approves internal DELETE/EXTRA SQLite journal operations only;
+the isolated internal journal is implemented for review, deliberately unused
+by production. [Operations/tests/proof limits](ISSUE_52_SESSION_JOURNAL.md). No service wiring, filesystem closure proof,
+worker, migration, API or media-format change is included. Production remains
+synchronous. Accepted raw policy and evidence remain under their original UUID.
+See [the design and retained integration matrix](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
 ## Current implementation goal
 
 Windows is the sole active and planned recording/service runtime under the

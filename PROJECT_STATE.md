@@ -7,25 +7,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE — capture availability reproduction/design COMPLETE,
-  project-manager review pending (2026-10-03, comment 5969640467):** Reproduced
-  finalizing-slot/page ownership and automation retries; proposed Windows-local
-  durable per-session handoff/queue,
-  two capture slots and one finalizer. This supersedes the Below Normal-only
-  next-slice recommendation; the earlier resource investigation remains historical
-  evidence, not a remedy for capture availability. Five new deterministic offline
-  characterizations passed: finalization occupies slots, a same-creator/new-room
-  start is rejected despite a free slot, and retry requires a later eligible
-  cycle after release. A return ending before release can be missed in this
-  controlled scenario; no missed production LIVE or #48 cause is established.
-  Related manager/ownership/worker/job/automation regression: **181 passed**.
-  Proposed ownership, crash/restart, raw/retention protection, backlog/storage,
-  shutdown and API phase contracts plus acceptance matrix are in
-  [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
-  **Not implemented:** journal, queue, worker, API/schema or scheduling changes.
-  Next: project-manager review of authority, ordering, bounds and API phase
-  semantics before any production implementation. #52 stays OPEN; no new task
-  is executed automatically from this design checkpoint.
+- **Issue #52 SINGLE ACTIVE — isolated durable journal COMPLETE for review
+  (2026-10-03, review 5970143137):** Reproduction/design `9d6299d9` accepted.
+  Implemented unused internal SQLite DELETE/EXTRA journal with two generation-bound
+  bindings, immutable session/raw policy, atomic reservation/admission/H, surviving
+  room/artifact claims, automatic acceptance/operation receipts, one finalizer,
+  eight total units and guarded settlement. Focused **95 passed**; related
+  ownership/automation/retention **633 passed / four skips**; full isolated **1,891 passed / seven skips / 19 subtests**
+  in [journal checkpoint](ISSUE_52_SESSION_JOURNAL.md). Linked SQLite **3.49.1**;
+  verified EXTRA/FK/1000 ms timeout. Process-death tests are not power-loss proof;
+  typed stored evidence does not establish native closure/media validity.
+  No owner decision pending. Production remains synchronous; no wiring, worker,
+  migration, API, markers, media/config, restart or deployment occurred. The full
+  service matrix remains outstanding. Next: project-manager review of actual
+  journal before selecting integration; do not auto-start it. #52 OPEN, #48 paused.
 
 - **Issue #48 OPEN / explicitly PAUSED (owner decision, 2026-10-03):**
   Implementation/deployment passed; natural-recording validation did not.

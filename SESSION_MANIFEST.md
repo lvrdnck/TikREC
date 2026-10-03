@@ -6,6 +6,16 @@ continuation attempts. The existing
 `connections.jsonl` remains the detailed event and connection log; neither file
 replaces the other.
 
+
+## Issue #52 isolated journal review boundary (2026-10-03)
+
+Review 5970143137 approves internal DELETE/EXTRA SQLite journal operations only;
+the isolated internal journal is implemented for review, deliberately unused
+by production. [Operations/tests/proof limits](ISSUE_52_SESSION_JOURNAL.md). No service wiring, filesystem closure proof,
+worker, migration, API or media-format change is included. Production remains
+synchronous. Accepted raw policy and evidence remain under their original UUID.
+See [the design and retained integration matrix](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+
 ## Lifecycle
 
 - Direct-FLV and supplied-tag captures initialize the manifest after creating
@@ -145,9 +155,9 @@ outcome and timing for each numbered attempt.
 
 ## Service intent boundary (v0.5.0)
 
-**Proposed #52 ownership correction, not implemented:** A durable per-session
-local journal would preserve capture/stop/raw intent and queued assembly across
-capture-slot reuse; its handoff does not replace this manifest's media evidence.
+**Proposed #52 service ownership correction, not integrated:** The isolated
+internal journal stores capture/stop/raw intent and queued tasks across slot reuse,
+but production is not wired to it; its handoff does not replace this manifest's media evidence.
 Current job/manifest schemas and synchronous lifecycle below remain unchanged.
 The review design specifies closed-part/control binding, a session ownership
 marker, separate capture-end/status facts, idempotent publication/restart and

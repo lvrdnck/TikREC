@@ -2,8 +2,12 @@
 
 ## Review status and authority
 
-2026-10-03: **reproduction/design task; proposed behavior is NOT implemented.**
-#52 remains OPEN / SINGLE ACTIVE, next awaiting project-manager design review.
+2026-10-03: **isolated journal slice IMPLEMENTED for review; service integration NOT implemented.**
+[Review 5970143137](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5970143137)
+approves internal journal operations only, not service integration or cutover.
+#52 remains OPEN / SINGLE ACTIVE; production behavior remains synchronous.
+Implementation, exact internal operations, tests and proof limits are in
+[ISSUE_52_SESSION_JOURNAL.md](ISSUE_52_SESSION_JOURNAL.md).
 #48 remains OPEN / PAUSED, with all criteria and Gracie-only raw policy preserved;
 monitored production order is `wardsimons`, `gracie.kf`, Ward raw OFF. #28 remains
 unresolved. This task did not access the service, configuration or recording root.
@@ -35,8 +39,9 @@ All state/lock files live under pytest's disposable external root.
 Focused result: **5 passed in 0.44 s**, repeated **5 passed in 0.42 s**;
 related manager/ownership/worker/job/automation regression checks: **181 passed
 in 3.05 s**, final rerun **181 passed in 2.93 s**, Windows Python 3.12.10.
-No full offline suite or real-media check was
-run: this task changes tests/design, not assembly code. The first command
+At the historical `9d6299d9` reproduction checkpoint, no full offline suite or
+real-media check was run: that task changed tests/design, not assembly code.
+The later isolated journal slice runs a full suite, reported separately above. The first command
 failed at pytest setup because the new external basetemp parent did not exist;
 creating that test directory resolved setup, without changing product code.
 The five tests characterize the limitation and must be replaced/adapted when
@@ -67,19 +72,25 @@ task; it survives slot reuse. Transactions combine queue handoff and slot releas
 An authoritative JSON queue plus separately authoritative slot files would need
 a cross-file recovery protocol; this design avoids that dual authority.
 Use the Task account's verified native local state location/file identity, not a
-redirected desktop APPDATA view or a UNC path for WAL. Configuration's separately
-proven service-visible UNC path is unchanged. Catalog identity/location must be
+redirected desktop APPDATA view or a UNC path for journal storage. Configuration's
+separately proven service-visible UNC path is unchanged. Catalog identity/location must be
 bound at cutover and in session markers; tools that cannot prove the same view
 fail closed rather than invent an empty alternate journal.
 
-Proposed SQLite settings: local Windows filesystem only, WAL, `synchronous=FULL`,
-foreign keys ON, verified pragmas/schema/application identity, bounded busy wait
-(1 s). No DB transaction spans network/media I/O or FFmpeg execution. WAL uses
-same-host shared memory and its sidecars are part of state; FULL sync supports
-durable commits, subject to OS/storage guarantees. Never copy just the live DB
-file or put it on SMB/cloud sync. [SQLite WAL](https://www.sqlite.org/wal.html),
-[synchronous policy](https://www.sqlite.org/pragma.html#pragma_synchronous).
-This persistence choice needs project-manager approval before production work.
+Approved persistence for this slice: standard-library SQLite on local storage,
+`journal_mode=DELETE`, `synchronous=EXTRA`, foreign keys ON, verified settings,
+explicit short transactions and a **1-second** busy timeout. No transaction spans
+network/media I/O or FFmpeg execution. Reopen known state without creating a
+replacement; reject unexpected catalog identity/schema/mode. Never discard a
+potentially hot rollback journal or copy a live database alone. Reconcile a lost
+commit acknowledgement by durable operation identity before retry/refund.
+EXTRA with DELETE adds directory synchronization after journal unlink, subject to
+OS/storage guarantees. Record the linked SQLite version/source identity; do not
+infer it from Python. This supersedes proposed WAL/FULL; a future WAL change
+requires explicit review and a verified engine with applicable WAL-reset fixes.
+[SQLite synchronization](https://www.sqlite.org/pragma.html#pragma_synchronous),
+[atomic commits](https://www.sqlite.org/atomiccommit.html),
+[WAL-reset notice](https://www.sqlite.org/wal.html#walreset).
 
 | Durable component | Required contents / constraints |
 | --- | --- |
@@ -222,7 +233,10 @@ lifetime control; nested-job/Task Scheduler behavior needs native acceptance,
 not assumption. [Windows Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
 
 Record progress heartbeat independently of capture heartbeat. Proposed review
-defaults: no forward progress for 5 minutes => terminate only this child, bounded
+ideas (NOT approved): a five-minute media-progress-only kill rule is unsafe.
+Integration must use phase-aware activity/deadlines for assembly, mux/publication,
+hashing and validation, distinguishing long-progressing work from a true stall.
+Only proven stalled owned work may be terminated, with bounded
 5-second cleanup then owned Job Object termination. A stopped/stalled attempt
 retains its partial and becomes failed/needs_attention; no automatic endless
 retry loop. Unknown child liveness keeps the sole worker unavailable and its
@@ -245,7 +259,8 @@ Capture-end time is separate in the journal/status; existing manifest lifecycle
 Startup acquires listener/state ownership before scheduling any work, opens the
 known catalog without silently creating an empty replacement, validates schema,
 integrity and all live/nonterminal claims, then reconciles slots/tasks/automation.
-DB/WAL/SHM are one state set. A missing/corrupt catalog after an activation marker
+The database and any potentially hot rollback journal are one recovery
+state set. A missing/corrupt catalog after an activation marker
 is an ownership failure, not an idle system. Cross-record UUID/path/slot collisions
 fail closed. No finalization record may cause a source resolver/new LIVE start.
 
@@ -324,9 +339,11 @@ safe captures. Completed metadata remains queryable through bounded pagination.
 Check each output volume and catalog volume, not only the configured automatic
 root. Preserve the configured minimum-free threshold. Defer finalization at low
 disk; it is not a capture-slot failure. Propose a per-attempt temporary-output
-budget `4 * retained_FLV_bytes + 64 MiB` (heuristic, not an encoded-size proof),
-reserve it before launch, and subtract unspent running reservation in new capture
-admission. Existing captures take priority: monitor free space/progress at least
+budget `4 * retained_FLV_bytes + 64 MiB` is an UNAPPROVED heuristic,
+not an encoded-size bound or production admission default. Before integration,
+specify yielding/reconciliation of unspent reservations, accounting for preserved
+partial bytes, so a reservation alone does not unnecessarily block safe capture. Existing captures take priority: monitor free space/progress
+at least
 each second; stop only owned assembly if it reaches that output budget or the
 free-space floor, preserving partial/evidence. Base low disk, unavailable storage,
 catalog write failure or unprovable ownership still refuse unsafe new capture.
@@ -389,17 +406,28 @@ side effects, not only the health response.
 | A15 | Automation claim accepted, H/reuse occurs before consumed-state promotion; restart | Accepted durable session receipt proves original creator/room/path acceptance even after slot reuse; promote once. A genuine duplicate clears without consuming new room, then retries on a later cycle. |
 | A16 | Actual short disposable media, same/different AVC configs, queue/restart boundaries | Existing deep/packet-DTS checks and timing/diagnostic expectations pass with identical assembly options. Retained FLV/raw/evidence hashes unchanged; include native process/locking tests, never a forced production LIVE. |
 
+### Additional integration cases from review 5970143137 (NOT executed)
+
+| ID | Case | Required result |
+| --- | --- | --- |
+| A17 | Unspent finalizer reservation alone would block capture | Yield/reconcile unspent budget safely; preserve partial bytes; real low disk fails closed. |
+| A18 | Long assembly/mux/hash/validation activity versus true stall | Phase-aware deadlines permit legitimate activity, isolate genuinely stalled work. |
+| A19 | Parent death during child create/assign/resume/last-handle close | Native child control/exit proven; PID/heartbeat alone is insufficient. |
+| A20 | Failed/backlog-blocked work recovery | Explicit guarded recovery, no infinite retry, false completion, eviction or pin clearing. |
+
 ## Review boundary and safe next action
 
-This commit contains reproduction tests and contracts/design only. No new product
-module, durable catalog, worker, migration, runtime/config change, restart, LIVE,
-media mutation, retention execution, priority benchmark, #48 search, dependency,
-remote setup or release is performed. Current behavior remains synchronous.
+The historical reproduction/design commit contained tests/contracts only. The
+current slice implements an isolated internal journal with disposable file-backed
+tests. No production catalog, worker, migration, runtime/config change, restart,
+LIVE, media mutation, production retention operation, priority benchmark, #48
+search, dependency, remote setup or release occurred. Production stays synchronous.
 
-Project management should review authority choice, closure/publication crash
-ordering, native child lifetime, retention compatibility, proposed bounds and
-API phase semantics. Then approve a bounded first implementation slice: journal
-schema/transactions and acceptance/crash tests with **no service wiring or cutover**.
+Project management approved the bounded internal journal slice in review
+5970143137. Schema/transactions and disposable acceptance/crash tests are now
+implemented with **no service wiring or cutover**. The next review examines the actual journal
+and selects a bounded integration slice. Stored typed seals are caller-supplied
+ownership evidence, not proof that a writer closed or media is valid.
 Subsequent tracked worker/ownership/API/retention integration requires the full
 matrix before a separately authorized safe Windows deployment. Process-priority
 tuning is later work, not the capture-availability remedy. Keep #52 OPEN.
