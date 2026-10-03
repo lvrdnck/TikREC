@@ -3,6 +3,11 @@
 
 ## Issue #52 isolated journal review boundary (2026-10-03)
 
+Review 5970692341 focused journal corrections are implemented for review:
+stop-before-admission, cross-session/automatic-receipt authority and committed
+queue-entry FIFO with retry at the tail. Integration remains unapproved. Schema 2 is isolated; schema 1 is refused/preserved,
+with no migration. No production schema or media format is changed.
+
 Review 5970143137 approves internal DELETE/EXTRA SQLite journal operations only;
 the isolated internal journal is implemented for review, deliberately unused
 by production. [Operations/tests/proof limits](ISSUE_52_SESSION_JOURNAL.md). No service wiring, filesystem closure proof,

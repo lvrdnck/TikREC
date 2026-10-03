@@ -1,5 +1,90 @@
 # Issue #52 — isolated durable journal checkpoint
 
+## Review correction pass — 2026-10-03 (complete for review)
+
+Evidence checkpoint: **2026-10-03 16:16:31 UTC**.
+
+[Review 5970692341](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5970692341)
+approves only focused journal corrections, not integration. #52 remains SINGLE
+ACTIVE/OPEN; #48 OPEN/PAUSED. The review was a source review, not an independent
+rerun of the historical Windows results below.
+
+Added regressions before changing package code: against `58939620`, **13 failed,
+four passed in 1.20 s**. Reproduced committed stop/latest-revision admission,
+mutually contradictory owners and missing/inconsistent automatic provenance,
+acceptance-based queue order and retry overtaking. These are unwired journal
+findings, not production recording/missed-LIVE or media-mutation claims.
+
+Implemented corrections:
+
+- R1: fresh admission refuses saved stop inside the guarded transaction. Historical
+  reserve/admit receipts remain idempotent evidence; they are not permission to
+  launch a writer after a later stop. Reconcile unknown acknowledgement, then
+  revalidate current UUID/binding/generation/revision/stop under the eventual
+  native launch boundary. No writer/launch adapter is implemented here.
+- R2: admission/audit share bounded pairwise owner rules. Two current captures
+  cannot own the same creator; room and native subtree conflicts fail closed.
+  Same creator/different known rooms with closed-task ownership remains valid.
+  Mandatory automatic receipt/claim/session/immutable-intent binding is checked
+  for outstanding sessions and when addressed historical evidence is used.
+  Logical-corruption fixtures insert individually constrained rows directly in
+  disposable databases; no production schema constraint/trigger is disabled.
+- R3: journal schema **2** adds immutable queue-entry history, task queue-order FK,
+  and indexed immutable accepted automatic-claim identity. H assigns queue order
+  atomically. Explicit failed retry appends at the tail. Replay finds the existing
+  operation receipt and neither appends nor moves its queue entry. FIFO eligibility
+  uses task queue entry, while session history keeps its independent acceptance
+  sequence. Queued/running/failed/blocked tasks still retain one unit and pins.
+
+Schema 1 is explicitly unsupported by this implementation: reopen refuses it,
+initialize refuses its existing path, and no migration/recreation is performed.
+The frozen reviewed schema-1 fixture preserves real state for refusal tests;
+all prior disposable roots, including the failing baseline fixtures, remain.
+DELETE/EXTRA/FK/1000 ms, two bindings, one finalizer, eight units, immutable raw/
+identity/seals and guarded accounting remain unchanged.
+
+### Actual correction-pass verification
+
+- Baseline on `58939620`: **13 failed / four passed**, 1.20 s, before package edits.
+- Expanded focused journal suite: **136 passed**, 17.19 s (initial corrected run:
+  113 passed, 12.76 s). Stop-before-admission/latest revision/reopen, both serialized
+  stop/admission orders, competing callbacks, admission/stop lost acknowledgements,
+  historical receipt replay versus fresh permission and unchanged durable records.
+- Ownership/provenance: contradictory creator/subtree fixtures are refused on
+  reopen, status and mutation without changing database bytes/unrelated records;
+  valid same-creator/distinct-room task+capture retains each raw policy. Missing,
+  wrong-session and wrong-hash automatic provenance is rejected; addressed
+  historical claim/operation/session validation does not scan all completed history.
+- FIFO: reverse acceptance/H, retry-tail/replay/reopen and competing claims;
+  12 H/retry fault cases including queue-entry writes and lost acknowledgement.
+  Three additional retry subprocess deaths complement the prior nine acceptance/
+  H/settlement cases; dirty-page spill exposes rollback journals before commit.
+  Durable operation identity resolves outcomes without double entry or unit release.
+- Related ownership/worker/job/automation/retention: **633 passed / four platform
+  skips**, 54.97 s; includes unchanged synchronous characterizations. Disposable
+  retention fixtures only; no production retention action.
+- Full isolated result: **1,932 passed / seven skips / 19 subtests passed**,
+  183.24 s.
+- Windows Python **3.12.10**, linked **SQLite 3.49.1**. Source ID:
+  `2025-02-18 13:38:58 873d4e274b4988d260ba8354a9718324a1c26187a4ab4c1cc0227c03d0f10e70`.
+  Reopened a current disposable file-backed journal to verify delete / synchronous
+  3 / FK 1 / busy 1000. No upgrade or production-engine assertion.
+- Evidence/config/database roots: `C:\Users\Leandro\TikREC-tests\issue52-journal-review-20261003`.
+  Logs: `baseline-regressions.log`, `focused-1.log`, `focused-2.log`,
+  `related-final.log`, `full-final.log`. Every invocation uses a distinct basetemp;
+  related/full child APPDATA/LOCALAPPDATA/XDG config/state are redirected there.
+  Existing old roots and all 42 unrelated worktree artifacts are preserved.
+  New package modules stay under 300 lines; public API docstrings/diff checked.
+
+Native proof, power-loss guarantees and all A1–A20 service gates remain
+outstanding. No service/API/worker/marker/database deployment,
+config/media/runtime change, restart, LIVE, production retention, #48 polling,
+priority benchmark, dependency, remote worker, release or tag occurred.
+
+Next: review the focused correction commit; do not start integration automatically.
+
+## Initial journal checkpoint — 58939620 (historical)
+
 2026-10-03, evidence checkpoint **15:25:56 UTC**.
 Authority: [approved review 5970143137](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5970143137),
 following design/reproduction `9d6299d9`. **Journal slice complete for review;

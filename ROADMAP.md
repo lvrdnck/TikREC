@@ -1324,8 +1324,8 @@ to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
 replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
 **#48 is OPEN / PAUSED awaiting qualifying natural evidence; #52 is the single
-active issue**, with the isolated journal complete for review under
-comment 5970143137; production integration remains unimplemented.
+active issue**, with focused journal corrections complete for review under
+5970692341. Service integration is not approved.
 #8/#28 remain opportunistic
 non-blocking evidence work and #13 remains separate rendition-policy work.
 No other issue was started. v0.10.0 remains released/package version and v0.11.0
@@ -2057,12 +2057,20 @@ one finalizer, distinct LIVE/artifact claims, crash-safe handoff/publication,
 restart, raw/retention pins, bounded backlog/low disk, controlled shutdown and
 compatible routes with explicit capture/finalization phase semantics. Review 5970143137 approves internal journal implementation only: DELETE/EXTRA,
 1-second busy timeout, eight total reserved/task units and durable operation
-reconciliation. Journal slice implemented with no production imports/wiring: 95 focused checks
+reconciliation. Initial journal checkpoint `58939620`, with no production
+imports/wiring: 95 focused checks
 passed, 633 related checks passed (four skips), full isolated **1,891 passed /
 seven skips / 19 subtests**. Evidence in
 [ISSUE_52_SESSION_JOURNAL.md](ISSUE_52_SESSION_JOURNAL.md). SQLite 3.49.1 observed.
 Service matrix/closure/native process/retention/migration/API gates remain outstanding.
-Next: project-manager review of actual journal, then select bounded integration. See
+Review 5970692341 found R1 committed-stop admission, R2 cross-session/receipt
+validation and R3 queue ordering gaps. Focused corrections are complete for review
+in explicit schema 2, with unsupported schema 1 refused/preserved, no migration.
+Baseline 13 failures/four control passes; corrected focused **136 passed**, related
+**633 passed / four skips**; full isolated
+**1,932 passed / seven skips / 19 subtests passed**. Native/service gates remain
+unpassed.
+Next: review the correction commit before selecting any integration. See
 [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
 Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;
 #28 unresolved, #13/#8 and release/remote-worker work are separate.

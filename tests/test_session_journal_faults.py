@@ -14,7 +14,7 @@ from tikrec.session_journal_types import JournalUncertain
 BOUNDARIES = {
     "reserve": ["after_begin", "after_session", "after_binding", "after_unit", "after_claims",
                 "after_receipt", "after_writes", "before_commit", "after_commit"],
-    "handoff": ["after_begin", "after_seal", "after_task", "after_transfer", "after_release",
+    "handoff": ["after_begin", "after_seal", "after_queue_entry", "after_task", "after_transfer", "after_release",
                 "after_writes", "before_commit", "after_commit"],
     "settle_task": ["after_begin", "after_terminal", "after_unit_release", "after_claim_release",
                     "after_writes", "before_commit", "after_commit"],

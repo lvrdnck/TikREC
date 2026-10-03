@@ -34,8 +34,8 @@ class TaskOperations:
         def action(connection):
             if connection.execute("SELECT 1 FROM tasks WHERE state='running' LIMIT 1").fetchone():
                 return None
-            row = connection.execute("SELECT t.* FROM tasks t JOIN sessions s ON s.id=t.session "
-                                     "WHERE t.state='queued' ORDER BY s.seq LIMIT 1").fetchone()
+            row = connection.execute("SELECT * FROM tasks WHERE state='queued' "
+                                     "ORDER BY queue_order LIMIT 1").fetchone()
             if row is None:
                 return None
             connection.execute("INSERT INTO attempts VALUES (?,?,?,'running',NULL)",
@@ -85,18 +85,22 @@ class TaskOperations:
 
     def retry_failed(self, operation: str, session_id: str, revision: int,
                      attempt: int, token: str, proof: AttemptExitProof) -> dict:
-        """Explicitly requeue matching failed work without refunding its unit or pins."""
+        """Requeue at the durable FIFO tail without refunding the unit or moving on replay."""
         _exit(proof, session_id, token)
         def action(connection):
             row = _guard(connection, session_id, revision, attempt, token)
             if row["state"] != "failed" or row["proof"] != encode(asdict(proof)):
                 raise JournalConflict("failed attempt proof conflicts")
-            connection.execute("UPDATE tasks SET state='queued',revision=revision+1 WHERE session=?",
-                               (session_id,))
+            entry = connection.execute("INSERT INTO queue_entries(session,operation) VALUES (?,?)",
+                                       (session_id, operation)).lastrowid
+            self._inject("retry_failed", "after_queue_entry")
+            connection.execute("UPDATE tasks SET state='queued',revision=revision+1,queue_order=? WHERE session=?",
+                               (entry, session_id))
+            self._inject("retry_failed", "after_task")
             connection.execute("UPDATE sessions SET phase='queued',revision=revision+1 WHERE id=?",
                                (session_id,))
             return {"session_id": session_id, "revision": revision + 1,
-                    "attempt": attempt, "token": token}
+                    "attempt": attempt, "token": token, "queue_order": entry}
         return self._mutate(operation, "retry_failed",
                             [session_id, revision, attempt, token, asdict(proof)], action)
 

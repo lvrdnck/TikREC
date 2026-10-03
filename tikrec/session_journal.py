@@ -3,6 +3,7 @@
 import json
 
 from .session_journal_capture import CaptureOperations
+from .session_journal_receipts import lookup_receipt, validate_session_receipt
 from .session_journal_store import JournalStore
 from .session_journal_tasks import TaskOperations
 from .session_journal_types import identifier, require
@@ -18,6 +19,7 @@ class SessionJournal(CaptureOperations, TaskOperations, JournalStore):
             row = connection.execute("SELECT * FROM sessions WHERE id=?", (session_id,)).fetchone()
             if row is None:
                 return None
+            validate_session_receipt(connection, row)
             result = dict(row)
             result["intent"] = json.loads(result["intent"])
             result["seal"] = None if row["seal"] is None else json.loads(row["seal"])
@@ -31,12 +33,9 @@ class SessionJournal(CaptureOperations, TaskOperations, JournalStore):
         return self._read(read)
 
     def automatic_receipt(self, claim_id: str) -> dict | None:
-        """Find permanent accepted-start provenance even after capture slot reuse."""
+        """Find validated historical acceptance evidence, never fresh writer permission."""
         identifier(claim_id)
-        def read(connection):
-            row = connection.execute("SELECT * FROM automatic_receipts WHERE claim=?", (claim_id,)).fetchone()
-            return None if row is None else dict(row)
-        return self._read(read)
+        return self._read(lambda connection: lookup_receipt(connection, claim_id))
 
     def status(self) -> dict:
         """Return bounded internal counts/bindings, separately from MP4 completion."""
@@ -47,7 +46,7 @@ class SessionJournal(CaptureOperations, TaskOperations, JournalStore):
                     "units": [dict(x) for x in connection.execute(
                         "SELECT * FROM units ORDER BY session LIMIT 8")],
                     "tasks": [dict(x) for x in connection.execute(
-                        "SELECT * FROM tasks WHERE state!='completed' ORDER BY session LIMIT 8")],
+                        "SELECT * FROM tasks WHERE state!='completed' ORDER BY queue_order LIMIT 8")],
                     "limit": 8}
         return self._read(read)
 

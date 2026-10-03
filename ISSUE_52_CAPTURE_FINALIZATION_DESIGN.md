@@ -2,21 +2,25 @@
 
 ## Review status and authority
 
-2026-10-03: **isolated journal slice IMPLEMENTED for review; service integration NOT implemented.**
-[Review 5970143137](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5970143137)
-approves internal journal operations only, not service integration or cutover.
-#52 remains OPEN / SINGLE ACTIVE; production behavior remains synchronous.
-Implementation, exact internal operations, tests and proof limits are in
-[ISSUE_52_SESSION_JOURNAL.md](ISSUE_52_SESSION_JOURNAL.md).
-#48 remains OPEN / PAUSED, with all criteria and Gracie-only raw policy preserved;
-monitored production order is `wardsimons`, `gracie.kf`, Ward raw OFF. #28 remains
-unresolved. This task did not access the service, configuration or recording root.
+2026-10-03: **focused journal corrections complete for review; service integration NOT approved.**
+[Review 5970692341](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5970692341)
+retains `58939620` as the isolated foundation but requires R1 stop/admission,
+R2 cross-owner/automatic-receipt authority validation and R3 durable queue-entry
+FIFO before another review. Fresh admission must refuse committed stop even with
+latest revision. Historical receipts do not authorize a fresh writer launch.
+Outstanding owners must be mutually consistent, while distinct known rooms with
+closed-task ownership remain allowed. H queues by committed entry; failed retry
+joins the tail, and idempotent replay cannot move it. Versioned schema 2 is isolated;
+unsupported schema 1 is refused/preserved, not migrated or recreated.
+The [journal report](ISSUE_52_SESSION_JOURNAL.md) preserves actual tests and limits.
 
-The [priority correction, comment 5969640467](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5969640467)
-supersedes the Below Normal-only next-slice recommendation in `978cce93`.
-That resource investigation remains valid within its scope, including the old
-TikREC NVENC attribution. Slowing the current synchronous finalizer can lengthen
-the capture-availability exposure. Capture ownership separation comes first.
+[Review 5970143137](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5970143137)
+approved only the initial journal operations, not service cutover. #52 remains
+OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED, Gracie-only raw policy/Ward OFF and monitored
+order `wardsimons`, `gracie.kf` untouched. #28 unresolved. No production access.
+[Priority correction 5969640467](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5969640467)
+superseded the Below Normal-only next slice; that resource evidence remains
+historical and is not a capture-availability remedy.
 
 ## Deterministic reproduction of CURRENT behavior
 
@@ -214,7 +218,7 @@ itself recursively; its own immutable byte hash is stored with the task.
 
 ### Finalizer and publication
 
-One non-daemon tracked worker chooses oldest eligible queued task, commits its
+One non-daemon tracked worker chooses the oldest eligible committed queue entry, commits its
 attempt token before launch, and owns only that UUID's immutable inputs/paths.
 Use existing stream-copy versus libx264 decision, filters, quality, frame timing,
 diagnostics and validation semantics. Capture jobs never wait on its join.
@@ -425,8 +429,10 @@ search, dependency, remote setup or release occurred. Production stays synchrono
 
 Project management approved the bounded internal journal slice in review
 5970143137. Schema/transactions and disposable acceptance/crash tests are now
-implemented with **no service wiring or cutover**. The next review examines the actual journal
-and selects a bounded integration slice. Stored typed seals are caller-supplied
+implemented with **no service wiring or cutover**. Review 5970692341 required
+focused stop/admission, cross-owner/receipt and FIFO corrections; these are now
+implemented and verified in schema 2. The next action is project-manager review
+of that correction commit before selecting any integration slice. Stored typed seals are caller-supplied
 ownership evidence, not proof that a writer closed or media is valid.
 Subsequent tracked worker/ownership/API/retention integration requires the full
 matrix before a separately authorized safe Windows deployment. Process-priority

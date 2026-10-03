@@ -1,20 +1,12 @@
 """Atomic capture reservations, guarded admission and sealed handoff H."""
 
-import json
 from dataclasses import asdict
 
-from .session_journal_types import (ArtifactIdentity, ClosureSeal, JournalConflict,
+from .session_journal_ownership import check_admission
+from .session_journal_receipts import lookup_receipt, validate_session_receipt
+from .session_journal_types import (ClosureSeal, JournalConflict,
                                   ReservationReleaseProof, SessionIntent, digest, encode,
-                                  identifier, require, room)
-
-
-def intent_from_record(record: str) -> SessionIntent:
-    """Revalidate stored immutable intent without reading any media or filesystem."""
-    values = json.loads(record)
-    for key in ("root", "output", "parts"):
-        identity = values[key]
-        values[key] = ArtifactIdentity(identity["volume"], tuple(identity["components"]))
-    return SessionIntent(**values)
+                                  identifier, intent_from_record, require, room)
 
 
 def guard_capture(connection, session_id, generation, revision):
@@ -36,48 +28,28 @@ def _result(row, revision=None):
             "revision": row["revision"] if revision is None else revision}
 
 
-def _ownership(connection, intent, proven_room, *, excluding=None):
-    owners = connection.execute("SELECT s.*,u.kind FROM sessions s JOIN units u "
-                                "ON u.session=s.id WHERE s.id IS NOT ? LIMIT 9",
-                                (excluding,)).fetchall()
-    for owner in owners:
-        old_room = owner["room"] or owner["expected_room"]
-        if old_room is not None and old_room == proven_room:
-            raise JournalConflict("public room already owned")
-        if owner["creator"] == intent.creator:
-            # A free slot cannot bypass a current page owner or an unknown old room.
-            if owner["kind"] == "capture" or old_room is None or proven_room is None:
-                raise JournalConflict("public page ownership cannot be separated")
-    rows = connection.execute("SELECT * FROM artifacts WHERE session IS NOT ? LIMIT 17",
-                              (excluding,)).fetchall()
-    for row in rows:
-        value = json.loads(row["identity"])
-        old = ArtifactIdentity(value["volume"], tuple(value["components"]))
-        if old.overlaps(intent.output) or old.overlaps(intent.parts):
-            raise JournalConflict("artifact identity or subtree already owned")
-
-
 class CaptureOperations:
     """Internal transitions only; this mixin does not start or stop a LIVE."""
 
     def reserve(self, operation: str, intent: SessionIntent, *, slot: int | None = None) -> dict:
-        """Atomically accept immutable intent, paths, receipt, binding and one work unit."""
+        """Accept intent/claims/unit atomically; replay is historical, not writer permission."""
         require(type(intent) is SessionIntent)
         require(slot is None or type(slot) is int and slot in {1, 2})
         values = asdict(intent)
         def action(connection):
             if intent.automatic_claim is not None:
-                receipt = connection.execute("SELECT * FROM automatic_receipts WHERE claim=?",
-                                             (intent.automatic_claim,)).fetchone()
+                receipt = lookup_receipt(connection, intent.automatic_claim)
                 if receipt is not None:
                     if receipt["intent_hash"] != digest(values):
                         raise JournalConflict("automatic claim identity conflicts")
                     previous = connection.execute("SELECT * FROM sessions WHERE id=?",
                                                   (receipt["session"],)).fetchone()
                     return _result(previous, 1)
-            if connection.execute("SELECT 1 FROM sessions WHERE id=?", (intent.session_id,)).fetchone():
+            previous = connection.execute("SELECT * FROM sessions WHERE id=?", (intent.session_id,)).fetchone()
+            if previous is not None:
+                validate_session_receipt(connection, previous)
                 raise JournalConflict("session already accepted")
-            _ownership(connection, intent, intent.expected_room)
+            check_admission(connection, intent, intent.expected_room)
             if connection.execute("SELECT count(*) FROM units").fetchone()[0] >= 8:
                 raise JournalConflict("outstanding work limit")
             binding = connection.execute("SELECT * FROM bindings WHERE session IS NULL "
@@ -87,9 +59,9 @@ class CaptureOperations:
                 raise JournalConflict("capture capacity unavailable")
             generation = binding["generation"] + 1
             connection.execute("INSERT INTO sessions(id,intent,creator,expected_room,origin_slot,"
-                               "generation,phase,revision) VALUES (?,?,?,?,?,?,'reserved',1)",
+                               "generation,automatic_claim,phase,revision) VALUES (?,?,?,?,?,?,?,'reserved',1)",
                                (intent.session_id, encode(values), intent.creator,
-                                intent.expected_room, binding["slot"], generation))
+                                intent.expected_room, binding["slot"], generation, intent.automatic_claim))
             self._inject("reserve", "after_session")
             connection.execute("UPDATE bindings SET session=?,generation=? WHERE slot=?",
                                (intent.session_id, generation, binding["slot"]))
@@ -113,16 +85,18 @@ class CaptureOperations:
 
     def admit(self, operation: str, session_id: str, generation: int,
               revision: int, proven_room: str) -> dict:
-        """Record caller-proven source room before the reserved capture may write."""
+        """Admit a non-stopped reservation; replayed receipts are not fresh permission."""
         room(proven_room)
         require(proven_room is not None)
         def action(connection):
             row = guard_capture(connection, session_id, generation, revision)
             intent = intent_from_record(row["intent"])
+            if row["stop"]:
+                raise JournalConflict("stop already committed; capture admission refused")
             if row["phase"] != "reserved" or (intent.expected_room is not None
                                                and intent.expected_room != proven_room):
                 raise JournalConflict("reservation or room proof conflicts")
-            _ownership(connection, intent, proven_room, excluding=session_id)
+            check_admission(connection, intent, proven_room, excluding=session_id)
             connection.execute("INSERT OR IGNORE INTO rooms VALUES (?,?)", (proven_room, session_id))
             connection.execute("UPDATE sessions SET room=?,phase='capturing',revision=revision+1 "
                                "WHERE id=?", (proven_room, session_id))
@@ -165,15 +139,19 @@ class CaptureOperations:
                                "seal=?,seal_hash=? WHERE id=?",
                                (encode(values), digest(values), session_id))
             self._inject("handoff", "after_seal")
-            connection.execute("INSERT INTO tasks(session,state,revision) VALUES (?,'queued',1)",
-                               (session_id,))
+            entry = connection.execute("INSERT INTO queue_entries(session,operation) VALUES (?,?)",
+                                       (session_id, operation)).lastrowid
+            self._inject("handoff", "after_queue_entry")
+            connection.execute("INSERT INTO tasks(session,state,revision,queue_order) VALUES (?,'queued',1,?)",
+                               (session_id, entry))
             self._inject("handoff", "after_task")
             connection.execute("UPDATE units SET kind='task' WHERE session=?", (session_id,))
             self._inject("handoff", "after_transfer")
             connection.execute("UPDATE bindings SET session=NULL WHERE session=?", (session_id,))
             self._inject("handoff", "after_release")
             # Artifact and old-room rows are deliberately untouched by handoff H.
-            return {**_result(row, revision + 1), "task_revision": 1, "seal_hash": digest(values)}
+            return {**_result(row, revision + 1), "task_revision": 1,
+                    "seal_hash": digest(values), "queue_order": entry}
         return self._mutate(operation, "handoff", [session_id, generation, revision, values], action)
 
     def settle_reservation(self, operation: str, session_id: str, generation: int,

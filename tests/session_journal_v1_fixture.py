@@ -1,19 +1,10 @@
-"""Versioned isolated SQLite authority; no production path or import side effects."""
+"""Frozen reviewed schema-1 fixture from 58939620; never migrate or repair it."""
 
-import hashlib
-import sqlite3
-
-
-APPLICATION_ID = 0x544B524A
-SCHEMA_VERSION = 2
-
-# STRICT tables and CHECKs reject malformed rows even outside the public operations.
-SCHEMA = """
-CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=2)) STRICT;
+SCHEMA_V1 = r"""
+CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=1)) STRICT;
 CREATE TABLE sessions(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
  intent TEXT NOT NULL, creator TEXT NOT NULL, expected_room TEXT, room TEXT,
- automatic_claim TEXT UNIQUE,
  origin_slot INTEGER NOT NULL CHECK(origin_slot IN (1,2)),
  generation INTEGER NOT NULL CHECK(generation>0),
  phase TEXT NOT NULL CHECK(phase IN ('reserved','capturing','closing','queued','running',
@@ -35,18 +26,13 @@ CREATE TABLE attempts(token TEXT PRIMARY KEY, session TEXT NOT NULL REFERENCES s
  number INTEGER NOT NULL CHECK(number>0),
  state TEXT NOT NULL CHECK(state IN ('running','failed','completed')), proof TEXT,
  UNIQUE(session,number)) STRICT;
-CREATE TABLE queue_entries(position INTEGER PRIMARY KEY AUTOINCREMENT,
- session TEXT NOT NULL REFERENCES sessions(id), operation TEXT NOT NULL UNIQUE
- REFERENCES operations(id) DEFERRABLE INITIALLY DEFERRED) STRICT;
 CREATE TABLE tasks(session TEXT PRIMARY KEY REFERENCES sessions(id),
  state TEXT NOT NULL CHECK(state IN ('queued','running','failed','blocked','completed')),
  revision INTEGER NOT NULL CHECK(revision>0), attempt INTEGER NOT NULL DEFAULT 0,
  token TEXT UNIQUE REFERENCES attempts(token), error TEXT, proof TEXT,
- queue_order INTEGER NOT NULL UNIQUE REFERENCES queue_entries(position) CHECK(queue_order>0),
  CHECK(attempt>=0), CHECK(state!='running' OR (token IS NOT NULL AND attempt>0))) STRICT;
 CREATE UNIQUE INDEX one_finalizer ON tasks((1)) WHERE state='running';
-CREATE INDEX task_phase ON tasks(state,queue_order);
-CREATE INDEX session_queue_entries ON queue_entries(session,position DESC);
+CREATE INDEX task_phase ON tasks(state,session);
 CREATE INDEX outstanding_sessions ON sessions(id) WHERE phase NOT IN ('completed','no_assembly');
 CREATE INDEX running_attempts ON attempts(token) WHERE state='running';
 CREATE INDEX room_session ON rooms(session);
@@ -57,7 +43,7 @@ CREATE TABLE operations(id TEXT PRIMARY KEY, kind TEXT NOT NULL,
 CREATE TRIGGER limit_work BEFORE INSERT ON units WHEN (SELECT count(*) FROM units)>=8
  BEGIN SELECT RAISE(ABORT,'outstanding work limit'); END;
 CREATE TRIGGER immutable_session BEFORE UPDATE OF id,intent,creator,expected_room,
- origin_slot,generation,automatic_claim ON sessions BEGIN SELECT RAISE(ABORT,'immutable session'); END;
+ origin_slot,generation ON sessions BEGIN SELECT RAISE(ABORT,'immutable session'); END;
 CREATE TRIGGER immutable_room BEFORE UPDATE OF room ON sessions
  WHEN OLD.room IS NOT NULL AND NEW.room IS NOT OLD.room
  BEGIN SELECT RAISE(ABORT,'immutable room'); END;
@@ -78,22 +64,4 @@ CREATE TRIGGER immutable_attempt BEFORE UPDATE OF token,session,number ON attemp
  BEGIN SELECT RAISE(ABORT,'immutable attempt identity'); END;
 CREATE TRIGGER keep_attempt BEFORE DELETE ON attempts
  BEGIN SELECT RAISE(ABORT,'keep attempt history'); END;
-CREATE TRIGGER immutable_queue_entry BEFORE UPDATE ON queue_entries
- BEGIN SELECT RAISE(ABORT,'immutable queue entry'); END;
-CREATE TRIGGER keep_queue_entry BEFORE DELETE ON queue_entries
- BEGIN SELECT RAISE(ABORT,'keep queue history'); END;
 """
-
-
-def schema_fingerprint(connection: sqlite3.Connection) -> str:
-    """Bind every declared table/index/trigger, excluding SQLite's private metadata."""
-    rows = connection.execute("SELECT type,name,tbl_name,sql FROM sqlite_master "
-                              "WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()
-    return hashlib.sha256(repr([tuple(row) for row in rows]).encode()).hexdigest()
-
-
-def expected_fingerprint() -> str:
-    """Calculate the versioned schema signature without touching any filesystem."""
-    with sqlite3.connect(":memory:") as connection:
-        connection.executescript(SCHEMA)
-        return schema_fingerprint(connection)

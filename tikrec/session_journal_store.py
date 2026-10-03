@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .session_journal_schema import (APPLICATION_ID, SCHEMA, SCHEMA_VERSION,
                                    expected_fingerprint, schema_fingerprint)
+from .session_journal_receipts import validate_operation_receipt
 from .session_journal_types import (JournalBusy, JournalConflict, JournalError,
                                   JournalUncertain, digest, encode, identifier, require)
 
@@ -148,7 +149,7 @@ class JournalStore:
             if prior is not None:
                 if prior["kind"] != kind or prior["arguments_hash"] != arguments_hash:
                     raise JournalConflict("operation identity reused with different arguments")
-                result = json.loads(prior["result"])
+                result = validate_operation_receipt(connection, prior)
                 connection.rollback()
                 return result
             self._inject(kind, "after_begin")
@@ -207,6 +208,8 @@ class JournalStore:
         identifier(operation)
         def read(connection):
             row = connection.execute("SELECT * FROM operations WHERE id=?", (operation,)).fetchone()
+            if row is not None:
+                validate_operation_receipt(connection, row)
             return None if row is None else dict(row)
         return self._read(read)
 

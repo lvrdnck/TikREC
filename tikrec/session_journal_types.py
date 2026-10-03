@@ -65,6 +65,15 @@ def encode(value: object) -> str:
     return result
 
 
+def intent_from_record(record: str) -> SessionIntent:
+    """Revalidate immutable intent without reading media or a native filesystem."""
+    values = json.loads(record)
+    for key in ("root", "output", "parts"):
+        identity = values[key]
+        values[key] = ArtifactIdentity(identity["volume"], tuple(identity["components"]))
+    return SessionIntent(**values)
+
+
 def digest(value: object) -> str:
     """Hash canonical evidence or operation arguments without inspecting media."""
     return hashlib.sha256(encode(value).encode("utf-8")).hexdigest()

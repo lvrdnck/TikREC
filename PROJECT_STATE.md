@@ -7,20 +7,20 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE — isolated durable journal COMPLETE for review
-  (2026-10-03, review 5970143137):** Reproduction/design `9d6299d9` accepted.
-  Implemented unused internal SQLite DELETE/EXTRA journal with two generation-bound
-  bindings, immutable session/raw policy, atomic reservation/admission/H, surviving
-  room/artifact claims, automatic acceptance/operation receipts, one finalizer,
-  eight total units and guarded settlement. Focused **95 passed**; related
-  ownership/automation/retention **633 passed / four skips**; full isolated **1,891 passed / seven skips / 19 subtests**
-  in [journal checkpoint](ISSUE_52_SESSION_JOURNAL.md). Linked SQLite **3.49.1**;
-  verified EXTRA/FK/1000 ms timeout. Process-death tests are not power-loss proof;
-  typed stored evidence does not establish native closure/media validity.
-  No owner decision pending. Production remains synchronous; no wiring, worker,
-  migration, API, markers, media/config, restart or deployment occurred. The full
-  service matrix remains outstanding. Next: project-manager review of actual
-  journal before selecting integration; do not auto-start it. #52 OPEN, #48 paused.
+- **Issue #52 SINGLE ACTIVE — focused journal corrections COMPLETE FOR REVIEW
+  (2026-10-03, review 5970692341):** R1 committed-stop fresh admission refusal,
+  R2 shared cross-owner/required automatic-receipt validation, R3 durable queue-entry
+  FIFO/retry tail implemented in isolated schema **2**. Unsupported schema 1 is
+  refused/preserved without migration. Baseline **13 failed / four passed**;
+  focused **136 passed**, related **633 passed / four skips**; full isolated
+  **1,932 passed / seven skips / 19 subtests passed**.
+  DELETE/EXTRA/FK/1000 ms, two bindings, one finalizer, eight units, failure pins,
+  immutable raw/identity and operation reconciliation preserved. Historical replay
+  receipts are not fresh writer permission. Production remains synchronous and
+  untouched; no wiring/worker/API/marker/runtime changes or native/media proof.
+  **Next: project-manager review of the correction commit before selecting any
+  integration; no owner decision pending.** #48 OPEN/PAUSED, #28 unresolved,
+  #13/#8 unstarted. [Journal proof/results](ISSUE_52_SESSION_JOURNAL.md).
 
 - **Issue #48 OPEN / explicitly PAUSED (owner decision, 2026-10-03):**
   Implementation/deployment passed; natural-recording validation did not.
