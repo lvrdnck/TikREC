@@ -2112,7 +2112,7 @@ seven skips / 19 subtests passed**. Native barrier/cleanup/
 tail/EOF-fault/time-bound evidence and unchanged FFmpeg hashes/deep validation are
 in the process report. R4–R5 and schema 3 are preserved. Review **5980268720**
 **accepted `b2bff05f` R6–R7** and selected only the unpublished assembly primitive.
-That slice is **COMPLETE FOR REVIEW** on the same isolated branch: explicit closed
+That slice was **accepted by review 5981877279** on the same isolated branch: explicit closed
 FLVs -> attempt-owned MP4 candidate, shared copy/libx264 planning/timing/settings,
 sequential contained probes/FFmpeg and fresh before-resume authorization. Complete
 streaming diagnostics/EOF/native exit/cleanup establish execution readiness;
@@ -2128,13 +2128,42 @@ Matching/differing generated AVC candidates pass part/packet-DTS/deep validation
 unchanged source/raw/arrival/control fixture hashes and synchronous frame timing;
 requested final destinations remain absent. See
 [ISSUE_52_UNPUBLISHED_ASSEMBLY.md](ISSUE_52_UNPUBLISHED_ASSEMBLY.md).
-Durable attempts/launch persistence, native sealed-input authority, queue worker,
+Durable attempts/launch persistence, integration of the separate sealed-input guard, queue worker,
 publication/settlement/retry/service/retention/migration/cutover remain unstarted.
-**Current next action: PM review of the pushed assembly primitive; no automatic
-worker integration, queued-session use or cutover.**
+**Historical next action: assembly review, completed by 5981877279; current
+next action follows. No automatic worker integration, queued-session use or cutover.**
 No full A1–A20 or deployed Scheduled Task gate passed; owner decisions: None.
 Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;
 #28 unresolved, #13/#8 and release/remote-worker work are separate.
+
+Review **5981877279** accepted `2d6896ce` including `c22c482f` and selected the
+native sealed-input guard, now **COMPLETE FOR REVIEW** on the isolated branch.
+Explicit known authority/session/revision/seal/catalog/marker/H receipt proves
+the original queued owner without claim or launch. Complete native FLV/raw/arrival/
+control protection permits reads and denies conflicting data-write/delete;
+controls compare stored hashes, media compares native identity/size/write stamps.
+Compatible existing root writer protection permits disjoint capture and takes
+no capture slot/unit. Explicit lease-scoped revalidation brackets native evidence
+outside authority/SQLite locks. Failed acquisition/teardown retains exact owners
+and first/secondary evidence; no repair or task/accounting mutation occurs.
+Final **434 focused / two skips; 1,365 related / eight skips; 2,220 full /
+nine skips / 19 subtests passed**. R5 receipt-lookup ordering was restored after
+seven regression failures and every selection rerun; R4–R7 remain preserved.
+Actual CaptureBridge/journal raw/arrival/control fixtures, native readers and
+bounded owned FFprobe pass exit/EOF/lifetime/hash checks. Both separate generated
+assembly paths again pass part/packet-DTS/deep validation with unchanged inputs
+and absent final destinations. See [sealed-input evidence](ISSUE_52_SEALED_INPUTS.md).
+Partial A7/A8 only; marker byte hash is lease-local, native metadata is not whole-
+media hashing/decoder proof, and directory pins still require cooperative namespace
+ownership. Two direct-symlink fixtures lack Windows privilege; junction refusal
+is proved. Schema 3, old-schema refusal and synchronous defaults stay unchanged.
+Durable attempt/launch, claimed-phase input/scratch protocols, queue scheduling,
+publication/settlement/retry, service/API/monitor/storage/retention/migration/cutover
+remain later reviewed gates. **Current next action: PM review of the pushed guard;
+no automatic integration or queued assembly.** #52 OPEN/SINGLE ACTIVE; #48 OPEN/
+PAUSED with all natural criteria/raw policy intact; owner decisions: None.
+No full A1–A20/Scheduled Task gate, production access/change/restart, retention
+execution, #48 polling, dependencies/upgrades/resource policy, release/tag or merge.
 
 The earlier bounded resource investigation remains complete within its scope:
 12 synthetic comparisons passed media checks, byte-identical within each path,

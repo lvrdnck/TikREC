@@ -2,6 +2,35 @@
 
 ## Review status and authority
 
+2026-10-04: [review 5981877279](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5981877279)
+**accepted `2d6896ce` and `c22c482f` unpublished assembly**, selecting only native
+sealed-input protection. `acquire_sealed_inputs` now addresses an explicit known
+authority/session/revision/seal and atomically reads original queued H ownership,
+immutable claims and receipt. Distinct noninheritable read-compatible handles
+deny data-write/delete sharing, hold all FLV/raw/arrival/control/marker evidence
+and compare native identity/size/write stamps plus stored control hashes. Marker
+validation uses actual schema-3 intent/seal/catalog/H bindings; its byte hash is
+only a lease-local snapshot. Capture zero-sharing closure is unchanged.
+
+Compatible existing root writer protection permits disjoint capture without a
+capture slot/unit. Native evidence work is outside authority/SQLite locks;
+target projection and complete inventory are rechecked around acquisition/use.
+Original and secondary failures retain possibly live exact owners. Final reader
+exit and revalidation are the future orchestrator's responsibility; there is no
+task claim, launch write, scratch allocation, queue assembly or guard-to-assembly
+wiring here. [Actual native read evidence and limits](ISSUE_52_SEALED_INPUTS.md).
+This adds partial A7/A8 evidence only, no full A1–A20 or Scheduled Task acceptance.
+Durable attempts/launch, claimed-phase input/scratch protocols, validation/
+publication/settlement/retry and service/retention/cutover remain later gates.
+Final **434 focused / 1,365 related / 2,220 full passes**; full nine skips /
+19 subtests passed. Actual H raw/arrival/control fixtures, bounded owned FFprobe,
+unchanged hashes and both assembly/media regression paths pass. The introduced
+R5 receipt-lookup ordering regression was fixed and all selections rerun.
+**Current next action: PM review of the pushed guard; no automatic integration.**
+#52 remains OPEN/SINGLE ACTIVE; #48 paused; owner decisions: None.
+
+The following assembly checkpoint is historical and accepted by 5981877279.
+
 2026-10-04: [review 5980268720](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5980268720)
 **accepted `b2bff05f` R6–R7** and selected only explicit closed FLVs -> an
 attempt-owned unpublished MP4 candidate. That internal primitive is implemented
@@ -26,11 +55,11 @@ part/packet-DTS/deep validation, unchanged source/raw/arrival/control fixture
 hashes, matching synchronous frame timing and absent final destinations.
 R4–R7/schema-3/history/refusal/FIFO/eight-unit accounting remain intact. This
 primitive trusts closed inputs and exclusive caller scratch; durable attempts/
-launch persistence, native sealed-input authority, queue scheduling, validation/
+launch persistence, integration of the separate sealed-input guard, queue scheduling, validation/
 publication/settlement/retry and service/retention/migration/cutover remain later
 reviewed adapters. No full A1–A20 or deployed Scheduled Task gate passed.
 #52 OPEN/SINGLE ACTIVE; #48 paused; #28 unresolved; owner decisions: None.
-**Next: project-manager review of the pushed primitive.** Earlier checkpoints
+**Historical next: primitive review, completed by 5981877279.** Earlier checkpoints
 below are historical; no production access/change, release/tag or merge occurred.
 
 2026-10-04: [review 5979948212](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979948212)
@@ -298,8 +327,11 @@ The seal binds immutable capture fields and a specific initial control revision.
 Finalization/recovery control updates must have journaled predecessor/successor
 byte hashes and phase intent before writing; reconcile only those exact declared
 successors after a crash. Do not ignore a manifest/log change just because a
-worker might have written it. The marker binds the seal digest without hashing
-itself recursively; its own immutable byte hash is stored with the task.
+worker might have written it. Schema 3's marker binds the seal digest without
+hashing itself recursively; **its own byte hash is not stored with the task**.
+Durable marker-byte hashes and control successor records above are proposed
+future protocol, not schema-3 guarantees. The implemented read guard compares
+the supported marker fields/H receipt and retains only a lease-local byte hash.
 
 ### Finalizer and publication
 

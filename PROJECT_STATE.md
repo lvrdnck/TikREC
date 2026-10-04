@@ -7,7 +7,39 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE / OPEN — unpublished assembly COMPLETE FOR REVIEW
+- **Issue #52 SINGLE ACTIVE / OPEN — native sealed-input guard COMPLETE FOR REVIEW
+  (2026-10-04):** [review 5981877279](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5981877279)
+  **accepted `2d6896ce` including `c22c482f`** and selected only the read guard.
+  Explicit known authority/session/revision/seal binds original queued H task,
+  immutable claims, catalog, marker and receipt. Distinct noninheritable native
+  read protection holds the complete FLV/raw/arrival/control inventory, permits
+  readers and denies conflicting data-write/delete access. Controls use stored
+  hashes; media uses native identity/size/write stamps. Marker byte hash is only
+  lease-local; schema 3 is unchanged. Compatible existing root writer protection
+  takes no capture slot/unit and allows disjoint capture. Explicit revalidation
+  brackets native work outside authority/SQLite locks; cleanup retains possible
+  live owners and first/secondary failures. No claim, durable launch, queued
+  assembly, scratch/publication/settlement/retry or service integration.
+  Final **434 focused / two skips; 1,365 related / eight skips; 2,220 full /
+  nine skips / 19 subtests passed**. An introduced R5 lookup-order regression
+  was fixed and all selections rerun; R4–R7 are preserved. Real H fixtures with
+  actual raw/arrival/controls, bounded owned FFprobe, exit/EOF/protection lifetime,
+  unchanged hashes and both generated assembly/deep-validation paths pass.
+  [Sealed-input evidence and limits](ISSUE_52_SEALED_INPUTS.md).
+  Partial A7/A8 only; media hashes/decoder validation are not guard guarantees;
+  native metadata/cooperative namespace limits and two symlink-privilege skips
+  are recorded. No full A1–A20 or Scheduled Task gate passed. Durable attempt/
+  launch/claimed-phase input/scratch protocols and publication/service/retention/
+  migration/cutover remain later reviewed gates. **Next: PM review of the pushed
+  guard. Safe resume: pull this isolated branch, reconcile this checkpoint and
+  #52's latest PM decision; do not connect a worker or use production inputs.
+  Pending owner action: None.** #48 OPEN/PAUSED with all Gracie-only raw/Ward-OFF
+  criteria intact; #28 unresolved; #13/#8 unstarted. No production access/change,
+  restart/polling/retention execution/resource policy/upgrade/release/tag/merge.
+  Branch: `codex/capture-journal-handoff`; deployed editable `main` remains
+  `fe28327c`, its 42 unrelated artifacts preserved.
+
+- **Issue #52 historical unpublished assembly — accepted by review 5981877279
   (2026-10-04):** [review 5980268720](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5980268720)
   **accepted `b2bff05f` R6–R7**, selecting only the internal closed-input ->
   attempt-owned MP4 primitive. Shared copy/libx264 planning preserves ordering,
@@ -29,7 +61,7 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   remain intact; no full A1–A20 or Scheduled Task gate passed. Durable attempt/
   launch/input-seal adapters, validation/publication/settlement/retry, scheduler/
   service/API/monitor/storage/retention/migration/cutover remain later reviewed
-  work. **Next: project-manager review of the pushed primitive; pending owner
+  work. **Historical next: primitive review, now completed; pending owner
   action: None.** #48 OPEN/PAUSED, #28 unresolved, #13/#8 unstarted. No real queued
   session/production access/change/restart/polling/retention/resource policy/
   upgrade/release/tag/merge. Branch: `codex/capture-journal-handoff`; deployed

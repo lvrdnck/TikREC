@@ -46,6 +46,16 @@ def inspect_pending(authority, session_id):
     from .capture_handoff_native import NativeHandle
     with NativeHandle(path) as held:
         values = json.loads(held.read_control())
+    validate_pending_control(authority, session_id, row, values)
+    receipt = authority.journal.operation(values["operation"])
+    phase = validate_pending_values(authority, session_id, row, values, receipt)
+    return {"session_id": session_id, "phase": phase, "operation": values["operation"],
+            "source_resume_allowed": False}
+
+
+def validate_pending_control(authority, session_id, row, values):
+    """Refuse invalid control/disposition bindings before looking up any receipt."""
+    require(type(values) is dict, "unsupported pending marker")
     require(set(values) == {"schema_version", "catalog_id", "catalog_native", "catalog_file", "session_id",
                            "generation", "revision", "operation", "intent_hash", "seal_hash", "disposition",
                            "requested_output", "raw_copy"}, "unsupported pending marker fields")
@@ -65,8 +75,13 @@ def inspect_pending(authority, session_id):
             and values["revision"] > 0
             and values["intent_hash"] == digest(row["intent"])
             and values["requested_output"] == row["intent"]["output_path"]
+            and type(values["raw_copy"]) is bool
             and values["raw_copy"] == row["intent"]["raw_copy"], "pending marker authority conflicts")
-    receipt = authority.journal.operation(values["operation"])
+
+
+def validate_pending_values(authority, session_id, row, values, receipt):
+    """Validate held marker values against an explicit same-catalog row and receipt."""
+    validate_pending_control(authority, session_id, row, values)
     if receipt is None:
         require(row["phase"] == "closing", "uncommitted marker lacks capture responsibility")
         phase = "closing"
@@ -78,5 +93,4 @@ def inspect_pending(authority, session_id):
                 and result["generation"] == values["generation"]
                 and result["revision"] == values["revision"] + 1, "pending receipt binding conflicts")
         phase = row["phase"]
-    return {"session_id": session_id, "phase": phase, "operation": values["operation"],
-            "source_resume_allowed": False}
+    return phase

@@ -119,7 +119,7 @@ def acquire_lifecycle(root: Path, mode: str, *,
             if slot is not None and mode == "writer":
                 _occupied.setdefault(key, set()).add(slot)
             return lease
-        except BaseException:
+        except BaseException as original:
             if registered:
                 try:
                     # A slot insertion may raise after adding it; this slot was
@@ -138,6 +138,8 @@ def acquire_lifecycle(root: Path, mode: str, *,
             except BaseException as cleanup:
                 if cleanup_errors is not None:
                     cleanup_errors.append(cleanup)
+                # Read guards must be able to retain an owner whose release failed.
+                original.lifecycle_retained_handles = [handle]
             raise
 
 
@@ -182,12 +184,13 @@ def _open_lock(root: Path, cleanup_errors: list[BaseException] | None = None):
             else:
                 os.close(parent)
         return os.fdopen(descriptor, "r+b", buffering=0)
-    except BaseException:
+    except BaseException as original:
         try:
             os.close(descriptor)
         except BaseException as cleanup:
             if cleanup_errors is not None:
                 cleanup_errors.append(cleanup)
+            original.lifecycle_retained_descriptors = [descriptor]
         raise
 
 

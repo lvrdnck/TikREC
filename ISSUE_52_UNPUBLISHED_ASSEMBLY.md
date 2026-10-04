@@ -1,5 +1,28 @@
 # Issue #52 — isolated unpublished assembly evidence
 
+## Acceptance checkpoint and separate input precondition
+
+2026-10-04: [PM review 5981877279](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5981877279)
+**accepted `2d6896ce` including `c22c482f`**. That was source/test review; PM did
+not rerun Windows or access production. Historical 198/1,222/2,162 results below
+remain the implementation developer's reported evidence, not new service gates.
+R4–R7 and the assembly primitive required no further correction-only review.
+
+The next approved slice implements the separate
+[native sealed-input read guard](ISSUE_52_SEALED_INPUTS.md): explicit original H
+session/revision/seal/catalog/marker/receipt proof, complete held native inventory,
+stored control hashes and explicit lease-scoped revalidation. Its fixtures use
+real CaptureBridge raw/arrival/control evidence. Native metadata is not a stored
+whole-media hash or decoder proof. UnpublishedAssembly still trusts caller-owned
+inputs and scratch; this slice does not wire it to the guard, claim work or launch
+queued assembly. Durable attempt/launch, claimed-phase input lifetime, scratch,
+publication/settlement/retry and service integration remain separately reviewed.
+The historical next action below was assembly review, now completed; current
+next action is PM review of the pushed input guard. Its final **434 focused /
+1,365 related / 2,220 full passes** preserve both assembly media paths and R4–R7;
+full nine skips / 19 subtests passed. Actual owned FFprobe against H-sealed inputs
+passes existing part decoding/DTS checks with unchanged evidence and no MP4.
+
 ## Authority and scope
 
 2026-10-04: [project-manager review 5980268720](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5980268720)
@@ -186,7 +209,7 @@ by controlled diagnostic fixtures, not inferred from clean generated validation.
 
 This completes only the internal media-execution boundary. No full A1–A20 service
 case or deployed Scheduled Task gate is passed. Durable attempts/launch persistence,
-native sealed-input authority, successor/restart orchestration, validation policy,
+integration of the separate sealed-input guard, successor/restart orchestration, validation policy,
 publication receipts/promotion, settlement/retry, queue scheduling/service/API/
 monitor/bootstrap/storage/retention-reader/destructive-recheck/migration/cutover
 remain later reviewed work. Existing schema 3, schema-1/2 refusal, H/history/FIFO/

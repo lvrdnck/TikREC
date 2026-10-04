@@ -13,6 +13,11 @@ from .session_journal_types import identifier, require
 class SessionJournal(CaptureOperations, EmptyCaptureOperations, TaskOperations, JournalStore):
     """Explicit-path authority with two capture bindings and one finalizer claim."""
 
+    def sealed_input(self, session_id: str) -> dict | None:
+        """Read one addressed seal/owner/H receipt atomically without claiming work."""
+        from .session_journal_inputs import sealed_input_projection
+        return sealed_input_projection(self, session_id)
+
     def session(self, session_id: str) -> dict | None:
         """Read one independent session, including its immutable evidence and task."""
         identifier(session_id)
