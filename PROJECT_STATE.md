@@ -7,9 +7,15 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE / OPEN — isolated capture-side handoff COMPLETE FOR
-  REVIEW (2026-10-04):** [review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
-  accepted `a96bd6e9` R1–R3 and approved this single integration slice. Real local
+- **Issue #52 SINGLE ACTIVE / OPEN — focused R4–R5 COMPLETE FOR REVIEW
+  (2026-10-04):** [review 5978780261](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5978780261)
+  retained `ea263199` and required only post-H cleanup and marker-disposition
+  corrections before worker integration. Confirmed/reconciled H now remains
+  task/evidence-owned after native teardown failure; capture lease release and
+  projection run independently, with post-H diagnostics retained. Marker disposition
+  is literal assembly/empty and must match any committed seal before receipt lookup;
+  invalid/mismatched inspection refuses without journal/evidence mutation.
+  Earlier review 5971119601 accepted `a96bd6e9` R1–R3. Real local
   fixture LIVE/writer/raw/manifest/connection capture now closes and supplies held
   native Windows evidence to durable H before journal-backed slot reuse. Distinct
   verified returning rooms and two new real writers preserve old UUIDs/paths/raw/FIFO.
@@ -19,10 +25,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   Failed/ambiguous closure stays held; replay never grants fresh writer permission.
   Native/crash/compatibility/retention-plan/synthetic-media results and partial
   A1–A20 coverage are in [the bridge report](ISSUE_52_CAPTURE_HANDOFF.md).
-  Final focused **211 passed**; full isolated **2,007 passed / seven skips /
-  19 subtests passed**; actual synchronous synthetic media passes deep validation.
+  R4–R5 baseline **17 failed**; corrected focused **228 passed**, related **1,221
+  passed / six skips / two subtests**, full **2,024 passed / seven skips /
+  19 subtests passed**; synthetic deep validation regressions pass. Initial bridge
+  211/2,007 results are historical in the report, not current correction results.
   Branch: `codex/capture-journal-handoff`, isolated from the deployed editable checkout.
-  **Next: project-manager review of the actual bridge and proof limits before
+  **Next: project-manager review of R4–R5 and the actual bridge proof limits before
   selecting another integration slice. Pending owner action: None.** Service/API/
   monitor/worker/publication/storage-recovery/retention readers/cutover gates remain.
   No production mutation/restart, #48 polling, release or tag. #48 OPEN/PAUSED,

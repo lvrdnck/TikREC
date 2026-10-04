@@ -2078,11 +2078,20 @@ reuse journal-backed capacity while old sessions remain queued. Schema 3 retains
 pinned/counted admitted-empty evidence; schemas 1/2 are refused without migration.
 Failed/ambiguous captures stay held; source end never claims MP4 completion.
 [Actual verification/partial A1–A20 coverage](ISSUE_52_CAPTURE_HANDOFF.md).
-Focused **211 passed**, full isolated **2,007 passed / seven skips / 19 subtests**;
+Initial `ea263199` verification: focused **211 passed**, full isolated
+**2,007 passed / seven skips / 19 subtests**;
 native process-death/locking, real raw/control inventory and synthetic deep media
-validation pass within the isolated scope.
+validation pass within the isolated scope. Review 5978780261 retained the direction
+and required only R4–R5 before another integration slice. Those corrections are
+**COMPLETE FOR REVIEW** on the same branch: confirmed H survives later native
+teardown with independent capture-lease release and post-H diagnostics; exact
+marker disposition must match the committed seal and invalid/mismatched inspection
+refuses without mutation. Baseline **17 failed**; corrected focused **228 passed**,
+related **1,221 passed / six skips / two subtests**, full isolated **2,024 passed /
+seven skips / 19 subtests**. Schema 3/history/refusal/FIFO/accounting/native trust
+and all A1–A20 proof limitations are unchanged.
 The worker is unstarted, no production cutover occurred and full integration gates
-remain outstanding. Next: project-manager review of the bridge and its proof limits
+remain outstanding. Next: project-manager review of R4–R5 and the bridge proof limits
 before selecting another slice. No further owner implementation decision is pending. See
 [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
 Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;

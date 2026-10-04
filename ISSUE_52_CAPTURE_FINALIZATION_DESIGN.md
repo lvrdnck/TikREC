@@ -2,7 +2,18 @@
 
 ## Review status and authority
 
-2026-10-04: **isolated capture-only close -> durable H bridge complete for review.**
+2026-10-04: **focused R4–R5 corrections complete for review on the isolated bridge.**
+[Review 5978780261](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5978780261)
+retains `ea263199` but requires an explicit confirmed-H cleanup boundary and exact
+marker disposition before another review. The corrections preserve committed
+task/evidence ownership after native teardown failure, independently release the
+capture lease and return post-H diagnostics. Marker disposition must be exactly
+`assembly` / `empty` and agree with the stored seal before receipt lookup.
+Baseline **17 failed**; corrected focused **228 passed**, related **1,221 passed /
+six skips / two subtests**, full isolated **2,024 passed / seven skips / 19 subtests**.
+Actual results and unchanged proof limits are in the bridge report below.
+
+The initial isolated capture-only close -> durable H bridge was complete for review.
 [Review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
 accepted `a96bd6e9` R1–R3 and selected this single capture-side integration slice.
 [Bridge implementation, native proof limits, actual tests and A1–A20 coverage](ISSUE_52_CAPTURE_HANDOFF.md).
@@ -203,10 +214,19 @@ exclusive root lease then reads the journal, never waits for the manager lock.
    task `queued`, artifact claims and release of the slot/LIVE-page binding in
    one transaction. Its reserved backlog unit becomes the task's existing unit.
    Preserve old-room protection. H commit is the sole slot-reuse authority.
-5. Publish in-memory availability after H; notify the one finalizer. Root writer
-   lease can then release. A slot JSON projection may be refreshed/overwritten
+5. After confirmed/reconciled H, release the capture root writer lease independently
+   of native teardown/projection errors and publish availability/notify the finalizer.
+   A slot JSON projection may be refreshed/overwritten
    only because the older UUID remains authoritative in the journal. Notification
    is a hint: startup/worker scanning finds committed tasks without it.
+
+In the isolated bridge, a confirmed/reconciled receipt is the explicit local
+boundary before native teardown. A subsequent cleanup/projection error cannot
+return to capture-owned closing or authorize source resume. Release the capture
+lease independently, preserve the committed task/evidence and report post-H
+diagnostics. Unknown acknowledgement without a reconciled receipt still blocks
+new admission. Marker disposition is literal `assembly` / `empty` and must match
+any committed seal; invalid or mismatched control refuses without mutation.
 
 Do not synchronously reread/hash every old FLV/raw byte at handoff; closure
 inventory/control binding is collected as writers close. Expensive per-part
@@ -434,7 +454,8 @@ side effects, not only the health response.
 ## Review boundary and safe next action
 
 The historical reproduction/design commit contained tests/contracts only. The
-current slice implements an isolated internal journal with disposable file-backed
+current slice corrects only R4–R5 of the isolated native capture/journal bridge with
+disposable file-backed
 tests. No production catalog, worker, migration, runtime/config change, restart,
 LIVE, media mutation, production retention operation, priority benchmark, #48
 search, dependency, remote setup or release occurred. Production stays synchronous.
@@ -443,9 +464,11 @@ Project management approved the bounded internal journal slice in review
 5970143137. Schema/transactions and disposable acceptance/crash tests are now
 implemented with **no service wiring or cutover**. Review 5970692341 required
 focused stop/admission, cross-owner/receipt and FIFO corrections; these are now
-implemented and verified in schema 2. The next action is project-manager review
-of that correction commit before selecting any integration slice. Stored typed seals are caller-supplied
-ownership evidence, not proof that a writer closed or media is valid.
+implemented and verified in schema 2 and accepted by review 5971119601.
+The resulting schema-3 native bridge at `ea263199` was reviewed in 5978780261;
+its focused R4–R5 corrections require project-manager review before another slice.
+The native adapter establishes closure only within its documented trust/lifetime
+limits. Stored typed seals alone are not native writer-closure or media-validity proof.
 Subsequent tracked worker/ownership/API/retention integration requires the full
 matrix before a separately authorized safe Windows deployment. Process-priority
 tuning is later work, not the capture-availability remedy. Keep #52 OPEN.

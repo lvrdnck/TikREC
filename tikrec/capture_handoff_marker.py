@@ -51,6 +51,11 @@ def inspect_pending(authority, session_id):
                            "requested_output", "raw_copy"}, "unsupported pending marker fields")
     identifier(values["operation"])
     sha256(values["seal_hash"])
+    require(type(values["disposition"]) is str and values["disposition"] in {"assembly", "empty"},
+            "unsupported pending marker disposition")
+    # The persisted seal fixes the disposition independently of operation receipts.
+    require(row["seal"] is None or values["disposition"] == row["seal"]["disposition"],
+            "pending marker disposition conflicts with committed seal")
     require(type(values["schema_version"]) is int and values["schema_version"] == 1
             and values["catalog_id"] == authority.journal.catalog_id
             and digest(values["catalog_native"]) == digest(asdict(authority.catalog.identity))

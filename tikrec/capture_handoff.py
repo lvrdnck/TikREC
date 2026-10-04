@@ -18,7 +18,11 @@ from .session_journal_types import ReservationReleaseProof, encode, require
 
 @dataclass(frozen=True)
 class HandoffResult:
-    """Confirmed responsibility disposition, separately from any MP4 completion."""
+    """Confirmed ownership, separately from MP4 completion and post-H diagnostics.
+
+    Later teardown errors never populate capture failure or undo this receipt.
+    Notification errors remain available individually and in post_h_errors.
+    """
 
     session_id: str
     phase: str
@@ -26,6 +30,7 @@ class HandoffResult:
     requested_output: str
     failure: BaseException | None = None
     notification_error: BaseException | None = None
+    post_h_errors: tuple[BaseException, ...] = ()
 
 
 class CaptureHandoffError(RuntimeError):
@@ -134,6 +139,27 @@ class CaptureBridge:
             self.fence.cleanup_errors.append(cleanup)
         raise CaptureHandoffError(error, self.fence.cleanup_errors) from error
 
+    def _finish_handoff(self, receipt, phase, notify, errors):
+        # Confirmation is irreversible locally: cleanup cannot revive capture ownership.
+        def record(error, secondary=()):
+            for diagnostic in (error, *getattr(error, "capture_cleanup_errors", ()), *secondary):
+                if not any(diagnostic is previous for previous in errors):
+                    errors.append(diagnostic)
+        try:
+            self.lease.close()
+        except BaseException as error:
+            record(error, self.lease.cleanup_errors)
+        notification_error = None
+        # Lease release and projection each run even if an earlier teardown failed.
+        for project in (lambda: self._fault("after_h"), lambda: notify(receipt) if notify is not None else None):
+            try:
+                project()
+            except BaseException as error:
+                record(error)
+                notification_error = notification_error or error
+        return HandoffResult(self.intent.session_id, phase, receipt, self.intent.output_path,
+                             notification_error=notification_error, post_h_errors=tuple(errors))
+
     def run(self, *, notify=None, **observations):
         """Run the real recorder, then hold native closure proof until H is confirmed.
 
@@ -168,6 +194,7 @@ class CaptureBridge:
                     except BaseException as cleanup:
                         self.fence.cleanup_errors.append(cleanup)
             return self._hold(error)
+        receipt, post_h_errors = None, []
         try:
             require(type(result) is CaptureEnded and not self.fence.cleanup_errors,
                     "source/writer closure was not proved")
@@ -202,21 +229,16 @@ class CaptureBridge:
                     self.authority.pending.add(self.intent.session_id)
                     method = (self.authority.journal.handoff if seal.disposition == "assembly"
                               else self.authority.journal.settle_empty_capture)
+                    phase = "queued" if seal.disposition == "assembly" else "no_assembly"
+                    # Set the boundary immediately on confirmed/reconciled receipt,
+                    # before pending projection, fault hooks or native ExitStack teardown.
                     receipt = self.authority.invoke(method, self.handoff_operation, self.intent.session_id,
                         values["generation"], values["revision"], seal)
                     self.authority.pending.discard(self.intent.session_id)
                     # Only a confirmed/reconciled receipt makes capacity observable to this authority.
                 self._fault("confirmed_h")
-            phase = "queued" if seal.disposition == "assembly" else "no_assembly"
         except BaseException as error:
-            return self._hold(error)
-        notification_error = None
-        try:
-            self.lease.close()
-            self._fault("after_h")
-            if notify is not None:
-                notify(receipt)
-        except BaseException as error:
-            notification_error = error
-        return HandoffResult(self.intent.session_id, phase, receipt, self.intent.output_path,
-                             notification_error=notification_error)
+            if receipt is None:
+                return self._hold(error)
+            post_h_errors.extend((error, *getattr(error, "capture_cleanup_errors", ())))
+        return self._finish_handoff(receipt, phase, notify, post_h_errors)

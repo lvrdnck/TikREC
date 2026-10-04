@@ -2,18 +2,90 @@
 
 ## Authority and current checkpoint
 
-2026-10-04: capture-side integration is complete for project-manager review on
+2026-10-04: focused R4–R5 corrections are **complete for project-manager review** on
 `codex/capture-journal-handoff`. #52 remains **OPEN / SINGLE ACTIVE**, #48
 **OPEN / PAUSED**, and #28 unresolved. Production capture availability is not
 fixed by this harness. No further owner implementation decision is pending.
 
+[Review 5978780261](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5978780261)
+retained the `ea263199` bridge direction and required only post-H cleanup and
+exact marker-disposition corrections before another review. This task pulled the
+existing isolated branch (already current at `ea263199`), then followed MODEL GATE /
+PROCEED with GPT-6.1 Sol — High. It does not start worker or production integration.
+
 [Review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
 accepted `a96bd6e9` and R1–R3 and selected this slice. That review was not repeated.
-The task pulled `main` from `a96bd6e9` to `fe28327c` (the intervening change is
+The initial bridge task pulled `main` from `a96bd6e9` to `fe28327c` (the intervening change is
 ROADMAP maintenance-window planning), then used the normal MODEL GATE / PROCEED
 workflow with GPT-6.1 Sol — High. Implementation uses an isolated managed worktree;
 the primary editable checkout's source and its 42 unrelated artifacts were preserved.
 Historical journal/reproduction/resource results remain in their original reports.
+
+## Focused R4–R5 corrections
+
+**R4:** `CaptureBridge.run()` records the confirmed/reconciled H or empty-settlement
+receipt before pending projection, fault hooks or native `ExitStack` teardown.
+Only failures before that receipt use `_hold()`. Once confirmed, later errors
+return the committed `queued` / `no_assembly` disposition; capture failure remains
+unset, the source fence stays closed and no second H or recovery launch is allowed.
+The capture lifecycle lease is released independently of native teardown and
+notification. `HandoffResult.post_h_errors` retains native, secondary cleanup,
+lease and projection exceptions; `notification_error` also retains a projection
+failure. These are returned diagnostics, not new journal/control writes or a new
+recovery policy. Durable reopen authority remains the original seal/operation/marker.
+Unconfirmed H with an unavailable receipt retains the existing pending-admission gate.
+
+**R5:** inspection requires a literal string `assembly` or `empty`, and any stored
+closure seal must have that same disposition. Invalid/mismatched values refuse
+before operation receipt lookup. Refusal leaves journal state and artifact bytes
+unchanged; inspection never grants source resume.
+
+Regression evidence covers assembly and admitted-empty captures; native input and
+marker teardown after normally acknowledged and lost-ACK/reconciled H; independent
+actual lifecycle release (exclusive lease acquisition only, no retention execution);
+slot/generation reuse, exact historical H replay without duplicate task/evidence,
+and known-catalog reopen/inspection. Combined confirmed-hook, two native teardown,
+lease-after-release and projection failures preserve all five diagnostics. Five
+invalid marker values and both assembly/empty mismatch directions reject exactly.
+
+Schema 3, schema-1/2 refusal, H ordering/FIFO, stop/admission guards, eight-unit
+accounting, native trust limits, synchronous defaults and the A1–A20 limits below
+remain unchanged. No finalizer/media/publication algorithm changed. Real-LIVE and
+queued-worker/publication validation remain outstanding; existing synthetic media
+checks are included in the correction suites.
+
+### Actual R4–R5 verification
+
+- Regressions first against `ea263199`: **17 failed**, 14.70 s. Ten R4 cases
+  reached committed ownership then raised unproved-handoff errors. Five invalid
+  empty-marker dispositions were accepted. The two mismatch directions already
+  refused at receipt-kind validation; their new regressions require explicit
+  seal-disposition refusal before receipt lookup.
+- Corrected targeted selection: **20 passed**, 15.67 s. An intermediate probe
+  also injected its marker-close fault into later inspection handles (four failures);
+  injection now ends after actual capture teardown, keeping the close-boundary
+  assertions intact. The initial external log directory was created after a
+  runner-copy attempt found it missing; no prior evidence was erased.
+- Focused bridge/native/marker/journal selection: **228 passed**, 61.26 s.
+- Related capture/LIVE/source/writer/recovery/finalization/journal/automation/raw/
+  recording/admission/lifecycle/retention selection: **1,221 passed, six platform
+  skips, two subtests passed**, 137.24 s. This selection differs from the initial
+  bridge's historical 1,251-test selection below; the full suite includes both scopes.
+- Full isolated offline suite: **2,024 passed, seven platform skips, 19 subtests
+  passed**, 145.30 s. Includes unchanged synchronous capture-availability
+  characterizations, schema-1/2 refusal and synthetic decoder/packet-DTS/deep
+  retained-part/output validation; no queued task is finalized.
+- All 124 package modules remain below 300 lines; changed public docstrings,
+  `compileall` and final diff whitespace checks pass. Only the bridge, marker,
+  their regression tests and coordination/design/report documentation changed.
+
+Logs are `baseline-r4-r5.log`, `corrected-targeted.log`, `focused.log`, `related.log`
+and `full.log` under `C:\Users\Leandro\TikREC-tests\issue52-r4-r5-20261004`.
+The existing runner redirects APPDATA/LOCALAPPDATA/XDG configuration/state and
+TMP/TEMP into fresh external per-run roots, with PYTHONPATH at the isolated checkout.
+No production configuration/state is used or mutated. No new media/publication
+proof or full A1–A20 service case is claimed by R4–R5. The partial matrix below
+and every worker/retention/cutover gate remain in force.
 
 ## Implemented boundary
 
@@ -114,9 +186,9 @@ completed fixture with the new marker cannot become deletion-eligible. Planning
 leaves all bytes unchanged. No retention eligibility/executor code changed and no
 deletion ran. Journal-aware authority readers and destructive rechecks remain gates.
 
-## Actual verification
+## Historical initial bridge verification — ea263199
 
-Final verification: **211 focused passed**, 43.82 s; **2,007 full isolated passed,
+Initial bridge final verification: **211 focused passed**, 43.82 s; **2,007 full isolated passed,
 seven platform skips, 19 subtests passed**, 117.70 s. Logs: `focused-final-index.log`
 and `full-final-index.log`. All tests use fresh external roots under:
 `C:\Users\Leandro\TikREC-tests\issue52-bridge-20261004`.
@@ -207,6 +279,7 @@ Gracie-only raw policy, Ward OFF and monitored order remain untouched; no #28/#4
 validation claim or waiver. Source is committed/pushed only on the isolated branch.
 
 Project management should review the actual capture bridge, native trust/lifetime,
-schema-3 empty disposition, tests and remaining gates before selecting another
+R4–R5 confirmed-H/marker corrections, schema-3 empty disposition, tests and remaining
+gates before selecting another
 bounded implementation slice. Recommended review model: **GPT-6.1 Sol — High**.
 Do not auto-start worker or production integration. The issue remains open.

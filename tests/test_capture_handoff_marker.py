@@ -72,3 +72,45 @@ def test_changed_marker_catalog_or_missing_marker_refuses_reconciliation(tmp_pat
         path.unlink()
         with pytest.raises(JournalError, match="lost its marker"):
             owner.inspect(bridge.intent.session_id)
+
+
+@pytest.mark.parametrize("disposition", ["unsupported", None, False, [], {}])
+def test_invalid_empty_marker_disposition_refuses_without_mutating_evidence(tmp_path, disposition):
+    _assert_disposition_refusal(tmp_path, True, disposition)
+
+
+@pytest.mark.parametrize("empty,disposition", [(False, "empty"), (True, "assembly")])
+def test_marker_disposition_must_match_committed_seal_before_receipt_lookup(tmp_path, empty, disposition):
+    _assert_disposition_refusal(tmp_path, empty, disposition)
+
+
+def _assert_disposition_refusal(tmp_path, empty, disposition):
+    import json
+    data = local_media(tmp_path / "fixture.flv")
+    with authority(tmp_path) as owner:
+        bridge = reserve(owner, raw=False)
+        options = observations(data)
+        if empty:
+            options["tag_source"] = lambda _: iter(())
+        result = bridge.run(**options)
+        path = Path(bridge.intent.parts_path, MARKER_NAME)
+        original = path.read_bytes()
+        values = json.loads(original)
+        values["disposition"] = disposition
+        path.write_text(json.dumps(values), encoding="utf-8")
+        row, status = owner.journal.session(bridge.intent.session_id), owner.journal.status()
+        before, state = contents(owner.root), contents(owner.journal.path.parent)
+        original_lookup, looked_up = owner.journal.operation, []
+        def lookup(operation):
+            looked_up.append(operation)
+            return original_lookup(operation)
+        owner.journal.operation = lookup
+        with pytest.raises(JournalError, match="disposition"):
+            owner.inspect(bridge.intent.session_id)
+        assert not looked_up
+        assert owner.journal.session(bridge.intent.session_id) == row and owner.journal.status() == status
+        assert contents(owner.root) == before and contents(owner.journal.path.parent) == state
+        owner.journal.operation = original_lookup
+        path.write_bytes(original)
+        inspected = owner.inspect(bridge.intent.session_id)
+        assert inspected["phase"] == result.phase and inspected["source_resume_allowed"] is False
