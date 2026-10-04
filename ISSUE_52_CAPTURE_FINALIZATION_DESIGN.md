@@ -2,6 +2,14 @@
 
 ## Review status and authority
 
+2026-10-04: **isolated capture-only close -> durable H bridge complete for review.**
+[Review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
+accepted `a96bd6e9` R1–R3 and selected this single capture-side integration slice.
+[Bridge implementation, native proof limits, actual tests and A1–A20 coverage](ISSUE_52_CAPTURE_HANDOFF.md).
+Journal schema 3 adds pinned admitted-empty evidence; schemas 1/2 are preserved/refused.
+Production wiring, finalizer/process policy, publication, recovery/cutover and the
+full service gates remain unimplemented. The review history below is historical.
+
 2026-10-03: **focused journal corrections complete for review; service integration NOT approved.**
 [Review 5970692341](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5970692341)
 retains `58939620` as the isolated foundation but requires R1 stop/admission,
@@ -384,7 +392,11 @@ Old clients must not equate slot reuse or `active=false` with successful MP4
 completion. Test current `remote.py` / CLI and document capability fallback before
 rollout. No endpoint/schema/default change is made in this task.
 
-## Acceptance matrix for implementation (NOT yet executed)
+## Acceptance matrix for full integration (no full case passed yet)
+
+The 2026-10-04 [capture bridge report](ISSUE_52_CAPTURE_HANDOFF.md) lists partial
+isolated coverage separately. Passing those probes does not pass the complete
+service/finalizer/automation/deployment cases below.
 
 Use Events/barriers, fake clock/disk/child handles, injectable commit failures
 and a reopened real disposable journal; no sleeps/network/LIVE required. Each

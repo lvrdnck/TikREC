@@ -2064,13 +2064,26 @@ seven skips / 19 subtests**. Evidence in
 [ISSUE_52_SESSION_JOURNAL.md](ISSUE_52_SESSION_JOURNAL.md). SQLite 3.49.1 observed.
 Service matrix/closure/native process/retention/migration/API gates remain outstanding.
 Review 5970692341 found R1 committed-stop admission, R2 cross-session/receipt
-validation and R3 queue ordering gaps. Focused corrections are complete for review
-in explicit schema 2, with unsupported schema 1 refused/preserved, no migration.
+validation and R3 queue ordering gaps. The historical `a96bd6e9` correction checkpoint
+uses explicit schema 2, with unsupported schema 1 refused/preserved, no migration.
 Baseline 13 failures/four control passes; corrected focused **136 passed**, related
 **633 passed / four skips**; full isolated
 **1,932 passed / seven skips / 19 subtests passed**. Native/service gates remain
-unpassed.
-Next: review the correction commit before selecting any integration. See
+unpassed at that checkpoint. Review 5971119601 **accepted `a96bd6e9` and R1–R3**
+and selected only capture-side handoff integration, superseding the pending review.
+The 2026-10-04 isolated capture-only close -> native verified durable H bridge is
+**COMPLETE FOR REVIEW** on `codex/capture-journal-handoff`. Real local source/writer/
+raw/control code closes before H and same-creator distinct rooms/two new writers
+reuse journal-backed capacity while old sessions remain queued. Schema 3 retains
+pinned/counted admitted-empty evidence; schemas 1/2 are refused without migration.
+Failed/ambiguous captures stay held; source end never claims MP4 completion.
+[Actual verification/partial A1–A20 coverage](ISSUE_52_CAPTURE_HANDOFF.md).
+Focused **211 passed**, full isolated **2,007 passed / seven skips / 19 subtests**;
+native process-death/locking, real raw/control inventory and synthetic deep media
+validation pass within the isolated scope.
+The worker is unstarted, no production cutover occurred and full integration gates
+remain outstanding. Next: project-manager review of the bridge and its proof limits
+before selecting another slice. No further owner implementation decision is pending. See
 [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
 Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;
 #28 unresolved, #13/#8 and release/remote-worker work are separate.

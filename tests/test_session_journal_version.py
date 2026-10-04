@@ -13,8 +13,8 @@ from tikrec.session_journal_schema import APPLICATION_ID, SCHEMA_VERSION
 from tikrec.session_journal_types import JournalError
 
 
-def test_explicit_version_two_and_old_version_one_refusal(tmp_path):
-    assert SCHEMA_VERSION == 2
+def test_explicit_version_three_and_old_version_one_refusal(tmp_path):
+    assert SCHEMA_VERSION == 3
     path, catalog = tmp_path / "old-reviewed.sqlite3", uid()
     with sqlite3.connect(path) as connection:
         connection.executescript(SCHEMA_V1)

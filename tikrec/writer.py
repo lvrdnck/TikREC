@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import nullcontext
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import BinaryIO
@@ -29,6 +30,7 @@ def write_parts(
     on_part_closed: Callable[[PartTiming], None] | None = None,
     on_timestamp_replay: Callable[[TimestampReplay], None] | None = None,
     on_media_retained: Callable[[], None] | None = None,
+    _open_guard=None,
 ) -> tuple[Path, ...]:
     """Write media into numbered FLV parts and return the retained paths.
 
@@ -80,7 +82,8 @@ def write_parts(
                 if configuration != next_configuration:
                     _close_part(part, paths, on_part_retained, on_part_closed, on_timestamp_replay)
                     part = None
-                    part = _open_part(output_dir, start_index + len(paths), tag)
+                    with _open_guard() if _open_guard is not None else nullcontext():
+                        part = _open_part(output_dir, start_index + len(paths), tag)
                     part.metadata_rate = metadata_rate
                     configuration = next_configuration
                     continue

@@ -34,6 +34,11 @@ The current package, immutable annotated tag, published GitHub Release, and
 current released version are v0.10.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
+Unreleased #52 development includes an isolated capture-to-journal handoff
+[harness and evidence report](ISSUE_52_CAPTURE_HANDOFF.md). The deployed CLI/service
+still finalizes synchronously and retains its current slot lifecycle. The harness
+adds no public command or deployed capture-capacity change.
+
 ## Usage
 
     tikrec live <tiktok-live-page-url> [--output FILE] [--raw-copy DIR] [--recovery-window-seconds SECONDS]

@@ -101,8 +101,8 @@ def closure_from_record(value: str) -> ClosureSeal:
 class ArtifactIdentity:
     """Caller-proven native volume and canonical component key, including aliases.
 
-    This key is NOT derived from a displayed path by the journal. A future native
-    adapter must prove parent/volume/alias identity before constructing it.
+    This key is NOT derived from a displayed path by the journal. The isolated
+    Windows adapter proves parent/volume/alias identity; other callers must do so.
     """
 
     volume: str
@@ -203,6 +203,7 @@ class ClosureSeal:
     ended_at: float
     artifacts: tuple[ClosedArtifact, ...]
     warnings: tuple[str, ...] = ()
+    disposition: str = "assembly"
 
     def __post_init__(self) -> None:
         identifier(self.session_id)
@@ -210,15 +211,19 @@ class ClosureSeal:
         room(self.room_id)
         require(self.room_id is not None and type(self.raw_copy) is bool)
         timestamp(self.ended_at)
-        require(type(self.artifacts) is tuple and 3 <= len(self.artifacts) <= 4096)
+        require(type(self.disposition) is str and self.disposition in {"assembly", "empty"})
+        require(type(self.artifacts) is tuple and 2 <= len(self.artifacts) <= 4096)
         require(all(type(x) is ClosedArtifact for x in self.artifacts))
         identities = [encode(asdict(x.identity)) for x in self.artifacts]
         require(len(identities) == len(set(identities)))
         roles = [x.role for x in self.artifacts]
         require(roles.count("manifest") == 1 and roles.count("connections") == 1
-                and "flv" in roles)
+                and (("flv" in roles) if self.disposition == "assembly" else
+                     all(a.role != "flv" and (a.role != "raw" or a.size == 0)
+                         for a in self.artifacts)))
         require(self.raw_copy or not ({"raw", "arrivals"} & set(roles)))
         require(type(self.warnings) is tuple and len(self.warnings) <= 64)
+        require(self.disposition == "assembly" or not self.warnings, "empty closure cannot hide raw uncertainty")
         require(all(type(x) is str and re.fullmatch(r"[a-z_]{1,64}", x)
                     for x in self.warnings))
 

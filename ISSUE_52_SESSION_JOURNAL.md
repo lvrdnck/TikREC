@@ -1,6 +1,18 @@
 # Issue #52 — isolated durable journal checkpoint
 
-## Review correction pass — 2026-10-03 (complete for review)
+## Current capture-side bridge checkpoint — 2026-10-04
+
+[Project-manager review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
+accepted `a96bd6e9` and R1–R3. The approved isolated capture-side bridge is now
+implemented for review; [actual scope, Windows evidence and remaining gates](ISSUE_52_CAPTURE_HANDOFF.md).
+Its native adapter supplies real closure inputs to H; production remains synchronous.
+Explicit schema **3** adds `evidence` units and typed empty closure for admitted
+zero-media captures: no task, released binding, retained counted artifact/room pins.
+Unadmitted no-writer settlement remains separate. Failed/ambiguous captures stay held.
+Schemas 1 and 2 are preserved/refused without migration or empty recreation.
+The following schema-2/1 checkpoints and test results remain historical.
+
+## Historical review correction pass — 2026-10-03 (accepted by 5971119601)
 
 Evidence checkpoint: **2026-10-03 16:16:31 UTC**.
 
@@ -81,7 +93,8 @@ outstanding. No service/API/worker/marker/database deployment,
 config/media/runtime change, restart, LIVE, production retention, #48 polling,
 priority benchmark, dependency, remote worker, release or tag occurred.
 
-Next: review the focused correction commit; do not start integration automatically.
+Next at that checkpoint: review the focused correction commit; this was fulfilled
+by review 5971119601. Current resume authority is the bridge report/PROJECT_STATE.
 
 ## Initial journal checkpoint — 58939620 (historical)
 

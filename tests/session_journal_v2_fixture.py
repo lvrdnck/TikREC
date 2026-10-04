@@ -1,15 +1,7 @@
-"""Versioned isolated SQLite authority; no production path or import side effects."""
+"""Frozen schema 2 from accepted a96bd6e9; no migration."""
 
-import hashlib
-import sqlite3
-
-
-APPLICATION_ID = 0x544B524A
-SCHEMA_VERSION = 3
-
-# STRICT tables and CHECKs reject malformed rows even outside the public operations.
-SCHEMA = """
-CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=3)) STRICT;
+SCHEMA_V2 = r"""
+CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=2)) STRICT;
 CREATE TABLE sessions(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
  intent TEXT NOT NULL, creator TEXT NOT NULL, expected_room TEXT, room TEXT,
@@ -26,7 +18,7 @@ CREATE TABLE bindings(slot INTEGER PRIMARY KEY CHECK(slot IN (1,2)),
  generation INTEGER NOT NULL CHECK(generation>=0),
  session TEXT UNIQUE REFERENCES sessions(id)) STRICT;
 CREATE TABLE units(session TEXT PRIMARY KEY REFERENCES sessions(id),
- kind TEXT NOT NULL CHECK(kind IN ('capture','task','evidence'))) STRICT;
+ kind TEXT NOT NULL CHECK(kind IN ('capture','task'))) STRICT;
 CREATE TABLE artifacts(session TEXT NOT NULL REFERENCES sessions(id),
  kind TEXT NOT NULL CHECK(kind IN ('output','parts')), identity TEXT NOT NULL,
  PRIMARY KEY(session,kind), UNIQUE(identity)) STRICT;
@@ -48,7 +40,6 @@ CREATE UNIQUE INDEX one_finalizer ON tasks((1)) WHERE state='running';
 CREATE INDEX task_phase ON tasks(state,queue_order);
 CREATE INDEX session_queue_entries ON queue_entries(session,position DESC);
 CREATE INDEX outstanding_sessions ON sessions(id) WHERE phase NOT IN ('completed','no_assembly');
-CREATE INDEX sealed_empty_sessions ON sessions(id) WHERE phase='no_assembly' AND seal IS NOT NULL;
 CREATE INDEX running_attempts ON attempts(token) WHERE state='running';
 CREATE INDEX room_session ON rooms(session);
 CREATE TABLE automatic_receipts(claim TEXT PRIMARY KEY,
@@ -84,17 +75,3 @@ CREATE TRIGGER immutable_queue_entry BEFORE UPDATE ON queue_entries
 CREATE TRIGGER keep_queue_entry BEFORE DELETE ON queue_entries
  BEGIN SELECT RAISE(ABORT,'keep queue history'); END;
 """
-
-
-def schema_fingerprint(connection: sqlite3.Connection) -> str:
-    """Bind every declared table/index/trigger, excluding SQLite's private metadata."""
-    rows = connection.execute("SELECT type,name,tbl_name,sql FROM sqlite_master "
-                              "WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()
-    return hashlib.sha256(repr([tuple(row) for row in rows]).encode()).hexdigest()
-
-
-def expected_fingerprint() -> str:
-    """Calculate the versioned schema signature without touching any filesystem."""
-    with sqlite3.connect(":memory:") as connection:
-        connection.executescript(SCHEMA)
-        return schema_fingerprint(connection)

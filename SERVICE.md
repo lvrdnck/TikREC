@@ -28,19 +28,23 @@ The persistent root lock file is never a retention target. Durable completed
 job references still block that executor even after their writer lease ends.
 
 
-## Issue #52 isolated journal review boundary (2026-10-03)
+## Issue #52 isolated capture handoff boundary (2026-10-04)
 
-Review 5970692341 focused journal corrections are implemented for review:
-stop-before-admission, cross-session/automatic-receipt authority and committed
-queue-entry FIFO with retry at the tail. Integration remains unapproved. Schema 2 is isolated; schema 1 is refused/preserved,
-with no migration. No production schema or media format is changed.
+[Review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
+accepted `a96bd6e9` and R1–R3, then approved capture-side integration only.
+The [isolated bridge](ISSUE_52_CAPTURE_HANDOFF.md) now reuses real LIVE/writer/raw/
+manifest/connection code, verifies native Windows closure and durably transfers
+responsibility before journal-backed capture reuse. The finalizer stays unstarted.
+Journal schema **3** adds pinned/counted admitted-empty evidence; schemas 1 and 2
+are refused/preserved without migration. Media manifest/connection schemas remain 1.
 
-Review 5970143137 approves internal DELETE/EXTRA SQLite journal operations only;
-the isolated internal journal is implemented for review, deliberately unused
-by production. [Operations/tests/proof limits](ISSUE_52_SESSION_JOURNAL.md). No service wiring, filesystem closure proof,
-worker, migration, API or media-format change is included. Production remains
-synchronous. Accepted raw policy and evidence remain under their original UUID.
-See [the design and retained integration matrix](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+Internal source-ended results preserve requested output and `finalization: pending`;
+they never claim MP4 completion. Immutable pending markers bind H to the known
+catalog/session/generation/operation/seal. Failed or ambiguous closure remains held.
+Production CLI/service defaults and current slot lifecycle remain synchronous;
+no production journal, marker, worker, API, cutover or retention change is included.
+#52 stays OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED and #28 unresolved. Full service
+[A1–A20 gates](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md) remain outstanding.
 
 ## Finalization scheduling observation (#52 investigation)
 

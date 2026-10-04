@@ -8,6 +8,8 @@ from pathlib import Path
 from threading import Event
 
 from .capture_control import CaptureControl, CaptureStopped
+from .capture_completion import CaptureEnded
+from .capture_fence import capture_callback, live_callbacks
 from .capture import (
     CaptureError, CaptureResult, ConnectionRecord, _prepare_session,
     append_connection_record, append_room_status_record,
@@ -25,7 +27,7 @@ from .tiktok import (TikTokOfflineError, TikTokResolutionError,
 from .tiktok_bound import resolve_live_url_bound
 from .writer import PartTiming, TimestampReplay, write_parts
 from .live_source import connection_source
-from .live_session import finish_live, fail_live, close_live_connection
+from .live_session import finish_live, fail_live, close_live_connection, write_live_connection
 from .live_recovery import (LiveRecovery, OutageCaptureError, SourceNetworkError,
                             SourceRefreshError, resolve_bound_live)
 from .retry_policy import RetryPolicy, RecoveryExhausted
@@ -66,10 +68,14 @@ def capture_live(
     recovery_clock: Callable[[], float] = time.monotonic,
     recovery_observer: Callable[[dict], None] | None = None,
     recovery_waiter=None,
-) -> CaptureResult:
-    """Record a public LIVE page through reconnects until confirmed offline."""
+    _capture_only: bool = False,
+    _capture_fence=None,
+) -> CaptureResult | CaptureEnded:
+    """Record a public LIVE; internal source-ended completion keeps output work pending."""
     _validate_limits(max_consecutive_failures, max_consecutive_empty_connections, backoff_seconds,
                      offline_confirmation_checks, offline_confirmation_interval)
+    progress, heartbeat, warning, state, room_identity, recovery_observer = live_callbacks(
+        _capture_fence, progress, heartbeat, warning, state, room_identity, recovery_observer)
     parts_directory = Path(parts_directory)
     output_path = Path(output_path) if output_path is not None else None
     manifest = SessionManifest(parts_directory, output_path, "tiktok_live",
@@ -100,13 +106,14 @@ def capture_live(
     recovery = LiveRecovery(retry_policy or RetryPolicy(), clock=recovery_clock, wall_clock=manifest_clock,
                             directory=parts_directory, manifest=manifest, observer=recovery_observer)
 
-    def finish(interrupted: bool = False) -> CaptureResult:
+    def finish(interrupted: bool = False) -> CaptureResult | CaptureEnded:
         return finish_live(all_parts, output_path, manifest=manifest, records=records,
                            finalizer=finalizer, state=state, progress=progress, interrupted=interrupted,
-                           connection_count=connection_number)
+                           connection_count=connection_number, capture_only=_capture_only)
 
     def capture_failure(message: str) -> CaptureError:
-        return fail_live(message, all_parts, manifest=manifest, output_path=output_path, connection_count=connection_number)
+        return fail_live(message, all_parts, manifest=manifest, output_path=output_path,
+                         connection_count=connection_number, fence=_capture_fence)
 
     while True:
         try:
@@ -154,7 +161,7 @@ def capture_live(
                 raw_copy=raw_copy, observation=observation, session_started=session_started,
                 records=records, all_parts=all_parts, manifest=manifest, clock=clock,
                 # Repeated resolver-only failures are coalesced by the outage boundaries.
-                persist_record=not (outcome == "resolver_error" and recovery.outage.active))
+                persist_record=not (outcome == "resolver_error" and recovery.outage.active), fence=_capture_fence)
             # This advances from writer output, rather than inspecting the directory.
             next_part_index += len(connection_parts)
             previous_end = ended_at
@@ -202,29 +209,21 @@ def capture_live(
                 raw_tag_source=raw_tag_source, tag_source=tag_source,
                 observation=observation, control=control,
                 warning=lambda message: _warn(warning, progress, message),
+                fence=_capture_fence,
             )
             controlled_tags = control.tags(observation.tags(tags))
-            try:
-                written_parts = writer(
-                    controlled_tags,
-                    parts_directory,
+            written_parts = write_live_connection(
+                    writer, tags, raw_copy, controlled_tags, parts_directory, _capture_fence,
                     start_index=next_part_index,
-                    on_part_started=part_started,
+                    on_part_started=capture_callback(part_started, _capture_fence),
                     on_progress=heartbeat,
-                    on_part_retained=retained,
-                    on_part_closed=part_closed,
-                    on_timestamp_replay=timestamp_replay,
+                    on_part_retained=capture_callback(retained, _capture_fence),
+                    on_part_closed=capture_callback(part_closed, _capture_fence),
+                    on_timestamp_replay=capture_callback(timestamp_replay, _capture_fence),
+                    **({"_open_guard": _capture_fence.opening} if _capture_fence is not None else {}),
                     # Older injected writers need not implement the new observation hook.
                     **({"on_media_retained": observation.retained} if writer is write_parts else {}),
                 )
-            finally:
-                # Explicit closure also covers injected writers that return early.
-                controlled_tags.close()
-                close = getattr(tags, "close", None)
-                if close is not None:
-                    close()
-                if raw_copy is not None:
-                    raw_copy.close()
             # Custom writers may not use the callback, while the built-in writer does.
             if not connection_parts:
                 connection_parts.extend(written_parts)
@@ -243,7 +242,7 @@ def capture_live(
             close_record("offline", error)
             recovery.end("offline")
             _report(progress, "room ended")
-            if not all_parts:
+            if not all_parts and not (_capture_only and manifest.active):
                 raise capture_failure("TikTok account or room is not live") from error
             return finish()
         except TikTokResolutionTransientError as error:

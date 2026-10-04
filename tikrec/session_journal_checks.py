@@ -48,13 +48,21 @@ def audit(connection) -> None:
         task = connection.execute("SELECT * FROM tasks WHERE session=?", (sid,)).fetchone()
         if unit["kind"] == "capture":
             require(binding is not None and task is None
+                    and session["seal"] is None
                     and session["phase"] in {"reserved", "capturing", "closing"}
                     and binding["generation"] == session["generation"]
                     and binding["slot"] == session["origin_slot"], "invalid capture ownership")
+        elif unit["kind"] == "evidence":
+            require(binding is None and task is None and session["phase"] == "no_assembly"
+                    and session["seal"] is not None
+                    and closure_from_record(session["seal"]).disposition == "empty",
+                    "invalid empty evidence ownership")
         else:
             require(binding is None and task is not None and task["state"] != "completed"
                     and session["phase"] == task["state"] and session["seal"] is not None,
                     "invalid task ownership")
+            require(closure_from_record(session["seal"]).disposition == "assembly",
+                    "assembly task lacks media closure")
             entry = connection.execute("SELECT * FROM queue_entries WHERE position=?",
                                        (task["queue_order"],)).fetchone()
             require(entry is not None and entry["session"] == sid, "queue entry binding conflicts")
@@ -97,6 +105,10 @@ def audit(connection) -> None:
     require(connection.execute("SELECT 1 FROM rooms r LEFT JOIN units u ON u.session=r.session "
                                "WHERE u.session IS NULL LIMIT 1").fetchone() is None,
             "unaccounted room ownership")
+    require(connection.execute("SELECT 1 FROM sessions s LEFT JOIN units u ON u.session=s.id "
+                               "WHERE s.phase='no_assembly' AND s.seal IS NOT NULL "
+                               "AND (u.kind IS NULL OR u.kind!='evidence') LIMIT 1").fetchone() is None,
+            "unaccounted empty evidence ownership")
     require(connection.execute("SELECT 1 FROM attempts a LEFT JOIN tasks t ON t.token=a.token "
                                "WHERE a.state='running' AND (t.state IS NULL OR t.state!='running') "
                                "LIMIT 1").fetchone() is None, "unaccounted running attempt")

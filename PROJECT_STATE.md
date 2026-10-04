@@ -1,26 +1,32 @@
 # TikREC current state
 
-Last reviewed: 2026-10-03. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-04. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE — focused journal corrections COMPLETE FOR REVIEW
-  (2026-10-03, review 5970692341):** R1 committed-stop fresh admission refusal,
-  R2 shared cross-owner/required automatic-receipt validation, R3 durable queue-entry
-  FIFO/retry tail implemented in isolated schema **2**. Unsupported schema 1 is
-  refused/preserved without migration. Baseline **13 failed / four passed**;
-  focused **136 passed**, related **633 passed / four skips**; full isolated
-  **1,932 passed / seven skips / 19 subtests passed**.
-  DELETE/EXTRA/FK/1000 ms, two bindings, one finalizer, eight units, failure pins,
-  immutable raw/identity and operation reconciliation preserved. Historical replay
-  receipts are not fresh writer permission. Production remains synchronous and
-  untouched; no wiring/worker/API/marker/runtime changes or native/media proof.
-  **Next: project-manager review of the correction commit before selecting any
-  integration; no owner decision pending.** #48 OPEN/PAUSED, #28 unresolved,
-  #13/#8 unstarted. [Journal proof/results](ISSUE_52_SESSION_JOURNAL.md).
+- **Issue #52 SINGLE ACTIVE / OPEN — isolated capture-side handoff COMPLETE FOR
+  REVIEW (2026-10-04):** [review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
+  accepted `a96bd6e9` R1–R3 and approved this single integration slice. Real local
+  fixture LIVE/writer/raw/manifest/connection capture now closes and supplies held
+  native Windows evidence to durable H before journal-backed slot reuse. Distinct
+  verified returning rooms and two new real writers preserve old UUIDs/paths/raw/FIFO.
+  Explicit source-ended result/marker retain requested MP4 pending intent; worker
+  unstarted, production synchronous defaults unchanged. Schema **3** pins/counts
+  admitted-empty evidence without a task; schemas 1/2 are preserved/refused.
+  Failed/ambiguous closure stays held; replay never grants fresh writer permission.
+  Native/crash/compatibility/retention-plan/synthetic-media results and partial
+  A1–A20 coverage are in [the bridge report](ISSUE_52_CAPTURE_HANDOFF.md).
+  Final focused **211 passed**; full isolated **2,007 passed / seven skips /
+  19 subtests passed**; actual synchronous synthetic media passes deep validation.
+  Branch: `codex/capture-journal-handoff`, isolated from the deployed editable checkout.
+  **Next: project-manager review of the actual bridge and proof limits before
+  selecting another integration slice. Pending owner action: None.** Service/API/
+  monitor/worker/publication/storage-recovery/retention readers/cutover gates remain.
+  No production mutation/restart, #48 polling, release or tag. #48 OPEN/PAUSED,
+  #28 unresolved, #13/#8 unstarted. Historical journal results remain below/in its report.
 
 - **Issue #48 OPEN / explicitly PAUSED (owner decision, 2026-10-03):**
   Implementation/deployment passed; natural-recording validation did not.

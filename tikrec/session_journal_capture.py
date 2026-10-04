@@ -123,7 +123,7 @@ class CaptureOperations:
     def handoff(self, operation: str, session_id: str, generation: int,
                 revision: int, seal: ClosureSeal) -> dict:
         """Atomically seal a task and transfer its existing unit before slot reuse."""
-        require(type(seal) is ClosureSeal)
+        require(type(seal) is ClosureSeal and seal.disposition == "assembly")
         values = asdict(seal)
         def action(connection):
             row = guard_capture(connection, session_id, generation, revision)
