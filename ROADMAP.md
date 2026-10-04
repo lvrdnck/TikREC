@@ -2133,6 +2133,18 @@ schedule/history views here.
 Possible schedule prediction may use only the owner's retained history and should
 be presented as an estimate, not a guarantee.
 
+Prediction may also support optional **safe host maintenance windows** for a
+personal always-on recording PC. When every monitored creator is confirmed not
+LIVE and the predictor indicates a sufficiently low-risk period, TikREC may
+identify a candidate window for OS updates or a controlled host restart. This
+must be opt-in and fail closed: prediction is advisory and never authorizes a
+restart by itself. A separate maintenance safety gate must prove there is no
+active capture, finalization, recovery, queued work, or other unsafe state, and
+uncertainty must skip rather than force maintenance. Restarts should occur only
+for an actual maintenance reason (for example pending OS updates or an explicit
+uptime/maintenance policy), followed by normal service startup and monitoring
+verification.
+
 ### v0.17.0 — LIVE events, chat, and gifts
 
 **Goal:** Optionally retain timestamped public chat, gifts, joins, and other
