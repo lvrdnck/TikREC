@@ -1,6 +1,18 @@
 # Issue #52 — native sealed-input read protection
 
-## Authority and scope
+## Acceptance checkpoint - 2026-10-04
+
+[PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
+**accepts `44711e65`**. Its original queued-only API/native proof limits remain
+strict. The subsequent [durable-attempt slice](ISSUE_52_DURABLE_LAUNCH.md) adds a
+separate claimed-input protocol with explicit receipt-scoped revision advances,
+independent original H validation and attempt-time durable marker observation.
+Current schema is 4; schema-3 scope/results below are historical accepted evidence.
+Durable attempt/launch and claimed protection are implemented for review; scratch/
+queued assembly/publication/settlement/service/retention/migration/cutover remain
+unimplemented gates. No automatic integration or full-service/media-hash claim.
+
+## Historical authority and scope
 
 2026-10-04: [PM review 5981877279](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5981877279)
 accepted `2d6896ce` and the separate `c22c482f` extraction, selecting only this

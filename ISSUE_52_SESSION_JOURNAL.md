@@ -1,6 +1,21 @@
 # Issue #52 — isolated durable journal checkpoint
 
-## Current capture-side bridge checkpoint — 2026-10-04
+## Current durable ownership extension - 2026-10-04
+
+[PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
+approves minimal schema **4** for held local attempt/child authority. New tables
+retain owner, original H, attempt-time marker observation and permanent sequential
+launch intent/native identity/whole-job exit/diagnostics/cleanup with phase receipts.
+FIFO claiming shares existing rules; capture bindings, eight-unit accounting,
+immutable H/room/raw/path claims and DELETE/EXTRA/FK/1000-ms settings remain.
+Schemas 1/2/3 are retained/refused byte-identically, no migration/recreation.
+Existing failure/retry/hold/settlement callbacks refuse owned attempts; successful
+readers do not complete/refund/clear pins. Reopen grants inspection only, no local
+launch authority, adoption or PID-only absence inference. Audits stay bounded to
+current owners/latest children, with paged history. See the
+[internal protocol, tests and limits](ISSUE_52_DURABLE_LAUNCH.md).
+
+## Historical capture-side bridge checkpoint — 2026-10-04
 
 [Project-manager review 5971119601](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5971119601)
 accepted `a96bd6e9` and R1–R3. The approved isolated capture-side bridge is now

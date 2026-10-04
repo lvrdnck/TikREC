@@ -1,5 +1,17 @@
 # Issue #52 — isolated Windows subprocess lifetime evidence
 
+## Durable caller fence checkpoint - 2026-10-04
+
+The accepted R6-R7 containment/lifetime contract remains. `OwnedProcess.start`
+adds an optional trusted `resume_guard` context for immediate exact verification
+and resume, defaulting to existing behavior. The new internal
+[durable coordinator](ISSUE_52_DURABLE_LAUNCH.md) uses this short fence to serialize
+revocation commit with resume; scanning, authorization hooks, waits and streams
+remain outside it. Exact process/job ownership and final-tail/EOF proof remain.
+No scheduler, assembly, process adoption or service wiring. Earlier schema-3
+references describe historical slices; current isolated journal schema 4 is
+explicitly approved by 5982869804.
+
 ## Accepted process checkpoint and unpublished assembly use
 
 2026-10-04: [review 5980268720](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5980268720)

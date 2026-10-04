@@ -112,3 +112,5 @@ def audit(connection) -> None:
     require(connection.execute("SELECT 1 FROM attempts a LEFT JOIN tasks t ON t.token=a.token "
                                "WHERE a.state='running' AND (t.state IS NULL OR t.state!='running') "
                                "LIMIT 1").fetchone() is None, "unaccounted running attempt")
+    from .session_journal_owned_checks import audit_owned
+    audit_owned(connection)

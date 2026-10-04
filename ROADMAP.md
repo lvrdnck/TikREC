@@ -1324,8 +1324,9 @@ to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
 replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
 **#48 is OPEN / PAUSED awaiting qualifying natural evidence; #52 is the single
-active issue**, with focused journal corrections complete for review under
-5970692341. Service integration is not approved.
+active issue**. The historical journal review under 5970692341 is complete;
+current durable-attempt work/next action are recorded in the #52 checkpoint below.
+Service integration is not approved.
 #8/#28 remain opportunistic
 non-blocking evidence work and #13 remains separate rendition-policy work.
 No other issue was started. v0.10.0 remains released/package version and v0.11.0
@@ -2137,7 +2138,7 @@ Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED
 #28 unresolved, #13/#8 and release/remote-worker work are separate.
 
 Review **5981877279** accepted `2d6896ce` including `c22c482f` and selected the
-native sealed-input guard, now **COMPLETE FOR REVIEW** on the isolated branch.
+native sealed-input guard, **accepted by 5982869804** on the isolated branch.
 Explicit known authority/session/revision/seal/catalog/marker/H receipt proves
 the original queued owner without claim or launch. Complete native FLV/raw/arrival/
 control protection permits reads and denies conflicting data-write/delete;
@@ -2159,11 +2160,38 @@ ownership. Two direct-symlink fixtures lack Windows privilege; junction refusal
 is proved. Schema 3, old-schema refusal and synchronous defaults stay unchanged.
 Durable attempt/launch, claimed-phase input/scratch protocols, queue scheduling,
 publication/settlement/retry, service/API/monitor/storage/retention/migration/cutover
-remain later reviewed gates. **Current next action: PM review of the pushed guard;
-no automatic integration or queued assembly.** #52 OPEN/SINGLE ACTIVE; #48 OPEN/
+remain later reviewed gates. **Historical next action: guard review, completed by 5982869804.** #52 OPEN/SINGLE ACTIVE; #48 OPEN/
 PAUSED with all natural criteria/raw policy intact; owner decisions: None.
 No full A1–A20/Scheduled Task gate, production access/change/restart, retention
 execution, #48 polling, dependencies/upgrades/resource policy, release/tag or merge.
+
+**Current durable attempt/launch checkpoint (2026-10-04):**
+
+[PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
+**accepted `44711e65`** and selected durable attempt/child launch with claimed
+input protection. The isolated one-shot `AttemptCoordinator` now combines existing
+FIFO/single-finalizer claiming, distinct claimed protection and sequential
+creation-contained readers. Original H/marker evidence is separate from current
+task/owner revisions. Approved schema **4** adds permanent intent/native identity/
+whole-job exit/diagnostic/cleanup records; schemas 1/2/3 are retained/refused
+unchanged, without migration. Final resume fencing serializes cancellation/
+revocation with exact native resume. Unknown/unclean owners retain reachable input
+guards; historical receipts do not authorize creation, resume or adoption.
+Successful readers leave unfinished tasks held with counted units/raw/room/path
+pins while disjoint capture retains both slots. No scratch protocol, queued MP4
+assembly, publication/settlement/retry or service integration.
+Final **484 focused / two skips; 1,281 related / six skips / two subtests;
+2,270 full / nine skips / 19 subtests passed**. Ten native owner-death boundaries,
+final diagnostic tails, claimed teardown faults and bounded sequential FFprobe
+on actual sealed H inputs pass; evidence hashes stay unchanged. Both separate
+generated assembly paths retain part/packet-DTS/deep validation and absent final
+destinations. [Complete evidence and limits](ISSUE_52_DURABLE_LAUNCH.md).
+**Current next action: PM review of this pushed slice; no automatic integration.**
+#52 OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED (Gracie-only raw/Ward OFF), #28 unresolved;
+owner decisions: None. Scratch/publication/settlement/retry, scheduling/service/
+retention/migration/cutover and full A1-A20/Scheduled Task acceptance remain gates.
+No production access/change/restart, retention execution, #48 polling, resource
+policy/upgrade/release/tag/remote worker/merge.
 
 The earlier bounded resource investigation remains complete within its scope:
 12 synthetic comparisons passed media checks, byte-identical within each path,

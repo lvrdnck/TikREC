@@ -1,6 +1,34 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Review status and authority
+## Current durable attempt/launch checkpoint - 2026-10-04
+
+[PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
+**accepted `44711e65`** and selected durable attempt/child launch with claimed
+input protection. The isolated one-shot `AttemptCoordinator` now combines existing
+FIFO/single-finalizer claiming, distinct claimed protection and sequential
+creation-contained readers. Original H/marker evidence is separate from current
+task/owner revisions. Approved schema **4** adds permanent intent/native identity/
+whole-job exit/diagnostic/cleanup records; schemas 1/2/3 are retained/refused
+unchanged, without migration. Final resume fencing serializes cancellation/
+revocation with exact native resume. Unknown/unclean owners retain reachable input
+guards; historical receipts do not authorize creation, resume or adoption.
+Successful readers leave unfinished tasks held with counted units/raw/room/path
+pins while disjoint capture retains both slots. No scratch protocol, queued MP4
+assembly, publication/settlement/retry or service integration.
+Final **484 focused / two skips; 1,281 related / six skips / two subtests;
+2,270 full / nine skips / 19 subtests passed**. Ten native owner-death boundaries,
+final diagnostic tails, claimed teardown faults and bounded sequential FFprobe
+on actual sealed H inputs pass; evidence hashes stay unchanged. Both separate
+generated assembly paths retain part/packet-DTS/deep validation and absent final
+destinations. [Complete evidence and limits](ISSUE_52_DURABLE_LAUNCH.md).
+**Current next action: PM review of this pushed slice; no automatic integration.**
+#52 OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED (Gracie-only raw/Ward OFF), #28 unresolved;
+owner decisions: None. Scratch/publication/settlement/retry, scheduling/service/
+retention/migration/cutover and full A1-A20/Scheduled Task acceptance remain gates.
+No production access/change/restart, retention execution, #48 polling, resource
+policy/upgrade/release/tag/remote worker/merge.
+
+## Historical sealed-input checkpoint - accepted by 5982869804
 
 2026-10-04: [review 5981877279](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5981877279)
 **accepted `2d6896ce` and `c22c482f` unpublished assembly**, selecting only native
@@ -26,7 +54,7 @@ Final **434 focused / 1,365 related / 2,220 full passes**; full nine skips /
 19 subtests passed. Actual H raw/arrival/control fixtures, bounded owned FFprobe,
 unchanged hashes and both assembly/media regression paths pass. The introduced
 R5 receipt-lookup ordering regression was fixed and all selections rerun.
-**Current next action: PM review of the pushed guard; no automatic integration.**
+**Historical next action: guard review, completed by 5982869804.**
 #52 remains OPEN/SINGLE ACTIVE; #48 paused; owner decisions: None.
 
 The following assembly checkpoint is historical and accepted by 5981877279.

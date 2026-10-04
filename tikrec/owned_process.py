@@ -4,6 +4,7 @@ import math
 import time
 from pathlib import Path
 from threading import RLock
+from contextlib import nullcontext
 
 from .owned_process_native import NativeChild
 from .owned_process_api import identity as native_identity
@@ -75,8 +76,12 @@ class OwnedProcess:
                      "incomplete" if self.streams_incomplete else "pending"
                      for name in ("stdout", "stderr"))
 
-    def start(self, executable, arguments, *, cwd, before_resume):
-        """Create contained/suspended; authorize native identity before exact-thread resume."""
+    def start(self, executable, arguments, *, cwd, before_resume, resume_guard=None):
+        """Create contained/suspended; authorize identity before exact-thread resume.
+
+        Optional resume_guard fences immediate verification/resume against durable
+        revocation. Its context must contain no scanning, waiting or caller hooks.
+        """
         with self.lock:
             if self.started or self.closed or self.cancel_requested:
                 raise ValueError("owned process is single-use")
@@ -108,10 +113,13 @@ class OwnedProcess:
                     raise ValueError("before-resume identity/authorization mismatch")
                 if self.closed or self.cancel_requested or self.state != "suspended":
                     raise ValueError("cancelled/stale suspended launch cannot resume")
-                self.native.verify(self.native.initial)
                 self._fault("before_resume")
-                self.native.resume()
-                self.state = "running"
+                # A caller may fence immediate resume against durable revocation.
+                # Hooks/streaming/filesystem work must stay outside that fence.
+                with nullcontext() if resume_guard is None else resume_guard(self.identity):
+                    self.native.verify(self.native.initial)
+                    self.native.resume()
+                    self.state = "running"
                 self._fault("after_resume")
             return self.evidence()
         except BaseException as error:

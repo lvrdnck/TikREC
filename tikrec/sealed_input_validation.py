@@ -29,13 +29,20 @@ def target_binding(row, session_id, revision, seal_hash):
     require(row is not None and row["id"] == session_id and row["revision"] == revision
             and row["seal_hash"] == seal_hash and row["phase"] == "queued",
             "stale or uncommitted sealed input binding")
-    intent, seal = intent_from_record(encode(row["intent"])), closure_from_record(encode(row["seal"]))
     task, queue, receipt = row["task"], row["queue"], row["receipt"]
+    require(task is not None and task["state"] == "queued" and task["revision"] == 1
+            and task["attempt"] == 0 and task["token"] is None
+            and queue is not None and task["queue_order"] == queue["position"],
+            "sealed input task/H owner conflicts")
+    return original_h_binding(row, revision, queue, receipt)
+
+
+def original_h_binding(row, revision, queue, receipt):
+    """Validate immutable H evidence separately from later task/attempt revisions."""
+    session_id, seal_hash = row["id"], row["seal_hash"]
+    intent, seal = intent_from_record(encode(row["intent"])), closure_from_record(encode(row["seal"]))
     require(seal.disposition == "assembly" and digest(asdict(seal)) == seal_hash
             and row["unit"] == {"session": session_id, "kind": "task"} and not row["bound"]
-            and task is not None and task["state"] == "queued" and task["revision"] == 1
-            and task["attempt"] == 0 and task["token"] is None
-            and queue is not None and task["queue_order"] == queue["position"]
             and receipt is not None and receipt["id"] == queue["operation"]
             and receipt["kind"] == "handoff", "sealed input task/H owner conflicts")
     require(receipt["arguments_hash"] == digest([session_id, row["generation"], revision - 1,
@@ -66,7 +73,8 @@ def inventory_names(directory, seal):
             "sealed inventory changed")
 
 
-def verify_inventory(authority, row, intent, seal, directory, files, marker):
+def verify_inventory(authority, row, intent, seal, directory, files, marker, *,
+                     h_receipt=None, h_revision=None):
     """Check complete held metadata, control hashes and exact marker/H bindings."""
     directory.verify()
     require(directory.identity == intent.parts, "sealed parts identity changed")
@@ -84,9 +92,11 @@ def verify_inventory(authority, row, intent, seal, directory, files, marker):
             and marker.identity.volume == intent.parts.volume, "pending marker namespace conflicts")
     data = marker.read_control()
     values = json.loads(data)
-    validate_pending_values(authority, intent.session_id, row, values, row["receipt"])
-    require(values["operation"] == row["receipt"]["id"]
-            and values["revision"] + 1 == row["revision"], "pending marker H revision conflicts")
+    receipt = row["receipt"] if h_receipt is None else h_receipt
+    revision = row["revision"] if h_revision is None else h_revision
+    validate_pending_values(authority, intent.session_id, row, values, receipt)
+    require(values["operation"] == receipt["id"]
+            and values["revision"] + 1 == revision, "pending marker H revision conflicts")
     # Parent pins allow child creation. Reconcile enumeration again after held
     # control reads rather than treating the first list as an atomic namespace.
     inventory_names(directory.path, seal)

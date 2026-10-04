@@ -17,7 +17,28 @@ def _guard(connection, session_id, revision, attempt, token):
                              (session_id, revision, attempt, token)).fetchone()
     if row is None:
         raise JournalConflict("stale finalizer callback")
+    if connection.execute("SELECT 1 FROM attempt_owners WHERE token=?", (token,)).fetchone():
+        raise JournalConflict("owned attempt requires its child protocol; retain pins")
     return row
+
+
+def claim(connection, token):
+    """Share FIFO claiming without nesting journal transactions."""
+    if connection.execute("SELECT 1 FROM tasks WHERE state='running' LIMIT 1").fetchone():
+        return None
+    row = connection.execute("SELECT * FROM tasks WHERE state='queued' "
+             "ORDER BY queue_order LIMIT 1").fetchone()
+    if row is None:
+        return None
+    connection.execute("INSERT INTO attempts VALUES (?,?,?,'running',NULL)",
+               (token, row["session"], row["attempt"] + 1))
+    connection.execute("UPDATE tasks SET state='running',revision=revision+1,"
+               "attempt=attempt+1,token=?,error=NULL WHERE session=?",
+               (token, row["session"]))
+    connection.execute("UPDATE sessions SET phase='running',revision=revision+1 WHERE id=?",
+               (row["session"],))
+    return {"session_id": row["session"], "revision": row["revision"] + 1,
+            "attempt": row["attempt"] + 1, "token": token}
 
 
 def _exit(proof, session_id, token):
@@ -32,21 +53,7 @@ class TaskOperations:
         """Durably claim oldest queued task only when no other task is running."""
         identifier(attempt_token)
         def action(connection):
-            if connection.execute("SELECT 1 FROM tasks WHERE state='running' LIMIT 1").fetchone():
-                return None
-            row = connection.execute("SELECT * FROM tasks WHERE state='queued' "
-                                     "ORDER BY queue_order LIMIT 1").fetchone()
-            if row is None:
-                return None
-            connection.execute("INSERT INTO attempts VALUES (?,?,?,'running',NULL)",
-                               (attempt_token, row["session"], row["attempt"] + 1))
-            connection.execute("UPDATE tasks SET state='running',revision=revision+1,"
-                               "attempt=attempt+1,token=?,error=NULL WHERE session=?",
-                               (attempt_token, row["session"]))
-            connection.execute("UPDATE sessions SET phase='running',revision=revision+1 WHERE id=?",
-                               (row["session"],))
-            return {"session_id": row["session"], "revision": row["revision"] + 1,
-                    "attempt": row["attempt"] + 1, "token": attempt_token}
+            return claim(connection, attempt_token)
         return self._mutate(operation, "claim_next", [attempt_token], action)
 
     def hold_attempt(self, operation: str, session_id: str, revision: int,
