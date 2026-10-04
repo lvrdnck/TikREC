@@ -2,6 +2,37 @@
 
 ## Review status and authority
 
+2026-10-04: [review 5980268720](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5980268720)
+**accepted `b2bff05f` R6–R7** and selected only explicit closed FLVs -> an
+attempt-owned unpublished MP4 candidate. That internal primitive is implemented
+on the isolated branch, sharing existing ordering/AVC/copy/libx264/filter/frame-rate/
+timing/quality/diagnostic logic with the unchanged synchronous finalizer. Every
+required probe/assembly child uses the contained owner and fresh before-resume
+authorization. Exclusive fresh scratch and post-authorization collision checks
+preserve candidates/partials; no path promotion, manifest/control mutation,
+publication receipt, journal settlement or capacity refund occurs.
+
+Whole-job exit, complete bounded streaming diagnostics/EOF, cleanup and nonempty
+candidate evidence establish execution readiness only. Input-decode health,
+validation and publication stay distinct; degraded reencode evidence is retained.
+Unknown native lifetime leaves the owner reachable and forbids a successor.
+Cancellation/first-error/secondary-cleanup evidence survives final draining;
+running assembly has no blanket thirty-second limit or new watchdog policy.
+The installed FFmpeg's occupied-output exit-0 behavior is explicitly fenced.
+
+[Actual assembly evidence and trusted preconditions](ISSUE_52_UNPUBLISHED_ASSEMBLY.md):
+**198 focused / 1,222 related / 2,162 full passes**, both generated AVC paths,
+part/packet-DTS/deep validation, unchanged source/raw/arrival/control fixture
+hashes, matching synchronous frame timing and absent final destinations.
+R4–R7/schema-3/history/refusal/FIFO/eight-unit accounting remain intact. This
+primitive trusts closed inputs and exclusive caller scratch; durable attempts/
+launch persistence, native sealed-input authority, queue scheduling, validation/
+publication/settlement/retry and service/retention/migration/cutover remain later
+reviewed adapters. No full A1–A20 or deployed Scheduled Task gate passed.
+#52 OPEN/SINGLE ACTIVE; #48 paused; #28 unresolved; owner decisions: None.
+**Next: project-manager review of the pushed primitive.** Earlier checkpoints
+below are historical; no production access/change, release/tag or merge occurred.
+
 2026-10-04: [review 5979948212](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979948212)
 retained `86b9d4d4` containment and required only R6–R7 before integration.
 Those corrections now fence validation/allocation/resume against irreversible

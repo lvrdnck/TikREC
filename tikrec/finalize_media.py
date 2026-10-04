@@ -122,3 +122,10 @@ def _concat_filter(part_count: int, target_size: tuple[int, int]) -> str:
     return ";".join(filters)
 
 
+def progress_command(command: list[str], enabled: bool) -> list[str]:
+    """Use the existing structured stderr progress flags only when requested."""
+    return command[:2] + [
+        "-progress", "pipe:2", "-nostats", "-loglevel", "warning",
+    ] + command[2:] if enabled else command
+
+

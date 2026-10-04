@@ -10,15 +10,16 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
-from .flv import FlvFormatError, avc_configuration_dimensions
+from .flv import avc_configuration_dimensions
 from .decode_diagnostics import DecodeDiagnostics, input_decode_health
 from .ffmpeg_progress import FfmpegProgressReporter
 from .frame_rate import inspect_frame_rate, nominal_frame_rate
+from .finalize_plan import plan_media, target_size
 # Re-export the existing internal helpers to preserve injected callers/tests.
 from .finalize_media import (
     _validate_parts, _validate_output_path, _temporary_output_path,
     _configuration_for, _file_chunks, _write_concat_manifest, _concat_path,
-    _build_ffmpeg_command, _concat_filter,
+    _build_ffmpeg_command, _concat_filter, progress_command,
 )
 
 
@@ -40,14 +41,12 @@ def finalize_parts(
     ordered_parts = _validate_parts(parts)
     output_path = Path(output_path)
     _validate_output_path(output_path)
-    configurations = tuple(_configuration_for(part) for part in ordered_parts)
-    same_configuration = len(set(configurations)) == 1
+    plan = plan_media(ordered_parts, frame_rate_inspector=frame_rate_inspector,
+                      dimension_inspector=avc_configuration_dimensions,
+                      rate_selector=nominal_frame_rate)
+    same_configuration = plan.stream_copy
     diagnostics = None if same_configuration else DecodeDiagnostics()
-    target_size = _target_size(configurations) if not same_configuration else None
-    nominal_rate = (
-        nominal_frame_rate(ordered_parts, inspector=frame_rate_inspector)
-        if not same_configuration else None
-    )
+    target_size, nominal_rate = plan.target_size, plan.nominal_rate
     temporary_output = _temporary_output_path(output_path)
     if temporary_output.exists():
         raise FileExistsError(f"temporary output already exists: {temporary_output}")
@@ -116,12 +115,10 @@ def _run_ffmpeg(
 
     # FFmpeg writes both structured progress and diagnostics to stderr. Retain
     # every line so a non-zero exit still reports the actual diagnostic.
-    progress_command = command[:2] + [
-        "-progress", "pipe:2", "-nostats", "-loglevel", "warning",
-    ] + command[2:] if progress is not None else command
+    streamed_command = progress_command(command, progress is not None)
     try:
         process = subprocess.Popen(
-            progress_command,
+            streamed_command,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
@@ -157,11 +154,7 @@ def _run_ffmpeg(
 
 
 def _target_size(configurations: tuple[bytes, ...]) -> tuple[int, int]:
-    try:
-        dimensions = [avc_configuration_dimensions(configuration) for configuration in configurations]
-    except FlvFormatError as error:
-        raise ValueError(f"could not determine AVC dimensions: {error}") from error
-    return max(width for width, _ in dimensions), max(height for _, height in dimensions)
+    return target_size(configurations, dimension_inspector=avc_configuration_dimensions)
 
 
 def _ffmpeg_failure(command: list[str], stderr: str | None, returncode: int) -> str:

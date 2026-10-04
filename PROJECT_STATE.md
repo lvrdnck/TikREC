@@ -7,7 +7,35 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE / OPEN — focused R6–R7 COMPLETE FOR REVIEW
+- **Issue #52 SINGLE ACTIVE / OPEN — unpublished assembly COMPLETE FOR REVIEW
+  (2026-10-04):** [review 5980268720](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5980268720)
+  **accepted `b2bff05f` R6–R7**, selecting only the internal closed-input ->
+  attempt-owned MP4 primitive. Shared copy/libx264 planning preserves ordering,
+  timing, filters, quality and decoder diagnostics; synchronous CLI/service and
+  `finalize_parts` defaults/publication/cleanup remain unchanged. All new-path
+  probes/FFmpeg use sequential `OwnedProcess` with fresh suspended authorization.
+  Complete streamed diagnostics/EOF and native exit/cleanup are required for
+  execution readiness; validation/publication stay explicitly unperformed.
+  Failed/cancelled candidates and scratch are preserved; unknown lifetime retains
+  exact owners and forbids successor launch. No blanket assembly deadline.
+  Actual occupied-output exit-0 behavior is fenced before resume and through
+  explicit error diagnostics. Structure extraction: `c22c482f`, separate commit.
+  Final focused **198 passed / 17 subtests**; related **1,222 / six skips /
+  17 subtests**; full isolated **2,162 / seven skips / 19 subtests**. Matching and
+  differing generated AVC fixtures pass part/packet-DTS/deep validation with
+  unchanged source/raw/arrival/control hashes, matching synchronous frame timing
+  and absent final destinations. [Assembly evidence](ISSUE_52_UNPUBLISHED_ASSEMBLY.md).
+  R4–R7 and schema 3/history/refusal/FIFO/stop/admission/eight-unit accounting
+  remain intact; no full A1–A20 or Scheduled Task gate passed. Durable attempt/
+  launch/input-seal adapters, validation/publication/settlement/retry, scheduler/
+  service/API/monitor/storage/retention/migration/cutover remain later reviewed
+  work. **Next: project-manager review of the pushed primitive; pending owner
+  action: None.** #48 OPEN/PAUSED, #28 unresolved, #13/#8 unstarted. No real queued
+  session/production access/change/restart/polling/retention/resource policy/
+  upgrade/release/tag/merge. Branch: `codex/capture-journal-handoff`; deployed
+  editable `main` stays `fe28327c`, with 42 unrelated artifacts preserved.
+
+- **Issue #52 historical R6–R7 delivery — accepted by review 5980268720
   (2026-10-04):** [review 5979948212](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979948212)
   retained `86b9d4d4` containment and selected only startup/close fencing and final
   stream corrections. Close/cancel intent now linearizes with allocation/resume
@@ -20,8 +48,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   [Process evidence and remaining limits](ISSUE_52_PROCESS_LIFETIME.md).
   R4–R5 accepted and preserved; schema 3/history/refusal/FIFO/eight-unit accounting,
   creation-time containment and synchronous defaults unchanged. No full A1–A20
-  or Scheduled Task gate passed. **Next: project-manager
-  review of the pushed R6–R7 correction. Pending owner action: None.** No worker,
+  or Scheduled Task gate passed. **Historical next action was correction review,
+  now completed by 5980268720; current next action is above.** No worker,
   queued assembly/publication, retry, production access/change, restart, retention,
   polling, resource policy, upgrade, release/tag or merge/cutover. #48 OPEN/PAUSED,
   #28 unresolved, #13/#8 unstarted. Branch: `codex/capture-journal-handoff`.

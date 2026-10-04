@@ -1,6 +1,28 @@
 # Issue #52 — isolated Windows subprocess lifetime evidence
 
-## Focused R6–R7 correction checkpoint
+## Accepted process checkpoint and unpublished assembly use
+
+2026-10-04: [review 5980268720](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5980268720)
+**accepted `b2bff05f` R6–R7** and selected the internal unpublished-assembly
+boundary. Accepted corrections were preserved without another review-only task.
+The primitive now runs every required probe and FFmpeg sequentially through
+`OwnedProcess`, with fresh per-child before-resume authorization, reachable exact
+owners on uncertainty and no successor before exit/control release. Optional
+observers on `cancel/close` preserve streaming diagnostic tails through cleanup;
+existing defaults, containment, identity, irreversible cancellation and independent
+whole-job/EOF evidence remain unchanged. There is no overall assembly deadline.
+
+[Assembly contract, actual native/media evidence and limits](ISSUE_52_UNPUBLISHED_ASSEMBLY.md):
+**198 focused / 1,222 related / 2,162 full passes**; related six skips / 17 subtests,
+full seven skips / 19 subtests. Two generated AVC paths pass existing part,
+packet-DTS and deep-output validation with unchanged source/control hashes,
+unchanged synchronous frame timing and absent requested final paths. No queued
+session, durable launch record, sealed-input adapter, publication or settlement.
+No full A1–A20 or deployed Scheduled Task gate is inferred. #52 stays OPEN/SINGLE
+ACTIVE; #48 OPEN/PAUSED; #28 unresolved. Next is project-manager review of the
+pushed assembly primitive, not automatic worker integration or cutover.
+
+## Historical focused R6–R7 correction checkpoint — now accepted
 
 2026-10-04: [review 5979948212](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979948212)
 retained `86b9d4d4` creation-time containment but required startup/close fencing

@@ -203,8 +203,8 @@ class OwnedProcess:
                 return self.evidence()
             time.sleep(min(0.005, max(0, deadline - time.monotonic())))
 
-    def cancel(self, timeout=5):
-        """Request termination only of this exact job, then independently prove whole-job exit."""
+    def cancel(self, timeout=5, *, observer=None):
+        """Terminate the exact job, proving exit while optionally observing final chunks."""
         _timeout(timeout)
         with self.lock:
             self.cancel_requested = True
@@ -216,10 +216,10 @@ class OwnedProcess:
             except BaseException as error:
                 self._record(error)
                 self.state = "exit_unknown"
-        return self.wait(timeout)
+        return self.wait(timeout, observer=observer)
 
-    def close(self, timeout=5):
-        """Fence launch and bound cleanup; unread-stream release is explicitly incomplete."""
+    def close(self, timeout=5, *, observer=None):
+        """Fence launch and bound cleanup, retaining optional streaming tail observation."""
         deadline = time.monotonic() + _timeout(timeout)
         with self.lock:
             # Close intent linearizes with allocation/resume, even without a child.
@@ -228,9 +228,9 @@ class OwnedProcess:
             needs_cancel = (self.native is not None and self.native.process is not None
                             and self.state != "confirmed_exited")
         if needs_cancel:
-            self.cancel(max(0, deadline - time.monotonic()))
+            self.cancel(max(0, deadline - time.monotonic()), observer=observer)
         elif self.state == "confirmed_exited" and not self.closed:
-            self.wait(max(0, deadline - time.monotonic()))
+            self.wait(max(0, deadline - time.monotonic()), observer=observer)
         with self.lock:
             if self.native is not None:
                 if self.native.process is not None and self.state != "confirmed_exited":

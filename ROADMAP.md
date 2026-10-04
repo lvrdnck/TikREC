@@ -2110,8 +2110,28 @@ whole-job exit. Baseline **14 failed / three controls passed**; corrected focuse
 **91 passed**; related **675 passed / two skips**; full isolated **2,115 passed /
 seven skips / 19 subtests passed**. Native barrier/cleanup/
 tail/EOF-fault/time-bound evidence and unchanged FFmpeg hashes/deep validation are
-in the process report. R4–R5 and schema 3 are preserved. **Current next action:
-PM review of pushed R6–R7; no automatic integration.**
+in the process report. R4–R5 and schema 3 are preserved. Review **5980268720**
+**accepted `b2bff05f` R6–R7** and selected only the unpublished assembly primitive.
+That slice is **COMPLETE FOR REVIEW** on the same isolated branch: explicit closed
+FLVs -> attempt-owned MP4 candidate, shared copy/libx264 planning/timing/settings,
+sequential contained probes/FFmpeg and fresh before-resume authorization. Complete
+streaming diagnostics/EOF/native exit/cleanup establish execution readiness;
+input-decode health, media validation and publication remain distinct. Failed
+partials/scratch and unknown-lifetime owners are retained; no successor is allowed
+before exit proof and control release. Candidate collisions, including creation
+during authorization and actual FFmpeg occupied-output exit 0, fail closed.
+No blanket assembly deadline or new resource policy. Public synchronous defaults,
+promotion and failed-output cleanup remain unchanged. Structure extraction
+`c22c482f` is committed separately. Final **198 focused / 1,222 related / 2,162
+full passes**; related six skips / 17 subtests, full seven skips / 19 subtests.
+Matching/differing generated AVC candidates pass part/packet-DTS/deep validation,
+unchanged source/raw/arrival/control fixture hashes and synchronous frame timing;
+requested final destinations remain absent. See
+[ISSUE_52_UNPUBLISHED_ASSEMBLY.md](ISSUE_52_UNPUBLISHED_ASSEMBLY.md).
+Durable attempts/launch persistence, native sealed-input authority, queue worker,
+publication/settlement/retry/service/retention/migration/cutover remain unstarted.
+**Current next action: PM review of the pushed assembly primitive; no automatic
+worker integration, queued-session use or cutover.**
 No full A1–A20 or deployed Scheduled Task gate passed; owner decisions: None.
 Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;
 #28 unresolved, #13/#8 and release/remote-worker work are separate.
