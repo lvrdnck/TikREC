@@ -7,34 +7,31 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE / OPEN — focused R4–R5 COMPLETE FOR REVIEW
-  (2026-10-04):** [review 5978780261](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5978780261)
-  retained `ea263199` and required only post-H cleanup and marker-disposition
-  corrections before worker integration. Confirmed/reconciled H now remains
-  task/evidence-owned after native teardown failure; capture lease release and
-  projection run independently, with post-H diagnostics retained. Marker disposition
-  is literal assembly/empty and must match any committed seal before receipt lookup;
-  invalid/mismatched inspection refuses without journal/evidence mutation.
-  Earlier review 5971119601 accepted `a96bd6e9` R1–R3. Real local
-  fixture LIVE/writer/raw/manifest/connection capture now closes and supplies held
-  native Windows evidence to durable H before journal-backed slot reuse. Distinct
-  verified returning rooms and two new real writers preserve old UUIDs/paths/raw/FIFO.
-  Explicit source-ended result/marker retain requested MP4 pending intent; worker
-  unstarted, production synchronous defaults unchanged. Schema **3** pins/counts
-  admitted-empty evidence without a task; schemas 1/2 are preserved/refused.
-  Failed/ambiguous closure stays held; replay never grants fresh writer permission.
-  Native/crash/compatibility/retention-plan/synthetic-media results and partial
-  A1–A20 coverage are in [the bridge report](ISSUE_52_CAPTURE_HANDOFF.md).
-  R4–R5 baseline **17 failed**; corrected focused **228 passed**, related **1,221
-  passed / six skips / two subtests**, full **2,024 passed / seven skips /
-  19 subtests passed**; synthetic deep validation regressions pass. Initial bridge
-  211/2,007 results are historical in the report, not current correction results.
+- **Issue #52 SINGLE ACTIVE / OPEN — isolated subprocess foundation COMPLETE FOR REVIEW
+  (2026-10-04):** [review 5979465363](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979465363)
+  **accepted `3d26a7bc` R4–R5** and selected only the Windows process-lifetime slice.
+  `OwnedProcess` binds session/attempt UUIDs, associates a private kill-on-close job
+  during suspended creation, requires fresh caller authorization before resume,
+  retains exact native handles/creation identity, and bounds wait/cancel/streams/
+  cleanup. Native-confirmed whole-job exit is distinct from unknown lifetime;
+  uncertainty retains control and grants no retry, task or media completion.
+  Actual disposable owner-death/descendant/last-handle/nesting/fault evidence and
+  separate FFmpeg candidate/input hashes/deep validation are in
+  [the process report](ISSUE_52_PROCESS_LIFETIME.md). Final focused **71 passed**;
+  related **655 passed / two skips**; full isolated **2,095 passed / seven skips /
+  19 subtests passed**. Generated scratch media deep validation passed. R4–R5 regressions are
+  preserved; their historical 228/1,221/2,024 results remain in
+  [the bridge report](ISSUE_52_CAPTURE_HANDOFF.md). Schema **3**, old-schema refusal,
+  H ordering/FIFO/stop/admission/eight-unit accounting and synchronous defaults
+  remain unchanged. No queued session is consumed. No full A1–A20 case is passed;
+  only partial A6/A12/A19 process evidence is added.
   Branch: `codex/capture-journal-handoff`, isolated from the deployed editable checkout.
-  **Next: project-manager review of R4–R5 and the actual bridge proof limits before
-  selecting another integration slice. Pending owner action: None.** Service/API/
-  monitor/worker/publication/storage-recovery/retention readers/cutover gates remain.
-  No production mutation/restart, #48 polling, release or tag. #48 OPEN/PAUSED,
-  #28 unresolved, #13/#8 unstarted. Historical journal results remain below/in its report.
+  **Next: project-manager review of the pushed process
+  slice before selecting another integration task. Pending owner action: None.**
+  Scheduler/durable launch/input reopening/assembly/publication/settlement/service/
+  API/monitor/storage-recovery/retention-reader/migration/cutover gates remain.
+  No production mutation/restart, #48 polling, release/tag or merge. #48 OPEN/PAUSED,
+  #28 unresolved, #13/#8 unstarted. Historical journal results remain in their report.
 
 - **Issue #48 OPEN / explicitly PAUSED (owner decision, 2026-10-03):**
   Implementation/deployment passed; natural-recording validation did not.

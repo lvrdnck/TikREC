@@ -2,6 +2,18 @@
 
 ## Review status and authority
 
+2026-10-04: [review 5979465363](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979465363)
+**accepted `3d26a7bc` R4–R5** and selected the isolated Windows subprocess owner.
+That process boundary is implemented for review on the same isolated branch:
+single-use session/attempt UUID, creation-time JOB_LIST containment, suspended
+authorization, exact handles/creation identity, bounded streams/cancellation and
+native whole-job exit evidence. Synchronous defaults and schema 3 are unchanged.
+[Actual native/media tests, support limits and partial A6/A12/A19 evidence](ISSUE_52_PROCESS_LIFETIME.md).
+No worker, queued assembly/publication, settlement, service wiring or cutover is
+implemented; no full A1–A20 service gate is passed. #52 remains OPEN/SINGLE ACTIVE,
+#48 OPEN/PAUSED, #28 unresolved. Next is project-manager review of this slice;
+no owner product decision is pending. The earlier checkpoints below are historical.
+
 2026-10-04: **focused R4–R5 corrections complete for review on the isolated bridge.**
 [Review 5978780261](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5978780261)
 retains `ea263199` but requires an explicit confirmed-H cleanup boundary and exact
@@ -257,12 +269,20 @@ detached thread cannot implement the receipt ordering below. Keep direct CLI
 behavior compatible while exposing the required internal phase boundary.
 
 Each attempt's FFmpeg must belong to a Windows Job Object with kill-on-close;
-start suspended, assign before resume, and retain the job/process handles.
+associate it during suspended creation using STARTUPINFOEX / JOB_LIST, authorize
+identity before resume, and retain exact thread/job/process handles. A later
+create-then-assign sequence leaves an owner-death gap and is not sufficient.
 Persist PID AND creation time / attempt token. Failure to establish child control
 fails the attempt before execution. Process death must not leave a writing child
 which a replacement finalizer can race. Job Objects support grouped child
 lifetime control; nested-job/Task Scheduler behavior needs native acceptance,
 not assumption. [Windows Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
+The isolated `OwnedProcess` foundation now implements this native boundary;
+the later scheduler must independently validate/persist its durable attempt
+claim in the before-resume hook. The runner's supplied token is not permission,
+its exit evidence is not media/task completion, and unknown exit cannot become
+`AttemptExitProof` or authorize a replacement. The [process report](ISSUE_52_PROCESS_LIFETIME.md)
+records exact support, callback bounds and remaining deployment/integration gates.
 
 Record progress heartbeat independently of capture heartbeat. Proposed review
 ideas (NOT approved): a five-minute media-progress-only kill rule is unsafe.

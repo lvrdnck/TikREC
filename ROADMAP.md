@@ -2082,17 +2082,26 @@ Initial `ea263199` verification: focused **211 passed**, full isolated
 **2,007 passed / seven skips / 19 subtests**;
 native process-death/locking, real raw/control inventory and synthetic deep media
 validation pass within the isolated scope. Review 5978780261 retained the direction
-and required only R4–R5 before another integration slice. Those corrections are
-**COMPLETE FOR REVIEW** on the same branch: confirmed H survives later native
+and required only R4–R5 before another integration slice. Those corrections were
+**ACCEPTED at `3d26a7bc` by review 5979465363**: confirmed H survives later native
 teardown with independent capture-lease release and post-H diagnostics; exact
 marker disposition must match the committed seal and invalid/mismatched inspection
 refuses without mutation. Baseline **17 failed**; corrected focused **228 passed**,
 related **1,221 passed / six skips / two subtests**, full isolated **2,024 passed /
 seven skips / 19 subtests**. Schema 3/history/refusal/FIFO/accounting/native trust
 and all A1–A20 proof limitations are unchanged.
-The worker is unstarted, no production cutover occurred and full integration gates
-remain outstanding. Next: project-manager review of R4–R5 and the bridge proof limits
-before selecting another slice. No further owner implementation decision is pending. See
+That review selected only the isolated Windows process-lifetime foundation. It
+now provides session/attempt-bound single-use creation-time JOB_LIST containment,
+suspended authorization, exact identity/handles, bounded streams/wait/cancel/
+cleanup and whole-job exit evidence, **COMPLETE FOR REVIEW** on the same branch.
+Final focused **71 passed**; related **655 passed / two skips**; full isolated
+**2,095 passed / seven skips / 19 subtests passed**. Actual owner-death/descendant/last-handle/nesting/fault
+and generated FFmpeg scratch validation evidence is in
+[ISSUE_52_PROCESS_LIFETIME.md](ISSUE_52_PROCESS_LIFETIME.md). R4–R5 tests and schema 3
+are preserved. Partial A6/A12/A19 evidence adds no full service acceptance.
+The scheduler/assembly/publication/service worker is unstarted; no production
+cutover occurred. Next: project-manager review of the
+pushed process slice before selecting another task. No owner decision is pending. See
 [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
 Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;
 #28 unresolved, #13/#8 and release/remote-worker work are separate.

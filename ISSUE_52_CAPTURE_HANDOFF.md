@@ -2,6 +2,13 @@
 
 ## Authority and current checkpoint
 
+2026-10-04: [review 5979465363](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979465363)
+**accepted `3d26a7bc` R4–R5**. Those regressions remain unchanged. The next isolated
+process-lifetime foundation is implemented for review; [its separate report](ISSUE_52_PROCESS_LIFETIME.md)
+records native evidence and remaining A6/A12/A19 gates. It consumes no queued
+session and adds no service/publication/cutover claim. Earlier review-pending
+wording below describes the historical R4–R5 delivery checkpoint.
+
 2026-10-04: focused R4–R5 corrections are **complete for project-manager review** on
 `codex/capture-journal-handoff`. #52 remains **OPEN / SINGLE ACTIVE**, #48
 **OPEN / PAUSED**, and #28 unresolved. Production capture availability is not
