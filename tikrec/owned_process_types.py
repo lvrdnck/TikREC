@@ -37,6 +37,7 @@ class ProcessEvidence:
     error: BaseException | None
     diagnostics: tuple[BaseException, ...]
     diagnostics_dropped: int = 0
+    stream_status: tuple[str, str] = ("not_open", "not_open")
 
 
 class ProcessOwnerError(RuntimeError):

@@ -2,6 +2,20 @@
 
 ## Review status and authority
 
+2026-10-04: [review 5979948212](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979948212)
+retained `86b9d4d4` containment and required only R6–R7 before integration.
+Those corrections now fence validation/allocation/resume against irreversible
+close/cancel intent and reconcile final stdout/stderr EOF separately from proved
+whole-job exit. Bounded pending/incomplete stream evidence preserves tail bytes,
+prefix/drop accounting and first-error diagnostics. Baseline **14 failed / three
+controls passed**; corrected focused **91 passed**; related **675 passed / two
+skips**; full isolated **2,115 passed / seven skips / 19 subtests passed**.
+[Actual correction evidence and unchanged gates](ISSUE_52_PROCESS_LIFETIME.md).
+R4–R5 remain accepted; schema 3, containment and synchronous defaults unchanged.
+No full A1–A20 or deployed Scheduled Task acceptance is inferred. #52 stays
+OPEN/SINGLE ACTIVE; #48 paused; #28 unresolved. Next is correction review, not
+automatic integration. Earlier checkpoints below describe historical delivery.
+
 2026-10-04: [review 5979465363](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979465363)
 **accepted `3d26a7bc` R4–R5** and selected the isolated Windows subprocess owner.
 That process boundary is implemented for review on the same isolated branch:

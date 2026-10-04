@@ -57,6 +57,13 @@ def managed_process(monkeypatch):
     for owner in owners:
         owner._fault = lambda _: None
         try:
+            if owner.closed and owner.native is not None and owner.native.process is not None:
+                # A baseline lifecycle bug can hide controls behind closed=True.
+                # The independent guard already proved exit; release exact handles.
+                code, active = owner.native.status()
+                assert code is not None and active == 0
+                owner.native.close()
+                continue
             assert owner.close(5).state in {"not_created", "confirmed_exited"}
         except BaseException as error:
             errors.append(error)

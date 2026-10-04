@@ -7,7 +7,26 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE / OPEN — isolated subprocess foundation COMPLETE FOR REVIEW
+- **Issue #52 SINGLE ACTIVE / OPEN — focused R6–R7 COMPLETE FOR REVIEW
+  (2026-10-04):** [review 5979948212](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979948212)
+  retained `86b9d4d4` containment and selected only startup/close fencing and final
+  stream corrections. Close/cancel intent now linearizes with allocation/resume
+  and never resets; confirmed exit and per-stream pending/complete/incomplete
+  EOF evidence are separate. Tail delivery/prefix/drop accounting survives exit,
+  and final stream faults/timeouts retain proved process exit. Baseline **14 failed /
+  three controls passed**, corrected focused **91 passed**; related **675 passed /
+  two skips**; full isolated **2,115 passed / seven skips / 19 subtests passed**.
+  Generated FFmpeg fixture hashes and existing deep validation pass.
+  [Process evidence and remaining limits](ISSUE_52_PROCESS_LIFETIME.md).
+  R4–R5 accepted and preserved; schema 3/history/refusal/FIFO/eight-unit accounting,
+  creation-time containment and synchronous defaults unchanged. No full A1–A20
+  or Scheduled Task gate passed. **Next: project-manager
+  review of the pushed R6–R7 correction. Pending owner action: None.** No worker,
+  queued assembly/publication, retry, production access/change, restart, retention,
+  polling, resource policy, upgrade, release/tag or merge/cutover. #48 OPEN/PAUSED,
+  #28 unresolved, #13/#8 unstarted. Branch: `codex/capture-journal-handoff`.
+
+- **Issue #52 historical subprocess-foundation delivery — review required R6–R7
   (2026-10-04):** [review 5979465363](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979465363)
   **accepted `3d26a7bc` R4–R5** and selected only the Windows process-lifetime slice.
   `OwnedProcess` binds session/attempt UUIDs, associates a private kill-on-close job
@@ -26,8 +45,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   remain unchanged. No queued session is consumed. No full A1–A20 case is passed;
   only partial A6/A12/A19 process evidence is added.
   Branch: `codex/capture-journal-handoff`, isolated from the deployed editable checkout.
-  **Next: project-manager review of the pushed process
-  slice before selecting another integration task. Pending owner action: None.**
+  **Review outcome: foundation retained; R6–R7 required. Current next action is
+  recorded above. Pending owner action: None.**
   Scheduler/durable launch/input reopening/assembly/publication/settlement/service/
   API/monitor/storage-recovery/retention-reader/migration/cutover gates remain.
   No production mutation/restart, #48 polling, release/tag or merge. #48 OPEN/PAUSED,

@@ -1,5 +1,110 @@
 # Issue #52 — isolated Windows subprocess lifetime evidence
 
+## Focused R6–R7 correction checkpoint
+
+2026-10-04: [review 5979948212](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5979948212)
+retained `86b9d4d4` creation-time containment but required startup/close fencing
+and final-stream reconciliation before integration. R4–R5 remain accepted.
+The existing isolated branch was pulled (already current/clean), repository and
+open issues reconciled, then MODEL GATE / PROCEED used GPT-6.1 Sol — High.
+#52 stays OPEN / SINGLE ACTIVE; #48 OPEN / PAUSED; #28 unresolved.
+
+**R6:** close now commits irreversible cancellation intent under the same lock
+that guards native allocation and resume. Startup checks that intent both before
+allocation (after unlocked validation) and before resume. Close computes whether
+termination is required only after obtaining that lock; a prior read of an empty
+native process cannot skip required cleanup after creation wins. Intent is never
+cleared and `closed=True` only describes completed resource cleanup. The hook
+still runs outside the lock, permitting cancellation while authorization is
+blocked. Already-confirmed exit survives a stale-hook failure during cleanup.
+
+**R7:** `ProcessEvidence.stream_status` is an internal `(stdout, stderr)` tuple:
+`not_open`, `pending`, `complete` (native EOF observed), or `incomplete` (drain
+fault/bound reached without EOF). It is independent of process lifetime. Native
+zero-member/root-handle exit proof stays `confirmed_exited` during final stream
+faults or timeouts. A collection pass before status is not final-stream proof.
+After exit confirmation, polling uses bounded final batches, and wait repeats
+them until both EOFs, a stream fault or the supplied deadline. An empty available
+read without EOF remains pending; there is no single extra-read assumption.
+
+Each collection batch retains the existing eight × 8-KiB per-stream limit; a
+poll that first proves exit can perform an initial and a final batch. Subsequent
+confirmed-exit polls perform only the necessary final batch. Prefix capacities
+are unchanged. Observers are supplied per poll/wait call, not registered across
+calls; collected bytes update prefixes and dropped-byte counts once before an
+observer is invoked. A failing observer's chunk is not replayed; the original
+error remains even if later pipe EOF is reconciled. Counts describe bytes actually
+collected, and incomplete status explicitly leaves the unread remainder unknown.
+
+Wait leaves pending readers available for reconciliation; a fault/deadline makes
+incompleteness explicit. Close spends its remaining shared cancellation/drain
+budget before reader release. A normal close drains both EOFs. If a stream still
+fails or exceeds the bound, close can release it only with the retained incomplete
+status/error, while preserving native-confirmed exit and already collected bytes.
+Unknown **process** lifetime still retains all native controls. Creation faults
+can leave parent write copies open; after proved exit these are released before
+EOF draining, without replacing the original creation failure.
+
+### Reproduction and corrected evidence
+
+Regressions were added before implementation. Against unchanged `86b9d4d4`, the
+expanded baseline was **14 failed / three passing controls, 0.75 seconds**
+(`baseline-orderings.log`): five startup/cleanup expectations and nine tail/drain
+expectations failed. The real validation-gap close returned first, then the child
+actually wrote `forbidden.txt`. All three native tail fixtures returned confirmed
+exit with final stdout/stderr missing. Some state tests also expose absent stream
+completion metadata; those are contract gaps, not separate Windows failures.
+The earlier smaller baseline was 13 failed / one passed, labelled separately.
+
+Independent exact-job guard cleanup was strengthened for the baseline's hidden
+controls: after the guard proves zero members, it verifies the exact root object
+and releases handles directly without trusting the broken owner's `closed` flag.
+No baseline failure can strand that disposable job. No PID/name termination.
+
+Twenty new regression cases now distinguish portable native-double state evidence
+from real Windows evidence. Native barriers cover close winning validation,
+creation winning before three concurrent close/cancel callers, cleanup during
+blocked authorization, and resume winning before exact-job cleanup. Native tails
+are published only after initial collection, then actual root signaling and zero
+job membership are observed before the final collection. Tests cover stdout,
+stderr and both streams, prefix/drop accounting and no duplicate observation.
+
+Additional state cases require multiple bounded batches and delayed bytes after
+an empty final read. Native final ReadFile failure retains exit proof and permits
+tail reconciliation; a duplicated test-only parent writer deliberately withholds
+stdout EOF after zero job members, proving a bounded incomplete result and later
+EOF reconciliation after that writer closes. All extra handles and test threads
+have bounded independent cleanup. No reader thread was introduced.
+
+- Final focused runner selection: **91 passed, 4.49 seconds** (`focused-final.log`).
+- Final related process/finalization/capture/journal/lifecycle/live/writer/recovery
+  selection: **675 passed / two skips, 76.15 seconds** (`related.log`).
+- Final full isolated suite: **2,115 passed / seven skips / 19 subtests passed,
+  230.21 seconds** (`full.log`).
+- The generated FFmpeg fixture reran with unchanged command/media settings and
+  input hash; existing part and deep output validation passed. The retained
+  focused input/candidate hashes equal the historical values below byte-for-byte.
+- Existing containment, owner-death, descendants, nesting, identity, streams,
+  cancellation, native cleanup and R4–R5 coverage are preserved.
+
+New logs/config/state/media are external and disposable under
+`C:\Users\Leandro\TikREC-tests\issue52-r6-r7-20261004`, using the same isolated
+configuration/temp/import harness and selection patterns recorded below.
+The first corrected run passed 88 cases; expanded coverage passed 91. Duration
+inspection exposed parent-owned write endpoints postponing EOF after creation
+faults; releasing them before final drain removed those artificial timeouts.
+Only the final run above describes the current correction code.
+
+No containment, journal schema/public interface or synchronous launch default is
+changed. No queued session is consumed. No production access/mutation, worker,
+assembly/publication, settlement/retry, migration/cutover, restart, retention
+execution against user data, #48 polling, resource policy/benchmark, upgrade,
+release/tag or merge occurred. The stuck-native-API/uncooperative-callback limits,
+deployed Scheduled Task gate and all full A1–A20/integration gates remain. Next
+is project-manager review of the pushed R6–R7 correction; no owner decision pending.
+
+## Historical `86b9d4d4` process-foundation checkpoint
+
 ## Authority and scope
 
 2026-10-04: the process owner is implemented on `codex/capture-journal-handoff`,
@@ -143,10 +248,10 @@ All logs, child barriers and media live outside Git and production roots under
 The harness redirects APPDATA, LOCALAPPDATA, XDG configuration/state, TEMP/TMP
 and pytest basetemp; it imports the isolated worktree and disables pytest cache.
 
-- Final focused runner selection: **71 passed, 3.90 seconds** (`focused-final-identity.log`).
-- Final related process/finalization/capture/journal/lifecycle/live/writer/recovery
+- Historical focused runner selection: **71 passed, 3.90 seconds** (`focused-final-identity.log`).
+- Historical related process/finalization/capture/journal/lifecycle/live/writer/recovery
   selection: **655 passed / two skips, 75.34 seconds** (`related-final.log`).
-- Final full isolated suite: **2,095 passed / seven skips / 19 subtests passed,
+- Historical full isolated suite: **2,095 passed / seven skips / 19 subtests passed,
   141.55 seconds** (`full-final.log`).
 - R4–R5 tests are preserved in the related/full selections; schema 3 and existing
   refusal/history/FIFO/stop/admission/eight-unit accounting are unchanged.
@@ -192,6 +297,13 @@ under a new MODEL GATE. No automatic worker implementation or production cutover
 - [Job accounting information](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information)
   supplies whole-job membership evidence; a job handle signal alone is not used
   as a general proof that every member exited.
+- [PeekNamedPipe](https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-peeknamedpipe)
+  reports currently available bytes; availability is not proof of final stream
+  completion. Its synchronous-handle API-stall caveat remains a native trust limit.
+- [Redirected child output example](https://learn.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output)
+  distinguishes output draining from process creation and requires parent write
+  copies to close for EOF. This runner uses bounded availability polling/EOF
+  reconciliation instead of copying the example's blocking read loop.
 
 These references explain the mechanism. The tests supply only the empirical
 native evidence and limits described above.

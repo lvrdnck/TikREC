@@ -35,6 +35,7 @@ class OwnedProcess:
         self.code, self.active, self.cancel_requested = None, None, False
         self.buffers, self.dropped, self.errors = {"stdout": bytearray(), "stderr": bytearray()}, [0, 0], []
         self.errors_dropped = 0
+        self.streams_incomplete = False
         self.lock, self._fault = RLock(), lambda _: None
 
     def __enter__(self):
@@ -65,12 +66,19 @@ class OwnedProcess:
             return ProcessEvidence(self.session_id, self.attempt_token, self.state, self.identity,
                 self.code, self.active, bytes(self.buffers["stdout"]), bytes(self.buffers["stderr"]),
                 tuple(self.dropped), self.cancel_requested, self.errors[0] if self.errors else None,
-                tuple(self.errors[1:]), self.errors_dropped)
+                tuple(self.errors[1:]), self.errors_dropped, self._stream_status())
+
+    def _stream_status(self):
+        if self.native is None or self.state == "not_created":
+            return ("not_open", "not_open")
+        return tuple("complete" if name in self.native.streams.eof else
+                     "incomplete" if self.streams_incomplete else "pending"
+                     for name in ("stdout", "stderr"))
 
     def start(self, executable, arguments, *, cwd, before_resume):
         """Create contained/suspended; authorize native identity before exact-thread resume."""
         with self.lock:
-            if self.started or self.closed:
+            if self.started or self.closed or self.cancel_requested:
                 raise ValueError("owned process is single-use")
             self.started = True
         try:
@@ -84,6 +92,10 @@ class OwnedProcess:
             if not callable(before_resume):
                 raise ValueError("fresh before-resume authorization hook required")
             with self.lock:
+                # Validation runs outside the lock; close/cancel can win there.
+                # Irreversible intent must be checked before allocating controls.
+                if self.closed or self.cancel_requested:
+                    raise ValueError("closed/cancelled attempt cannot create child")
                 self.native = NativeChild()
                 self.native.create(executable.resolve(), arguments, cwd, self._creation_boundary)
                 self.identity = ProcessIdentity(self.session_id, self.attempt_token, *self.native.initial)
@@ -94,7 +106,7 @@ class OwnedProcess:
             with self.lock:
                 if type(authorized) is not ProcessIdentity or authorized != self.identity:
                     raise ValueError("before-resume identity/authorization mismatch")
-                if self.cancel_requested or self.state != "suspended":
+                if self.closed or self.cancel_requested or self.state != "suspended":
                     raise ValueError("cancelled/stale suspended launch cannot resume")
                 self.native.verify(self.native.initial)
                 self._fault("before_resume")
@@ -106,7 +118,8 @@ class OwnedProcess:
             with self.lock:
                 self._record(error)
                 if self.native is not None and self.native.process is not None:
-                    self.state = "exit_unknown"
+                    if self.state != "confirmed_exited":
+                        self.state = "exit_unknown"
                     # A fault immediately after creation must not discard obtainable
                     # creation evidence before bounded cleanup closes the held object.
                     if self.identity is None:
@@ -139,34 +152,54 @@ class OwnedProcess:
     def poll(self, *, observer=None):
         """Poll exact handles and bounded diagnostic chunks; descendants prevent exit proof."""
         with self.lock:
-            if self.native is None or self.closed or self.state == "confirmed_exited":
+            if self.native is None or self.closed:
                 return self.evidence()
-            try:
-                if self.native.process is not None:
+            if self.state != "confirmed_exited":
+                try:
+                    if self.native.process is not None:
+                        self._collect(observer)
+                    self.code, self.active = self.native.status()
+                    if self.code is not None and self.active == 0:
+                        self.state = "confirmed_exited"
+                    elif self.state != "suspended":
+                        self.state = "running"
+                except BaseException as error:
+                    self._record(error)
+                    self.state = "exit_unknown"
+            if self.state == "confirmed_exited" and self._stream_status() != ("complete", "complete"):
+                # Exit and pipe EOF are independent. Repeated bounded batches
+                # reconcile buffered tails; stream errors cannot revoke exit proof.
+                try:
+                    # Creation faults can precede release of the parent's write
+                    # copies. After exit those copies must not prevent pipe EOF.
+                    self.native.streams.close_child()
                     self._collect(observer)
-                self.code, self.active = self.native.status()
-                if self.code is not None and self.active == 0:
-                    self.state = "confirmed_exited"
-                elif self.state != "suspended":
-                    self.state = "running"
-            except BaseException as error:
-                self._record(error)
-                self.state = "exit_unknown"
+                    self.streams_incomplete = False
+                except BaseException as error:
+                    self._record(error)
+                    self.streams_incomplete = True
             return self.evidence()
 
     def wait(self, timeout, *, observer=None):
-        """Bound whole-job waiting; timeout retains handles and supplies no exit proof."""
+        """Bound exit/EOF waiting; stream timeout preserves already confirmed exit."""
         deadline = time.monotonic() + _timeout(timeout)
         while True:
             result = self.poll(observer=observer)
-            if result.state in {"not_created", "confirmed_exited"}:
+            if result.state == "not_created":
+                return result
+            if result.state == "confirmed_exited" and (result.stream_status == ("complete", "complete")
+                                                       or "incomplete" in result.stream_status):
                 return result
             if result.state == "exit_unknown" and result.error is not None:
                 return result
             if time.monotonic() >= deadline:
                 with self.lock:
-                    self.state = "exit_unknown"
-                    self._record(TimeoutError("whole-job exit was not confirmed within wait bound"))
+                    if self.state == "confirmed_exited":
+                        self.streams_incomplete = True
+                        self._record(TimeoutError("diagnostic stream EOF was not confirmed within wait bound"))
+                    else:
+                        self.state = "exit_unknown"
+                        self._record(TimeoutError("whole-job exit was not confirmed within wait bound"))
                 return self.evidence()
             time.sleep(min(0.005, max(0, deadline - time.monotonic())))
 
@@ -175,20 +208,29 @@ class OwnedProcess:
         _timeout(timeout)
         with self.lock:
             self.cancel_requested = True
-            if self.native is None or self.closed or self.state == "confirmed_exited":
+            if self.native is None or self.closed:
                 return self.evidence()
             try:
-                self.native.terminate()
+                if self.state != "confirmed_exited":
+                    self.native.terminate()
             except BaseException as error:
                 self._record(error)
                 self.state = "exit_unknown"
         return self.wait(timeout)
 
     def close(self, timeout=5):
-        """Bound cleanup; unknown lifetime retains exact handles for explicit reconciliation."""
-        _timeout(timeout)
-        if self.native is not None and self.native.process is not None and self.state != "confirmed_exited":
-            self.cancel(timeout)
+        """Fence launch and bound cleanup; unread-stream release is explicitly incomplete."""
+        deadline = time.monotonic() + _timeout(timeout)
+        with self.lock:
+            # Close intent linearizes with allocation/resume, even without a child.
+            # closed=True is reserved for completed resource cleanup, never a reset.
+            self.cancel_requested = True
+            needs_cancel = (self.native is not None and self.native.process is not None
+                            and self.state != "confirmed_exited")
+        if needs_cancel:
+            self.cancel(max(0, deadline - time.monotonic()))
+        elif self.state == "confirmed_exited" and not self.closed:
+            self.wait(max(0, deadline - time.monotonic()))
         with self.lock:
             if self.native is not None:
                 if self.native.process is not None and self.state != "confirmed_exited":

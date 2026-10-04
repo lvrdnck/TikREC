@@ -2100,9 +2100,19 @@ and generated FFmpeg scratch validation evidence is in
 [ISSUE_52_PROCESS_LIFETIME.md](ISSUE_52_PROCESS_LIFETIME.md). R4–R5 tests and schema 3
 are preserved. Partial A6/A12/A19 evidence adds no full service acceptance.
 The scheduler/assembly/publication/service worker is unstarted; no production
-cutover occurred. Next: project-manager review of the
-pushed process slice before selecting another task. No owner decision is pending. See
+cutover occurred. The next action at that historical checkpoint was review of the
+pushed process slice; the current correction checkpoint follows. See
 [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md).
+Review **5979948212** retained `86b9d4d4` containment but selected R6–R7 corrections
+before integration. These now fence startup against close/cancel across validation,
+creation and resume, and reconcile final pipe EOF separately from native-confirmed
+whole-job exit. Baseline **14 failed / three controls passed**; corrected focused
+**91 passed**; related **675 passed / two skips**; full isolated **2,115 passed /
+seven skips / 19 subtests passed**. Native barrier/cleanup/
+tail/EOF-fault/time-bound evidence and unchanged FFmpeg hashes/deep validation are
+in the process report. R4–R5 and schema 3 are preserved. **Current next action:
+PM review of pushed R6–R7; no automatic integration.**
+No full A1–A20 or deployed Scheduled Task gate passed; owner decisions: None.
 Current production behavior remains synchronous. #52 stays OPEN, #48 OPEN/PAUSED;
 #28 unresolved, #13/#8 and release/remote-worker work are separate.
 
