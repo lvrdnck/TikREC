@@ -61,6 +61,7 @@ split between `test_attempt_scratch_windows.py` and
 
 ## Durable references
 
+- Implementation commit: `6fdacd37` on `codex/capture-journal-handoff`.
 - [PM scope decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5991952747)
 - [Current issue #52 design checkpoint](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md)
 - [Prior attempt/launch evidence](ISSUE_52_DURABLE_LAUNCH.md)

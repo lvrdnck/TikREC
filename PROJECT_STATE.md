@@ -29,7 +29,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   [ISSUE_52_DURABLE_SCRATCH.md](ISSUE_52_DURABLE_SCRATCH.md).
   #48 remains OPEN/PAUSED and #28 unresolved. Preserve all existing capture,
   accounting, raw, room, path and original H evidence. Safe resume: pull this
-  branch and read the current #52 checkpoint/evidence report before continuing.
+  branch `codex/capture-journal-handoff`, inspect commit `6fdacd37`, and read the
+  current #52 checkpoint/evidence report before continuing. The implementation
+  commit is pushed; the branch remains isolated pending PM review.
 
 - **Historical checkpoint — Issue #52 durable attempt/child authority COMPLETE FOR REVIEW
   (2026-10-04):** [PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
