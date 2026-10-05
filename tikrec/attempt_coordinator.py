@@ -126,11 +126,11 @@ class AttemptCoordinator:
     def _resume(self, child, identity):
         self._fault("before_resume_fence")
         self.guard.revalidate()
+        if child.get("intent", {}).get("access") == "write":
+            self.scratch.assert_outputs_absent(child["intent"]["outputs"])
         with self.gate:
             require(not self.cancelled.is_set() and not self.closed and child["authorized"],
                     "local launch authorization revoked")
-            if child.get("intent", {}).get("access") == "write":
-                self.scratch.assert_outputs_absent(child["intent"]["outputs"])
             with self.journal.resume_fence(self.token, self.owner, self.revision,
                                            child["launch"], asdict(identity)):
                 yield
@@ -155,6 +155,7 @@ class AttemptCoordinator:
                 require(self.scratch is None, "attempt scratch reservation is single-use")
                 return AttemptScratch.reserve(self, helpers)
             except BaseException as original:
+                self.cancelled.set()
                 if self.scratch is not None:
                     self.scratch.hold(original)
                 raise AttemptError(self, original) from original
@@ -216,7 +217,19 @@ class AttemptCoordinator:
                     self.guard.close()
                 except BaseException as error:
                     self._error(error)
-            if safe and self.scratch is not None and self.scratch.candidate_ready:
-                scratch_safe = self.scratch.close_candidate_protection()
+            if self.scratch is not None:
+                if safe and self.scratch.candidate_ready:
+                    try:
+                        self.scratch.close_candidate_protection()
+                    except BaseException as error:
+                        self._error(error)
+                protection = self.scratch.protection_evidence()
+                scratch_safe = not protection["workspace_retained"] and not protection["artifacts_retained"]
             self.closed = safe and scratch_safe and (self.guard is None or self.guard.closed)
             return self.closed
+
+    def cleanup_evidence(self):
+        """Distinguish execution revocation from complete local resource cleanup."""
+        with self.run_lock:
+            return {"execution_revoked": self.cancelled.is_set(), "cleanup_complete": self.closed,
+                    "scratch": None if self.scratch is None else self.scratch.protection_evidence()}

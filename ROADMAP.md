@@ -2045,10 +2045,25 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current 2026-10-05 slice:** PM decision narrows work to durable scratch and
+**Current correction task (2026-10-05):** [PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
+requires only R8–R10 and the specified verification before scratch acceptance for
+successor integration. Preserve first failures and partial native owners; report
+unresolved scratch protection as incomplete cleanup; recheck the complete
+inventory and exact artifact evidence before binding/sealing. The two CLI failures
+are reproduced on accepted and reviewed code under synthetic isolated configured
+defaults; the fixture now isolates unset defaults without changing product
+defaults or assertions.
+Actual Windows supervisor death, scratch cancellation/descendant/unknown-status/
+diagnostic/cleanup checks pass. Final tree: **71 focused passed; 593 related passed
+/ 2 skips; 2,339 full passed / 9 skips / 19 subtests passed**, no failures.
+Status: corrections delivered for PM review; no successor integration is
+authorized. Schema 5 and all previously accepted foundations remain preserved.
+
+**Historical initial 2026-10-05 slice:** PM decision narrows work to durable scratch and
 unpublished-candidate ownership, based on accepted `3d4e15ce`; this supersedes the
-earlier queue-connected assembly selection. Implementation is complete for PM
-review in an isolated branch. Schema 5 persists reservations, native workspace
+earlier queue-connected assembly selection. The initial implementation was
+delivered for review, which subsequently required R8–R10. Schema 5 persists
+reservations, native workspace
 identity, declared artifact observations, and candidate hold/seal state; schemas
 1–4 remain refused unchanged. Candidate validation remains `not_checked`, and
 publication remains `unpublished`. No queue-to-assembly integration, validation,
@@ -2175,7 +2190,7 @@ PAUSED with all natural criteria/raw policy intact; owner decisions: None.
 No full A1–A20/Scheduled Task gate, production access/change/restart, retention
 execution, #48 polling, dependencies/upgrades/resource policy, release/tag or merge.
 
-**Current durable attempt/launch checkpoint (2026-10-04):**
+**Historical durable attempt/launch checkpoint (2026-10-04):**
 
 [PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
 **accepted `44711e65`** and selected durable attempt/child launch with claimed

@@ -10,10 +10,20 @@ from .session_journal_types import ArtifactIdentity, digest, require
 
 
 class ScratchHandle(NativeHandle):
-    """Keep the exact scratch handle reachable until native close confirms success."""
+    """Retain exact partial acquisition and unconfirmed native close identity."""
+
+    def __init__(self, *args, **kwargs):
+        try:
+            super().__init__(*args, **kwargs)
+        except BaseException as original:
+            # Inherited construction already tries exact cleanup. A failed
+            # close exposes this owner explicitly, without traceback access.
+            if getattr(self, "handle", None) is not None:
+                original.scratch_native_owner = self
+            raise
 
     def close(self):
-        """Retain failed CloseHandle/_close identity so callers cannot lose ownership."""
+        """Keep a failed CloseHandle/_close reachable until native close confirms."""
         if self.handle is None:
             return
         if self.fd is not None:
@@ -36,6 +46,7 @@ class AttemptScratch:
         self.workspace = None
         self.created = False
         self.artifacts = {}
+        self.observed = None
         self.candidate_ready = False
         self.failure = None
 
@@ -70,10 +81,7 @@ class AttemptScratch:
         runner.scratch = scratch
         runner._transition("reserve_scratch", runner.journal.reserve_scratch, intent)
         runner._fault("after_scratch_intent")
-        try:
-            scratch._create()
-        except BaseException:
-            raise
+        scratch._create()
         return scratch
 
     def _create(self):
@@ -92,12 +100,20 @@ class AttemptScratch:
             self.intent["workspace"]["volume"], tuple(self.intent["workspace"]["components"])),
             "created scratch native identity conflicts")
         self._revalidate()
+        self._assert_empty()
         self.runner._transition("bind_scratch", self.runner.journal.bind_scratch,
                                 asdict(self.workspace.identity), self.workspace.stamp)
         self.runner._fault("after_scratch_bind")
+        self._revalidate()
+        self._assert_empty()
+
+    def _assert_empty(self):
+        """Refuse any unexplained entry before the one authorized writer starts."""
+        require(not sorted(entry.name for entry in os.scandir(self.path)),
+                "scratch inventory is not empty before writer")
 
     def _revalidate(self):
-        """Recheck catalog, parent and pinned workspace without database locks."""
+        """Recheck inputs, complete observed inventory and every held artifact unlocked."""
         self.runner.authority.assert_held()
         self.runner.guard.revalidate()
         require(self.workspace is not None and self.workspace.handle is not None,
@@ -107,10 +123,20 @@ class AttemptScratch:
         require(self.workspace.identity == ArtifactIdentity(
             self.intent["workspace"]["volume"], tuple(self.intent["workspace"]["components"])),
             "scratch namespace identity changed")
+        if self.observed is not None:
+            names = sorted(entry.name for entry in os.scandir(self.path))
+            require(names == [item["name"] for item in self.observed],
+                    "scratch inventory changed after observation")
+            for item in self.observed:
+                held = self.artifacts[item["name"]]
+                held.verify()
+                require(asdict(held.identity) == item["identity"] and held.size == item["size"]
+                        and held.stamp == item["stamp"], "scratch artifact evidence changed")
 
     def assert_outputs_absent(self, outputs):
         """Fence declared candidate/helper collisions at both process authorization edges."""
         self._revalidate()
+        self._assert_empty()
         declared = {item["name"] for item in self.intent["artifacts"]}
         require(set(outputs) <= declared, "writer requested undeclared scratch output")
         for name in outputs:
@@ -125,7 +151,6 @@ class AttemptScratch:
         """Run a separately authorized output child with explicit reserved artifacts."""
         outputs = tuple(outputs)
         require(outputs and len(outputs) == len(set(outputs)), "explicit unique output declarations required")
-        self.assert_outputs_absent(outputs)
         return self.runner.run_writer_child(executable, arguments, cwd=self.path,
             phase=phase, timeout=timeout, outputs=outputs)
 
@@ -134,11 +159,19 @@ class AttemptScratch:
         self._revalidate()
         names = sorted(entry.name for entry in os.scandir(self.path))
         declared = {item["name"] for item in self.intent["artifacts"]}
-        require(set(names) <= declared and set(outputs) <= set(names),
+        require(set(names) <= declared and set(outputs) == set(names),
                 "scratch contains unexplained or missing artifacts")
         observed = []
         for name in names:
-            held = ScratchHandle(self.path / name)
+            try:
+                held = ScratchHandle(self.path / name)
+            except BaseException as original:
+                partial = getattr(original, "scratch_native_owner", None)
+                if partial is not None:
+                    self.artifacts[name] = partial
+                for cleanup in getattr(original, "capture_cleanup_errors", ()):
+                    self.runner._error(cleanup)
+                raise
             self.artifacts[name] = held
             held.flush()
             require(held.identity.volume == self.workspace.identity.volume
@@ -147,6 +180,7 @@ class AttemptScratch:
                     "artifact native identity escaped scratch scope")
             observed.append({"name": name, "identity": asdict(held.identity),
                              "size": held.size, "stamp": held.stamp})
+        self.observed = observed
         self._revalidate()
         return observed
 
@@ -184,6 +218,7 @@ class AttemptScratch:
         require("candidate.mp4" in by_name and by_name["candidate.mp4"]["size"] > 0,
                 "candidate is empty or absent")
         self.runner._fault("after_candidate_created")
+        self._revalidate()
         self.runner._transition("bind_scratch_artifacts", self.runner.journal.bind_scratch_artifacts,
                                 launch, observed)
         self.runner._fault("after_artifact_bind")
@@ -191,12 +226,14 @@ class AttemptScratch:
         held = self.artifacts["candidate.mp4"]
         self._revalidate()
         sha = self._hash(held)
+        self._revalidate()
         require(held.size == candidate["size"] and held.stamp == candidate["stamp"],
                 "candidate changed while hashing")
         evidence = {**candidate, "sha256": sha, "input_decode": input_decode,
                     "diagnostics_hash": digest(child["diagnostics"])}
         self._revalidate()
         self.runner._fault("before_candidate_ready")
+        self._revalidate()
         self.runner._transition("seal_candidate", self.runner.journal.seal_candidate, launch, evidence)
         self.candidate_ready = True
         self.runner._fault("after_candidate_ready")
@@ -204,17 +241,27 @@ class AttemptScratch:
 
     def hold(self, original=None):
         """Keep all partials and exact native owners after failure or cancellation."""
-        self.failure = self.failure or original
-        record = self.runner.journal.scratch(self.runner.token)
-        if record is None or record["state"] in {"held", "candidate_ready"}:
-            return
-        first = self.failure or RuntimeError("attempt scratch cancelled before candidate sealing")
-        reason = {"first": repr(first)[:2048],
-                  "secondary": [repr(error)[:2048] for error in self.runner.errors[:32]]}
+        if self.failure is None:
+            self.failure = original
+        self.runner.cancelled.set()
         try:
+            record = self.runner.journal.scratch(self.runner.token)
+            if record is None or record["state"] in {"held", "candidate_ready"}:
+                return
+            first = (self.failure if self.failure is not None else
+                     RuntimeError("attempt scratch cancelled before candidate sealing"))
+            reason = {"first": repr(first)[:2048],
+                      "secondary": [repr(error)[:2048] for error in self.runner.errors[:32]]}
             self.runner._transition("hold_scratch", self.runner.journal.hold_scratch, reason)
         except BaseException as error:
             self.runner._error(error)
+
+    def protection_evidence(self):
+        """Report retained local handles separately from durable candidate state."""
+        return {"candidate_ready_local": self.candidate_ready,
+                "workspace_retained": self.workspace is not None and self.workspace.handle is not None,
+                "artifacts_retained": sorted(name for name, held in self.artifacts.items()
+                                              if held.handle is not None or held.fd is not None)}
 
     def close_candidate_protection(self):
         """Release local pins only after candidate ownership and child exit are durable."""

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from tikrec.capture import CaptureError, CaptureResult
 from tikrec.cli import main
@@ -716,6 +718,12 @@ class LiveCaptureTests(unittest.TestCase):
 
 
 class LiveCliTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # Injected CLI captures expect unset defaults. Isolate all default-config
+        # reads so a real user's output directory cannot change these assertions.
+        directory = self.enterContext(TemporaryDirectory())
+        self.enterContext(patch.dict(os.environ, {"APPDATA": directory, "XDG_CONFIG_HOME": directory}))
+
     def test_live_command_uses_the_injected_live_capture(self) -> None:
         calls: list[tuple[str, dict[str, object]]] = []
 

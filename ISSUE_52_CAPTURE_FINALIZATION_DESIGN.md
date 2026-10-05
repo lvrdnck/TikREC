@@ -1,6 +1,20 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Current scratch/candidate ownership checkpoint — 2026-10-05
+## Current scratch corrections R8–R10 — 2026-10-05
+
+[PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
+requires R8–R10 before accepting the scratch slice for successor integration.
+The current task preserves first failures and explicit partial native owners,
+reports retained scratch protection as incomplete cleanup, and revalidates the
+whole inventory plus all held artifact evidence before binding/sealing. Real
+supervisor-death and scratch-writer cancellation/descendant/diagnostic/cleanup
+checks supplement the original exception tests. Schema 5 and accepted R1–R7
+foundations remain intact. Final tree: **71 focused passed; 593 related passed /
+2 skips; 2,339 full passed / 9 skips / 19 subtests**, with no failures. Current
+status: corrections delivered for PM review; no successor integration authorized.
+Owner decisions: None. See [current evidence and limits](ISSUE_52_DURABLE_SCRATCH.md).
+
+## Historical first scratch delivery — correction review required
 
 [PM scope decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5991952747)
 narrows the next implementation slice to durable attempt scratch and unpublished
@@ -18,8 +32,8 @@ without migration. This does not add validation, publication, queue settlement,
 retry, scheduling, service integration, or full A1–A20 acceptance. See
 [durable scratch evidence and limits](ISSUE_52_DURABLE_SCRATCH.md).
 
-**Current status:** implementation complete for PM review; issue #52 remains
-OPEN/SINGLE ACTIVE. No automatic integration or production access/change/restart.
+**Historical status:** delivered for PM review; R8–R10 were subsequently required.
+Issue #52 remains OPEN/SINGLE ACTIVE. No integration or production changes.
 
 ## Current durable attempt/launch checkpoint - 2026-10-04
 

@@ -1,13 +1,38 @@
 # TikREC current state
 
-Last reviewed: 2026-10-04. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-05. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE / OPEN - durable scratch/candidate ownership COMPLETE
+- **Issue #52 OPEN / SINGLE ACTIVE — R8–R10 DELIVERED FOR PM REVIEW
+  (2026-10-05):** [PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
+  retains the scratch direction but does not accept `d35f946f` for successor
+  integration. After required pull and MODEL GATE / PROCEED, this task corrects
+  first-failure/partial-native-owner retention, truthful cleanup completion, and
+  complete scratch inventory/artifact revalidation. Schema 5 and all accepted
+  foundations remain intact. Real Windows regressions against unchanged reviewed
+  code reproduce five defects. An isolated comparison against `3d4e15ce` confirms
+  the two CLI failures depend on configured output-directory leakage; the CLI
+  fixture now isolates unset defaults. Final tree: **71 focused passed; 593
+  related passed / 2 skips; 2,339 full passed / 9 skips / 19 subtests passed**,
+  no failures. Thirteen real supervisor-death boundaries plus scratch writer
+  cancellation/descendant/status/diagnostic/native cleanup checks pass. Original
+  H/input/unrelated hashes and both separate generated media paths are preserved.
+  This is process-death evidence, not power-loss or atomic namespace proof.
+  Owner decisions: None. #48 OPEN/PAUSED and #28 unresolved. Next action: PM review
+  of only these corrections; no successor integration is authorized. Safe resume: pull
+  `codex/capture-journal-handoff`, read the linked review and
+  [scratch evidence](ISSUE_52_DURABLE_SCRATCH.md). Use `Refs #52`; historical
+  `6fdacd37` contains `Closes #52`, which must be addressed at a separately
+  reviewed integration and does not authorize closure. Do not rewrite history.
+  Branch: `codex/capture-journal-handoff`; final source/test files are committed
+  and pushed normally. No production access/change/restart or merge/release/tag.
+
+- **Historical first scratch delivery — corrections required by 5993102551:
+  durable scratch/candidate ownership COMPLETE
   FOR PM REVIEW (2026-10-05):** The 2026-10-05 PM decision accepts `3d4e15ce`
   as the internal
   durable-attempt/child-launch foundation and narrows the next slice to durable
@@ -19,9 +44,9 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   unvalidated candidate evidence after complete writer execution proof. No queue
   assembly, validation, publication, settlement, retry, scheduler or service work.
   Schema 5 adds the durable scratch/candidate ledger; schemas 1-4 remain unchanged
-  and are refused without migration. **Current status: implementation complete,
-  awaiting PM review; no owner decisions pending. Focused ownership/journal/
-  coordinator suite: **33 passed** after the final
+  and are refused without migration. **Historical delivery status: implementation complete,
+  awaiting PM review; review subsequently required R8–R10.** Focused ownership/
+  journal/coordinator suite: **33 passed** after the final
   test-file split. Full offline suite: **2,289 passed, 9 skipped, 19 subtests
   passed; 2 failed**. Both `test_live.py`
   assertions failed because the host's default Videos path is absolute while the
