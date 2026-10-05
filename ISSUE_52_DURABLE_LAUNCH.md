@@ -1,7 +1,12 @@
 # Issue #52 — durable attempt and child-launch authority
 
-> Historical checkpoint: the 2026-10-05 PM scope decision and current durable
-> scratch/candidate ownership slice are recorded in
+> Historical checkpoint: accepted launch/input foundations are now reused by
+> the schema-5 [internal journal-backed assembly](ISSUE_52_JOURNAL_ASSEMBLY.md),
+> authorized by PM decision 5999162236 after acceptance of `58e40084` R8–R10.
+> Declared writers may use cancellation-aware `timeout=None`; reader/default
+> finite waits remain intact. Optional trusted semantic `on_exit` interpretation
+> runs outside authority/SQLite/resume locks before success and cannot skip
+> independent exit/cleanup. Current scratch/design contracts are recorded in
 > [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md)
 > and [ISSUE_52_DURABLE_SCRATCH.md](ISSUE_52_DURABLE_SCRATCH.md).
 

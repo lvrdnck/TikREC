@@ -71,9 +71,12 @@ def finish_child(runner, child, timeout):
     return evidence
 
 
-def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outputs=()):
+def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outputs=(), on_exit=None):
     """Consume a reader or separately declared scratch-writer creation capability."""
-    _timeout(timeout)
+    # Only explicit scratch writers may run without an overall media deadline.
+    # Reader/default waits retain their accepted finite timeout contract.
+    require(timeout is not None or outputs, "unbounded reader wait refused")
+    cleanup_timeout = 5 if timeout is None else _timeout(timeout)
     require(runner.claimed is not None and runner.guard is not None and not runner.cancelled.is_set()
             and not runner.closed, "attempt cannot launch")
     executable, cwd = Path(executable), Path(cwd)
@@ -114,15 +117,22 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
         process.start(executable, arguments, cwd=cwd,
             before_resume=lambda identity: runner._authorize(child, identity),
             resume_guard=lambda identity: runner._resume(child, identity))
-        evidence = process.wait(timeout, observer=child["streams"].observe)
+        if timeout is None:
+            evidence = wait_writer(runner, child, cleanup_timeout)
+        else:
+            evidence = process.wait(timeout, observer=child["streams"].observe)
         if evidence.error is not None:
             raise evidence.error
         require(evidence.state == "confirmed_exited", "unknown whole-job lifetime")
         runner.guard.revalidate()
+        if on_exit is not None:
+            # Trusted semantic interpretation stays outside the resume/DB locks;
+            # failure cannot skip independent durable exit and native cleanup.
+            on_exit(evidence)
     except BaseException as error:
         original = error
     try:
-        evidence = finish_child(runner, child, timeout)
+        evidence = finish_child(runner, child, cleanup_timeout)
     except BaseException as secondary:
         if original is None:
             original = secondary
@@ -130,5 +140,21 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
             runner._error(secondary)
     if original is not None:
         raise original
-    require(evidence.root_exit_code == 0, "read-only child failed")
+    require(evidence.root_exit_code == 0, "owned child failed")
     return evidence
+
+
+def wait_writer(runner, child, drain_timeout):
+    """Poll a legitimately long writer; only its final EOF wait has a deadline."""
+    process, streams = child["process"], child["streams"]
+    while True:
+        require(not runner.cancelled.is_set(), "attempt execution revoked")
+        evidence = process.poll(observer=streams.observe)
+        if evidence.error is not None:
+            raise evidence.error
+        require(evidence.state != "exit_unknown", "unknown whole-job lifetime")
+        if evidence.state == "confirmed_exited":
+            return process.wait(drain_timeout, observer=streams.observe)
+        # Event waiting is outside all authority/SQLite/resume locks and wakes
+        # promptly when cancel/close revokes this invocation.
+        runner.cancelled.wait(0.005)

@@ -1,5 +1,18 @@
 # Issue #52 — isolated unpublished assembly evidence
 
+## Current connected successor — 2026-10-05
+
+[PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
+accepts the schema-5 scratch foundation and authorizes the internal
+[journal-backed adapter](ISSUE_52_JOURNAL_ASSEMBLY.md). It shares the media
+planning/command/diagnostic primitives documented here, with durable coordinator
+probes, exact held H inputs, reserved scratch and one contained writer. It never
+invokes this standalone object's independent directory/process ownership path.
+The standalone behavior and synchronous defaults remain unchanged. Its result
+type also permits absent session/workspace fields for unclaimed adapter failure
+snapshots; successful standalone and connected candidates still have exact paths.
+Earlier successor/checkpoint statements below are historical.
+
 ## Acceptance checkpoint and separate input precondition
 
 2026-10-04: [PM review 5981877279](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5981877279)

@@ -21,11 +21,11 @@ class AssemblyChild:
 class UnpublishedCandidate:
     """Execution readiness only; never validated, published or session completion."""
 
-    session_id: str
+    session_id: str | None
     attempt_token: str
     state: str
-    candidate: Path
-    work_scope: Path
+    candidate: Path | None
+    work_scope: Path | None
     plan: MediaPlan | None
     children: tuple[AssemblyChild, ...]
     input_decode: dict

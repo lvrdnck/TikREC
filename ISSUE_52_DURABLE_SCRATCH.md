@@ -1,6 +1,19 @@
 # Issue #52 — durable scratch and unpublished-candidate ownership
 
-## Current correction checkpoint — R8–R10, 2026-10-05
+## Current acceptance and adapter contract — 2026-10-05
+
+[PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
+accepts `58e40084` R8–R10 within their recorded limits. The new internal
+[journal-backed assembly](ISSUE_52_JOURNAL_ASSEMBLY.md) uses this exact scratch
+capability, preserving schema 5, empty authorization inventory, one writer and
+R8–R10. Copy's declared concat helper is produced only inside the contained
+writer whose code/text/FFmpeg argv are durable intent bytes. Writer `timeout=None`
+permits cancellation-aware long execution with bounded final drain/cleanup;
+readers/default waits remain finite. Trusted semantic diagnostics finish before
+same-attempt unpublished/not_checked sealing. Current delivery/evidence is in
+the linked adapter report; the correction checkpoint below is historical.
+
+## Historical correction checkpoint — R8–R10, 2026-10-05
 
 [PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
 retains the direction and requires focused corrections before successor

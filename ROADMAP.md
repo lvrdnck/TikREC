@@ -2045,7 +2045,27 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current correction task (2026-10-05):** [PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
+**Current internal assembly task (2026-10-05):** [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
+accepts `58e40084` and supersedes the previous pending-review/no-successor checkpoint.
+The one-shot adapter claims at most one sealed FIFO session through the durable
+coordinator, holds its exact original-H inputs, reuses copy/libx264 planning and
+seals only an unpublished/not_checked MP4 in the same attempt scratch. Concat
+helper work and FFmpeg are bound to one creation-contained writer intent;
+long execution remains cancellation-aware without a blanket assembly timeout.
+Complete semantic diagnostics precede sealing; R4–R10 and schema 5 remain intact.
+Both NEW connected generated media paths pass part/DTS/deep-output/frame-timing
+checks, with unchanged input/control/H/unrelated hashes and retained accounting/pins.
+Twelve actual connected supervisor-death boundaries plus native fault/cancellation
+coverage pass. Final tree: **129 focused passed; 651 related passed / 2 skips;
+2,389 full passed / 9 skips / 19 subtests passed**, no failures. Delivery complete
+for PM review; this is not issue/service/release acceptance.
+[Evidence and remaining limits](ISSUE_52_JOURNAL_ASSEMBLY.md). #52 remains OPEN/SINGLE
+ACTIVE; #48 OPEN/PAUSED and #28 unresolved. Owner decisions: None. PM review after
+delivery is the next action; no publication, settlement/refund, retry/adoption,
+scheduler/service/production/retention/migration/dependency/merge/release successor
+is authorized here. Synchronous CLI/service defaults remain unchanged.
+
+**Historical R8–R10 correction delivery — accepted by 5999162236:** [PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
 requires only R8–R10 and the specified verification before scratch acceptance for
 successor integration. Preserve first failures and partial native owners; report
 unresolved scratch protection as incomplete cleanup; recheck the complete

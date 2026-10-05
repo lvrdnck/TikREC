@@ -1,6 +1,45 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Current scratch corrections R8–R10 — 2026-10-05
+## Current internal journal-backed assembly — 2026-10-05
+
+[PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
+accepts `58e40084` and authorizes one internal adapter only. This supersedes the
+pending-review/no-successor statements for scratch; accepted foundations remain
+accepted. `JournalAssembly` requires explicit held authority and claims at most
+one FIFO sealed session through its `AttemptCoordinator`. Its exact original-H
+inputs stay protected throughout shared planning, durable probes, one contained
+writer and same-attempt unpublished/not_checked MP4 sealing.
+
+Scratch owns exclusive directory creation; there is no call to standalone
+`UnpublishedAssembly._prepare()`, independent owner or supervisor helper write.
+Copy binds trusted `-I -c` launcher code, concat text and exact FFmpeg argv in one
+writer intent. That already-contained writer exclusively creates/fsyncs
+`concat.ffconcat`; FFmpeg inherits its job and diagnostic pipes. Wrapper exit
+alone is insufficient. Reencode directly uses the shared exact command. Empty
+inventory/single-writer, R8 owner/failure retention, R9 truthful cleanup and R10
+complete artifact/inventory rechecks remain intact, without a schema-5 change.
+
+Only declared writers may wait without an overall deadline. Cancellation-aware
+polling is outside authority/SQLite/resume locks; final EOF/cancel/cleanup retain
+separate bounded operations. Optional trusted `on_exit` interpretation finishes
+semantic diagnostics before success without skipping independent exit/cleanup.
+Zero-exit explicit FFmpeg failures refuse sealing; degraded/unknown input facts
+are preserved, with no #28 repair or runtime media-validation claim.
+
+Final tree: **129 focused passed; 651 related passed / 2 skips; 2,389 full passed /
+9 skips / 19 subtests passed**, no failures. Delivered for PM review. Both NEW connected
+generated media paths preserve hashes/frame timing and pass part/DTS/deep-output
+checks; the unchanged pending-manifest validator mismatch is recorded explicitly.
+Twelve actual connected supervisor-death boundaries and integrated cancellation/
+descendant/unknown-status/diagnostic/cleanup/ack-loss cases pass. No atomic namespace/
+SQLite snapshot, power-loss, natural-recording or full A1–A20/service gate is claimed.
+The task remains unfinished/running and counted with durable ownership/pins.
+See [integration contract/evidence](ISSUE_52_JOURNAL_ASSEMBLY.md). #52 stays OPEN/SINGLE
+ACTIVE; #48 OPEN/PAUSED, #28 unresolved. Next: PM review; no publication, settlement,
+retry/adoption, scheduler/service/production/retention/migration/dependency/merge/
+release work. Owner decisions: None; `Refs #52`, preserve pushed history.
+
+## Historical scratch corrections R8–R10 — accepted by 5999162236
 
 [PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
 requires R8–R10 before accepting the scratch slice for successor integration.
@@ -35,7 +74,7 @@ retry, scheduling, service integration, or full A1–A20 acceptance. See
 **Historical status:** delivered for PM review; R8–R10 were subsequently required.
 Issue #52 remains OPEN/SINGLE ACTIVE. No integration or production changes.
 
-## Current durable attempt/launch checkpoint - 2026-10-04
+## Historical durable attempt/launch checkpoint - 2026-10-04
 
 [PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
 **accepted `44711e65`** and selected durable attempt/child launch with claimed

@@ -135,12 +135,12 @@ class AttemptCoordinator:
                                            child["launch"], asdict(identity)):
                 yield
 
-    def run_child(self, executable, arguments, *, cwd, phase, timeout, observer=None):
+    def run_child(self, executable, arguments, *, cwd, phase, timeout, observer=None, on_exit=None):
         """Execute one explicit contained reader; no task completion or media publication."""
         from .attempt_execution import run_child
         with self.run_lock:
             try:
-                return run_child(self, executable, arguments, cwd, phase, timeout, observer)
+                return run_child(self, executable, arguments, cwd, phase, timeout, observer, on_exit=on_exit)
             except BaseException as original:
                 self.cancelled.set()
                 if self.scratch is not None:
@@ -161,14 +161,14 @@ class AttemptCoordinator:
                 raise AttemptError(self, original) from original
 
     def run_writer_child(self, executable, arguments, *, cwd, phase, timeout,
-                         outputs=("candidate.mp4",), observer=None):
-        """Run a separately declared scratch writer without changing reader authority."""
+                         outputs=("candidate.mp4",), observer=None, on_exit=None):
+        """Run one declared writer; timeout=None permits cancellation-aware assembly."""
         from .attempt_execution import run_child
         with self.run_lock:
             try:
                 require(outputs and self.scratch is not None and not self.scratch.candidate_ready,
                         "bound attempt scratch is required for writer authority")
-                return run_child(self, executable, arguments, cwd, phase, timeout, observer, outputs)
+                return run_child(self, executable, arguments, cwd, phase, timeout, observer, outputs, on_exit)
             except BaseException as original:
                 self.cancelled.set()
                 if self.scratch is not None:

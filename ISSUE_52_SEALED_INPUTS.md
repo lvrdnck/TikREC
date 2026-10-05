@@ -1,5 +1,15 @@
 # Issue #52 — native sealed-input read protection
 
+## Current connected use — 2026-10-05
+
+Current schema is 5. [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
+accepts `58e40084` and authorizes the [internal assembly adapter](ISSUE_52_JOURNAL_ASSEMBLY.md).
+It claims through the coordinator and retains the distinct `ClaimedInputs`
+capability through shared planning, durable probes/writer and exact same-attempt
+scratch sealing. The queued-only API below stays strict. Native input proof,
+original H independence, accounting/pins and cooperative namespace limits remain
+unchanged. Earlier schema/checkpoint/next-task statements below are historical.
+
 ## Acceptance checkpoint - 2026-10-04
 
 [PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)

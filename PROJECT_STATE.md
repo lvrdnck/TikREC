@@ -7,7 +7,36 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 OPEN / SINGLE ACTIVE — R8–R10 DELIVERED FOR PM REVIEW
+- **Issue #52 OPEN / SINGLE ACTIVE — internal journal-backed assembly
+  COMPLETE FOR PM REVIEW (2026-10-05):** [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
+  accepts `58e40084` and supersedes the previous pending-review/no-successor
+  checkpoint. The isolated one-shot adapter claims at most one FIFO sealed
+  session through `AttemptCoordinator`, retains its exact original-H inputs,
+  shares accepted copy/libx264 planning and uses one durable contained scratch
+  writer. Copy helper code/text/FFmpeg argv are bound in the same launch intent;
+  only the contained writer creates the helper. Long assembly has no overall
+  timeout, with bounded final drain/cancel/cleanup and complete semantic diagnostics
+  before sealing an unpublished/not_checked candidate. Schema 5 and R4–R10 remain.
+  The unfinished running task/unit/raw/room/path pins remain counted and retained.
+  Both new connected generated media paths pass part/DTS/deep output checks and
+  synchronous frame timing; legacy pending-manifest findings remain explicit.
+  Twelve real connected supervisor-death boundaries and integrated native failure/
+  cancellation/diagnostic/acknowledgement checks pass. Final source/test tree:
+  **129 focused passed; 651 related passed / 2 skips; 2,389 full passed / 9 skips /
+  19 subtests passed**, no failures. Source/test hashes remain unchanged across runs.
+  See [connected evidence](ISSUE_52_JOURNAL_ASSEMBLY.md).
+  #48 remains OPEN/PAUSED with Gracie-only raw/Ward OFF; #28 unresolved. Owner
+  decisions: None. Next action after delivery: PM review only, no automatic successor.
+  No publication, settlement/refund, retry/adoption, scheduler/service integration,
+  production access/change/restart, #48 polling, retention, migration, dependencies/
+  upgrades, merge/release/tag. Safe resume: pull the isolated branch and reconcile
+  this report/current #52 decision. Use `Refs #52`; historical `6fdacd37` contains
+  `Closes #52`, flagged for eventual separately reviewed integration. Preserve history.
+  Branch: `codex/capture-journal-handoff`; task-owned source/tests/documentation
+  committed and pushed normally. Actual delivery commit is in the current #52
+  top checkpoint; no merge/cutover occurred.
+
+- **Historical R8–R10 delivery — accepted by 5999162236; prior checkpoint follows
   (2026-10-05):** [PM review 5993102551](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5993102551)
   retains the scratch direction but does not accept `d35f946f` for successor
   integration. After required pull and MODEL GATE / PROCEED, this task corrects
