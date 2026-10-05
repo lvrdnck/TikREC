@@ -2045,7 +2045,23 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current internal assembly task (2026-10-05):** [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
+**Current internal candidate-validation task (2026-10-05):** [PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417)
+accepts `ee884bdc` and authorizes only durable same-candidate validation. The new
+connected phase keeps original native scratch/input ownership while three fixed
+contained validators inspect, decode and check packet DTS. Minimal schema 6 adds
+immutable validation authority/receipts and refuses/preserves schemas 1–5 without
+migration. Candidate/assembly evidence remains immutable, unpublished/not_checked;
+separate validation never publishes, settles, releases pins or authorizes adoption.
+Generated copy/libx264 media and integrated native failure/cancellation/ack-loss,
+capture availability and twelve actual validation supervisor deaths are verified.
+Final frozen tree: **75 passed; 687 passed, 2 skipped, 17 subtests passed; 2461 passed, 9 skipped, 19 subtests passed**, no failures; 376
+source/test hashes unchanged. See [validation contract/evidence](ISSUE_52_CANDIDATE_VALIDATION.md).
+**COMPLETE FOR PM REVIEW**, not #52 completion or release acceptance. Next: PM review
+only. #48 stays paused; #28 unresolved. No automatic successor, production/service
+integration, publication, settlement/refund, retry/adoption, retention, migration/
+cutover, upgrade/resource-policy work, merge/release/tag. Use `Refs #52`.
+
+**Historical connected assembly — accepted by 6000035417 (2026-10-05):** [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
 accepts `58e40084` and supersedes the previous pending-review/no-successor checkpoint.
 The one-shot adapter claims at most one sealed FIFO session through the durable
 coordinator, holds its exact original-H inputs, reuses copy/libx264 planning and

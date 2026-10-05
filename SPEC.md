@@ -1,19 +1,20 @@
 # TikREC — a recorder for public TikTok LIVE streams
 
 
-## Issue #52 internal assembly checkpoint (2026-10-05)
+## Issue #52 internal candidate-validation checkpoint (2026-10-05)
 
-[PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
-accepts `58e40084` and authorizes the isolated
-[one-shot journal-backed assembly adapter](ISSUE_52_JOURNAL_ASSEMBLY.md). It claims
-at most one sealed FIFO session and seals only a same-attempt scratch MP4 with
-validation `not_checked` and publication `unpublished`. The unfinished task stays
-running/counted with original H, raw/room/path ownership and durable pins intact.
-Current journal schema is **5**; schemas 1–4 remain refused/preserved without
-migration. Media manifest/connection schemas remain 1, including the original
-`finalization: pending` evidence. CLI/service behavior remains synchronous;
-no publication, settlement, retry/adoption, service wiring or production change
-is included. Full service gates remain outstanding; PM review is next.
+[PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417) accepts `ee884bdc` connected assembly. The new
+[validation contract/evidence](ISSUE_52_CANDIDATE_VALIDATION.md) retains original same-attempt scratch/native/input ownership through
+three fixed contained media validators and an append-only validation receipt.
+The immutable candidate stays `not_checked / unpublished`; separate validation
+does not publish, settle/refund, release units/raw/room/path claims or pins, or
+authorize retry/adoption. Current isolated journal schema is **6**; schemas 1–5
+remain refused/preserved without migration. Media manifest/connection schemas
+remain 1, including intentional `finalization: pending`. Applicable candidate
+inspection/decode/DTS checks do not use pending publication as a failure reason.
+CLI/service behavior remains synchronous and unchanged. No service/API/monitor/
+scheduler integration, production access/change/restart or cutover is included.
+Full service gates remain outstanding; PM review is next.
 
 ## Historical isolated capture handoff boundary (2026-10-04)
 

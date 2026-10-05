@@ -1,6 +1,19 @@
 # Issue #52 — isolated unpublished assembly evidence
 
-## Current connected successor — 2026-10-05
+## Current validation extension — 2026-10-05
+
+[PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417)
+accepts `ee884bdc` assembly. The [same-candidate validation contract](ISSUE_52_CANDIDATE_VALIDATION.md)
+adds only explicit retained-native validation authority and append-only schema-6
+evidence; schemas 1–5 remain refused/preserved without migration. Original H,
+accounting/input preservation, exact job ownership and R1–R10 remain accepted.
+Candidate validation is the only additional cancellation-aware long reader phase;
+generic readers stay finite and arbitrary post-candidate launches stay refused.
+No publication, settlement, retry/adoption, service wiring or production change.
+Earlier checkpoint/schema statements below are historical evidence within their
+recorded limits. #52 OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED; next action: PM review.
+
+## Historical connected successor — 2026-10-05
 
 [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
 accepts the schema-5 scratch foundation and authorizes the internal

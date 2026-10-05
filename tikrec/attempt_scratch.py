@@ -155,7 +155,7 @@ class AttemptScratch:
             phase=phase, timeout=timeout, outputs=outputs)
 
     def _observe_artifacts(self, outputs):
-        """Open every produced entry exclusively and reject aliases or undeclared files."""
+        """Pin every entry against new writes/deletion; refuse aliases or undeclared files."""
         self._revalidate()
         names = sorted(entry.name for entry in os.scandir(self.path))
         declared = {item["name"] for item in self.intent["artifacts"]}
@@ -164,7 +164,10 @@ class AttemptScratch:
         observed = []
         for name in names:
             try:
-                held = ScratchHandle(self.path / name)
+                # Validation opts into read sharing at original acquisition. This
+                # same read/write owner still denies all new writes and deletion.
+                held = ScratchHandle(self.path / name,
+                    share_mode=1 if getattr(self.runner, "validation_readers", False) else 0)
             except BaseException as original:
                 partial = getattr(original, "scratch_native_owner", None)
                 if partial is not None:
@@ -186,7 +189,7 @@ class AttemptScratch:
 
     @staticmethod
     def _hash(held):
-        """Hash only through the exclusive held file identity, not a reopened path."""
+        """Hash only through the write-protected held identity, never a reopened path."""
         digest_value = hashlib.sha256()
         os.lseek(held.fd, 0, os.SEEK_SET)
         while chunk := os.read(held.fd, 1024 * 1024):

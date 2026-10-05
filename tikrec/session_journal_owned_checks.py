@@ -18,7 +18,8 @@ def audit_child(connection, row, child):
     intent = json.loads(child["intent"])
     identifier(child["id"])
     require(("access" not in intent and "outputs" not in intent)
-            or intent.get("access") == "write" and type(intent.get("outputs")) is list,
+            or intent.get("access") == "write" and type(intent.get("outputs")) is list
+            or intent.get("access") == "candidate_validation" and "validation_operation" in intent,
             "invalid child filesystem authority")
     require(intent["seal_hash"] == row["seal_hash"] and intent["marker_hash"] == row["marker_hash"],
             "child seal/marker conflicts")
@@ -87,3 +88,5 @@ def audit_owned(connection):
                     and json.loads(prior["diagnostics"])["complete"], "premature successor child")
         from .session_journal_scratch_checks import audit_scratch
         audit_scratch(connection, row)
+        from .session_journal_validation_checks import audit_validation
+        audit_validation(connection, row)

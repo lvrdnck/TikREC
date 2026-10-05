@@ -73,7 +73,8 @@ class AttemptCoordinator:
         with self.transition_lock:
             with self.gate:
                 if kind in {"launch_intent", "child_identity", "bind_owned_inputs", "reserve_scratch",
-                            "bind_scratch", "bind_scratch_artifacts", "seal_candidate"}:
+                            "bind_scratch", "bind_scratch_artifacts", "seal_candidate",
+                            "begin_validation", "finish_validation"}:
                     require(not self.cancelled.is_set() and not self.closed, "attempt execution revoked")
                 args = [self.token, self.owner, self.revision, *tail]
                 receipt_args = None if receipt_tail is None else [self.token, self.owner, self.revision, *receipt_tail]
@@ -114,6 +115,8 @@ class AttemptCoordinator:
     def _authorize(self, child, identity):
         require(not child["authorized"], "historical authorization cannot resume again")
         self.guard.revalidate()
+        if child.get("validation") is not None:
+            child["validation"].revalidate()
         if child.get("intent", {}).get("access") == "write":
             require(self.scratch is not None, "writer scratch owner unavailable")
             self.scratch.assert_outputs_absent(child["intent"]["outputs"])
@@ -126,6 +129,8 @@ class AttemptCoordinator:
     def _resume(self, child, identity):
         self._fault("before_resume_fence")
         self.guard.revalidate()
+        if child.get("validation") is not None:
+            child["validation"].revalidate()
         if child.get("intent", {}).get("access") == "write":
             self.scratch.assert_outputs_absent(child["intent"]["outputs"])
         with self.gate:
@@ -208,7 +213,7 @@ class AttemptCoordinator:
             safe = all(child["process"].closed and child["process"].evidence().state in
                        {"not_created", "confirmed_exited"} for child in self.children[-1:])
             scratch_safe = True
-            if safe and self.guard is not None:
+            if safe and self.guard is not None and not getattr(self, "validation_retained", False):
                 try:
                     self.guard.revalidate()
                 except BaseException as error:
@@ -218,7 +223,7 @@ class AttemptCoordinator:
                 except BaseException as error:
                     self._error(error)
             if self.scratch is not None:
-                if safe and self.scratch.candidate_ready:
+                if safe and self.scratch.candidate_ready and not getattr(self, "validation_retained", False):
                     try:
                         self.scratch.close_candidate_protection()
                     except BaseException as error:

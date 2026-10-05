@@ -7,7 +7,34 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 OPEN / SINGLE ACTIVE — internal journal-backed assembly
+- **Issue #52 OPEN / SINGLE ACTIVE — durable candidate validation COMPLETE FOR
+  PM REVIEW (2026-10-05):** [PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417)
+  accepts `ee884bdc` and supersedes the prior pending assembly checkpoint.
+  `JournalValidation` validates the exact same-attempt unpublished candidate while
+  its original scratch/native/input protection remains held. Three fixed owned
+  validators inspect output, fully decode and stream packet DTS checks; a narrow
+  append-only authority preserves the arbitrary post-candidate launch prohibition.
+  Minimal schema 6 adds validation authority/receipts; schemas 1–5 are refused and
+  preserved unchanged, without migration/cutover. Assembly/candidate evidence stays
+  immutable `not_checked / unpublished`; separate success grants no promotion,
+  settlement/refund, retry/adoption or unit/raw/room/path/pin release. Cancellation,
+  complete streamed diagnostics/EOF, first failures, exact native cleanup and
+  one-operation acknowledgement reconciliation remain explicit. Unknown lifetime
+  and failed/ambiguous validation retain protection. See [validation contract/evidence](ISSUE_52_CANDIDATE_VALIDATION.md).
+  Final frozen tree: **75 passed; 687 passed, 2 skipped, 17 subtests passed; 2461 passed, 9 skipped, 19 subtests passed**. No failures;
+  all 376 source/test hashes unchanged. Full details are in that report/current #52 checkpoint.
+  Generated copy/libx264 media, corruption/identity/hash changes, native lifetimes,
+  capture availability and twelve real validation supervisor-death boundaries are
+  exercised. No atomic filesystem/SQLite snapshot, power-loss or natural-recording
+  validation is claimed. #48 OPEN/PAUSED; #28 unresolved. Owner decisions: None.
+  Next action: PM review only. No service/API/monitor/scheduler wiring, production
+  access/change/restart, #48 polling, retention, dependency/runtime/resource-policy
+  change, merge/release/tag. Use `Refs #52`; preserve pushed history. Safe resume:
+  pull the existing isolated `codex/capture-journal-handoff` worktree and reconcile
+  the current issue decision/report. Delivery commit is recorded in the issue top
+  checkpoint; task-owned source/tests/docs are committed and pushed normally.
+
+- **Historical connected assembly — accepted by 6000035417; prior delivery
   COMPLETE FOR PM REVIEW (2026-10-05):** [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
   accepts `58e40084` and supersedes the previous pending-review/no-successor
   checkpoint. The isolated one-shot adapter claims at most one FIFO sealed

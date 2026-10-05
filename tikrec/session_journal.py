@@ -9,11 +9,12 @@ from .session_journal_store import JournalStore
 from .session_journal_tasks import TaskOperations
 from .session_journal_owned import OwnedOperations
 from .session_journal_scratch import ScratchOperations
+from .session_journal_validation import ValidationOperations
 from .session_journal_types import identifier, require
 
 
 class SessionJournal(CaptureOperations, EmptyCaptureOperations, TaskOperations,
-                    ScratchOperations, OwnedOperations, JournalStore):
+                    ValidationOperations, ScratchOperations, OwnedOperations, JournalStore):
     """Explicit-path authority with two capture bindings and one finalizer claim."""
 
     def sealed_input(self, session_id: str) -> dict | None:

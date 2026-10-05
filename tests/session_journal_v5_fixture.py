@@ -5,11 +5,11 @@ import sqlite3
 
 
 APPLICATION_ID = 0x544B524A
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 5
 
 # STRICT tables and CHECKs reject malformed rows even outside the public operations.
 SCHEMA = """
-CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=6)) STRICT;
+CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=5)) STRICT;
 CREATE TABLE sessions(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
  intent TEXT NOT NULL, creator TEXT NOT NULL, expected_room TEXT, room TEXT,
@@ -103,20 +103,6 @@ CREATE TABLE scratch_candidates(token TEXT PRIMARY KEY REFERENCES scratch_owners
  execution TEXT NOT NULL, validation TEXT NOT NULL CHECK(validation='not_checked'),
  publication TEXT NOT NULL CHECK(publication='unpublished'),
  operation TEXT NOT NULL UNIQUE REFERENCES operations(id) DEFERRABLE INITIALLY DEFERRED) STRICT;
-CREATE TABLE candidate_validations(token TEXT PRIMARY KEY REFERENCES scratch_candidates(token),
- binding TEXT NOT NULL, operation TEXT NOT NULL UNIQUE REFERENCES operations(id)
- DEFERRABLE INITIALLY DEFERRED) STRICT;
-CREATE TABLE validation_receipts(token TEXT PRIMARY KEY REFERENCES candidate_validations(token),
- evidence TEXT NOT NULL, operation TEXT NOT NULL UNIQUE REFERENCES operations(id)
- DEFERRABLE INITIALLY DEFERRED) STRICT;
-CREATE TRIGGER immutable_validation BEFORE UPDATE ON candidate_validations
- BEGIN SELECT RAISE(ABORT,'immutable validation authority'); END;
-CREATE TRIGGER keep_validation BEFORE DELETE ON candidate_validations
- BEGIN SELECT RAISE(ABORT,'keep validation authority'); END;
-CREATE TRIGGER immutable_validation_receipt BEFORE UPDATE ON validation_receipts
- BEGIN SELECT RAISE(ABORT,'immutable validation receipt'); END;
-CREATE TRIGGER keep_validation_receipt BEFORE DELETE ON validation_receipts
- BEGIN SELECT RAISE(ABORT,'keep validation receipt'); END;
 CREATE TRIGGER immutable_owner BEFORE UPDATE OF token,owner,claim_operation,h_operation,h_revision,seal_hash
  ON attempt_owners BEGIN SELECT RAISE(ABORT,'immutable owned attempt'); END;
 CREATE TRIGGER keep_owner BEFORE DELETE ON attempt_owners

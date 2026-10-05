@@ -1,6 +1,23 @@
 # Issue #52 — durable scratch and unpublished-candidate ownership
 
-## Current acceptance and adapter contract — 2026-10-05
+## Current candidate-validation contract — 2026-10-05
+
+[PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417) accepts `ee884bdc` connected assembly and supersedes its pending-review
+checkpoint. The new [validation contract/evidence](ISSUE_52_CANDIDATE_VALIDATION.md) describes `JournalValidation`: exact same-attempt
+validation with original native/input ownership retained, three fixed durable
+contained FFprobe phases, append-only evidence and no arbitrary post-candidate
+launches. Schema 6 adds validation authority/receipts; schemas 1–5 are refused and
+preserved without migration. Assembly/candidate evidence remains immutable
+`not_checked / unpublished`; separate validation success does not publish, settle,
+release units/claims/pins or permit retry/adoption. Pending manifests are unchanged.
+Only explicit candidate validation joins the writer's cancellation-aware long
+execution allowance; generic readers remain finite, with bounded final drain/
+cancel/cleanup. Failure/ambiguity and unknown lifetime retain native protection.
+#52 OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED; #28 unresolved. Delivery stops for PM
+review; no service/production/cutover/release action. The checkpoints below are
+historical accepted evidence within their recorded limits.
+
+## Historical acceptance and adapter contract — 2026-10-05
 
 [PM decision 5999162236](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5999162236)
 accepts `58e40084` R8–R10 within their recorded limits. The new internal

@@ -71,11 +71,11 @@ def finish_child(runner, child, timeout):
     return evidence
 
 
-def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outputs=(), on_exit=None):
-    """Consume a reader or separately declared scratch-writer creation capability."""
-    # Only explicit scratch writers may run without an overall media deadline.
-    # Reader/default waits retain their accepted finite timeout contract.
-    require(timeout is not None or outputs, "unbounded reader wait refused")
+def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outputs=(), on_exit=None, validation=None):
+    """Consume a reader, declared writer or exact candidate-validation capability."""
+    # Only declared writers and the exact candidate-validation capability may
+    # omit the overall deadline. Generic readers keep their finite contract.
+    require(timeout is not None or outputs or validation is not None, "unbounded reader wait refused")
     cleanup_timeout = 5 if timeout is None else _timeout(timeout)
     require(runner.claimed is not None and runner.guard is not None and not runner.cancelled.is_set()
             and not runner.closed, "attempt cannot launch")
@@ -89,6 +89,8 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
                 "writer must use its bound attempt scratch scope")
         runner.scratch.assert_outputs_absent(outputs)
     proof = runner.guard.revalidate()
+    if validation is not None:
+        validation.revalidate()
     for previous in runner.children[-1:]:
         require(previous["process"].closed and previous["cleanup_recorded"], "prior local cleanup unresolved")
     launch = runner.uuid()
@@ -97,12 +99,15 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
               "predecessor": None if not runner.children else runner.children[-1]["launch"]}
     if outputs:
         intent.update(access="write", outputs=list(outputs))
+    if validation is not None:
+        intent.update(access="candidate_validation", validation_operation=validation.operation,
+                      validation_index=validation.index)
     runner._transition("launch_intent", runner.journal.launch_intent, launch, intent)
     # Reachability precedes creation. Each fresh object is permanently tied to this launch.
     child = {"launch": launch, "process": runner.process_factory(proof.session_id, runner.token),
              "streams": StreamEvidence(observer), "authorized": False, "creation_used": False,
              "exit_recorded": False, "diagnostics_recorded": False, "cleanup_recorded": False,
-             "intent": intent}
+             "intent": intent, "validation": validation}
     runner.children.append(child)
     runner._fault("after_launch_intent")
     process, prior_fault = child["process"], child["process"]._fault
@@ -125,6 +130,8 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
             raise evidence.error
         require(evidence.state == "confirmed_exited", "unknown whole-job lifetime")
         runner.guard.revalidate()
+        if validation is not None:
+            validation.revalidate()
         if on_exit is not None:
             # Trusted semantic interpretation stays outside the resume/DB locks;
             # failure cannot skip independent durable exit and native cleanup.
@@ -140,12 +147,15 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
             runner._error(secondary)
     if original is not None:
         raise original
-    require(evidence.root_exit_code == 0, "owned child failed")
+    if validation is not None:
+        validation.revalidate()
+    else:
+        require(evidence.root_exit_code == 0, "owned child failed")
     return evidence
 
 
 def wait_writer(runner, child, drain_timeout):
-    """Poll a legitimately long writer; only its final EOF wait has a deadline."""
+    """Poll an authorized long media phase; only final EOF has a deadline."""
     process, streams = child["process"], child["streams"]
     while True:
         require(not runner.cancelled.is_set(), "attempt execution revoked")

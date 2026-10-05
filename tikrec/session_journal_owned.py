@@ -60,9 +60,15 @@ class OwnedOperations(OwnedViews):
         identifier(launch)
         read_keys = {"executable", "arguments", "cwd", "phase", "seal_hash", "marker_hash", "predecessor"}
         write_keys = read_keys | {"access", "outputs"}
-        require(type(intent) is dict and frozenset(intent) in {frozenset(read_keys), frozenset(write_keys)},
+        validation_keys = read_keys | {"access", "validation_operation", "validation_index"}
+        require(type(intent) is dict and frozenset(intent) in
+                {frozenset(read_keys), frozenset(write_keys), frozenset(validation_keys)},
                 "invalid child intent")
-        if "access" in intent:
+        validation = set(intent) == validation_keys
+        if validation:
+            require(intent["access"] == "candidate_validation" and type(intent["validation_index"]) is int)
+            identifier(intent["validation_operation"])
+        elif "access" in intent:
             require(intent["access"] == "write" and type(intent["outputs"]) is list
                     and 1 <= len(intent["outputs"]) <= 32
                     and len(intent["outputs"]) == len(set(intent["outputs"]))
@@ -79,9 +85,13 @@ class OwnedOperations(OwnedViews):
         def action(connection):
             row = owner_guard(connection, token, owner, revision, launch=True)
             prior = row["child"]
-            require(connection.execute("SELECT 1 FROM scratch_candidates WHERE token=?", (token,)).fetchone()
-                    is None, "candidate-ready attempt cannot launch another child")
-            if "access" in intent:
+            if validation:
+                from .candidate_validation_plan import check_launch
+                check_launch(connection, row, intent)
+            else:
+                require(connection.execute("SELECT 1 FROM scratch_candidates WHERE token=?", (token,)).fetchone()
+                        is None, "candidate-ready attempt cannot launch another child")
+            if intent.get("access") == "write":
                 scratch = connection.execute("SELECT * FROM scratch_owners WHERE token=?", (token,)).fetchone()
                 require(scratch is not None and scratch["state"] == "bound"
                         and scratch["writer_launch"] is None
@@ -99,7 +109,7 @@ class OwnedOperations(OwnedViews):
             sequence = row["sequence"] + 1
             connection.execute("INSERT INTO child_launches(id,token,sequence,intent,intent_operation) "
                                "VALUES (?,?,?,?,?)", (launch, token, sequence, encode(intent), operation))
-            if "access" in intent:
+            if intent.get("access") == "write":
                 connection.execute("UPDATE scratch_owners SET writer_launch=?,writer_sequence=? WHERE token=?",
                                    (launch, sequence, token))
             connection.execute("UPDATE attempt_owners SET sequence=? WHERE token=?", (sequence, token))
