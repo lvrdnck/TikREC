@@ -58,8 +58,17 @@ class OwnedOperations(OwnedViews):
     def launch_intent(self, operation, token, owner, revision, launch, intent):
         """Commit permanent sequential executable/argv/seal intent before native creation."""
         identifier(launch)
-        require(type(intent) is dict and set(intent) == {"executable", "arguments", "cwd", "phase",
-                "seal_hash", "marker_hash", "predecessor"}, "invalid child intent")
+        read_keys = {"executable", "arguments", "cwd", "phase", "seal_hash", "marker_hash", "predecessor"}
+        write_keys = read_keys | {"access", "outputs"}
+        require(type(intent) is dict and frozenset(intent) in {frozenset(read_keys), frozenset(write_keys)},
+                "invalid child intent")
+        if "access" in intent:
+            require(intent["access"] == "write" and type(intent["outputs"]) is list
+                    and 1 <= len(intent["outputs"]) <= 32
+                    and len(intent["outputs"]) == len(set(intent["outputs"]))
+                    and "candidate.mp4" in intent["outputs"]
+                    and all(type(name) is str and re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", name)
+                            for name in intent["outputs"]), "invalid declared writer artifacts")
         require(type(intent["phase"]) is str and re.fullmatch(r"[a-z_]{1,64}", intent["phase"]) is not None)
         require(type(intent["arguments"]) is list and all(type(a) is str and "\0" not in a
                 for a in intent["arguments"]), "invalid child arguments")
@@ -70,6 +79,16 @@ class OwnedOperations(OwnedViews):
         def action(connection):
             row = owner_guard(connection, token, owner, revision, launch=True)
             prior = row["child"]
+            require(connection.execute("SELECT 1 FROM scratch_candidates WHERE token=?", (token,)).fetchone()
+                    is None, "candidate-ready attempt cannot launch another child")
+            if "access" in intent:
+                scratch = connection.execute("SELECT * FROM scratch_owners WHERE token=?", (token,)).fetchone()
+                require(scratch is not None and scratch["state"] == "bound"
+                        and scratch["writer_launch"] is None
+                        and set(intent["outputs"]) <= {x["name"] for x in connection.execute(
+                            "SELECT name FROM scratch_artifacts WHERE token=?", (token,))}
+                        and Path(intent["cwd"]) == Path(json.loads(scratch["intent"])["workspace_path"]),
+                        "writer lacks bound attempt scratch and declared outputs")
             require(intent["seal_hash"] == row["seal_hash"] and intent["marker_hash"] == row["marker_hash"]
                     and intent["predecessor"] == (None if prior is None else prior["id"]),
                     "child input/predecessor binding conflicts")
@@ -80,6 +99,9 @@ class OwnedOperations(OwnedViews):
             sequence = row["sequence"] + 1
             connection.execute("INSERT INTO child_launches(id,token,sequence,intent,intent_operation) "
                                "VALUES (?,?,?,?,?)", (launch, token, sequence, encode(intent), operation))
+            if "access" in intent:
+                connection.execute("UPDATE scratch_owners SET writer_launch=?,writer_sequence=? WHERE token=?",
+                                   (launch, sequence, token))
             connection.execute("UPDATE attempt_owners SET sequence=? WHERE token=?", (sequence, token))
             return {**advance(connection, operation, row), "launch": launch, "sequence": sequence}
         return self._mutate(operation, "launch_intent", [token, owner, revision, launch, intent], action)

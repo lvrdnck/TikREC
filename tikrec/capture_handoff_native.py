@@ -17,6 +17,21 @@ class _Information(ctypes.Structure):
                 ("index_high", wintypes.DWORD), ("index_low", wintypes.DWORD)]
 
 
+class _UnicodeString(ctypes.Structure):
+    _fields_ = [("length", wintypes.USHORT), ("maximum", wintypes.USHORT),
+                ("buffer", wintypes.LPWSTR)]
+
+
+class _ObjectAttributes(ctypes.Structure):
+    _fields_ = [("length", wintypes.ULONG), ("root", wintypes.HANDLE),
+                ("name", ctypes.POINTER(_UnicodeString)), ("attributes", wintypes.ULONG),
+                ("security", ctypes.c_void_p), ("quality", ctypes.c_void_p)]
+
+
+class _IoStatusBlock(ctypes.Structure):
+    _fields_ = [("status_or_pointer", ctypes.c_void_p), ("information", ctypes.c_size_t)]
+
+
 def _kernel():
     require(os.name == "nt", "capture handoff requires native Windows proof")
     api = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -44,7 +59,7 @@ class NativeHandle:
     Shared handles are only for directory/catalog lifetime, never a closure seal.
     """
 
-    def __init__(self, path: Path, *, directory=False, shared=False):
+    def __init__(self, path: Path, *, directory=False, shared=False, share_mode=None):
         self.api, self.path, self.fd, self.handle = _kernel(), Path(path), None, None
         self.directory, self.shared = directory, shared
         scope = local_path(self.path, directory=directory)
@@ -52,7 +67,9 @@ class NativeHandle:
         # READ_ATTRIBUTES suffices for directory namespace pins. Closed files are
         # opened read/write with no sharing: existing readers/writers must unwind.
         access = 0x80 if directory else 0x80000000 if shared else 0xC0000000
-        handle = self.api.CreateFileW(str(scope), access, 3 if directory or shared else 0,
+        sharing = (3 if directory or shared else 0) if share_mode is None else share_mode
+        require(type(sharing) is int and 0 <= sharing <= 7, "invalid native sharing mode")
+        handle = self.api.CreateFileW(str(scope), access, sharing,
                                       None, 3, 0x02200000, None)
         if handle == ctypes.c_void_p(-1).value:
             raise ctypes.WinError(ctypes.get_last_error())
@@ -78,6 +95,56 @@ class NativeHandle:
 
     def __enter__(self):
         return self
+
+    @classmethod
+    def create_directory(cls, parent, name):
+        """Create one child relative to a held parent and return its creation handle.
+
+        NtCreateFile FILE_CREATE returns the exact handle atomically with directory
+        creation; reopening by name after mkdir could silently adopt a replacement.
+        """
+        require(parent.directory and parent.handle is not None and name == Path(name).name
+                and name.isascii() and name not in {"", ".", ".."}, "invalid relative scratch child")
+        parent.verify()
+        target = parent.path / name
+        api = ctypes.WinDLL("ntdll", use_last_error=True)
+        api.NtCreateFile.argtypes = (ctypes.POINTER(wintypes.HANDLE), wintypes.ULONG,
+            ctypes.POINTER(_ObjectAttributes), ctypes.POINTER(_IoStatusBlock), ctypes.c_void_p,
+            wintypes.ULONG, wintypes.ULONG, wintypes.ULONG, wintypes.ULONG, ctypes.c_void_p, wintypes.ULONG)
+        api.NtCreateFile.restype = ctypes.c_long
+        api.RtlNtStatusToDosError.argtypes = (ctypes.c_long,)
+        api.RtlNtStatusToDosError.restype = wintypes.ULONG
+        buffer = ctypes.create_unicode_buffer(name)
+        native_name = _UnicodeString(len(name) * 2, len(name) * 2 + 2,
+                                     ctypes.cast(buffer, wintypes.LPWSTR))
+        attributes = _ObjectAttributes(ctypes.sizeof(_ObjectAttributes), parent.handle,
+                                       ctypes.pointer(native_name), 0x40, None, None)
+        status_block, handle = _IoStatusBlock(), wintypes.HANDLE()
+        # FILE_CREATE is exclusive; the root-relative handle avoids path re-resolution.
+        # DIRECTORY_FILE, synchronous I/O and OPEN_REPARSE_POINT refuse file/link substitution.
+        status = api.NtCreateFile(ctypes.byref(handle), 0x100080, ctypes.byref(attributes),
+            ctypes.byref(status_block), None, 0x10, 0, 2, 0x200021, None, 0)
+        if status < 0:
+            ctypes.set_last_error(api.RtlNtStatusToDosError(status))
+            raise ctypes.WinError(ctypes.get_last_error())
+        owner = cls.__new__(cls)
+        owner.api, owner.path, owner.fd, owner.handle = parent.api, target, None, handle.value
+        owner.directory, owner.shared = True, False
+        try:
+            info = owner._information()
+            require(status_block.information == 2 and not info.attributes & 0x400
+                    and bool(info.attributes & 0x10), "scratch creation identity is ambiguous")
+            owner.identity, owner.initial = owner._path_identity(), owner.stamp
+            require(parent.identity.contains(owner.identity)
+                    and owner.identity.components[-1] == name.casefold(),
+                    "relative scratch creation escaped its parent")
+            owner.verify()
+            return owner
+        except BaseException as error:
+            # The successful native create remains reachable when proof fails.
+            error.scratch_native_owner = owner
+            error.scratch_native_created = True
+            raise
 
     def __exit__(self, *_exc):
         try:

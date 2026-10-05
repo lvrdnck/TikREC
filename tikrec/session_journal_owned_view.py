@@ -21,6 +21,21 @@ def owned_row(connection, token):
     if child is not None:
         for field in ("intent", "identity", "exit", "diagnostics"):
             result["child"][field] = None if child[field] is None else json.loads(child[field])
+    scratch = connection.execute("SELECT * FROM scratch_owners WHERE token=?", (token,)).fetchone()
+    result["scratch"] = None if scratch is None else dict(scratch)
+    if result["scratch"] is not None:
+        result["scratch"]["intent"] = json.loads(scratch["intent"])
+        result["scratch"]["workspace_identity"] = (None if scratch["workspace_identity"] is None
+                                                       else json.loads(scratch["workspace_identity"]))
+        result["scratch"]["artifacts"] = [dict(x) for x in connection.execute(
+            "SELECT * FROM scratch_artifacts WHERE token=? ORDER BY name LIMIT 32", (token,))]
+        candidate = connection.execute("SELECT * FROM scratch_candidates WHERE token=?", (token,)).fetchone()
+        result["scratch"]["candidate"] = None if candidate is None else dict(candidate)
+        if result["scratch"]["candidate"] is not None:
+            for field in ("identity", "execution"):
+                result["scratch"]["candidate"][field] = json.loads(candidate[field])
+        result["scratch"]["hold_reason"] = (None if scratch["hold_reason"] is None
+                                             else json.loads(scratch["hold_reason"]))
     return result
 
 

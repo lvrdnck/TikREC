@@ -1,5 +1,10 @@
 # Issue #52 — durable attempt and child-launch authority
 
+> Historical checkpoint: the 2026-10-05 PM scope decision and current durable
+> scratch/candidate ownership slice are recorded in
+> [ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md](ISSUE_52_CAPTURE_FINALIZATION_DESIGN.md)
+> and [ISSUE_52_DURABLE_SCRATCH.md](ISSUE_52_DURABLE_SCRATCH.md).
+
 ## Authority and scope — 2026-10-04
 
 [PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)

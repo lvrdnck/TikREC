@@ -1,5 +1,26 @@
 # Issue #52 — capture availability and durable local finalization
 
+## Current scratch/candidate ownership checkpoint — 2026-10-05
+
+[PM scope decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5991952747)
+narrows the next implementation slice to durable attempt scratch and unpublished
+candidate ownership, bound to `AttemptCoordinator`. This supersedes the earlier
+queue-connected assembly selection: do not connect the queue to MP4 assembly in
+this slice. The implementation records a durable reservation before native
+workspace creation, then binds the workspace identity and declared artifact
+observations to the exact attempt/session/H-seal/writer operation. A writer may
+only write declared outputs through a separate authority. Candidate evidence is
+sealed only after complete writer-exit and cleanup proof, with validation
+`not_checked` and publication `unpublished`. Ambiguous artifacts and native
+handles remain held; journal reopen is inspection only and cannot adopt a process
+or workspace. Schema 5 is new; schemas 1–4 remain unchanged and are refused
+without migration. This does not add validation, publication, queue settlement,
+retry, scheduling, service integration, or full A1–A20 acceptance. See
+[durable scratch evidence and limits](ISSUE_52_DURABLE_SCRATCH.md).
+
+**Current status:** implementation complete for PM review; issue #52 remains
+OPEN/SINGLE ACTIVE. No automatic integration or production access/change/restart.
+
 ## Current durable attempt/launch checkpoint - 2026-10-04
 
 [PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
@@ -21,7 +42,8 @@ final diagnostic tails, claimed teardown faults and bounded sequential FFprobe
 on actual sealed H inputs pass; evidence hashes stay unchanged. Both separate
 generated assembly paths retain part/packet-DTS/deep validation and absent final
 destinations. [Complete evidence and limits](ISSUE_52_DURABLE_LAUNCH.md).
-**Current next action: PM review of this pushed slice; no automatic integration.**
+**Historical next action (2026-10-04): PM review of that slice; superseded by
+the 2026-10-05 decision above.**
 #52 OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED (Gracie-only raw/Ward OFF), #28 unresolved;
 owner decisions: None. Scratch/publication/settlement/retry, scheduling/service/
 retention/migration/cutover and full A1-A20/Scheduled Task acceptance remain gates.

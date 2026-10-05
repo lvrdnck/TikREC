@@ -71,8 +71,8 @@ def finish_child(runner, child, timeout):
     return evidence
 
 
-def run_child(runner, executable, arguments, cwd, phase, timeout, observer):
-    """Consume one local creation capability after confirmed durable intent."""
+def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outputs=()):
+    """Consume a reader or separately declared scratch-writer creation capability."""
     _timeout(timeout)
     require(runner.claimed is not None and runner.guard is not None and not runner.cancelled.is_set()
             and not runner.closed, "attempt cannot launch")
@@ -80,6 +80,11 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer):
     require(executable.is_absolute() and executable.is_file() and executable.suffix.lower() == ".exe"
             and cwd.is_absolute() and cwd.is_dir(), "explicit executable and working scope required")
     require(type(arguments) in {list, tuple}, "explicit argument vector required")
+    outputs = tuple(sorted(outputs))
+    if outputs:
+        require(runner.scratch is not None and cwd.resolve() == runner.scratch.path,
+                "writer must use its bound attempt scratch scope")
+        runner.scratch.assert_outputs_absent(outputs)
     proof = runner.guard.revalidate()
     for previous in runner.children[-1:]:
         require(previous["process"].closed and previous["cleanup_recorded"], "prior local cleanup unresolved")
@@ -87,11 +92,14 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer):
     intent = {"executable": str(executable.resolve()), "arguments": list(arguments), "cwd": str(cwd),
               "phase": phase, "seal_hash": proof.seal_hash, "marker_hash": proof.marker_sha256,
               "predecessor": None if not runner.children else runner.children[-1]["launch"]}
+    if outputs:
+        intent.update(access="write", outputs=list(outputs))
     runner._transition("launch_intent", runner.journal.launch_intent, launch, intent)
     # Reachability precedes creation. Each fresh object is permanently tied to this launch.
     child = {"launch": launch, "process": runner.process_factory(proof.session_id, runner.token),
              "streams": StreamEvidence(observer), "authorized": False, "creation_used": False,
-             "exit_recorded": False, "diagnostics_recorded": False, "cleanup_recorded": False}
+             "exit_recorded": False, "diagnostics_recorded": False, "cleanup_recorded": False,
+             "intent": intent}
     runner.children.append(child)
     runner._fault("after_launch_intent")
     process, prior_fault = child["process"], child["process"]._fault

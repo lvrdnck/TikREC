@@ -17,6 +17,9 @@ def audit_child(connection, row, child):
     """Check one current or immediate predecessor; history stays paged."""
     intent = json.loads(child["intent"])
     identifier(child["id"])
+    require(("access" not in intent and "outputs" not in intent)
+            or intent.get("access") == "write" and type(intent.get("outputs")) is list,
+            "invalid child filesystem authority")
     require(intent["seal_hash"] == row["seal_hash"] and intent["marker_hash"] == row["marker_hash"],
             "child seal/marker conflicts")
     op, result = receipt(connection, child["intent_operation"], "launch_intent")
@@ -82,3 +85,5 @@ def audit_owned(connection):
             require(json.loads(current["intent"])["predecessor"] == prior["id"]
                     and prior["exit"] is not None and prior["cleanup"] == 1
                     and json.loads(prior["diagnostics"])["complete"], "premature successor child")
+        from .session_journal_scratch_checks import audit_scratch
+        audit_scratch(connection, row)

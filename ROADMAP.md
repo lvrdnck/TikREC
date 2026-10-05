@@ -2044,6 +2044,16 @@ does not prove offline. Preserve the approved Gracie-only policy. No #48 polling
 or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
+
+**Current 2026-10-05 slice:** PM decision narrows work to durable scratch and
+unpublished-candidate ownership, based on accepted `3d4e15ce`; this supersedes the
+earlier queue-connected assembly selection. Implementation is complete for PM
+review in an isolated branch. Schema 5 persists reservations, native workspace
+identity, declared artifact observations, and candidate hold/seal state; schemas
+1–4 remain refused unchanged. Candidate validation remains `not_checked`, and
+publication remains `unpublished`. No queue-to-assembly integration, validation,
+publication, settlement, retry, scheduler, service, or A1–A20 acceptance is
+included. Details and test results: [ISSUE_52_DURABLE_SCRATCH.md](ISSUE_52_DURABLE_SCRATCH.md).
 Priority correction 2026-10-03, issue comment 5969640467, supersedes the prior
 Below Normal-only next-slice recommendation. Recording slots should represent
 capture capacity; safely closed capture must transfer responsibility durably
@@ -2186,7 +2196,8 @@ final diagnostic tails, claimed teardown faults and bounded sequential FFprobe
 on actual sealed H inputs pass; evidence hashes stay unchanged. Both separate
 generated assembly paths retain part/packet-DTS/deep validation and absent final
 destinations. [Complete evidence and limits](ISSUE_52_DURABLE_LAUNCH.md).
-**Current next action: PM review of this pushed slice; no automatic integration.**
+**Historical next action (2026-10-04): PM review of the attempt/launch slice;
+superseded by the 2026-10-05 scope decision above.**
 #52 OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED (Gracie-only raw/Ward OFF), #28 unresolved;
 owner decisions: None. Scratch/publication/settlement/retry, scheduling/service/
 retention/migration/cutover and full A1-A20/Scheduled Task acceptance remain gates.

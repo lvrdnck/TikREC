@@ -35,6 +35,7 @@ class AttemptCoordinator:
         self.token, self.owner = self.uuid(), self.uuid()
         self.revision, self.claimed, self.used, self.closed = None, None, False, False
         self.guard, self.children, self.errors = None, [], []
+        self.scratch = None
         self.errors_dropped = 0
         self.cancelled, self.gate, self.run_lock = Event(), RLock(), RLock()
         self.transition_lock = RLock()
@@ -71,7 +72,8 @@ class AttemptCoordinator:
     def _transition(self, kind, method, *tail, receipt_tail=None):
         with self.transition_lock:
             with self.gate:
-                if kind in {"launch_intent", "child_identity", "bind_owned_inputs"}:
+                if kind in {"launch_intent", "child_identity", "bind_owned_inputs", "reserve_scratch",
+                            "bind_scratch", "bind_scratch_artifacts", "seal_candidate"}:
                     require(not self.cancelled.is_set() and not self.closed, "attempt execution revoked")
                 args = [self.token, self.owner, self.revision, *tail]
                 receipt_args = None if receipt_tail is None else [self.token, self.owner, self.revision, *receipt_tail]
@@ -112,6 +114,9 @@ class AttemptCoordinator:
     def _authorize(self, child, identity):
         require(not child["authorized"], "historical authorization cannot resume again")
         self.guard.revalidate()
+        if child.get("intent", {}).get("access") == "write":
+            require(self.scratch is not None, "writer scratch owner unavailable")
+            self.scratch.assert_outputs_absent(child["intent"]["outputs"])
         self._record(child, "identity", asdict(identity))
         child["authorized"] = True
         self._fault("after_identity")
@@ -124,6 +129,8 @@ class AttemptCoordinator:
         with self.gate:
             require(not self.cancelled.is_set() and not self.closed and child["authorized"],
                     "local launch authorization revoked")
+            if child.get("intent", {}).get("access") == "write":
+                self.scratch.assert_outputs_absent(child["intent"]["outputs"])
             with self.journal.resume_fence(self.token, self.owner, self.revision,
                                            child["launch"], asdict(identity)):
                 yield
@@ -136,6 +143,35 @@ class AttemptCoordinator:
                 return run_child(self, executable, arguments, cwd, phase, timeout, observer)
             except BaseException as original:
                 self.cancelled.set()
+                if self.scratch is not None:
+                    self.scratch.hold(original)
+                raise AttemptError(self, original) from original
+
+    def reserve_scratch(self, *, helpers=()):
+        """Reserve and bind one fresh generated attempt workspace and declarations."""
+        from .attempt_scratch import AttemptScratch
+        with self.run_lock:
+            try:
+                require(self.scratch is None, "attempt scratch reservation is single-use")
+                return AttemptScratch.reserve(self, helpers)
+            except BaseException as original:
+                if self.scratch is not None:
+                    self.scratch.hold(original)
+                raise AttemptError(self, original) from original
+
+    def run_writer_child(self, executable, arguments, *, cwd, phase, timeout,
+                         outputs=("candidate.mp4",), observer=None):
+        """Run a separately declared scratch writer without changing reader authority."""
+        from .attempt_execution import run_child
+        with self.run_lock:
+            try:
+                require(outputs and self.scratch is not None and not self.scratch.candidate_ready,
+                        "bound attempt scratch is required for writer authority")
+                return run_child(self, executable, arguments, cwd, phase, timeout, observer, outputs)
+            except BaseException as original:
+                self.cancelled.set()
+                if self.scratch is not None:
+                    self.scratch.hold(original)
                 raise AttemptError(self, original) from original
 
     def cancel(self, timeout=5):
@@ -152,6 +188,8 @@ class AttemptCoordinator:
                 row = self.journal.owned_attempt(self.token)
                 if row["state"] == "held":
                     self._transition("revoke_owned", self.journal.revoke_owned)
+        if self.scratch is not None:
+            self.scratch.hold()
 
     def close(self, timeout=5):
         """Keep guards and uncertain/unclean process owners reachable together."""
@@ -168,6 +206,7 @@ class AttemptCoordinator:
                     self._error(error)
             safe = all(child["process"].closed and child["process"].evidence().state in
                        {"not_created", "confirmed_exited"} for child in self.children[-1:])
+            scratch_safe = True
             if safe and self.guard is not None:
                 try:
                     self.guard.revalidate()
@@ -177,5 +216,7 @@ class AttemptCoordinator:
                     self.guard.close()
                 except BaseException as error:
                     self._error(error)
-            self.closed = safe and (self.guard is None or self.guard.closed)
+            if safe and self.scratch is not None and self.scratch.candidate_ready:
+                scratch_safe = self.scratch.close_candidate_protection()
+            self.closed = safe and scratch_safe and (self.guard is None or self.guard.closed)
             return self.closed

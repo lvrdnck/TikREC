@@ -7,7 +7,31 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 SINGLE ACTIVE / OPEN - durable attempt/child authority COMPLETE FOR REVIEW
+- **Issue #52 SINGLE ACTIVE / OPEN - durable scratch/candidate ownership COMPLETE
+  FOR PM REVIEW (2026-10-05):** The 2026-10-05 PM decision accepts `3d4e15ce`
+  as the internal
+  durable-attempt/child-launch foundation and narrows the next slice to durable
+  scratch and unpublished-candidate ownership bound to `AttemptCoordinator`.
+  This supersedes the earlier GitHub comment selecting queue-connected assembly:
+  do not connect the queue to MP4 assembly here. Persist reservation before
+  filesystem creation; keep exact attempt/session/H-seal/operation bindings and
+  native scope protection; preserve ambiguous artifacts; seal only unpublished,
+  unvalidated candidate evidence after complete writer execution proof. No queue
+  assembly, validation, publication, settlement, retry, scheduler or service work.
+  Schema 5 adds the durable scratch/candidate ledger; schemas 1-4 remain unchanged
+  and are refused without migration. **Current status: implementation complete,
+  awaiting PM review; no owner decisions pending. Focused ownership/journal/
+  coordinator suite: **33 passed** after the final
+  test-file split. Full offline suite: **2,289 passed, 9 skipped, 19 subtests
+  passed; 2 failed**. Both `test_live.py`
+  assertions failed because the host's default Videos path is absolute while the
+  assertions expect a relative path (unrelated to scratch ownership). Evidence:
+  [ISSUE_52_DURABLE_SCRATCH.md](ISSUE_52_DURABLE_SCRATCH.md).
+  #48 remains OPEN/PAUSED and #28 unresolved. Preserve all existing capture,
+  accounting, raw, room, path and original H evidence. Safe resume: pull this
+  branch and read the current #52 checkpoint/evidence report before continuing.
+
+- **Historical checkpoint — Issue #52 durable attempt/child authority COMPLETE FOR REVIEW
   (2026-10-04):** [PM review 5982869804](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-5982869804)
   **accepted `44711e65`** and selected durable attempt/child launch with claimed
   input protection. The isolated one-shot `AttemptCoordinator` now combines existing
@@ -27,7 +51,8 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
   on actual sealed H inputs pass; evidence hashes stay unchanged. Both separate
   generated assembly paths retain part/packet-DTS/deep validation and absent final
   destinations. [Complete evidence and limits](ISSUE_52_DURABLE_LAUNCH.md).
-  **Current next action: PM review of this pushed slice; no automatic integration.**
+  **Historical next action (2026-10-04): PM review of that slice; superseded by
+  the 2026-10-05 decision above.**
   #52 OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED (Gracie-only raw/Ward OFF), #28 unresolved;
   owner decisions: None. Scratch/publication/settlement/retry, scheduling/service/
   retention/migration/cutover and full A1-A20/Scheduled Task acceptance remain gates.
