@@ -90,3 +90,6 @@ def audit_owned(connection):
         audit_scratch(connection, row)
         from .session_journal_validation_checks import audit_validation
         audit_validation(connection, row)
+
+        from .session_journal_publication_checks import audit_publication
+        audit_publication(connection, row)

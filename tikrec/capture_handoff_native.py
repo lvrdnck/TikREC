@@ -59,7 +59,7 @@ class NativeHandle:
     Shared handles are only for directory/catalog lifetime, never a closure seal.
     """
 
-    def __init__(self, path: Path, *, directory=False, shared=False, share_mode=None):
+    def __init__(self, path: Path, *, directory=False, shared=False, share_mode=None, publication_right=False):
         self.api, self.path, self.fd, self.handle = _kernel(), Path(path), None, None
         self.directory, self.shared = directory, shared
         scope = local_path(self.path, directory=directory)
@@ -67,6 +67,11 @@ class NativeHandle:
         # READ_ATTRIBUTES suffices for directory namespace pins. Closed files are
         # opened read/write with no sharing: existing readers/writers must unwind.
         access = 0x80 if directory else 0x80000000 if shared else 0xC0000000
+        # Only publication's original candidate acquisition requests DELETE.
+        require(type(publication_right) is bool and (not publication_right or not directory and not shared),
+                "invalid publication native access")
+        if publication_right:
+            access |= 0x10000
         sharing = (3 if directory or shared else 0) if share_mode is None else share_mode
         require(type(sharing) is int and 0 <= sharing <= 7, "invalid native sharing mode")
         handle = self.api.CreateFileW(str(scope), access, sharing,

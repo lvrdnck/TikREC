@@ -26,8 +26,10 @@ class JournalAssembly:
     """
 
     def __init__(self, authority, *, ffmpeg, ffprobe, progress=None,
-                 process_factory=OwnedProcess, fault=lambda _: None, candidate_validation=False):
+                 process_factory=OwnedProcess, fault=lambda _: None, candidate_validation=False, candidate_publication=False):
         self.coordinator = AttemptCoordinator(authority, process_factory=process_factory, fault=fault)
+        require(not candidate_publication or candidate_validation, "publication requires validation")
+        self.coordinator.publication_capable = candidate_publication
         self.coordinator.validation_readers = candidate_validation
         self.ffmpeg, self.ffprobe = Path(ffmpeg), Path(ffprobe)
         self.progress, self.plan, self.receipt = progress, None, None

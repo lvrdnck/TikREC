@@ -12,10 +12,18 @@ class NativeStreams:
         self.api, self.child, self.readers = api, [], {}
         self.eof = set()
 
-    def open(self):
+    def open(self, retained_stdin=None):
         """Create inheritable child endpoints and noninheritable parent readers."""
         security = Security(C.sizeof(Security), None, True)
-        stdin = self.api.CreateFileW("NUL", 0x80000000, 3, C.byref(security), 3, 0x80, None)
+        if retained_stdin is None:
+            stdin = self.api.CreateFileW("NUL", 0x80000000, 3, C.byref(security), 3, 0x80, None)
+        else:
+            duplicate = H()
+            current = self.api.GetCurrentProcess()
+            # Only READ access is inherited; write and rename authority stays local.
+            check(self.api.DuplicateHandle(current, retained_stdin, current, C.byref(duplicate),
+                                           0x80000000, True, 0))
+            stdin = duplicate.value
         if stdin == C.c_void_p(-1).value:
             raise C.WinError(C.get_last_error())
         self.child.append(stdin)

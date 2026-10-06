@@ -74,7 +74,7 @@ class AttemptCoordinator:
             with self.gate:
                 if kind in {"launch_intent", "child_identity", "bind_owned_inputs", "reserve_scratch",
                             "bind_scratch", "bind_scratch_artifacts", "seal_candidate",
-                            "begin_validation", "finish_validation"}:
+                            "begin_validation", "finish_validation", "prepare_publication", "observe_publication"}:
                     require(not self.cancelled.is_set() and not self.closed, "attempt execution revoked")
                 args = [self.token, self.owner, self.revision, *tail]
                 receipt_args = None if receipt_tail is None else [self.token, self.owner, self.revision, *receipt_tail]
@@ -131,6 +131,11 @@ class AttemptCoordinator:
         self.guard.revalidate()
         if child.get("validation") is not None:
             child["validation"].revalidate()
+        if child.get("validation") is not None and child["validation"].binding.get("transport") == "retained_stdin":
+            import os
+            # Hashing shares the inherited file object's cursor. Rewind after
+            # the final pre-resume proof, while the child is still suspended.
+            os.lseek(self.scratch.artifacts["candidate.mp4"].fd, 0, os.SEEK_SET)
         if child.get("intent", {}).get("access") == "write":
             self.scratch.assert_outputs_absent(child["intent"]["outputs"])
         with self.gate:

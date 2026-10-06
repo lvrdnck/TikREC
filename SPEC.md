@@ -1,7 +1,24 @@
 # TikREC — a recorder for public TikTok LIVE streams
 
+## Current guarded-publication contract — 2026-10-06
 
-## Issue #52 internal candidate-validation checkpoint (2026-10-05)
+[PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
+accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.
+The [publication contract/evidence](ISSUE_52_GUARDED_PUBLICATION.md) connects the
+original one-shot coordinator and continuously protected candidate to its exact
+claimed MP4 destination. Original acquisition narrowly adds candidate DELETE
+rights; only publication-capable validation uses read-only inherited seekable
+stdin. Assembly-only/validation-only defaults and arbitrary-launch refusal remain.
+Schema **7** appends immutable preparation and separate observed-result evidence;
+schemas **1–6 are refused/preserved unchanged**, no migration/cutover. Preparation
+is not completion; native root-relative no-replace rename has no reopen/replay.
+The exact local scratch-to-output successor retains all ownership. Original
+assembly/candidate/validation evidence, pending manifests, accounting/claims/pins
+and synchronous CLI/service defaults remain. No settlement/refund, retry/adoption,
+service/production integration or release. #52 OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED;
+#28 unresolved. Earlier checkpoints below are historical within their limits.
+
+## Historical accepted issue #52 internal candidate-validation checkpoint (2026-10-05)
 
 [PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417) accepts `ee884bdc` connected assembly. The new
 [validation contract/evidence](ISSUE_52_CANDIDATE_VALIDATION.md) retains original same-attempt scratch/native/input ownership through

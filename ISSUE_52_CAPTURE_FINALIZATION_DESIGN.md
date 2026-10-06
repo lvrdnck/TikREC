@@ -1,6 +1,24 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Current candidate-validation contract — 2026-10-05
+## Current guarded-publication contract — 2026-10-06
+
+[PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
+accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.
+The [publication contract/evidence](ISSUE_52_GUARDED_PUBLICATION.md) connects the
+original one-shot coordinator and continuously protected candidate to its exact
+claimed MP4 destination. Original acquisition narrowly adds candidate DELETE
+rights; only publication-capable validation uses read-only inherited seekable
+stdin. Assembly-only/validation-only defaults and arbitrary-launch refusal remain.
+Schema **7** appends immutable preparation and separate observed-result evidence;
+schemas **1–6 are refused/preserved unchanged**, no migration/cutover. Preparation
+is not completion; native root-relative no-replace rename has no reopen/replay.
+The exact local scratch-to-output successor retains all ownership. Original
+assembly/candidate/validation evidence, pending manifests, accounting/claims/pins
+and synchronous CLI/service defaults remain. No settlement/refund, retry/adoption,
+service/production integration or release. #52 OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED;
+#28 unresolved. Earlier checkpoints below are historical within their limits.
+
+## Historical accepted candidate-validation contract — 2026-10-05
 
 [PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417) accepts `ee884bdc` connected assembly and supersedes its pending-review
 checkpoint. The new [validation contract/evidence](ISSUE_52_CANDIDATE_VALIDATION.md) describes `JournalValidation`: exact same-attempt
@@ -454,6 +472,14 @@ future protocol, not schema-3 guarantees. The implemented read guard compares
 the supported marker fields/H receipt and retains only a lease-local byte hash.
 
 ### Finalizer and publication
+
+**Implemented internal boundary (2026-10-06):** schema-7 publication preparation
+commits before the retained-handle no-replace move; a distinct observed result
+commits only after native/post-operation proof. The earlier word "receipt" before
+promotion below means preparation, never publication completion. This slice does
+not perform the later completion-manifest or terminal settlement steps. Restart
+adoption/retry in the proposed table below remains unimplemented and unauthorized;
+reopen reports committed facts only. See the current publication contract above.
 
 One non-daemon tracked worker chooses the oldest eligible committed queue entry, commits its
 attempt token before launch, and owns only that UUID's immutable inputs/paths.

@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from .candidate_validation_plan import commands
+from .candidate_validation_plan import binding_commands
 from .candidate_validation_report import check_report
 from .session_journal_owned_checks import audit_child, receipt
 from .session_journal_types import digest, require
@@ -20,8 +20,7 @@ def audit_validation(connection, owner):
     require(binding["token"] == owner["token"] and binding["session_id"] == owner["session_id"]
             and binding["candidate"] == owner["scratch"]["candidate"]
             and binding["workspace"] == owner["scratch"]["intent"]["workspace_path"]
-            and binding["commands"] == commands(binding["commands"][0][0],
-                Path(binding["workspace"]) / binding["candidate"]["name"])
+            and binding["commands"] == binding_commands(binding)
             and result["binding"] == binding and result["token"] == owner["token"]
             and result["owner"] == owner["owner"] and op["arguments_hash"] == digest([
                 owner["token"], owner["owner"], result["previous_revision"], binding]), "validation authority conflicts")

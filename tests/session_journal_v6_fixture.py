@@ -5,11 +5,11 @@ import sqlite3
 
 
 APPLICATION_ID = 0x544B524A
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 6
 
 # STRICT tables and CHECKs reject malformed rows even outside the public operations.
 SCHEMA = """
-CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=7)) STRICT;
+CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=6)) STRICT;
 CREATE TABLE sessions(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
  intent TEXT NOT NULL, creator TEXT NOT NULL, expected_room TEXT, room TEXT,
@@ -109,20 +109,6 @@ CREATE TABLE candidate_validations(token TEXT PRIMARY KEY REFERENCES scratch_can
 CREATE TABLE validation_receipts(token TEXT PRIMARY KEY REFERENCES candidate_validations(token),
  evidence TEXT NOT NULL, operation TEXT NOT NULL UNIQUE REFERENCES operations(id)
  DEFERRABLE INITIALLY DEFERRED) STRICT;
-CREATE TABLE publication_preparations(token TEXT PRIMARY KEY REFERENCES validation_receipts(token),
- binding TEXT NOT NULL, operation TEXT NOT NULL UNIQUE REFERENCES operations(id)
- DEFERRABLE INITIALLY DEFERRED) STRICT;
-CREATE TABLE publication_results(token TEXT PRIMARY KEY REFERENCES publication_preparations(token),
- evidence TEXT NOT NULL, operation TEXT NOT NULL UNIQUE REFERENCES operations(id)
- DEFERRABLE INITIALLY DEFERRED) STRICT;
-CREATE TRIGGER immutable_publication BEFORE UPDATE ON publication_preparations
- BEGIN SELECT RAISE(ABORT,'immutable publication preparation'); END;
-CREATE TRIGGER keep_publication BEFORE DELETE ON publication_preparations
- BEGIN SELECT RAISE(ABORT,'keep publication preparation'); END;
-CREATE TRIGGER immutable_publication_result BEFORE UPDATE ON publication_results
- BEGIN SELECT RAISE(ABORT,'immutable publication result'); END;
-CREATE TRIGGER keep_publication_result BEFORE DELETE ON publication_results
- BEGIN SELECT RAISE(ABORT,'keep publication result'); END;
 CREATE TRIGGER immutable_validation BEFORE UPDATE ON candidate_validations
  BEGIN SELECT RAISE(ABORT,'immutable validation authority'); END;
 CREATE TRIGGER keep_validation BEFORE DELETE ON candidate_validations

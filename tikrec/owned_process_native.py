@@ -14,7 +14,7 @@ class NativeChild:
         self.api, self.job, self.process, self.thread = kernel(), None, None, None
         self.streams, self.initial = NativeStreams(self.api), None
 
-    def create(self, executable, arguments, cwd, fault):
+    def create(self, executable, arguments, cwd, fault, retained_stdin=None):
         """Associate the suspended child with its private job inside CreateProcessW."""
         fault("before_job")
         self.job = check(self.api.CreateJobObjectW(None, None))
@@ -29,7 +29,7 @@ class NativeChild:
         if observed.basic.flags != 0x2000:
             raise ValueError("private job kill-on-close containment unavailable")
         fault("after_limits")
-        standard = self.streams.open()
+        standard = self.streams.open(retained_stdin)
         size = S()
         self.api.InitializeProcThreadAttributeList(None, 2, 0, C.byref(size))
         if not size.value:

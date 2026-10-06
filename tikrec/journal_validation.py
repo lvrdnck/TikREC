@@ -28,8 +28,8 @@ class ValidationError(RuntimeError):
 class JournalValidation:
     """No reopen, retry, adoption or publication; one held candidate per invocation."""
 
-    def __init__(self, authority, **options):
-        self.assembly = JournalAssembly(authority, candidate_validation=True, **options)
+    def __init__(self, authority, *, candidate_publication=False, **options):
+        self.assembly = JournalAssembly(authority, candidate_validation=True, candidate_publication=candidate_publication, **options)
         self.coordinator = self.assembly.coordinator
         self.capability, self.report, self.error, self.used = None, None, None, False
 
@@ -47,6 +47,10 @@ class JournalValidation:
                 binding = {"session_id": assembled.session_id, "token": runner.token, "candidate": candidate,
                            "workspace": str(runner.scratch.path),
                            "commands": commands(str(self.assembly.ffprobe.resolve()), assembled.candidate)}
+                if getattr(runner, "publication_capable", False):
+                    binding["transport"] = "retained_stdin"
+                    binding["commands"] = commands(str(self.assembly.ffprobe.resolve()), assembled.candidate,
+                                                   retained_stdin=True)
                 self.capability = CandidateValidationExecution(runner, binding)
                 runner._fault("before_validation_authority")
                 self.capability.begin()
@@ -56,7 +60,9 @@ class JournalValidation:
                     index = self.capability.index
                     collector = ValidationDiagnostics(index)
                     try:
-                        evidence = self.capability.execute(command, collector)
+                        require(command == commands(str(self.assembly.ffprobe.resolve()), assembled.candidate)[index],
+                                "unexpected media validation command")
+                        evidence = self.capability.execute(binding["commands"][index], collector)
                     except BaseException as error:
                         # inspect_media's best-effort API may catch OSError;
                         # keep the execution failure independently before reuse.
@@ -70,7 +76,8 @@ class JournalValidation:
                         bytes(collector.stdout).decode("utf-8"), stderr)
                 # Validate the output itself. Pending publication manifests are
                 # neither modified nor used as candidate-validation prerequisites.
-                _validate_output(assembled.candidate, result, True, str(self.assembly.ffprobe.resolve()), execute)
+                _validate_output(assembled.candidate, result, True, str(self.assembly.ffprobe.resolve()), execute,
+                    readable_check=self.capability.readable if binding.get("transport") == "retained_stdin" else None)
                 if self.error is not None:
                     raise self.error
                 if self.capability.index == 1:

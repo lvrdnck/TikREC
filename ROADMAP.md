@@ -2045,7 +2045,26 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current internal candidate-validation task (2026-10-05):** [PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417)
+**Current guarded-publication slice (2026-10-06; COMPLETE FOR PM REVIEW):** [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
+accepts `1e1e1cae` validation. One live original coordinator connects accepted
+assembly/validation to the exact claimed final MP4 through continuous native
+ownership and no-replace rename. Minimal schema 7 appends exact preparation and
+separate observed-result evidence; schemas 1–6 remain preserved/refused without
+migration. Original evidence, pending manifests and all accounting/claims/pins stay
+retained. Only publication-capable validation inherits read-only seekable stdin;
+ordinary assembly/validation/CLI/service defaults remain. New connected generated
+copy/libx264, fault/lifetime and eleven supervisor-death cases are documented in
+[publication evidence](ISSUE_52_GUARDED_PUBLICATION.md). Final frozen suites:
+**72 focused passed; 755 related passed / 2 skips / 17 subtests; 2529 full passed /
+9 skips / 19 subtests**. No failures; all 388 source/test hashes unchanged.
+This is process-death/cooperative namespace evidence, not atomic filesystem/SQLite,
+power-loss, natural-recording or full service/A1–A20 acceptance. #52 OPEN/SINGLE
+ACTIVE; #48 paused; #28 unresolved. No completion-manifest, settlement/refund,
+retry/adoption, scheduler/service/API/monitor, production, retention, migration,
+upgrade/resource-policy or merge/release/tag work. Next: PM review
+only. Owner decisions None; use `Refs #52`; no automatic successor.
+
+**Historical candidate validation — accepted by 6010639470 (2026-10-05):** [PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417)
 accepts `ee884bdc` and authorizes only durable same-candidate validation. The new
 connected phase keeps original native scratch/input ownership while three fixed
 contained validators inspect, decode and check packet DTS. Minimal schema 6 adds

@@ -28,6 +28,14 @@ class CandidateValidationExecution:
                 and self._hash(held) == candidate["sha256"], "validation candidate bytes changed")
         scratch._revalidate()
 
+    def readable(self):
+        """Prove nonempty regular candidate bytes through original native ownership."""
+        self.revalidate()
+        held = self.runner.scratch.artifacts[self.binding["candidate"]["name"]]
+        os.lseek(held.fd, 0, os.SEEK_SET)
+        require(held.size > 0 and len(os.read(held.fd, 1)) == 1, "candidate unreadable")
+        return True
+
     def _hash(self, held):
         """Hash the retained descriptor with cancellation checks between bounded reads."""
         value = hashlib.sha256()

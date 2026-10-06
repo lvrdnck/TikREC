@@ -49,6 +49,7 @@ class AttemptScratch:
         self.observed = None
         self.candidate_ready = False
         self.failure = None
+        self.publication_successor = None
 
     @classmethod
     def reserve(cls, runner, helpers=()):
@@ -123,6 +124,9 @@ class AttemptScratch:
         require(self.workspace.identity == ArtifactIdentity(
             self.intent["workspace"]["volume"], tuple(self.intent["workspace"]["components"])),
             "scratch namespace identity changed")
+        if self.publication_successor is not None:
+            self.publication_successor.check_scratch()
+            return
         if self.observed is not None:
             names = sorted(entry.name for entry in os.scandir(self.path))
             require(names == [item["name"] for item in self.observed],
@@ -167,7 +171,8 @@ class AttemptScratch:
                 # Validation opts into read sharing at original acquisition. This
                 # same read/write owner still denies all new writes and deletion.
                 held = ScratchHandle(self.path / name,
-                    share_mode=1 if getattr(self.runner, "validation_readers", False) else 0)
+                    share_mode=1 if getattr(self.runner, "validation_readers", False) else 0,
+                    publication_right=name == "candidate.mp4" and getattr(self.runner, "publication_capable", False))
             except BaseException as original:
                 partial = getattr(original, "scratch_native_owner", None)
                 if partial is not None:

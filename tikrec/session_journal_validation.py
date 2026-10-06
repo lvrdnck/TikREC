@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from .candidate_validation_plan import commands
+from .candidate_validation_plan import binding_commands
 from .candidate_validation_report import check_report
 from .session_journal_owned import advance
 from .session_journal_owned_view import owner_guard
@@ -15,7 +15,9 @@ class ValidationOperations:
 
     def begin_validation(self, operation, token, owner, revision, binding):
         """Reserve three exact read-only launches against immutable assembly evidence."""
-        require(type(binding) is dict and set(binding) == {"session_id", "token", "candidate", "commands", "workspace"})
+        require(type(binding) is dict and set(binding) in ({"session_id", "token", "candidate", "commands", "workspace"},
+                {"session_id", "token", "candidate", "commands", "workspace", "transport"})
+                and binding.get("transport", "path") in {"path", "retained_stdin"})
         def action(connection):
             row = owner_guard(connection, token, owner, revision, launch=True)
             scratch = row["scratch"]
@@ -26,7 +28,7 @@ class ValidationOperations:
                     "validation lacks exact same-attempt candidate")
             executable = Path(binding["commands"][0][0])
             require(executable.is_absolute() and executable.suffix.casefold() == ".exe"
-                    and binding["commands"] == commands(str(executable), Path(binding["workspace"]) / candidate["name"]),
+                    and binding["commands"] == binding_commands(binding),
                     "validation requires fixed media checks")
             connection.execute("INSERT INTO candidate_validations VALUES (?,?,?)", (token, encode(binding), operation))
             return {**advance(connection, operation, row), "binding": binding}

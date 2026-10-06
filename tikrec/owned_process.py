@@ -76,11 +76,13 @@ class OwnedProcess:
                      "incomplete" if self.streams_incomplete else "pending"
                      for name in ("stdout", "stderr"))
 
-    def start(self, executable, arguments, *, cwd, before_resume, resume_guard=None):
+    def start(self, executable, arguments, *, cwd, before_resume, resume_guard=None, retained_stdin=None):
         """Create contained/suspended; authorize identity before exact-thread resume.
 
         Optional resume_guard fences immediate verification/resume against durable
         revocation. Its context must contain no scanning, waiting or caller hooks.
+        retained_stdin duplicates only READ rights to an explicitly held candidate;
+        omitted stdin preserves NUL and the ordinary process contract.
         """
         with self.lock:
             if self.started or self.closed or self.cancel_requested:
@@ -102,7 +104,10 @@ class OwnedProcess:
                 if self.closed or self.cancel_requested:
                     raise ValueError("closed/cancelled attempt cannot create child")
                 self.native = NativeChild()
-                self.native.create(executable.resolve(), arguments, cwd, self._creation_boundary)
+                if retained_stdin is None:
+                    self.native.create(executable.resolve(), arguments, cwd, self._creation_boundary)
+                else:
+                    self.native.create(executable.resolve(), arguments, cwd, self._creation_boundary, retained_stdin)
                 self.identity = ProcessIdentity(self.session_id, self.attempt_token, *self.native.initial)
                 self.state = "suspended"
             # Do not hold the native-owner lock during trusted durable authorization:

@@ -1,13 +1,40 @@
 # TikREC current state
 
-Last reviewed: 2026-10-05. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-06. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Issue #52 OPEN / SINGLE ACTIVE — durable candidate validation COMPLETE FOR
+- **Issue #52 OPEN / SINGLE ACTIVE — guarded same-attempt publication COMPLETE FOR PM REVIEW
+  (2026-10-06):** [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
+  accepts `1e1e1cae` validation and supersedes its pending-review checkpoint for
+  this single slice. Original coordinator/candidate ownership now connects to a
+  root-relative native no-replace transition, preceded by exact preparation and
+  followed by separate observed proof. Schema 7 appends publication records;
+  schemas 1–6 remain refused/preserved without migration/cutover. The original
+  candidate/assembly/validation evidence, source/raw/arrival/control/H, pending
+  manifests and task/unit/room/path/durable/local pins remain retained.
+  Publication-capable acquisition alone adds DELETE rights; its three owned
+  validators use read-only inherited seekable stdin. Existing assembly-only,
+  validation-only and synchronous CLI/service defaults remain.
+  [Publication evidence and limits](ISSUE_52_GUARDED_PUBLICATION.md).
+  Final frozen suites: **72 focused passed; 755 related passed / 2 skips /
+  17 subtests; 2529 full passed / 9 skips / 19 subtests**. No failures;
+  all 388 source/test hashes unchanged. Eleven actual supervisor-death boundaries,
+  generated copy/libx264, mutation/collision/ack-loss/cancellation/unknown/cleanup
+  and two disjoint capture bindings are verified. No atomic filesystem/SQLite,
+  power-loss or natural-recording/service/A1–A20 guarantee. Owner decisions None;
+  #48 OPEN/PAUSED, #28 unresolved.
+  No production access/change/restart, service/API/monitor/scheduler integration,
+  manifest completion, settlement/refund, retry/adoption, retention, #48 polling,
+  migration/cutover, dependency/runtime/resource-policy changes, merge/release/tag.
+  Use `Refs #52` and preserve pushed history. Commit is recorded in #52's current
+  checkpoint and delivery comment. Next: PM review only; no automatic successor. Safe resume: pull the existing isolated
+  branch and reconcile current issue/report; historical receipts grant no replay.
+
+- **Historical candidate validation — accepted by 6010639470; delivery COMPLETE FOR
   PM REVIEW (2026-10-05):** [PM decision 6000035417](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6000035417)
   accepts `ee884bdc` and supersedes the prior pending assembly checkpoint.
   `JournalValidation` validates the exact same-attempt unpublished candidate while

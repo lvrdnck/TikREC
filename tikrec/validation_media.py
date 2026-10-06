@@ -14,9 +14,12 @@ if TYPE_CHECKING:
 
 
 def _validate_output(
-    output: Path, result: _ResultBuilder, deep: bool, ffprobe: str, runner: Callable[..., Any]
+    output: Path, result: _ResultBuilder, deep: bool, ffprobe: str, runner: Callable[..., Any],
+    *, readable_check: Callable[[], bool] | None = None
 ) -> MediaInfo | None:
-    if not _readable_nonempty(output, result, "output"):
+    # The guarded publication path proves readability through its retained
+    # descriptor. Ordinary CLI/service callers preserve the existing path check.
+    if not (readable_check() if readable_check is not None else _readable_nonempty(output, result, "output")):
         result.media_integrity = "failed"
         result.final_output_inspection = "failed"
         return None

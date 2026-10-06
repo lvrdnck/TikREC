@@ -110,6 +110,12 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
              "intent": intent, "validation": validation}
     runner.children.append(child)
     runner._fault("after_launch_intent")
+    retained_stdin = None
+    if validation is not None and validation.binding.get("transport") == "retained_stdin":
+        import os
+        held = runner.scratch.artifacts[validation.binding["candidate"]["name"]]
+        os.lseek(held.fd, 0, os.SEEK_SET)
+        retained_stdin = held.handle
     process, prior_fault = child["process"], child["process"]._fault
     def native_fault(boundary):
         prior_fault(boundary)
@@ -119,9 +125,10 @@ def run_child(runner, executable, arguments, cwd, phase, timeout, observer, outp
     try:
         require(not child["creation_used"], "child creation capability already consumed")
         child["creation_used"] = True
+        input_options = {} if retained_stdin is None else {"retained_stdin": retained_stdin}
         process.start(executable, arguments, cwd=cwd,
             before_resume=lambda identity: runner._authorize(child, identity),
-            resume_guard=lambda identity: runner._resume(child, identity))
+            resume_guard=lambda identity: runner._resume(child, identity), **input_options)
         if timeout is None:
             evidence = wait_writer(runner, child, cleanup_timeout)
         else:
