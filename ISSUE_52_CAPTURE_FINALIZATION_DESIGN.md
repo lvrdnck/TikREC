@@ -1,12 +1,15 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Current owned success settlement boundary — 2026-10-06
+## Current accepted settlement and narrow recovery boundary — 2026-10-06
 
 [PM acceptance/task 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)
 accepts R11/corrected manifest completion at `df954dd2`. The explicit internal
 success lifecycle now includes prepared execution revocation, exact cleanup and
 atomic terminal capacity/claim return. Media/history remain intact; service wiring,
-restart adoption/retry and retention remain later gates. [Contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
+general restart adoption/retry and retention remain later gates. The separately
+authorized [prepared-success recovery](ISSUE_52_RELEASE_RECOVERY.md) applies only
+after successful release preparation, and cannot adopt earlier unfinished phases.
+[Settlement contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
 
 Earlier checkpoint statements/results below remain historical within their slice.
 

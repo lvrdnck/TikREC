@@ -71,8 +71,11 @@ def audit_owner(connection, token, *, historical=False):
     validate_session_receipt(connection, session)
     require(session['seal'] is not None and digest(json.loads(session['seal'])) == row['seal_hash'],
             'owned history seal conflicts')
+    normal_terminal = connection.execute('SELECT evidence FROM release_results WHERE token=?', (token,)).fetchone()
+    recovered_terminal = connection.execute('SELECT evidence FROM release_recovery_results WHERE token=?', (token,)).fetchone()
+    require(normal_terminal is None or recovered_terminal is None, 'conflicting terminal release authorities')
+    terminal = normal_terminal or recovered_terminal
     if historical:
-        terminal = connection.execute('SELECT evidence FROM release_results WHERE token=?', (token,)).fetchone()
         attempt = connection.execute('SELECT state,proof FROM attempts WHERE token=?', (token,)).fetchone()
         require(terminal is not None and task['state'] == session['phase'] == attempt['state'] == 'completed'
                 and task['proof'] == attempt['proof'] == terminal['evidence']
@@ -117,4 +120,6 @@ def audit_owner(connection, token, *, historical=False):
     from .session_journal_manifest_checks import audit_manifest
     audit_manifest(connection, row)
     from .session_journal_settlement_checks import audit_settlement
-    audit_settlement(connection, row, historical=historical)
+    audit_settlement(connection, row, historical=historical and normal_terminal is not None)
+    from .session_journal_recovery_checks import audit_recovery
+    audit_recovery(connection, row, historical=recovered_terminal is not None)

@@ -59,14 +59,17 @@ class NativeHandle:
     Shared handles are only for directory/catalog lifetime, never a closure seal.
     """
 
-    def __init__(self, path: Path, *, directory=False, shared=False, share_mode=None, publication_right=False):
+    def __init__(self, path: Path, *, directory=False, shared=False, share_mode=None,
+                 publication_right=False, read_only=False):
         self.api, self.path, self.fd, self.handle = _kernel(), Path(path), None, None
-        self.directory, self.shared = directory, shared
+        self.ever_acquired = False
+        self.directory, self.shared, self.read_only = directory, shared, read_only
         scope = local_path(self.path, directory=directory)
         require(self.api.GetDriveTypeW(scope.anchor) == 3, "handoff storage is not local fixed storage")
         # READ_ATTRIBUTES suffices for directory namespace pins. Closed files are
         # opened read/write with no sharing: existing readers/writers must unwind.
-        access = 0x80 if directory else 0x80000000 if shared else 0xC0000000
+        require(type(read_only) is bool, "invalid native read mode")
+        access = 0x80 if directory else 0x80000000 if shared or read_only else 0xC0000000
         # Only publication's original candidate acquisition requests DELETE.
         require(type(publication_right) is bool and (not publication_right or not directory and not shared),
                 "invalid publication native access")
@@ -79,6 +82,7 @@ class NativeHandle:
         if handle == ctypes.c_void_p(-1).value:
             raise ctypes.WinError(ctypes.get_last_error())
         self.handle = handle
+        self.ever_acquired = True
         try:
             information = self._information()
             require(not information.attributes & 0x400
@@ -88,13 +92,15 @@ class NativeHandle:
             self.identity = self._path_identity()
             if not directory:
                 import msvcrt
-                self.fd = msvcrt.open_osfhandle(handle, os.O_BINARY | (os.O_RDONLY if shared else os.O_RDWR))
+                self.fd = msvcrt.open_osfhandle(handle, os.O_BINARY |
+                    (os.O_RDONLY if shared or read_only else os.O_RDWR))
             self.initial = self.stamp
         except BaseException as original:
             try:
                 self.close()
             except BaseException as cleanup:
                 original.capture_cleanup_errors = [cleanup]
+                original.capture_native_owners = [self]
                 raise original from cleanup
             raise
 
@@ -134,6 +140,7 @@ class NativeHandle:
             raise ctypes.WinError(ctypes.get_last_error())
         owner = cls.__new__(cls)
         owner.api, owner.path, owner.fd, owner.handle = parent.api, target, None, handle.value
+        owner.ever_acquired = True
         owner.directory, owner.shared = True, False
         try:
             info = owner._information()
@@ -205,12 +212,13 @@ class NativeHandle:
     def close(self):
         """Release the exact native owner once, preserving errors for the caller."""
         if self.handle is not None:
-            handle, self.handle = self.handle, None
             if self.fd is not None:
-                descriptor, self.fd = self.fd, None
-                os.close(descriptor)
-            elif not self.api.CloseHandle(handle):
+                os.close(self.fd)
+                self.fd, self.handle = None, None
+            elif not self.api.CloseHandle(self.handle):
                 raise ctypes.WinError(ctypes.get_last_error())
+            else:
+                self.handle = None
 
     def _information(self):
         require(self.handle is not None, "native proof handle is closed")

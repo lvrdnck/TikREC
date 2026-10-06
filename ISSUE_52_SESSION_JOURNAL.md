@@ -1,6 +1,16 @@
 # Issue #52 — isolated durable journal checkpoint
 
-## Current owned success settlement boundary — 2026-10-06
+## Current prepared-success recovery boundary — 2026-10-06
+
+PM decision [6017389662](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6017389662)
+accepts the schema-9 settlement foundation and authorizes one explicit recovery
+path for an attempt with durable successful release preparation. Schema **10**
+adds bounded immutable authority, proof, cleanup, and terminal recovery facts;
+schemas **1–9 remain refused/preserved unchanged**. Reopen stays observational;
+only the addressed recovery call may settle eligible prepared success.
+[Contract and test evidence](ISSUE_52_RELEASE_RECOVERY.md).
+
+## Historical owned success settlement boundary — 2026-10-06
 
 Schema 9 appends release preparation, cleanup observation and terminal receipts.
 Preparation revokes execution but keeps the task counted; confirmed cleanup precedes

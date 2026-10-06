@@ -5,14 +5,15 @@ import sqlite3
 
 from .session_journal_manifest_schema import MANIFEST_SCHEMA
 from .session_journal_settlement_schema import SETTLEMENT_SCHEMA
+from .session_journal_recovery_schema import RECOVERY_SCHEMA
 
 
 APPLICATION_ID = 0x544B524A
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 # STRICT tables and CHECKs reject malformed rows even outside the public operations.
 SCHEMA = """
-CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=9)) STRICT;
+CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=10)) STRICT;
 CREATE TABLE sessions(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
  intent TEXT NOT NULL, creator TEXT NOT NULL, expected_room TEXT, room TEXT,
@@ -206,6 +207,7 @@ CREATE TRIGGER keep_queue_entry BEFORE DELETE ON queue_entries
 
 SCHEMA += MANIFEST_SCHEMA
 SCHEMA += SETTLEMENT_SCHEMA
+SCHEMA += RECOVERY_SCHEMA
 
 
 def schema_fingerprint(connection: sqlite3.Connection) -> str:

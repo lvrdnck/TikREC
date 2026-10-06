@@ -33,6 +33,7 @@ def main():
             child = runner.children[-1]["process"]
             native = child.native
             context = {"path": str(owner.journal.path), "catalog": owner.journal.catalog_id,
+                "root": str(owner.root),
                 "session": original["id"], "original": original, "hashes": before,
                 "token": runner.token, "workspace": str(runner.scratch.path),
                 "handle": 0 if native is None else native.process or 0,
@@ -43,11 +44,20 @@ def main():
             (root / "context.json").write_text(json.dumps(context))
             check(api.SetEvent(barriers[0]))
             wait(api, barriers[1])
+        transaction_mode = mode
         def fault(point):
+            if mode == "cleanup_incomplete_after_cleanup_receipt" and point == "after_release_preparation":
+                held = next(value for key, value in runner.settlement_owner.objects
+                            if key == "scratch:candidate.mp4")
+                def fail_close():
+                    raise OSError("injected retained output close")
+                held.close = fail_close
             if point == mode:
                 pause()
+        if mode == "cleanup_incomplete_after_cleanup_receipt":
+            transaction_mode = "record_release_cleanup_after_commit"
         def transaction(kind, point):
-            if mode == kind + "_" + point:
+            if transaction_mode == kind + "_" + point:
                 pause()
         runner._fault, owner.journal._fault = fault, transaction
         adapter.run()

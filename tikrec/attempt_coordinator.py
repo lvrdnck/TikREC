@@ -39,6 +39,9 @@ class AttemptCoordinator:
         self.errors_dropped = 0
         self.cancelled, self.gate, self.run_lock = Event(), RLock(), RLock()
         self.transition_lock = RLock()
+        registry = getattr(authority, '_attempts', None)
+        if registry is not None:
+            registry[self.token] = self
 
     @staticmethod
     def uuid():

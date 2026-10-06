@@ -2045,7 +2045,31 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current owned success settlement (2026-10-06; complete for PM review):**
+**Current prepared-success restart recovery (issue #52; complete for PM review, 2026-10-06):**
+[PM decision 6017389662](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6017389662)
+accepts `0665b5e8` settlement and authorizes only this bounded successor. Accepted
+R1–R11, assembly, validation, publication and corrected manifest completion stay
+accepted. Explicit `CaptureAuthority.recover_prepared_release` is idempotent for an
+already terminal result and safely completes bookkeeping for a durably prepared,
+unsettled success using a fresh fenced generation, retired-owner proof, exact
+read-only native protection, completed output/control/evidence verification,
+confirmed cleanup and atomic exact-once accounting. Schema 10 adds append-only
+recovery facts; schemas 1–9 remain refused/preserved with no migration. See the
+[recovery contract and test evidence](ISSUE_52_RELEASE_RECOVERY.md).
+Final frozen Windows suites: **302 focused; 1,065 related / 2 skipped / 17
+subtests; 2,826 full / 9 skipped / 19 subtests passed**, no failures; all 439
+source/test hashes unchanged across runs. Tests include generated copy/libx264,
+preserved capture truth, original cleanup-pending/incomplete/confirmed states,
+six recovery-death boundaries, proof drift, cleanup faults, lost acknowledgements,
+already-terminal idempotency and next explicit FIFO completion. #52 SINGLE ACTIVE;
+#48 OPEN/PAUSED; #28 unresolved; owner decisions None. No service/API/monitor/
+scheduler wiring, production access/change/restart, unfinished-phase adoption,
+automatic re-encoding retry, retention, migration, upgrade/resource-policy,
+remote worker, merge, release or tag. Natural recording, power-loss, service/A1–A20
+and integrated review remain separate gates. **PM review only next; no automatic
+successor or deployment-readiness claim.**
+
+**Historical accepted owned success settlement (accepted 2026-10-06):**
 [PM decision 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)
 accepts `df954dd2` R11/corrected manifest completion. Explicit `JournalSettlement`
 finishes the original internal lifecycle through immutable prepared revocation,

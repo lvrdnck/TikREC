@@ -31,6 +31,8 @@ class SettlementOperations:
         """Record confirmed and incomplete results separately without exposing capacity."""
         authorize(self, capability, 'record_release_cleanup', token, owner, revision, evidence)
         def action(connection):
+            require(connection.execute('SELECT 1 FROM release_recovery_heads WHERE token=?', (token,)).fetchone()
+                    is None, 'original release callback fenced by recovery authority')
             row = owner_guard(connection, token, owner, revision, cleanup=True)
             prep = connection.execute('SELECT * FROM release_preparations WHERE token=?', (token,)).fetchone()
             require(prep is not None and row['state'] == 'revoked', 'release cleanup authority missing')
@@ -44,6 +46,8 @@ class SettlementOperations:
         """Atomically return only this task's outstanding unit and lifetime claims."""
         authorize(self, capability, 'settle_owned_success', token, owner, revision, evidence)
         def action(connection):
+            require(connection.execute('SELECT 1 FROM release_recovery_heads WHERE token=?', (token,)).fetchone()
+                    is None, 'original settlement callback fenced by recovery authority')
             row = owner_guard(connection, token, owner, revision, cleanup=True)
             prep = connection.execute('SELECT * FROM release_preparations WHERE token=?', (token,)).fetchone()
             cleanup = connection.execute('SELECT * FROM release_cleanups WHERE token=?', (token,)).fetchone()
@@ -79,8 +83,10 @@ class SettlementOperations:
             if row is None:
                 return None
             terminal = connection.execute('SELECT 1 FROM release_results WHERE token=?', (token,)).fetchone()
+            recovered = connection.execute('SELECT 1 FROM release_recovery_results WHERE token=?', (token,)).fetchone()
+            require(terminal is None or recovered is None, 'conflicting terminal release authorities')
             from .session_journal_owned_checks import audit_owner
-            audit_owner(connection, token, historical=terminal is not None)
+            audit_owner(connection, token, historical=terminal is not None or recovered is not None)
             records = {}
             for name, table, field in [('preparation', 'release_preparations', 'binding'),
                 ('cleanup', 'release_cleanups', 'evidence'), ('result', 'release_results', 'evidence')]:
@@ -88,7 +94,13 @@ class SettlementOperations:
                 records[name] = None if value is None else {**dict(value), field: json.loads(value[field])}
             if records['preparation'] is None:
                 return None
-            state = 'released' if terminal else 'cleanup_pending' if records['cleanup'] is None else (
+            recovered_result = connection.execute('SELECT * FROM release_recovery_results WHERE token=?',
+                                                  (token,)).fetchone()
+            records['recovery_result'] = None if recovered_result is None else {
+                **dict(recovered_result), 'evidence': json.loads(recovered_result['evidence'])}
+            head = connection.execute('SELECT * FROM release_recovery_heads WHERE token=?', (token,)).fetchone()
+            records['recovery'] = None if head is None else dict(head)
+            state = 'released' if terminal or recovered else 'cleanup_pending' if records['cleanup'] is None else (
                 'cleanup_confirmed' if records['cleanup']['evidence']['cleanup_complete'] else 'cleanup_incomplete')
             return {**records, 'state': state}
         return self._read(read)

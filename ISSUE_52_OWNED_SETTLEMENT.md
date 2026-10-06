@@ -1,5 +1,17 @@
 # Issue #52 — successful owned-attempt settlement and safe release
 
+## Narrow prepared-success recovery successor — 2026-10-06
+
+[PM decision 6017389662](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6017389662)
+accepts `0665b5e8` as the successful local settlement foundation and authorizes
+the single follow-up described in [prepared-success recovery](ISSUE_52_RELEASE_RECOVERY.md).
+That decision supersedes this report's earlier blanket no-restart statement only
+for an explicitly addressed attempt with durable successful release preparation.
+No accepted foundation is reopened for review. Earlier incomplete media/control
+phases, attempts without preparation, and all service/deployment integration stay
+outside this exception. Recovery uses schema 10; schemas 1–9 remain
+refused/preserved without migration.
+
 ## Authority and delivery boundary
 
 [PM decision 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)

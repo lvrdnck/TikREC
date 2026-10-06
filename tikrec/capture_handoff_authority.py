@@ -28,6 +28,7 @@ class CaptureAuthority:
     def __init__(self, journal, root):
         self.journal, self.root = journal, Path(root).absolute()
         self.lock, self.bridges, self.pending = RLock(), {}, set()
+        self._attempts, self._recovery_owners, self._release_recovery = {}, {}, None
         self._stack, self.leases = ExitStack(), []
         try:
             require(self.root != journal.path.parent, "state and media scopes must be separate")
@@ -120,17 +121,46 @@ class CaptureAuthority:
             self.pending.discard(session_id)
             return result
 
+    def recover_prepared_release(self, session_id, token, *, fault=lambda _: None):
+        """Explicitly recover one prepared successful release after a restart."""
+        from .release_recovery import recover_prepared_release
+        with self.lock:
+            self.assert_held()
+            return recover_prepared_release(self, session_id, token, fault=fault)
+
+    def assert_recovery_retired(self, token):
+        """Prove no same-process original capability still owns this prepared attempt."""
+        runner = self._attempts.get(token)
+        if runner is not None:
+            require(runner.closed and runner.settlement_owner is not None,
+                    'original live attempt owner still exists')
+            require(all(reader.connection is None and not reader.errors
+                        for reader in runner.settlement_owner.readers),
+                    'original settlement reader ownership is unresolved')
+            for key, held in runner.settlement_owner.objects:
+                require((held.closed and held.handle.closed) if key == 'lease' else
+                        held.handle is None and getattr(held, 'fd', None) is None,
+                        'original native release owners are still live')
+        recovery = self._recovery_owners.get(token)
+        require(recovery is None or not recovery.has_retained_ownership(),
+                'a prior recovery still owns native or journal resources')
+        self.assert_held()
+        return True
+
     def close(self):
         """Release process handles while durable capture/task/evidence ownership persists."""
-        errors = []
-        for lease in self.leases:
+        with self.lock:
+            require(not any(owner.has_retained_ownership() for owner in self._recovery_owners.values()),
+                    'recovery native owners must remain reachable until confirmed cleanup')
+            errors = []
+            for lease in self.leases:
+                try:
+                    lease.close()
+                except BaseException as error:
+                    errors.append(error)
             try:
-                lease.close()
+                self._stack.close()
             except BaseException as error:
                 errors.append(error)
-        try:
-            self._stack.close()
-        except BaseException as error:
-            errors.append(error)
-        if errors:
-            raise errors[0]
+            if errors:
+                raise errors[0]

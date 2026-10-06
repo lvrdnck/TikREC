@@ -91,7 +91,8 @@ class LifecycleLease:
 
 
 def acquire_lifecycle(root: Path, mode: str, *,
-                      cleanup_errors: list[BaseException] | None = None) -> LifecycleLease:
+                      cleanup_errors: list[BaseException] | None = None,
+                      existing_only: bool = False) -> LifecycleLease:
     """Acquire a nonblocking shared writer or exclusive retention root lease."""
     if mode not in {"writer", "retention"}:
         raise ValueError("unsupported lifecycle lease mode")
@@ -103,7 +104,8 @@ def acquire_lifecycle(root: Path, mode: str, *,
         active = _registry.get(key, {"writer": 0, "retention": 0})
         if active["retention"] or (mode == "retention" and active["writer"]):
             raise LifecycleBusy("recording root has a conflicting lifecycle lease")
-        handle = _open_lock(scope, cleanup_errors)
+        handle = (_open_lock(scope, cleanup_errors, existing_only=True) if existing_only
+                  else _open_lock(scope, cleanup_errors))
         registered = False
         try:
             slot = _lock(handle, mode, _occupied.get(key, set()))
@@ -153,20 +155,25 @@ def acquire_writer_roots(*roots: Path):
         yield
 
 
-def _open_lock(root: Path, cleanup_errors: list[BaseException] | None = None):
+def _open_lock(root: Path, cleanup_errors: list[BaseException] | None = None, *, existing_only=False):
     path = root / LOCK_NAME
     flags = os.O_RDWR | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
     created = False
-    try:
-        descriptor = os.open(path, flags | os.O_CREAT | os.O_EXCL, 0o600)
-        created = True
-    except FileExistsError:
+    if existing_only:
         descriptor = os.open(path, flags)
+    else:
+        try:
+            descriptor = os.open(path, flags | os.O_CREAT | os.O_EXCL, 0o600)
+            created = True
+        except FileExistsError:
+            descriptor = os.open(path, flags)
     try:
         if (_identity(descriptor) is None
                 or _identity(path) != _identity(descriptor)):
             raise ValueError("lifecycle lock file is redirected or ambiguous")
-        if os.fstat(descriptor).st_size < _WRITER_SLOTS:
+        if existing_only and os.fstat(descriptor).st_size < _WRITER_SLOTS:
+            raise ValueError("existing lifecycle lock is truncated")
+        if not existing_only and os.fstat(descriptor).st_size < _WRITER_SLOTS:
             # A crashed creator may leave a short file; extending never releases locks.
             os.ftruncate(descriptor, _WRITER_SLOTS)
             os.fsync(descriptor)
