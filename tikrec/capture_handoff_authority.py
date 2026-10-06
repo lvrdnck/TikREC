@@ -28,6 +28,7 @@ class CaptureAuthority:
     def __init__(self, journal, root):
         self.journal, self.root = journal, Path(root).absolute()
         self.lock, self.bridges, self.pending = RLock(), {}, set()
+        self.recovery_gate = RLock()
         self._attempts, self._recovery_owners, self._release_recovery = {}, {}, None
         self._stack, self.leases = ExitStack(), []
         try:
@@ -124,9 +125,23 @@ class CaptureAuthority:
     def recover_prepared_release(self, session_id, token, *, fault=lambda _: None):
         """Explicitly recover one prepared successful release after a restart."""
         from .release_recovery import recover_prepared_release
-        with self.lock:
-            self.assert_held()
+        # Competing recovery executions serialize without blocking capture admission.
+        with self.recovery_gate:
             return recover_prepared_release(self, session_id, token, fault=fault)
+
+    def cancel_release_recovery(self, session_id, token):
+        """Request addressed cooperative cancellation without waiting for file hashing."""
+        with self.lock:
+            recovery = self._release_recovery
+            if recovery is None:
+                return False
+            require(recovery.session_id == session_id and recovery.token == token,
+                    'cancellation address does not match active recovery')
+            if getattr(recovery, 'terminal_started', False):
+                # Once terminal accounting starts, later cancellation cannot undo it.
+                return False
+            recovery.cancelled.set()
+            return True
 
     def assert_recovery_retired(self, token):
         """Prove no same-process original capability still owns this prepared attempt."""
@@ -141,8 +156,7 @@ class CaptureAuthority:
                 require((held.closed and held.handle.closed) if key == 'lease' else
                         held.handle is None and getattr(held, 'fd', None) is None,
                         'original native release owners are still live')
-        recovery = self._recovery_owners.get(token)
-        require(recovery is None or not recovery.has_retained_ownership(),
+        require(not any(recovery.has_retained_ownership() for recovery in self._recovery_owners.values()),
                 'a prior recovery still owns native or journal resources')
         self.assert_held()
         return True
@@ -150,6 +164,7 @@ class CaptureAuthority:
     def close(self):
         """Release process handles while durable capture/task/evidence ownership persists."""
         with self.lock:
+            require(self._release_recovery is None, 'active recovery protects catalog lifetime')
             require(not any(owner.has_retained_ownership() for owner in self._recovery_owners.values()),
                     'recovery native owners must remain reachable until confirmed cleanup')
             errors = []

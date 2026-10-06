@@ -122,6 +122,7 @@ def acquire_lifecycle(root: Path, mode: str, *,
                 _occupied.setdefault(key, set()).add(slot)
             return lease
         except BaseException as original:
+            secondary_errors = []
             if registered:
                 try:
                     # A slot insertion may raise after adding it; this slot was
@@ -133,15 +134,18 @@ def acquire_lifecycle(root: Path, mode: str, *,
                         _registry.pop(key, None)
                         _occupied.pop(key, None)
                 except BaseException as cleanup:
+                    secondary_errors.append(cleanup)
                     if cleanup_errors is not None:
                         cleanup_errors.append(cleanup)
             try:
                 handle.close()
             except BaseException as cleanup:
+                secondary_errors.append(cleanup)
                 if cleanup_errors is not None:
                     cleanup_errors.append(cleanup)
                 # Read guards must be able to retain an owner whose release failed.
                 original.lifecycle_retained_handles = [handle]
+            original.lifecycle_cleanup_errors = secondary_errors
             raise
 
 
@@ -167,7 +171,10 @@ def _open_lock(root: Path, cleanup_errors: list[BaseException] | None = None, *,
             created = True
         except FileExistsError:
             descriptor = os.open(path, flags)
+    guard = None
     try:
+        from .release_recovery_handles import guard_descriptor
+        guard = guard_descriptor(descriptor)
         if (_identity(descriptor) is None
                 or _identity(path) != _identity(descriptor)):
             raise ValueError("lifecycle lock file is redirected or ambiguous")
@@ -190,15 +197,32 @@ def _open_lock(root: Path, cleanup_errors: list[BaseException] | None = None, *,
                 raise
             else:
                 os.close(parent)
-        return os.fdopen(descriptor, "r+b", buffering=0)
+        handle = os.fdopen(descriptor, "r+b", buffering=0)
+        return handle if guard is None else guard.stream(handle)
     except BaseException as original:
         try:
-            os.close(descriptor)
+            descriptor_identity = _descriptor_identity(descriptor)
+        except BaseException:
+            descriptor_identity = None
+        try:
+            os.close(descriptor) if guard is None else guard.close()
         except BaseException as cleanup:
             if cleanup_errors is not None:
                 cleanup_errors.append(cleanup)
             original.lifecycle_retained_descriptors = [descriptor]
+            original.lifecycle_descriptor_identities = {descriptor: descriptor_identity}
+            original.lifecycle_cleanup_errors = [cleanup]
         raise
+
+
+def _descriptor_identity(descriptor):
+    """Bind a retained descriptor to its native handle and file before any close."""
+    details = os.fstat(descriptor)
+    native = descriptor
+    if os.name == 'nt':
+        import msvcrt
+        native = msvcrt.get_osfhandle(descriptor)
+    return details.st_dev, details.st_ino, details.st_mode, native
 
 
 def _identity(artifact) -> tuple | None:

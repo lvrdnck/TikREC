@@ -11,6 +11,16 @@ authorized [prepared-success recovery](ISSUE_52_RELEASE_RECOVERY.md) applies onl
 after successful release preparation, and cannot adopt earlier unfinished phases.
 [Settlement contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
 
+[R12–R13 correction decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
+requires recovery cleanup ownership and capture-independent execution fencing
+before successor integration. The correction uses a separate recovery gate and
+narrow shared-authority sections; native proof/hash, SQL waits and teardown are
+outside capture admission. Cancellation is chunk-aware and cannot reverse
+terminal accounting. Unknown exact resources remain registered and block catalog
+close/new recovery. Stable shared-directory identity permits unrelated children,
+while recovered-attempt inventories and file evidence remain strict. Schema 10,
+bounded prepared-success scope and accepted normal media/control work are unchanged.
+
 Earlier checkpoint statements/results below remain historical within their slice.
 
 ## Historical R11 teardown correction — accepted by 6014913888 — 2026-10-06

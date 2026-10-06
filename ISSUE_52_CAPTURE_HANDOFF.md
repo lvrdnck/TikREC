@@ -1,5 +1,19 @@
 # Issue #52 — isolated capture close and verified durable handoff
 
+## Recovery cleanup and admission correction — 2026-10-06
+
+[PM R12–R13 decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
+retains the prepared-success recovery design pending correction review. Recovery
+uses its own execution gate; capture registration/call fencing holds the shared
+lock only briefly. File scans, hashing, SQL waits and teardown do not hold capture
+admission. Two connected disjoint captures progress during proof and committed
+SQLite cleanup. Catalog close refuses active or uncertain recovery owners;
+exception-attached leases/descriptors and initial/history readers remain tracked.
+Fresh recovery-only native cleanup references distinguish exact open objects from
+reused identifiers. Shared-root child creation permits stable directory identity
+comparison; attempt inventories and file proofs remain exact. Schema 10 and
+accepted capture/media foundations remain unchanged. [Contract and evidence](ISSUE_52_RELEASE_RECOVERY.md).
+
 ## Current guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)

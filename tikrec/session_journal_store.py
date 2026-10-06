@@ -128,8 +128,14 @@ class JournalStore:
                     "unexpected catalog identity")
             require(_file_identity(self.path) == self._identity, "journal file replaced")
             return connection
-        except BaseException:
-            connection.close()
+        except BaseException as original:
+            try:
+                connection.close()
+            except BaseException as cleanup:
+                from .session_journal_manifest_fence import ManifestFenceConnection
+                original.manifest_fence_owner = ManifestFenceConnection(connection)
+                original.manifest_fence_owner.errors.append(('close', cleanup))
+                raise original from cleanup
             raise
 
     def _inject(self, kind: str, boundary: str) -> None:

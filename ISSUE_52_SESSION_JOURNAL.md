@@ -10,6 +10,16 @@ schemas **1–9 remain refused/preserved unchanged**. Reopen stays observational
 only the addressed recovery call may settle eligible prepared success.
 [Contract and test evidence](ISSUE_52_RELEASE_RECOVERY.md).
 
+[R12–R13 correction decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
+withholds recovery acceptance pending review. Initial/history, proof and receipt
+lookup readers now retain exact SQLite ownership, including partial connection
+setup and wrong-thread teardown. Exact primary/secondary exceptions remain
+accessible separately from bounded durable diagnostic text. A known committed
+terminal receipt stays authoritative after acknowledgement or close failure.
+SQL execution and teardown use the separate recovery gate outside capture
+admission; current owner/thread/call and durable generation fences still apply.
+No schema change, migration or broader reopen/recovery behavior is included.
+
 ## Historical owned success settlement boundary — 2026-10-06
 
 Schema 9 appends release preparation, cleanup observation and terminal receipts.

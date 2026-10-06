@@ -146,7 +146,7 @@ def test_incomplete_recovery_cleanup_stays_pinned_and_new_generation_can_finish(
                     raise OSError('injected close acknowledgement loss')
                 original_close(held)
             monkeypatch.setattr(NativeHandle, 'close', close_with_lost_ack)
-            expected = JournalError
+            expected = OSError
         else:
             def cancellation(point):
                 if point == 'after_recovery_resource_input_0':

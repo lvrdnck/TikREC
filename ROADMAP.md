@@ -2045,29 +2045,32 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current prepared-success restart recovery (issue #52; complete for PM review, 2026-10-06):**
-[PM decision 6017389662](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6017389662)
-accepts `0665b5e8` settlement and authorizes only this bounded successor. Accepted
-R1–R11, assembly, validation, publication and corrected manifest completion stay
-accepted. Explicit `CaptureAuthority.recover_prepared_release` is idempotent for an
-already terminal result and safely completes bookkeeping for a durably prepared,
-unsettled success using a fresh fenced generation, retired-owner proof, exact
-read-only native protection, completed output/control/evidence verification,
-confirmed cleanup and atomic exact-once accounting. Schema 10 adds append-only
-recovery facts; schemas 1–9 remain refused/preserved with no migration. See the
-[recovery contract and test evidence](ISSUE_52_RELEASE_RECOVERY.md).
-Final frozen Windows suites: **302 focused; 1,065 related / 2 skipped / 17
-subtests; 2,826 full / 9 skipped / 19 subtests passed**, no failures; all 439
-source/test hashes unchanged across runs. Tests include generated copy/libx264,
-preserved capture truth, original cleanup-pending/incomplete/confirmed states,
-six recovery-death boundaries, proof drift, cleanup faults, lost acknowledgements,
-already-terminal idempotency and next explicit FIFO completion. #52 SINGLE ACTIVE;
-#48 OPEN/PAUSED; #28 unresolved; owner decisions None. No service/API/monitor/
-scheduler wiring, production access/change/restart, unfinished-phase adoption,
-automatic re-encoding retry, retention, migration, upgrade/resource-policy,
-remote worker, merge, release or tag. Natural recording, power-loss, service/A1–A20
-and integrated review remain separate gates. **PM review only next; no automatic
-successor or deployment-readiness claim.**
+**Current R12–R13 recovery corrections (issue #52; complete for PM review, 2026-10-07):**
+[PM decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
+retains prepared-success recovery but withholds acceptance of `45243f6c` until
+these corrections are reviewed. Accepted R1–R11/media/control foundations and
+normal settlement at `0665b5e8` remain accepted. Exact primary and bounded actual
+secondary errors survive partial lease/native/SQLite acquisition and cleanup;
+uncertain owners block close/new recovery and known terminal commits stay final.
+Separate recovery execution fencing leaves hashing, scans, SQL waits and teardown
+outside capture admission, retaining current-owner/thread/call/generation and
+cancellation protection. Shared-root child changes use stable directory identity;
+strict attempt inventories and file proofs remain. Native close references cover
+Python-closed/live-Windows-handle faults and refuse descriptor reuse, including a
+fresh open of the same lock file. Schema 10 unchanged, schemas 1–9 preserved/refused,
+no migration. [Correction contract and evidence](ISSUE_52_RELEASE_RECOVERY.md).
+Final frozen isolated Windows suites: **351 focused passed; 1,114 related passed / 2 skipped / 17 subtests passed; 2,875 full passed / 9 skipped / 19 subtests passed**.
+No failures; **448 source/test hashes unchanged** before/after every serial run.
+Historical reviewed results remain **302 focused; 1,065 related/2 skips/17 subtests;
+2,826 full/9 skips/19 subtests**. Two disjoint connected captures progress during
+hashing and committed SQL cleanup; next explicit FIFO, preserved truth,
+copy/libx264, repeated crashes and exact-once accounting remain required.
+#52 SINGLE ACTIVE; #48 OPEN/PAUSED; #28 unresolved; owner decisions None.
+No service/API/monitor/scheduler integration, production access/change/restart,
+broader unfinished-phase adoption, retention, migration, upgrades/resource policy,
+remote worker, merge, release or tag. Natural-recording, power-loss, service/A1–A20
+and integrated review remain separate gates. **PM review only after delivery; no
+automatic successor or deployment-readiness claim.**
 
 **Historical accepted owned success settlement (accepted 2026-10-06):**
 [PM decision 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)

@@ -39,6 +39,11 @@ def mutate(journal, readers, operation, kind, arguments, action):
             # This narrow protocol exposes the exact first error, including
             # SQLite entry/body faults; generic journal translation is unchanged.
             primary = error
+    if retained is None and primary is not None:
+        # Policy/setup can fail before _connect returns its exact reader.
+        retained = getattr(primary, 'manifest_fence_owner', None)
+        if retained is not None:
+            readers.append(retained)
     if retained is not None:
         errors = retained.cleanup()
         if errors:

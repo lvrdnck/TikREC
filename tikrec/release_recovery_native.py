@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .capture_handoff_marker import validate_pending_values
 from .capture_handoff_native import NativeHandle
+from .release_recovery_handles import NativeCloseGuard
 from .session_journal_recovery_checks import expected_inventory
 from .session_journal_types import encode, require
 
@@ -23,6 +24,7 @@ class RecoveryNativeProof:
     def open_all(self):
         """Reopen the immutable prepared scope without writes or path adoption."""
         for resource in self.recovery.binding['resources']:
+            self.recovery._check_cancelled()
             if resource['kind'] == 'native':
                 self._open_resource(resource)
                 self.recovery.fault('after_recovery_resource_' + resource['key'].replace(':', '_'))
@@ -37,7 +39,8 @@ class RecoveryNativeProof:
         held.ever_acquired = False
         self.objects[key] = held
         try:
-            NativeHandle.__init__(held, Path(proof['path']), **options)
+            NativeHandle.__init__(held, Path(proof['path']), **options,
+                cleanup_guard_factory=lambda handle: NativeCloseGuard(self.recovery, handle, resource_key=key))
         except BaseException as error:
             self.extra_owners.extend(getattr(error, 'capture_native_owners', ()))
             if held.ever_acquired:
@@ -51,19 +54,26 @@ class RecoveryNativeProof:
             require(held.size == proof['size'] and held.stamp == proof['stamp'],
                     'recovery file identity or stamp drifted')
 
-    @staticmethod
-    def _names(directory):
-        names = [path.name.casefold() for path in directory.path.iterdir()]
+    def _names(self, directory):
+        names = []
+        for path in directory.path.iterdir():
+            self.recovery._check_cancelled()
+            names.append(path.name.casefold())
+            require(len(names) <= 4097, 'recovery directory inventory is ambiguous')
         require(len(names) <= 4097 and len(names) == len(set(names)),
                 'recovery directory inventory is ambiguous')
         return sorted(names)
 
     @staticmethod
-    def _hash(held):
+    def _hash(held, *, check=lambda: None):
         require(held.fd is not None and held.read_only, 'recovery output is not a held read-only file')
         os.lseek(held.fd, 0, os.SEEK_SET)
         digestor = hashlib.sha256()
-        while block := os.read(held.fd, 1024 * 1024):
+        while True:
+            check()
+            block = os.read(held.fd, 1024 * 1024)
+            if not block:
+                break
             digestor.update(block)
         os.lseek(held.fd, 0, os.SEEK_SET)
         return digestor.hexdigest()
@@ -71,10 +81,12 @@ class RecoveryNativeProof:
     def verify(self):
         """Recheck all held media/control bytes and exact post-install inventories."""
         recovery = self.recovery
-        authority, journal = recovery.authority, recovery.journal
+        recovery._check_cancelled()
+        authority, journal = recovery.authority, recovery.view
         authority.assert_held()
         recovery.lease.assert_held()
         for key, held in self.objects.items():
+            recovery._check_cancelled()
             held.verify()
             expected = next(item for item in recovery.binding['resources'] if item['key'] == key)['evidence']
             identity = {'volume': held.identity.volume, 'components': list(held.identity.components)}
@@ -122,9 +134,16 @@ class RecoveryNativeProof:
         control_hashes.extend(({'key': marker_key, 'sha256': marker_hash},
             {'key': 'manifest:successor', 'sha256': hashlib.sha256(installed).hexdigest()}))
         output = self.objects['scratch:candidate.mp4']
-        output_hash = self._hash(output)
+        output_hash = self._hash(output, check=recovery._check_cancelled)
         require(output_hash == recovery.binding['publication']['evidence']['sha256'],
                 'completed output bytes changed')
+        # Recheck after the long hash so drift during that scan cannot escape.
+        require(self._names(self.objects['input:2']) == parts
+                and self._names(self.objects['scratch:workspace']) == scratch,
+                'recovery parts or scratch namespace changed')
+        for held in self.objects.values():
+            recovery._check_cancelled()
+            held.verify()
         current = journal.settlement(recovery.token)
         require(current['preparation'] == recovery.record['preparation']
                 and current['cleanup'] == recovery.record['cleanup'] and current['state'] != 'released',
@@ -147,3 +166,17 @@ class RecoveryNativeProof:
             'binding_hash': recovery.binding_hash, 'resources': resources,
             'controls': control_hashes, 'output_sha256': output_hash,
             'parts_inventory': parts, 'scratch_inventory': scratch}))
+
+    @staticmethod
+    def same_proof(before, after):
+        """Compare stable directory identities, exact files and complete inventories."""
+        def stable(value):
+            result = json.loads(encode(value))
+            for resource in result['resources']:
+                if resource['key'] in {'input:0', 'input:2', 'scratch:workspace'}:
+                    evidence = resource['evidence']
+                    # Windows parent metadata changes when unrelated children are created.
+                    evidence['size'] = 0
+                    evidence['stamp'] = ':'.join(evidence['stamp'].split(':')[:2])
+            return result
+        return stable(before) == stable(after)

@@ -12,6 +12,15 @@ phases, attempts without preparation, and all service/deployment integration sta
 outside this exception. Recovery uses schema 10; schemas 1–9 remain
 refused/preserved without migration.
 
+[PM R12–R13 correction](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
+keeps this accepted normal success lifecycle intact. Recovery's exact primary
+errors and retained native/lease/SQLite resources now block unsafe teardown or
+another generation without blocking unrelated capture admission during proof.
+Its already committed terminal accounting remains authoritative if later cleanup
+or acknowledgement fails. Schema 10 stays unchanged; full correction evidence is
+in the linked recovery report. Recovery acceptance and service integration remain
+separate review gates.
+
 ## Authority and delivery boundary
 
 [PM decision 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)

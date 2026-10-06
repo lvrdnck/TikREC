@@ -60,7 +60,7 @@ class NativeHandle:
     """
 
     def __init__(self, path: Path, *, directory=False, shared=False, share_mode=None,
-                 publication_right=False, read_only=False):
+                 publication_right=False, read_only=False, cleanup_guard_factory=None):
         self.api, self.path, self.fd, self.handle = _kernel(), Path(path), None, None
         self.ever_acquired = False
         self.directory, self.shared, self.read_only = directory, shared, read_only
@@ -84,6 +84,8 @@ class NativeHandle:
         self.handle = handle
         self.ever_acquired = True
         try:
+            if cleanup_guard_factory is not None:
+                self.cleanup_guard = cleanup_guard_factory(handle)
             information = self._information()
             require(not information.attributes & 0x400
                     and bool(information.attributes & 0x10) == directory,
@@ -211,6 +213,16 @@ class NativeHandle:
 
     def close(self):
         """Release the exact native owner once, preserving errors for the caller."""
+        guard = getattr(self, 'cleanup_guard', None)
+        if guard is not None:
+            guard.descriptor = self.fd
+            guard.close(self._close_original)
+            if not guard.retained:
+                self.fd, self.handle = None, None
+            return
+        self._close_original()
+
+    def _close_original(self):
         if self.handle is not None:
             if self.fd is not None:
                 os.close(self.fd)
