@@ -1,6 +1,16 @@
 # TikREC — a recorder for public TikTok LIVE streams
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+The isolated internal #52 path now completes a schema-1 manifest only after fresh
+same-owner publication/output/control proof. Journal schema 8 appends exact
+predecessor/successor and observed installation evidence; all original H/input
+facts and accounting/pins remain retained. Public CLI/service defaults remain
+unchanged. [Contract and limits](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

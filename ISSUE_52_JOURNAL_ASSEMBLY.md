@@ -1,6 +1,15 @@
 # Issue #52 — internal one-shot journal-backed MP4 assembly
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+Accepted assembly remains unchanged in scope. The explicit original owner can now
+continue through accepted validation/publication to guarded schema-1 manifest
+completion, preserving input-decode health and all retained accounting/ownership.
+See [same-attempt completion](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

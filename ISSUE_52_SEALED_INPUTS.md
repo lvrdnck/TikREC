@@ -1,6 +1,16 @@
 # Issue #52 — native sealed-input read protection
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+Only completion-capable original acquisition grants the read-only `session.json`
+owner DELETE rights. Only its exact local journal-prepared predecessor/successor
+chain permits declared staging/history names; every other input/control/inventory
+check remains strict. No close/reopen, original-H hash rewrite or release occurs.
+See [control guard contract](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

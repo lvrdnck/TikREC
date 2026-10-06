@@ -1,6 +1,16 @@
 # Issue #52 — isolated durable journal checkpoint
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+Minimal schema **8** adds only immutable `manifest_preparations` and ordered
+`manifest_steps` (staged/preserved/installed), including recoverable original bytes.
+Schemas **1–7 are refused/preserved unchanged**, with frozen accepted schema-7
+coverage and no migration/cutover. Historical records are not live write authority.
+See [operations, audits and evidence](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

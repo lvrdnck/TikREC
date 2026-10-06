@@ -1,6 +1,16 @@
 # Issue #52 — durable same-attempt candidate validation
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+Completion-capable validation retains existing owned inspection facts and assembly
+input-decode health in its new immutable report before receipt commit. No extra
+probe or accepted-receipt mutation occurs. Copy's public `not_checked` remains
+compatible with accepted candidate evidence's `unknown`; clean output does not
+clear degraded/unknown source evidence. [Completion contract](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

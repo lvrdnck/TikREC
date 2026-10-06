@@ -1,6 +1,17 @@
 # TikREC session manifest
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+The internal connected path can now complete schema-1 finalization after fresh
+same-owner publication proof, preserving the original capture timeline/status and
+all prior errors. Exact original/successor bytes are journaled before staging;
+original controls remain recoverable and protected. Installation is separately
+verified/flushed; task/accounting/claims/pins remain retained. Synchronous defaults
+are unchanged. See [manifest completion](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

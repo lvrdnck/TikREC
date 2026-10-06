@@ -93,3 +93,5 @@ def audit_owned(connection):
 
         from .session_journal_publication_checks import audit_publication
         audit_publication(connection, row)
+        from .session_journal_manifest_checks import audit_manifest
+        audit_manifest(connection, row)

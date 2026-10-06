@@ -1,5 +1,14 @@
 # Issue #52 — durable guarded same-attempt publication
 
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+Publication base `0ca6144a` is accepted. This report remains the historical
+publication evidence within its stated limits. The authorized single successor is
+[durable manifest completion](ISSUE_52_MANIFEST_COMPLETION.md), with fresh live
+output/control proof and retained accounting; terminal settlement remains deferred.
+
 ## Authority — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)

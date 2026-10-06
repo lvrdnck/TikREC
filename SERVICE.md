@@ -1,6 +1,16 @@
 # TikREC remote recording and startup recovery
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+The isolated internal #52 connected path now has durable guarded manifest
+completion with retained running-task accounting and ownership. Schema 8 remains
+explicitly isolated; no service/API/monitor/scheduler or production integration,
+settlement/release, restart adoption or migration is included.
+[Contract and evidence](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

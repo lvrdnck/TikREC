@@ -1,6 +1,15 @@
 # Connection evidence
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+Manifest completion preserves `connections.jsonl`, raw/arrival evidence and the
+original pending-marker/H bytes unchanged. Connection schema remains 1; no new
+service or capture behavior is introduced. Journal schema 8 records only the
+exact manifest control successor. [Completion contract](ISSUE_52_MANIFEST_COMPLETION.md).
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

@@ -74,7 +74,8 @@ class AttemptCoordinator:
             with self.gate:
                 if kind in {"launch_intent", "child_identity", "bind_owned_inputs", "reserve_scratch",
                             "bind_scratch", "bind_scratch_artifacts", "seal_candidate",
-                            "begin_validation", "finish_validation", "prepare_publication", "observe_publication"}:
+                            "begin_validation", "finish_validation", "prepare_publication", "observe_publication",
+                            "prepare_manifest", "manifest_step"}:
                     require(not self.cancelled.is_set() and not self.closed, "attempt execution revoked")
                 args = [self.token, self.owner, self.revision, *tail]
                 receipt_args = None if receipt_tail is None else [self.token, self.owner, self.revision, *receipt_tail]
@@ -99,7 +100,8 @@ class AttemptCoordinator:
                 self._fault("after_claim")
                 row = self.journal.owned_attempt(self.token)
                 self.guard = acquire_claimed_inputs(self.authority, self.token, self.owner,
-                    self.revision, row["seal_hash"], fault=self._fault)
+                    self.revision, row["seal_hash"], fault=self._fault,
+                    manifest_completion=getattr(self, "manifest_capable", False))
                 self._transition("bind_owned_inputs", self.journal.bind_owned_inputs,
                                  self.guard.revalidate().marker_sha256)
                 return self.claimed
@@ -242,4 +244,8 @@ class AttemptCoordinator:
         """Distinguish execution revocation from complete local resource cleanup."""
         with self.run_lock:
             return {"execution_revoked": self.cancelled.is_set(), "cleanup_complete": self.closed,
-                    "scratch": None if self.scratch is None else self.scratch.protection_evidence()}
+                    "scratch": None if self.scratch is None else self.scratch.protection_evidence(),
+                    "manifest": None if getattr(self, "manifest_owner", None) is None else {
+                        "predecessor_retained": self.manifest_owner.predecessor.handle is not None,
+                        "successor_retained": self.manifest_owner.stage is not None and self.manifest_owner.stage.handle is not None,
+                        "preserved": self.manifest_owner.preserved, "installed": self.manifest_owner.installed}}

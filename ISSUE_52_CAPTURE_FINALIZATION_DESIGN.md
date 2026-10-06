@@ -1,6 +1,16 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Current guarded-publication contract — 2026-10-06
+## Current manifest-completion boundary — 2026-10-06
+
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
+and authorizes this single internal slice; earlier accepted foundations remain accepted.
+The original connected owner now has an explicit control-successor phase after
+publication. Preparation precedes stage creation; staged/preserved/verified-flushed
+installation have separate append-only facts. Original H/seal bytes stay immutable.
+Task/units/claims/pins remain held. [Detailed contract](ISSUE_52_MANIFEST_COMPLETION.md).
+Restart adoption and terminal settlement in the proposed design remain unauthorized.
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.
@@ -476,8 +486,9 @@ the supported marker fields/H receipt and retains only a lease-local byte hash.
 **Implemented internal boundary (2026-10-06):** schema-7 publication preparation
 commits before the retained-handle no-replace move; a distinct observed result
 commits only after native/post-operation proof. The earlier word "receipt" before
-promotion below means preparation, never publication completion. This slice does
-not perform the later completion-manifest or terminal settlement steps. Restart
+promotion below means preparation, never publication completion. The schema-8
+manifest successor now separately prepares/stages/preserves/installs the completion
+control; terminal settlement remains deferred. Restart
 adoption/retry in the proposed table below remains unimplemented and unauthorized;
 reopen reports committed facts only. See the current publication contract above.
 

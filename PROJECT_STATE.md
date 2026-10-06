@@ -7,7 +7,31 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 OPEN / SINGLE ACTIVE — guarded same-attempt publication COMPLETE FOR PM REVIEW
+- **Issue #52 OPEN / SINGLE ACTIVE — durable same-attempt manifest completion;
+  completed slice awaiting PM review (2026-10-06):** [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322)
+  accepts publication base `0ca6144a` and supersedes its pending-review checkpoint
+  for this single slice. Explicit original acquisition/control ownership connects
+  assembly/validation/publication to exact predecessor/successor preparation,
+  staging, original preservation and separately verified/flushed installation.
+  Schema 8 adds only immutable control authority/results; schemas 1–7 stay
+  refused/preserved without migration. Media manifest remains schema 1, preserving
+  capture timeline/status/errors and input-decode classification. Task/unit,
+  raw/room/path claims and all local/durable pins remain retained.
+  [Completion contract/evidence](ISSUE_52_MANIFEST_COMPLETION.md). Final frozen
+  isolated suites: **128 focused passed; 891 related passed / 2 skips / 17 subtests;
+  2,652 full passed / 9 skips / 19 subtests**, no failures. Seventeen actual
+  supervisor deaths; all 404 source/test hashes unchanged across the final runs.
+  Task-owned delivery uses normal `Refs #52` commit/push on isolated
+  `codex/capture-journal-handoff`; no pushed history rewrite. #48 OPEN/PAUSED;
+  #28 unresolved. Owner decisions None. No production/service integration,
+  settlement/refund/release, retry/adoption, retention, migration, upgrades/resource
+  policy, merge/release/tag. Natural-recording, power-loss, full A1–A20 and service
+  acceptance remain outstanding; no atomic filesystem/SQLite claim.
+  Safe resume: pull/reconcile the isolated branch, report and latest PM decision;
+  read-only reopen reports facts only. **Next: PM review only; no automatic
+  successor, historical-receipt adoption or access to deployed main.**
+
+- **Historical guarded publication — accepted by 6012406322; delivered for PM review
   (2026-10-06):** [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
   accepts `1e1e1cae` validation and supersedes its pending-review checkpoint for
   this single slice. Original coordinator/candidate ownership now connects to a

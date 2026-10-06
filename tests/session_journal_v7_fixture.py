@@ -3,15 +3,13 @@
 import hashlib
 import sqlite3
 
-from .session_journal_manifest_schema import MANIFEST_SCHEMA
-
 
 APPLICATION_ID = 0x544B524A
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 7
 
 # STRICT tables and CHECKs reject malformed rows even outside the public operations.
 SCHEMA = """
-CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=8)) STRICT;
+CREATE TABLE catalog(id TEXT PRIMARY KEY, version INTEGER NOT NULL CHECK(version=7)) STRICT;
 CREATE TABLE sessions(
  seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT NOT NULL UNIQUE,
  intent TEXT NOT NULL, creator TEXT NOT NULL, expected_room TEXT, room TEXT,
@@ -201,9 +199,6 @@ CREATE TRIGGER immutable_queue_entry BEFORE UPDATE ON queue_entries
 CREATE TRIGGER keep_queue_entry BEFORE DELETE ON queue_entries
  BEGIN SELECT RAISE(ABORT,'keep queue history'); END;
 """
-
-
-SCHEMA += MANIFEST_SCHEMA
 
 
 def schema_fingerprint(connection: sqlite3.Connection) -> str:

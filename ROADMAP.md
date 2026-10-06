@@ -2045,7 +2045,22 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current guarded-publication slice (2026-10-06; COMPLETE FOR PM REVIEW):** [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
+**Current manifest-completion slice (2026-10-06; complete for PM review):**
+[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication.
+The one original owner prepares exact control bytes before staging, preserves
+original manifest evidence, and separately verifies/flushes installation. Schema 8
+adds only append-only control authority/results; media schema stays 1. Original
+capture/H/media evidence and all accounting/claims/pins stay retained. [Focused
+contract/evidence](ISSUE_52_MANIFEST_COMPLETION.md). Final frozen isolated suites:
+**128 focused; 891 related / 2 skips / 17 subtests; 2,652 full / 9 skips /
+19 subtests passed**, no failures; seventeen actual supervisor deaths and all
+404 source/test hashes unchanged. No terminal settlement, restart adoption,
+production/service integration, retention, migration, upgrades or release is
+included. Natural-recording, power-loss, full A1–A20/service acceptance remain
+outstanding. #52 remains SINGLE ACTIVE; #48 paused; #28 unresolved. Owner decisions
+None. Normal task-owned `Refs #52` delivery; **PM review next, no automatic successor.**
+
+**Historical guarded-publication slice — accepted by 6012406322 (2026-10-06):** [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` validation. One live original coordinator connects accepted
 assembly/validation to the exact claimed final MP4 through continuous native
 ownership and no-replace rename. Minimal schema 7 appends exact preparation and

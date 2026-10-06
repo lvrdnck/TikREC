@@ -16,8 +16,8 @@ from tikrec.session_journal_schema import APPLICATION_ID, SCHEMA_VERSION
 from tikrec.session_journal_types import JournalError
 
 
-def test_schema_seven_and_old_version_one_refusal(tmp_path):
-    assert SCHEMA_VERSION == 7
+def test_schema_eight_and_old_version_one_refusal(tmp_path):
+    assert SCHEMA_VERSION == 8
     path, catalog = tmp_path / "old-reviewed.sqlite3", uid()
     with sqlite3.connect(path) as connection:
         connection.executescript(SCHEMA_V1)
@@ -121,3 +121,26 @@ def test_retained_schema_six_is_refused_byte_for_byte(tmp_path):
         assert connection.execute("SELECT version FROM catalog").fetchone()[0] == 6
         assert connection.execute("SELECT count(*) FROM sessions").fetchone()[0] == 1
         assert "publication_preparations" not in [x[0] for x in connection.execute("SELECT name FROM sqlite_master")]
+
+
+def test_retained_schema_seven_is_refused_byte_for_byte(tmp_path):
+    from tests.session_journal_v7_fixture import SCHEMA as SCHEMA_V7
+    path, catalog = tmp_path / "accepted-seven.sqlite3", uid()
+    with sqlite3.connect(path) as connection:
+        connection.executescript(SCHEMA_V7)
+        connection.execute(f"PRAGMA application_id={APPLICATION_ID}")
+        connection.execute("PRAGMA user_version=7")
+        connection.execute("INSERT INTO catalog VALUES (?,7)", (catalog,))
+        connection.executemany("INSERT INTO bindings VALUES (?,0,NULL)", [(1,), (2,)])
+    seed_reserved(SimpleNamespace(path=path), intent(), 1)
+    before = path.read_bytes()
+    with pytest.raises(JournalError, match="schema"):
+        SessionJournal(path, catalog)
+    with pytest.raises(FileExistsError):
+        SessionJournal.initialize(path, catalog)
+    assert path.read_bytes() == before
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 7
+        assert connection.execute("SELECT version FROM catalog").fetchone()[0] == 7
+        assert connection.execute("SELECT count(*) FROM sessions").fetchone()[0] == 1
+        assert "manifest_preparations" not in [x[0] for x in connection.execute("SELECT name FROM sqlite_master")]

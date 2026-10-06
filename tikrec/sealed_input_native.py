@@ -17,8 +17,13 @@ class ReadProtection(NativeHandle):
     Allocate this owner before calling open so even acquisition faults retain it.
     """
 
-    def __init__(self, path, *, directory=False, namespace=False):
+    def __init__(self, path, *, directory=False, namespace=False, control_right=False):
         self.path, self.directory, self.namespace = Path(path), directory, namespace
+        require(type(control_right) is bool and (not control_right or
+            not directory and not namespace and self.path.name == "session.json"), "invalid control rights")
+        # Only the completion-capable original manifest receives DELETE; its
+        # bytes remain read-only, and every other input/default keeps prior rights.
+        self.control_right = control_right
         self.api, self.handle, self.fd = _kernel(), None, None
         self.initial, self.identity = None, None
 
@@ -29,7 +34,7 @@ class ReadProtection(NativeHandle):
         # NULL security attributes disable inheritance. Only ordinary input readers
         # share data access; parent/lock pins also permit cooperative data writers.
         namespace = self.directory or self.namespace
-        handle = self.api.CreateFileW(str(scope), 0x80 if namespace else 0x80000000,
+        handle = self.api.CreateFileW(str(scope), 0x80 if namespace else 0x80000000 | (0x10000 if self.control_right else 0),
                                       3 if namespace else 1, None, 3, 0x02200000, None)
         if handle == ctypes.c_void_p(-1).value:
             raise ctypes.WinError(ctypes.get_last_error())

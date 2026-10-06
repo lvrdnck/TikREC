@@ -14,6 +14,11 @@ class ClaimedInputs(SealedInputs):
         require(row is not None, "missing claimed attempt")
         super().__init__(authority, row["session_id"], revision, seal_hash, fault)
 
+    def _open(self, path, **options):
+        if getattr(self, "manifest_capable", False) and path.name == "session.json" and not options:
+            options["control_right"] = True
+        return super()._open(path, **options)
+
     def _target(self):
         with self.authority.lock:
             self.authority.assert_held()
@@ -31,6 +36,9 @@ class ClaimedInputs(SealedInputs):
         self.lifecycle.assert_held()
         for held in self.handles[:2]:
             held.verify()
+        successor = getattr(self, "manifest_successor", None)
+        if successor is not None:
+            return successor.check_inputs()
         owned = self._snapshot["owned"]
         result = verify_inventory(self.authority, self._snapshot, self.intent, self.seal,
             self.directory, self.files, self.marker, h_receipt=self._snapshot["h_receipt"],
@@ -59,9 +67,10 @@ class ClaimedInputs(SealedInputs):
             return self.revalidate()
 
 
-def acquire_claimed_inputs(authority, token, owner, revision, seal_hash, *, fault=lambda _: None):
+def acquire_claimed_inputs(authority, token, owner, revision, seal_hash, *, fault=lambda _: None, manifest_completion=False):
     """Acquire explicit claimed ownership plus original H; neither token alone suffices."""
     guard = ClaimedInputs(authority, token, owner, revision, seal_hash, fault)
+    guard.manifest_capable = manifest_completion
     try:
         guard._acquire()
         return guard

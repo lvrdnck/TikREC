@@ -32,6 +32,7 @@ class JournalValidation:
         self.assembly = JournalAssembly(authority, candidate_validation=True, candidate_publication=candidate_publication, **options)
         self.coordinator = self.assembly.coordinator
         self.capability, self.report, self.error, self.used = None, None, None, False
+        self.media_info = None
 
     def run(self):
         """Assemble once, inspect/decode/check DTS while original protection stays held."""
@@ -76,7 +77,7 @@ class JournalValidation:
                         bytes(collector.stdout).decode("utf-8"), stderr)
                 # Validate the output itself. Pending publication manifests are
                 # neither modified nor used as candidate-validation prerequisites.
-                _validate_output(assembled.candidate, result, True, str(self.assembly.ffprobe.resolve()), execute,
+                self.media_info = _validate_output(assembled.candidate, result, True, str(self.assembly.ffprobe.resolve()), execute,
                     readable_check=self.capability.readable if binding.get("transport") == "retained_stdin" else None)
                 if self.error is not None:
                     raise self.error
@@ -100,6 +101,10 @@ class JournalValidation:
                     result.media_integrity = "failed"
                 self.report = {**asdict(result.finish()), "packet_dts": "failed" if packet_errors else "passed",
                                "packet_count": collector.packet_count}
+                if getattr(runner, "manifest_capable", False):
+                    from .manifest_media import media_values
+                    self.report["output_media"] = media_values(self.media_info)
+                    self.report["assembly_input_decode"] = assembled.input_decode
                 for finding in self.report["findings"]:
                     if len(finding["message"]) > 4096:
                         finding["message"] = finding["message"][:2000] + "\n[bounded excerpt]\n" + finding["message"][-2000:]
