@@ -1,5 +1,15 @@
 # Issue #52 — isolated durable journal checkpoint
 
+## Current R11 teardown correction — 2026-10-06
+
+[PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280)
+requires correction before manifest successor integration. The exact manifest
+reader owner now preserves entry/body exceptions, attempts rollback and close
+independently, and retains unconfirmed close with bounded separate diagnostics.
+Reader cleanup never repeats native control work or releases task/media pins.
+Schema 8 and the manifest protocol remain unchanged. [R11 contract/evidence](ISSUE_52_MANIFEST_COMPLETION.md).
+
+
 ## Current manifest-completion boundary — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication

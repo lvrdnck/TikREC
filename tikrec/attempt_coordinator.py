@@ -212,6 +212,9 @@ class AttemptCoordinator:
         except BaseException as error:
             self._error(error)
         with self.run_lock:
+            manifest = getattr(self, 'manifest_owner', None)
+            # A failed manifest reader close must stay owned even after child cleanup.
+            fence_safe = manifest is None or manifest.cleanup_fence()
             for child in self.children[-1:]:
                 try:
                     finish_child(self, child, timeout)
@@ -237,7 +240,7 @@ class AttemptCoordinator:
                         self._error(error)
                 protection = self.scratch.protection_evidence()
                 scratch_safe = not protection["workspace_retained"] and not protection["artifacts_retained"]
-            self.closed = safe and scratch_safe and (self.guard is None or self.guard.closed)
+            self.closed = safe and scratch_safe and fence_safe and (self.guard is None or self.guard.closed)
             return self.closed
 
     def cleanup_evidence(self):
@@ -248,4 +251,5 @@ class AttemptCoordinator:
                     "manifest": None if getattr(self, "manifest_owner", None) is None else {
                         "predecessor_retained": self.manifest_owner.predecessor.handle is not None,
                         "successor_retained": self.manifest_owner.stage is not None and self.manifest_owner.stage.handle is not None,
-                        "preserved": self.manifest_owner.preserved, "installed": self.manifest_owner.installed}}
+                        "preserved": self.manifest_owner.preserved, "installed": self.manifest_owner.installed,
+                        "fence": None if self.manifest_owner.fence_owner is None else self.manifest_owner.fence_owner.evidence()}}

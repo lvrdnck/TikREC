@@ -2045,20 +2045,27 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current manifest-completion slice (2026-10-06; complete for PM review):**
-[PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication.
-The one original owner prepares exact control bytes before staging, preserves
-original manifest evidence, and separately verifies/flushes installation. Schema 8
-adds only append-only control authority/results; media schema stays 1. Original
-capture/H/media evidence and all accounting/claims/pins stay retained. [Focused
-contract/evidence](ISSUE_52_MANIFEST_COMPLETION.md). Final frozen isolated suites:
-**128 focused; 891 related / 2 skips / 17 subtests; 2,652 full / 9 skips /
-19 subtests passed**, no failures; seventeen actual supervisor deaths and all
-404 source/test hashes unchanged. No terminal settlement, restart adoption,
-production/service integration, retention, migration, upgrades or release is
-included. Natural-recording, power-loss, full A1–A20/service acceptance remain
-outstanding. #52 remains SINGLE ACTIVE; #48 paused; #28 unresolved. Owner decisions
-None. Normal task-owned `Refs #52` delivery; **PM review next, no automatic successor.**
+**Current correction R11 (2026-10-06; complete for PM review):**
+[PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280) requires exception-safe manifest-fence
+teardown before successor integration. Exact primary errors survive independent
+rollback/close; separate bounded diagnostics and explicit unconfirmed reader
+ownership support honest cleanup. Schema 8, manifest protocol and accepted
+foundations remain unchanged. Task/units/claims/native pins remain retained;
+failed teardown never grants a later success step or native replay. [R11 evidence](ISSUE_52_MANIFEST_COMPLETION.md).
+Final frozen isolated suites: **171 focused; 934 related/2 skips/17 subtests;
+2,695 full/9 skips/19 subtests passed**, no final failures; 408 unchanged hashes,
+43 R11 regressions and seventeen existing supervisor deaths. Baseline failures,
+fixture correction, actual competing-writer proof and platform limits are recorded.
+Normal task-owned Refs #52 delivery; #52 SINGLE ACTIVE, #48 paused, #28 unresolved;
+owner decisions None. No production/service, settlement/release, retry/adoption,
+retention, migration/upgrade/resource policy or release work. **PM review next; no
+automatic successor.** Successful terminal settlement and safe owner/capacity
+release remain the planned later boundary only after acceptance, not authorized now.
+
+**Historical manifest-completion delivery `580104fc`:** 128 focused, 891 related/
+2 skips/17 subtests and 2,652 full/9 skips/19 subtests passed; seventeen supervisor
+deaths and 404 unchanged hashes. Preserve these historical results; R11 is an
+additional teardown gap, not a relabeling of those runs as failures.
 
 **Historical guarded-publication slice — accepted by 6012406322 (2026-10-06):** [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` validation. One live original coordinator connects accepted

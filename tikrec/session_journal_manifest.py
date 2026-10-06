@@ -4,6 +4,7 @@ import json
 from contextlib import contextmanager
 
 from .manifest_successor_values import successor_bytes, unpacked
+from .session_journal_manifest_fence import ManifestFenceConnection
 from .session_journal_owned import advance
 from .session_journal_owned_view import owner_guard
 from .session_journal_publication import validation_view
@@ -116,6 +117,7 @@ class ManifestOperations:
     def manifest_fence(self, token, owner, revision, operation, binding_hash, step_count):
         """Serialize narrow native authority with durable revocation, without callbacks/scans."""
         connection = self._connect()
+        retained, primary = ManifestFenceConnection(connection), None
         try:
             connection.execute('BEGIN')
             owner_guard(connection, token, owner, revision, launch=True)
@@ -124,9 +126,11 @@ class ManifestOperations:
                     and digest(json.loads(prep['binding'])) == binding_hash
                     and len(steps_view(connection, token)) == step_count, "stale manifest authority")
             yield
+        except BaseException as error:
+            primary = error
+            raise
         finally:
-            connection.rollback()
-            connection.close()
+            retained.finish(primary)
 
     def manifest_completion(self, token):
         """Read committed facts only; no paths, inferred success or repeat-write permission."""

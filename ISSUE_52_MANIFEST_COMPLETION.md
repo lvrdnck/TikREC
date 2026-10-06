@@ -1,5 +1,93 @@
 # Issue #52 — durable same-attempt manifest completion
 
+## Current correction R11 — completed for PM review
+
+[PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280)
+requires exception-safe manifest-fence teardown on reviewed `580104fc`; manifest
+completion is not yet accepted for successor integration. Its protocol and prior
+R1–R10/assembly/validation/publication acceptance remain unchanged. Owner decisions
+None; schema 8 stays byte-for-byte unchanged. This correction grants no settlement,
+release, retry/adoption or integration authority.
+
+`ManifestFenceConnection` owns the exact reader returned to the manifest fence.
+Entry/body failure remains the same original exception object/type. Rollback and
+close are independent one-attempt operations; their separately tagged errors follow
+the existing 32-diagnostic/dropped-count convention. Successful body plus failed
+teardown raises the first cleanup error and never appends a later success step.
+Confirmed close clears only the reader owner, even if rollback failed. An
+unconfirmed close retains the exact connection explicitly on the primary error and
+original manifest capability, independent of garbage collection. Adapter errors
+carry bounded secondary diagnostics and their dropped count.
+
+Connected `close()` attempts one rollback/close pair on that exact retained reader
+and reports its cleanup/retention separately. No native create/write/rename/flush
+is repeated. SQLite's existing thread affinity is unchanged: cleanup from a wrong
+thread remains unconfirmed/retained until the owning thread confirms close. Native
+manifest/output/control/workspace owners, intermediate durable facts, running task,
+unit/claims and pins remain retained; reader cleanup is not task settlement.
+Hashes/scans/hooks remain outside the short native fence.
+
+### R11 baseline and development evidence
+
+Regressions call the actual repository fence and connected generated Windows path
+before runtime edits. Main unchanged-code baseline: **36 failed / 4 passed** in
+89.81 seconds; supplemental exact-thread/catalog-writer selection: **3 failed /
+40 deselected** in 8.76 seconds. These expose the missing behavior rather than
+relabeling the historical full suites below. The portable teardown matrix isolates
+only the owner checker on a minimal file-backed SQLite fixture; connected tests use
+the actual schema-8 catalog, original ownership and native control transitions.
+
+`baseline-writer-proof.json` records Windows SQLite **3.53.1**, DELETE journal:
+rollback injection replaced the original body exception, skipped close and left
+`in_transaction=true`. The competing writer's bounded commit failed with
+`database is locked`; independently closing that exact reader let the same pending
+INSERT commit exactly once without replay. This is injected proof, not a claim of
+a natural production incident. The new connected competing-writer regression uses
+a fixture-only no-change UPDATE to a disjoint real catalog binding and verifies
+exactly one execution/unchanged claims.
+
+Development run: **41 passed / 2 failed** in 116.74 seconds. Both failures were
+in the new catalog-writer fixture, which referenced `revision` rather than the
+actual binding column `generation`. Corrected that column without weakening the
+exact-one-execution or unchanged-binding assertions. The corrected writer/thread
+selection passed **3 tests / 40 deselected** in 8.94 seconds.
+
+All final isolated suites passed on the same **408-file frozen source/test tree**:
+
+| R11 suite | Actual result | Seconds |
+| --- | --- | --- |
+| Focused (eight modules) | 171 passed | 752.77 |
+| Related (87 modules) | 934 passed / 2 skipped / 17 subtests passed | 1281.31 |
+| Full (`tests`) | 2,695 passed / 9 skipped / 19 subtests passed | 1585.39 |
+
+No final failures; all **408 source/test hashes unchanged after every run**.
+All 43 R11 regressions and seventeen existing actual supervisor-death cases pass.
+`final-tree-verification.json` and each suite's frozen-check JSON record the proof;
+`source-test-hashes-delivery.json`, module lists and complete delivery logs remain.
+Schema-8 definitions match reviewed `580104fc` exactly after normal Git line-ending
+normalization; no persistent schema change. Related overlaps focused/full only
+with independently isolated paths, configuration, catalogs, events and jobs.
+Delivery uses a normal task-owned `Refs #52` commit/push; **PM review only next**.
+Manifest completion remains unaccepted for successor integration until PM accepts
+the correction. Terminal settlement/release is planned later, not authorized now.
+Every suite uses new separate APPDATA/XDG_CONFIG_HOME and basetemp, explicit
+isolated-worktree PYTHONPATH and the unchanged installed Hermes Python runtime.
+Existing Windows FFmpeg/FFprobe/.NET native fixture tools are reused. Module-list
+files, complete logs, frozen hashes and verification JSON remain outside the repo.
+No previously completed basetemp/configuration or earlier evidence is reused.
+R11 evidence root: `C:\Users\Leandro\TikREC-tests\issue52-r11-manifest-fence`.
+`r11-catalog-fault-evidence.json` records 22 connected fault snapshots: no
+installed success row, byte-identical recoverable original manifest, unchanged
+published MP4 hash and retained running task/units/claims. These are read-only
+post-fixture facts; live native retention is asserted before independent fixture
+cleanup. `r11-positive-media-evidence.json` confirms the successful copy/libx264
+regression hashes match reviewed `580104fc` outputs below. The full diagnostic,
+cleanup/cancellation and one-operation acknowledgement regressions remain included.
+Historical evidence in `issue52-manifest-completion` remains preserved. No runtime/
+dependency upgrade, schema/resource-policy change or production access/change/
+restart is made.
+
+
 ## Authority and scope
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322)
@@ -112,7 +200,7 @@ immutable. Schemas **1–7 remain refused/preserved unchanged**, no migration,
 production catalog or cutover. The schema-7 fixture is frozen from accepted
 `0ca6144a`; its source matches that commit after line-ending normalization.
 
-## Verification
+## Historical reviewed 580104fc verification
 
 All final isolated suites passed on the same frozen source/test tree:
 

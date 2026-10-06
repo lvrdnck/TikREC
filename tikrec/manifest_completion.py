@@ -23,6 +23,7 @@ class ManifestCompletion:
         runner.manifest_owner = self
         self.stage, self.operation, self.used = None, None, False
         self.stage_owner, self.stage_handle, self.stage_fd = None, None, None
+        self.fence_owner = None
         self.preserved, self.installed, self.written = False, False, False
         self.guard = runner.guard
         self.predecessor_index = next(i for i, a in enumerate(self.guard.seal.artifacts)
@@ -89,9 +90,24 @@ class ManifestCompletion:
     def _fence(self, count):
         with self.runner.gate:
             self._live()
-            with self.runner.journal.manifest_fence(self.runner.token, self.runner.owner, self.runner.revision,
-                    self.operation, digest(self.binding), count):
-                yield
+            try:
+                with self.runner.journal.manifest_fence(self.runner.token, self.runner.owner, self.runner.revision,
+                        self.operation, digest(self.binding), count):
+                    yield
+            except BaseException as original:
+                self.fence_owner = getattr(original, 'manifest_fence_owner', None)
+                if self.fence_owner is not None:
+                    for _, error in self.fence_owner.errors:
+                        self.runner._error(error)
+                raise
+
+    def cleanup_fence(self):
+        """Bound cleanup to one exact reader, never repeating native control work."""
+        if self.fence_owner is None:
+            return True
+        for _, error in self.fence_owner.cleanup():
+            self.runner._error(error)
+        return self.fence_owner.connection is None
 
     def _retain(self, owner):
         self.stage = self.stage_owner = owner

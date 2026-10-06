@@ -12,6 +12,7 @@ class ManifestCompletionError(RuntimeError):
         super().__init__('manifest completion failed or ambiguous; all ownership retained')
         self.adapter, self.original = adapter, original
         self.diagnostics = tuple(adapter.coordinator.errors)
+        self.diagnostics_dropped = adapter.coordinator.errors_dropped
 
 
 class JournalManifest:
