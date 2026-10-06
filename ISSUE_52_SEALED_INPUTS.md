@@ -1,6 +1,16 @@
 # Issue #52 — native sealed-input read protection
 
-## Current manifest-completion boundary — 2026-10-06
+## Current owned success settlement boundary — 2026-10-06
+
+Only the explicit original success capability may release its captured input,
+control/history and writer-lease objects after durable preparation and fresh held
+proof. Unknown closes remain reachable/outstanding. Protection is never reopened
+and no held proof is claimed after closure; shared root/catalog authority remains.
+Original H/seal evidence and generic guards stay strict. [Contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
+
+Earlier checkpoint statements/results below remain historical within their slice.
+
+## Historical manifest-completion boundary — accepted by 6014913888 — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
 and authorizes this single internal slice; earlier accepted foundations remain accepted.

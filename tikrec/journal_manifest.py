@@ -21,6 +21,7 @@ class JournalManifest:
     def __init__(self, authority, **options):
         self.publication = JournalPublication(authority, manifest_completion=True, **options)
         self.coordinator = self.publication.coordinator
+        self.coordinator.manifest_adapter = self
         self.capability, self.error, self.used = None, None, False
 
     def run(self):

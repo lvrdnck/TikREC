@@ -1,6 +1,16 @@
 # Issue #52 — isolated durable journal checkpoint
 
-## Current R11 teardown correction — 2026-10-06
+## Current owned success settlement boundary — 2026-10-06
+
+Schema 9 appends release preparation, cleanup observation and terminal receipts.
+Preparation revokes execution but keeps the task counted; confirmed cleanup precedes
+atomic terminal unit/claim removal. Active audits use bounded outstanding work;
+addressed terminal audits validate immutable history without requiring released
+active claims. Schemas 1–8 remain refused/preserved. See [contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
+
+Earlier checkpoint statements/results below remain historical within their slice.
+
+## Historical R11 teardown correction — accepted by 6014913888 — 2026-10-06
 
 [PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280)
 requires correction before manifest successor integration. The exact manifest
@@ -10,7 +20,7 @@ Reader cleanup never repeats native control work or releases task/media pins.
 Schema 8 and the manifest protocol remain unchanged. [R11 contract/evidence](ISSUE_52_MANIFEST_COMPLETION.md).
 
 
-## Current manifest-completion boundary — 2026-10-06
+## Historical manifest-completion boundary — accepted by 6014913888 — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
 and authorizes this single internal slice; earlier accepted foundations remain accepted.

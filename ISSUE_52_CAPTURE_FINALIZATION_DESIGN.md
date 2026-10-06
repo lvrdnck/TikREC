@@ -1,6 +1,16 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Current R11 teardown correction — 2026-10-06
+## Current owned success settlement boundary — 2026-10-06
+
+[PM acceptance/task 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)
+accepts R11/corrected manifest completion at `df954dd2`. The explicit internal
+success lifecycle now includes prepared execution revocation, exact cleanup and
+atomic terminal capacity/claim return. Media/history remain intact; service wiring,
+restart adoption/retry and retention remain later gates. [Contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
+
+Earlier checkpoint statements/results below remain historical within their slice.
+
+## Historical R11 teardown correction — accepted by 6014913888 — 2026-10-06
 
 [PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280)
 requires correction before manifest successor integration. The exact manifest
@@ -10,7 +20,7 @@ Reader cleanup never repeats native control work or releases task/media pins.
 Schema 8 and the manifest protocol remain unchanged. [R11 contract/evidence](ISSUE_52_MANIFEST_COMPLETION.md).
 
 
-## Current manifest-completion boundary — 2026-10-06
+## Historical manifest-completion boundary — accepted by 6014913888 — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
 and authorizes this single internal slice; earlier accepted foundations remain accepted.
@@ -498,9 +508,11 @@ commits before the retained-handle no-replace move; a distinct observed result
 commits only after native/post-operation proof. The earlier word "receipt" before
 promotion below means preparation, never publication completion. The schema-8
 manifest successor now separately prepares/stages/preserves/installs the completion
-control; terminal settlement remains deferred. Restart
+control. The explicit schema-9 owned-success successor now separately prepares
+release/revokes execution, confirms exact cleanup and atomically settles its unit
+and active claims. Earlier adapters retain their accepted defaults. Restart
 adoption/retry in the proposed table below remains unimplemented and unauthorized;
-reopen reports committed facts only. See the current publication contract above.
+reopen reports committed facts only. See [owned settlement](ISSUE_52_OWNED_SETTLEMENT.md).
 
 One non-daemon tracked worker chooses the oldest eligible committed queue entry, commits its
 attempt token before launch, and owns only that UUID's immutable inputs/paths.

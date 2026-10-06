@@ -7,34 +7,35 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-- **Issue #52 OPEN / SINGLE ACTIVE — correction R11 completed for PM review
-  (2026-10-06):** [PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280)
-  requires exception-safe manifest-fence teardown on `580104fc`; manifest completion
-  remains unaccepted for successor integration until PM review. Exact entry/body
-  exceptions stay primary; rollback/close diagnostics are separate and bounded.
-  Close is attempted independently, and unconfirmed exact reader ownership stays
-  reachable for bounded cleanup with honest incomplete-cleanup evidence. No native
-  control replay or success step after failed teardown. Schema 8 and the manifest
-  protocol/accepted foundations are unchanged; task/unit/claims/native pins remain.
-  [R11 report/results/limits](ISSUE_52_MANIFEST_COMPLETION.md). Unchanged-code baseline:
-  36 failures/4 passes plus 3 supplemental failures; actual Windows SQLite 3.53.1
-  reader/writer lock reproduced. A new fixture-column typo was corrected without
-  weakening assertions. Final frozen suites: **171 focused passed; 934 related
-  passed/2 skips/17 subtests; 2,695 full passed/9 skips/19 subtests**, no final failures.
-  All 408 source/test hashes unchanged; 43 R11 regressions, 22 connected fault
-  snapshots and seventeen existing supervisor-death regressions. Normal task-owned
-  `Refs #52` delivery on isolated `codex/capture-journal-handoff`; pushed history kept.
-  Owner decisions None; #48 OPEN/PAUSED; #28 unresolved. No production/service
-  integration, settlement/refund/release, retry/adoption, retention, migration,
-  upgrade/resource policy, merge/release/tag. Existing SQLite thread affinity is
-  preserved; unconfirmed cleanup remains owned/pinned. Natural-recording,
-  power-loss, full A1–A20/service acceptance remain outstanding.
-  Safe resume: pull/reconcile this isolated branch, current finding/report and
-  #52 delivery checkpoint. **PM review next; no automatic successor.** Successful
-  terminal settlement and safe owner/capacity release are planned only after
-  acceptance and a new authorized task.
+- **Issue #52 OPEN / SINGLE ACTIVE — owned success settlement complete for PM review
+  (2026-10-06):** [PM decision 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)
+  accepts `df954dd2` R11/corrected manifest completion; prior foundations remain
+  accepted. Explicit `JournalSettlement` completes assembly through manifest,
+  immutable release preparation/revocation, confirmed exact native/SQLite cleanup
+  and atomic terminal settlement/exact-one unit and active task-claim return.
+  Original live owners authorize release; unknown cleanup remains outstanding.
+  Schema 9 only, schemas 1–8 preserved/refused, no migration. Immutable completed
+  history stays valid after claim release; active audits/admission remain bounded.
+  [Contract, actual failures/results/limits](ISSUE_52_OWNED_SETTLEMENT.md). Final
+  frozen isolated suites: **282 focused; 1,045 related/2 skips/17 subtests; 2,806
+  full/9 skips/19 subtests passed**, no final failures, 427 unchanged hashes.
+  110 new regressions plus schema-8 refusal; seventeen new actual supervisor-death
+  boundaries and accepted regressions, ten sequential successes, reused claims,
+  disjoint captures and unchanged media/H/manifest history. First-snapshot fixture
+  failures and their strengthened corrections remain recorded, not relabelled.
+  #48 OPEN/PAUSED; #28 unresolved; owner decisions None. No production/service
+  wiring, restart adoption/retry, retention, migration, upgrade/resource-policy,
+  merge/release/tag. v0.10.0 remains released; natural-recording, power-loss,
+  service/A1–A20 and independent integrated review remain separate gates.
+  Safe resume: pull/reconcile this isolated branch, #52 and the focused report.
+  **PM review only next; no automatic successor.**
 
-- **Historical manifest-completion delivery — reviewed; R11 required:**
+- **Historical accepted R11 correction:** `df954dd2`; 171 focused, 934 related/
+  2 skips/17 subtests and 2,695 full/9 skips/19 subtests passed, 408 unchanged hashes.
+  [R11/manifest evidence](ISSUE_52_MANIFEST_COMPLETION.md) preserves baseline failures,
+  competing-writer and wrong-thread proof, and seventeen supervisor-death cases.
+
+- **Historical accepted manifest-completion delivery — corrected by R11:**
   `580104fc` records 128 focused, 891 related/2 skips/17 subtests and 2,652 full/
   9 skips/19 subtests passed, seventeen supervisor deaths and 404 unchanged hashes.
   Those results remain valid historical suites, not acceptance of the R11 gap.

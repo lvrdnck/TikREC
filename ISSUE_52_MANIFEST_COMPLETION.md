@@ -1,6 +1,17 @@
 # Issue #52 — durable same-attempt manifest completion
 
-## Current correction R11 — completed for PM review
+## Acceptance and successor boundary — 2026-10-06
+
+[PM decision 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)
+accepts `df954dd2` R11 and the `580104fc` manifest foundation as corrected. This
+supersedes the historical pending-review/no-successor statements below. Their
+baseline, development and final-suite evidence remain preserved unchanged.
+The newly authorized explicit [owned settlement path](ISSUE_52_OWNED_SETTLEMENT.md)
+can release only after fresh live completion proof and confirmed exact cleanup;
+`JournalManifest` itself keeps its accepted retained-task default. Manifest schema 1,
+original H/capture truth, R11 connection ownership and SQLite thread affinity remain.
+
+## Historical correction R11 — accepted by 6014913888
 
 [PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280)
 requires exception-safe manifest-fence teardown on reviewed `580104fc`; manifest

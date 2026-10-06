@@ -198,6 +198,8 @@ class ScratchOperations(OwnedViews):
         identifier(token)
         def read(connection):
             self._audit(connection)
+            from .session_journal_owned_view import audit_history
+            audit_history(connection, token)
             owner = connection.execute("SELECT * FROM scratch_owners WHERE token=?", (token,)).fetchone()
             if owner is None:
                 return None

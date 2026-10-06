@@ -39,7 +39,7 @@ def owned_row(connection, token):
     return result
 
 
-def owner_guard(connection, token, owner, revision, *, launch=False):
+def owner_guard(connection, token, owner, revision, *, launch=False, cleanup=False):
     """Fence every mutation/resume against exact current local owner and revision."""
     identifier(token)
     identifier(owner)
@@ -50,10 +50,21 @@ def owner_guard(connection, token, owner, revision, *, launch=False):
     task = connection.execute("SELECT * FROM tasks WHERE token=?", (token,)).fetchone()
     require(task is not None and task["state"] == "running" and task["attempt"] == row["attempt"],
             "owned attempt lost task ownership")
+    if not cleanup:
+        require(connection.execute('SELECT 1 FROM release_preparations WHERE token=?', (token,)).fetchone()
+                is None, 'attempt permits only prepared cleanup/accounting')
     if launch:
         require(row["state"] == "held" and row["marker_hash"] is not None,
                 "revoked or unprotected attempt cannot launch")
     return row
+
+
+def audit_history(connection, token):
+    """Check only the addressed terminal owner; active owners already have bounded audit."""
+    task = connection.execute("SELECT state FROM tasks WHERE token=?", (token,)).fetchone()
+    if task is not None and task['state'] == 'completed':
+        from .session_journal_owned_checks import audit_owner
+        audit_owner(connection, token, historical=True)
 
 
 class OwnedViews:
@@ -64,6 +75,10 @@ class OwnedViews:
         identifier(token)
         def read(connection):
             self._audit(connection)
+            task = connection.execute('SELECT state FROM tasks WHERE token=?', (token,)).fetchone()
+            if task is not None:
+                from .session_journal_owned_checks import audit_owner
+                audit_owner(connection, token, historical=task['state'] == 'completed')
             return owned_row(connection, token)
         return self._read(read)
 

@@ -2045,22 +2045,28 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current correction R11 (2026-10-06; complete for PM review):**
-[PM finding 6013777280](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6013777280) requires exception-safe manifest-fence
-teardown before successor integration. Exact primary errors survive independent
-rollback/close; separate bounded diagnostics and explicit unconfirmed reader
-ownership support honest cleanup. Schema 8, manifest protocol and accepted
-foundations remain unchanged. Task/units/claims/native pins remain retained;
-failed teardown never grants a later success step or native replay. [R11 evidence](ISSUE_52_MANIFEST_COMPLETION.md).
-Final frozen isolated suites: **171 focused; 934 related/2 skips/17 subtests;
-2,695 full/9 skips/19 subtests passed**, no final failures; 408 unchanged hashes,
-43 R11 regressions and seventeen existing supervisor deaths. Baseline failures,
-fixture correction, actual competing-writer proof and platform limits are recorded.
-Normal task-owned Refs #52 delivery; #52 SINGLE ACTIVE, #48 paused, #28 unresolved;
-owner decisions None. No production/service, settlement/release, retry/adoption,
-retention, migration/upgrade/resource policy or release work. **PM review next; no
-automatic successor.** Successful terminal settlement and safe owner/capacity
-release remain the planned later boundary only after acceptance, not authorized now.
+**Current owned success settlement (2026-10-06; complete for PM review):**
+[PM decision 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)
+accepts `df954dd2` R11/corrected manifest completion. Explicit `JournalSettlement`
+finishes the original internal lifecycle through immutable prepared revocation,
+confirmed exact cleanup and atomic terminal return of one unit/active task claims.
+Unknown cleanup stays outstanding; historical receipts stay valid independently
+of new active claims. Schema 9 preserves/refuses schemas 1–8 without migration.
+[Contract, actual failures and evidence](ISSUE_52_OWNED_SETTLEMENT.md). Final frozen
+isolated suites: **282 focused; 1,045 related/2 skips/17 subtests; 2,806 full/9
+skips/19 subtests passed**, no final failures; 427 unchanged hashes. 110 new cases
+plus schema-8 refusal, seventeen new supervisor-death boundaries, ten sequential
+successes, disjoint captures and accepted regressions pass. Source/media/H/history
+remain unchanged; first-snapshot fixture failures/corrections stay documented.
+#52 SINGLE ACTIVE; #48 paused; #28 unresolved; owner decisions None. No service/
+production wiring, restart adoption/retry, retention, migration, upgrade/resource-
+policy, merge/release/tag. v0.10.0 remains released; natural-recording, power-loss,
+service/A1–A20 and independent integrated review remain separate gates.
+**PM review only next; no automatic successor or v0.11 readiness claim.**
+
+**Historical accepted R11 correction `df954dd2`:** 171 focused, 934 related/
+2 skips/17 subtests and 2,695 full/9 skips/19 subtests passed; 408 unchanged hashes.
+The [R11 report](ISSUE_52_MANIFEST_COMPLETION.md) preserves all earlier evidence.
 
 **Historical manifest-completion delivery `580104fc`:** 128 focused, 891 related/
 2 skips/17 subtests and 2,652 full/9 skips/19 subtests passed; seventeen supervisor

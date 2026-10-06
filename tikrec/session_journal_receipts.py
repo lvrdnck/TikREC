@@ -44,4 +44,9 @@ def validate_operation_receipt(connection, receipt):
         session = connection.execute("SELECT * FROM sessions WHERE id=?", (result["session_id"],)).fetchone()
         require(session is not None, "operation receipt lacks accepted session")
         validate_session_receipt(connection, session)
+        if 'token' in result and 'owner' in result:
+            from .session_journal_owned_checks import audit_owner
+            task = connection.execute('SELECT state FROM tasks WHERE token=?', (result['token'],)).fetchone()
+            require(task is not None, 'owned receipt lacks task history')
+            audit_owner(connection, result['token'], historical=task['state'] == 'completed')
     return result

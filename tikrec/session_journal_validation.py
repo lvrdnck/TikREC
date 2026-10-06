@@ -67,6 +67,8 @@ class ValidationOperations:
         identifier(token)
         def read(connection):
             self._audit(connection)
+            from .session_journal_owned_view import audit_history
+            audit_history(connection, token)
             authority = connection.execute("SELECT * FROM candidate_validations WHERE token=?", (token,)).fetchone()
             if authority is None:
                 return None

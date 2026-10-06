@@ -12,11 +12,12 @@ from .session_journal_scratch import ScratchOperations
 from .session_journal_validation import ValidationOperations
 from .session_journal_publication import PublicationOperations
 from .session_journal_manifest import ManifestOperations
+from .session_journal_settlement import SettlementOperations
 from .session_journal_types import identifier, require
 
 
 class SessionJournal(CaptureOperations, EmptyCaptureOperations, TaskOperations,
-                    ManifestOperations, PublicationOperations, ValidationOperations, ScratchOperations, OwnedOperations, JournalStore):
+                    SettlementOperations, ManifestOperations, PublicationOperations, ValidationOperations, ScratchOperations, OwnedOperations, JournalStore):
     """Explicit-path authority with two capture bindings and one finalizer claim."""
 
     def sealed_input(self, session_id: str) -> dict | None:
@@ -37,6 +38,11 @@ class SessionJournal(CaptureOperations, EmptyCaptureOperations, TaskOperations,
             result["seal"] = None if row["seal"] is None else json.loads(row["seal"])
             task = connection.execute("SELECT * FROM tasks WHERE session=?", (session_id,)).fetchone()
             result["task"] = None if task is None else dict(task)
+            if task is not None and task['state'] == 'completed':
+                owned = connection.execute('SELECT 1 FROM attempt_owners WHERE token=?', (task['token'],)).fetchone()
+                if owned is not None:
+                    from .session_journal_owned_view import audit_history
+                    audit_history(connection, task['token'])
             result["artifacts"] = [dict(x) for x in connection.execute(
                 "SELECT * FROM artifacts WHERE session=? ORDER BY kind LIMIT 2", (session_id,))]
             result["rooms"] = [x[0] for x in connection.execute(

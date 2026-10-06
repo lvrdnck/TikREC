@@ -1,6 +1,16 @@
 # Issue #52 — isolated Windows subprocess lifetime evidence
 
-## Current guarded-publication contract — 2026-10-06
+## Current owned success settlement boundary — 2026-10-06
+
+The explicit success capability requires every original child's receipt-bound
+exit/complete diagnostics and confirmed closure of native controls/pipes before
+preparation. Unknown lifetime prevents success authority. Release transactions
+retain exact failed SQLite owners and thread affinity; process-owner defaults and
+bounded native cleanup remain unchanged. [Contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
+
+Earlier checkpoint statements/results below remain historical within their slice.
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

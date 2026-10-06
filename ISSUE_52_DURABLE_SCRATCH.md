@@ -1,6 +1,16 @@
 # Issue #52 — durable scratch and unpublished-candidate ownership
 
-## Current manifest-completion boundary — 2026-10-06
+## Current owned success settlement boundary — 2026-10-06
+
+Only the prepared original success capability closes its exact workspace/helper/
+published-candidate owners. Cleanup deletes no files and does not rewrite immutable
+candidate `not_checked/unpublished` evidence. Unconfirmed protection keeps the
+unit/claims outstanding; prior adapter defaults retain their accepted behavior.
+R8–R10 inventories, first errors and native identity rules remain. [Contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
+
+Earlier checkpoint statements/results below remain historical within their slice.
+
+## Historical manifest-completion boundary — accepted by 6014913888 — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication
 and authorizes this single internal slice; earlier accepted foundations remain accepted.

@@ -1,6 +1,16 @@
 # Issue #52 — durable attempt and child-launch authority
 
-## Current guarded-publication contract — 2026-10-06
+## Current owned success settlement boundary — 2026-10-06
+
+The explicit success adapter permanently revokes execution at release preparation.
+Its owner stays `revoked` in immutable history; task/attempt/session become completed
+only after exact cleanup and terminal accounting commit. Preparation keeps the
+finalizer/unit occupied. Generic owned-attempt settlement and every media/control
+launch remain prohibited outside this narrow live continuation. [Contract/evidence](ISSUE_52_OWNED_SETTLEMENT.md).
+
+Earlier checkpoint statements/results below remain historical within their slice.
+
+## Historical accepted guarded-publication contract — 2026-10-06
 
 [PM decision 6010639470](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6010639470)
 accepts `1e1e1cae` candidate validation, preserving accepted R1–R10/assembly.

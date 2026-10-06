@@ -17,7 +17,7 @@ def validation_view(connection, token):
             "receipt_operation": result["operation"], "evidence": json.loads(result["evidence"])}
 
 
-def check_binding(connection, row, binding):
+def check_binding(connection, row, binding, *, historical=False):
     """Bind preparation to original H, immutable candidate/validation and exact claim."""
     require(type(binding) is dict and set(binding) == {"session_id", "token", "owner", "h_operation",
         "h_revision", "seal_hash", "marker_hash", "candidate", "validation", "destination", "inventory", "workspace"},
@@ -43,8 +43,9 @@ def check_binding(connection, row, binding):
             and destination["parent"] == intent["root"]
             and type(destination["parent_stamp"]) is str and len(destination["parent_stamp"]) <= 256,
             "publication destination conflicts")
-    claims = connection.execute("SELECT session FROM artifacts WHERE identity=?", (encode(intent["output"]),)).fetchall()
-    require(len(claims) == 1 and claims[0][0] == row["session_id"], "publication claim conflicts")
+    if not historical:
+        claims = connection.execute("SELECT session FROM artifacts WHERE identity=?", (encode(intent["output"]),)).fetchall()
+        require(len(claims) == 1 and claims[0][0] == row["session_id"], "publication claim conflicts")
 
 
 def check_result(binding, operation, evidence):
@@ -99,6 +100,8 @@ class PublicationOperations:
         identifier(token)
         def read(connection):
             self._audit(connection)
+            from .session_journal_owned_view import audit_history
+            audit_history(connection, token)
             row = connection.execute("SELECT * FROM publication_preparations WHERE token=?", (token,)).fetchone()
             if row is None:
                 return None

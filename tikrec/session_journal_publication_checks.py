@@ -7,13 +7,13 @@ from .session_journal_publication import check_binding, check_result
 from .session_journal_types import digest, require
 
 
-def audit_publication(connection, owner):
+def audit_publication(connection, owner, *, historical=False):
     """Preparation never implies completion; each optional result has its own receipt."""
     prepared = connection.execute("SELECT * FROM publication_preparations WHERE token=?", (owner["token"],)).fetchone()
     if prepared is None:
         return
     binding = json.loads(prepared["binding"])
-    check_binding(connection, owner, binding)
+    check_binding(connection, owner, binding, historical=historical)
     op, result = receipt(connection, prepared["operation"], "prepare_publication")
     prepared_result = result
     validation_operation = connection.execute("SELECT result FROM operations WHERE id=?",

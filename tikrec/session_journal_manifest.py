@@ -137,6 +137,8 @@ class ManifestOperations:
         identifier(token)
         def read(connection):
             self._audit(connection)
+            from .session_journal_owned_view import audit_history
+            audit_history(connection, token)
             prep = connection.execute("SELECT * FROM manifest_preparations WHERE token=?", (token,)).fetchone()
             return None if prep is None else {'binding': json.loads(prep['binding']),
                 'operation': prep['operation'], 'steps': steps_view(connection, token)}
