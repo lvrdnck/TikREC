@@ -2,6 +2,16 @@
 
 ## Authority and accepted foundation
 
+[PM acceptance 6030581435](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435)
+accepts `2d542164` R12–R13 and recovery introduced at `45243f6c` as corrected.
+The prior pending-review decision below is historical. The authorized successor
+is the [explicit isolated runtime](ISSUE_52_SERVICE_RUNTIME.md), resumed after
+[workspace audit review](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984).
+It invokes this same prepared-success-only operation under fresh ownership;
+ordinary journal reopen remains observational and schema 10 stays unchanged.
+The test-only `msvcrt` collection guard preserves all Windows assertions; its
+portability check and unexecuted native-platform limit belong to that delivery.
+
 [PM correction decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
 retains the bounded design but withholds acceptance of `45243f6c` until R12–R13
 are reviewed. The correction keeps schema 10 unchanged and preserves all accepted

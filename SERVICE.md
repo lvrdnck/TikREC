@@ -1,5 +1,27 @@
 # TikREC remote recording and startup recovery
 
+## Explicit isolated runtime backend — 2026-10-07
+
+[PM decision 6030581435](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435)
+accepts corrected prepared-success recovery and authorizes experimental runtime
+integration. [Audit/resumption](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984)
+resolves the workspace hold; the same integration is complete for PM review.
+`IsolatedServiceRuntime` explicitly takes an identified existing schema-10 catalog,
+local media root and absolute media tools. Construction owns the catalog before
+reconciliation; `start_runtime()` starts one tracked non-daemon FIFO worker.
+Two journal-backed captures H before slot reuse; at most eight outstanding units
+include reserved captures. Automatic full success/settlement and eligible prepared
+release recovery use accepted owners; earlier work stays visible/pinned.
+
+Internal UUID lookup, targeted capture-only stop, separate capture/finalization
+status, existing automation acceptance receipts and owned shutdown are described
+in the [runtime contract/evidence](ISSUE_52_SERVICE_RUNTIME.md). Unknown cleanup
+reports incomplete shutdown and retains authority. Output/catalog readiness is
+checked before admission/launch. The default service/CLI, legacy recovery and
+HTTP interfaces remain on their existing construction path. No configuration
+switch, deployed activation, migration, retention or new resource policy exists.
+Historical checkpoints below remain evidence within their original boundaries.
+
 ## Current manifest-completion boundary — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication

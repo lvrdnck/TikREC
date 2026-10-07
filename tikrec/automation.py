@@ -18,6 +18,7 @@ from .automation_jobs import (
     prior_session_id_for_start,
 )
 from .automation_status import automation_snapshot, _result, _creator
+from .automation_backend import reconcile_pending, accepted_start
 from .recording import RecordingBusy
 from .recording_manager import RecordingDuplicate
 from .creator_identity import validate_monitored_creators
@@ -116,6 +117,8 @@ class AutomationCoordinator:
             return
         claim = self._state.pending_claim
         if claim is None:
+            return
+        if reconcile_pending(self, claim):
             return
         try:
             jobs = controller_jobs(self._controller)
@@ -218,10 +221,7 @@ class AutomationCoordinator:
             return False
         page = f"https://www.tiktok.com/@{creator}/live"
         try:
-            started = self._controller.start(
-                page, claim.output_path, expected_room_id=room_id,
-                raw_copy=creator in self._raw_copy_creators,
-            )
+            started = accepted_start(self._controller, claim, page, creator in self._raw_copy_creators)
         except RecordingDuplicate:
             # This candidate never owned the room; later creators may use free capacity.
             return self._rejected(creator, "duplicate_live_owned", duplicate=True)
@@ -230,6 +230,11 @@ class AutomationCoordinator:
             return False
         except Exception:
             # A monitor callback must never kill future detection cycles.
+            reconcile = getattr(self._controller, 'reconcile_automatic_claim', None)
+            if callable(reconcile):
+                self._disable('automation_state_ambiguous')
+                self._cycle_results[creator] = _result('blocked', 'acceptance_unconfirmed')
+                return False
             self._rejected(creator, "start_rejected")
             return False
         consumed = self._state.consumed()

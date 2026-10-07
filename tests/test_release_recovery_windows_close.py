@@ -1,10 +1,14 @@
 """Actual Windows close failures keep exact ownership despite Python.closed."""
 
 import ctypes
-import msvcrt
+import sys
 from ctypes import wintypes
 
 import pytest
+
+if sys.platform != 'win32':
+    pytest.skip('native Windows close protection requires Windows', allow_module_level=True)
+import msvcrt
 
 from tests.journal_assembly_helpers import managed_process
 from tests.test_release_recovery_cleanup import recovery_case

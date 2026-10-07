@@ -1,5 +1,15 @@
 # Issue #52 — isolated durable journal checkpoint
 
+## Experimental runtime use — 2026-10-07
+
+Corrected schema-10 prepared-success recovery is accepted by
+[PM 6030581435](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435).
+The [explicit isolated runtime](ISSUE_52_SERVICE_RUNTIME.md) connects the same
+capture/reservation/H/FIFO/settlement operations and indexed automatic receipts.
+No schema or durable guard changes, migration, default catalog creation, legacy
+recovery competition or deployed activation. Ordinary reopen remains observational.
+Runtime integration is complete for PM review; final verification is recorded in its report.
+
 ## Current prepared-success recovery boundary — 2026-10-06
 
 PM decision [6017389662](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6017389662)

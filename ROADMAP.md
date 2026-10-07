@@ -2045,7 +2045,17 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current R12–R13 recovery corrections (issue #52; complete for PM review, 2026-10-07):**
+**Current isolated service-runtime integration checkpoint:**
+
+**Issue #52 OPEN / SINGLE ACTIVE — isolated service-runtime integration complete for PM review (2026-10-07).** Recovery at `2d542164` is accepted by [PM 6030581435](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435); [workspace audit/resumption 6030964984](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984) is resolved. The same partial implementation was preserved and completed under the recorded Complex / GPT-6.1 Sol — High / PROCEED authorization. Owner decisions None.
+
+The explicitly constructed, default-OFF backend connects real capture/H to automatic FIFO success and eligible prepared-success recovery: two captures, one tracked non-daemon finalizer, eight outstanding units; stable UUID/status/stop, accepted automation, storage barriers and truthful owned shutdown. Schema 10, accepted guards and default service/CLI remain unchanged. [Runtime contract, A1–A20 map, failures and limits](ISSUE_52_SERVICE_RUNTIME.md).
+
+Final frozen isolated Windows verification: **667 focused; 1,430 related; 2,922 full passed**; portability import guard **3 passed**; skips/subtests and timings are in the report. All **468 source/test hashes unchanged**. Before each serial suite the existing interpreter, cwd, Git root/HEAD and imported package were recorded and asserted against `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC`, branch `codex/capture-journal-handoff`, origin `lvrdnck/TikREC`, common Git directory `C:\Users\Leandro\dev\TikREC\.git`. Neither the old desktop project nor primary/deployed checkout was edited. External evidence: `C:\Users\Leandro\TikREC-tests\issue52-runtime-20261007\final-three`.
+
+**PM review only next.** #48 OPEN/PAUSED; #28 unresolved. No deployment-readiness claim or automatic successor. Public compatibility, broader recovery/storage/retention integration, independent integrated review and authorized natural-service validation remain separate gates. Production source, media, configuration and services were not changed or restarted. No activation, migration, retention, polling, upgrades, merge, version bump, release or tag.
+
+**Historical R12–R13 recovery corrections (accepted by 6030581435) — (issue #52; complete for PM review, 2026-10-07):**
 [PM decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
 retains prepared-success recovery but withholds acceptance of `45243f6c` until
 these corrections are reviewed. Accepted R1–R11/media/control foundations and

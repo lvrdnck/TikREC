@@ -1,5 +1,16 @@
 # Issue #52 — successful owned-attempt settlement and safe release
 
+## Managed isolated orchestration successor — 2026-10-07
+
+Normal successful settlement remains accepted; corrected prepared-success
+recovery at `2d542164` is accepted by
+[PM 6030581435](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435).
+The [explicit runtime](ISSUE_52_SERVICE_RUNTIME.md) automatically invokes this
+original full success adapter for FIFO queued work. It does not reconstruct live
+capabilities, alter cleanup/accounting guards or activate default service/CLI.
+Incomplete cleanup remains owned and terminal accounting survives local errors.
+Runtime integration is complete for PM review; final verification is recorded in its report.
+
 ## Narrow prepared-success recovery successor — 2026-10-06
 
 [PM decision 6017389662](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6017389662)

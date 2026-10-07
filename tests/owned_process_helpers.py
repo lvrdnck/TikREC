@@ -82,9 +82,10 @@ class Events:
             self.names.append(name)
             self.handles.append(check(self.api.CreateEventW(None, True, False, name)))
 
-    def wait(self, index=0):
-        """Wait for an actual child barrier, with a failure bound independent of the runner."""
-        assert self.api.WaitForSingleObject(self.handles[index], 10000) == 0, "child barrier not reached"
+    def wait(self, index=0, *, timeout_ms=10000):
+        """Require the exact native event within a bounded fixture-only setup wait."""
+        assert type(timeout_ms) is int and 0 < timeout_ms <= 30000, "invalid fixture wait bound"
+        assert self.api.WaitForSingleObject(self.handles[index], timeout_ms) == 0, "child barrier not reached"
 
     def release(self, index=1):
         """Permit the disposable child to advance its next deterministic boundary."""

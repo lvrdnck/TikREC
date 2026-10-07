@@ -1,5 +1,16 @@
 # Issue #52 — isolated capture close and verified durable handoff
 
+## Explicit runtime integration successor — 2026-10-07
+
+The [PM-authorized runtime](ISSUE_52_SERVICE_RUNTIME.md) uses the accepted bridge
+through durable H before slot reuse, then one tracked FIFO success worker and
+eligible prepared-release recovery. Original UUID/generation/room/path/raw/H
+truth remains; late callbacks and capture-only stop cannot affect a replacement
+or finalizer. Lost notifications do not lose durable tasks. Unknown post-H native
+cleanup retains local authority separately from completed accounting; no bridge
+or schema guard is weakened. This successor is complete for PM review;
+historical bridge evidence and default synchronous service behavior remain.
+
 ## Recovery cleanup and admission correction — 2026-10-06
 
 [PM R12–R13 decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)

@@ -33,7 +33,9 @@ def _kill(api, process):
 def _wait_for_barrier(barrier, process):
     """Include bounded supervisor diagnostics if setup exits before its barrier."""
     try:
-        barrier.wait()
+        # Full generated capture/assembly/validation setup can exceed the default 10s.
+        # The actual native event remains required; this is no product phase deadline.
+        barrier.wait(timeout_ms=30000)
     except AssertionError as error:
         evidence = process.poll()
         raise AssertionError(f'{error}; supervisor={evidence.state}; '

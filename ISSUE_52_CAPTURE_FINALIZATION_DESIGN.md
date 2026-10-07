@@ -1,5 +1,20 @@
 # Issue #52 — capture availability and durable local finalization
 
+## Current isolated runtime integration — 2026-10-07
+
+[PM acceptance/integration](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435)
+accepts corrected prepared-success recovery at `2d542164`;
+[audit/resumption](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984)
+resolves the same runtime task, now complete for PM review. The
+[runtime contract and A1–A20 evidence map](ISSUE_52_SERVICE_RUNTIME.md) describes
+explicit default-OFF construction, two captures, one tracked FIFO finalizer,
+eight outstanding units, automatic success and bounded recovery, automation,
+internal UUID/status/stop and truthful owned shutdown. Schema 10 unchanged.
+Public activation/API, unfinished-phase adoption, retention/storage resource
+policy, independent integrated review and natural-service validation remain gates.
+Earlier proposed broad retry/import/resource-policy requirements below are not
+authorization to implement those exclusions in this runtime slice.
+
 ## Current accepted settlement and narrow recovery boundary — 2026-10-06
 
 [PM acceptance/task 6014913888](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6014913888)
