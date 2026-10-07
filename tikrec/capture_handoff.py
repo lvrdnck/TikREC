@@ -16,6 +16,27 @@ from .live import capture_live
 from .session_journal_types import ReservationReleaseProof, encode, require
 
 
+class _HandoffInputs(ExitStack):
+    """Keep failed original proof owners reachable after ExitStack has unwound."""
+
+    def __init__(self, bridge):
+        super().__init__()
+        self.bridge = bridge
+
+    def enter_context(self, held):
+        """Register the original proof owner before its context can throw."""
+        self.bridge.handoff_input_owners.append(held)
+        return super().enter_context(held)
+
+    def __exit__(self, *exc):
+        try:
+            return super().__exit__(*exc)
+        finally:
+            # Retain exact owners, never retry saved descriptor/handle numbers.
+            self.bridge.handoff_input_owners[:] = [h for h in self.bridge.handoff_input_owners
+                if h.handle is not None or h.fd is not None]
+
+
 @dataclass(frozen=True)
 class HandoffResult:
     """Confirmed ownership, separately from MP4 completion and post-H diagnostics.
@@ -46,6 +67,8 @@ class CaptureBridge:
 
     def __init__(self, authority, intent, binding, lease):
         self.authority, self.intent, self.binding, self.lease = authority, intent, binding, lease
+        self.handoff_inputs_retired = False
+        self.handoff_input_owners = []
         self.stop_event, self.started = Event(), False
         self.fence = CaptureFence(intent.session_id, binding["generation"], self._opening)
         self.handoff_operation, self.admit_operation = operation_id(), operation_id()
@@ -207,7 +230,7 @@ class CaptureBridge:
                     self.intent.session_id, row["generation"], row["revision"], closing=True,
                     stop=result.interrupted, recovery="user_stop" if result.interrupted else "room_ended")
             self._fault("before_inventory")
-            with ExitStack() as inputs:
+            with _HandoffInputs(self) as inputs:
                 seal, verify = closed_inventory(inputs, self.intent, self.binding["generation"], result,
                                                 self.warnings, self.fence.source_items, fault=self._fault)
                 values = marker_values(self.authority, self.intent, self.binding, self.handoff_operation, seal)
@@ -237,6 +260,9 @@ class CaptureBridge:
                     self.authority.pending.discard(self.intent.session_id)
                     # Only a confirmed/reconciled receipt makes capacity observable to this authority.
                 self._fault("confirmed_h")
+            # This is local native readiness, not another H or durable accounting phase.
+            # The compatible root lease/projection may still fail and remain supervised.
+            self.handoff_inputs_retired = True
         except BaseException as error:
             if receipt is None:
                 return self._hold(error)

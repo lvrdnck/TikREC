@@ -8,8 +8,14 @@ eligible prepared-release recovery. Original UUID/generation/room/path/raw/H
 truth remains; late callbacks and capture-only stop cannot affect a replacement
 or finalizer. Lost notifications do not lose durable tasks. Unknown post-H native
 cleanup retains local authority separately from completed accounting; no bridge
-or schema guard is weakened. This successor is complete for PM review;
-historical bridge evidence and default synchronous service behavior remain.
+or schema guard is weakened. [PM R14–R15](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559)
+withholds acceptance of `90156913` pending these runtime corrections. R14 adds
+local `handoff_inputs_retired` readiness after the original exclusive ExitStack
+has successfully unwound, and explicit retained proof owners on the bridge.
+H/slot availability remains earlier; the oldest task is never claimed before
+readiness or skipped for later work. Unknown teardown remains visible/pinned;
+notifications cannot replace native proof. Historical bridge evidence and
+default synchronous service behavior remain.
 
 ## Recovery cleanup and admission correction — 2026-10-06
 

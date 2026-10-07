@@ -105,6 +105,8 @@ class AttemptCoordinator:
                 self.guard = acquire_claimed_inputs(self.authority, self.token, self.owner,
                     self.revision, row["seal_hash"], fault=self._fault,
                     manifest_completion=getattr(self, "manifest_capable", False))
+                # Optional runtime lifetime protection starts on the exact acquired owner.
+                self._fault("after_owned_inputs")
                 self._transition("bind_owned_inputs", self.journal.bind_owned_inputs,
                                  self.guard.revalidate().marker_sha256)
                 return self.claimed

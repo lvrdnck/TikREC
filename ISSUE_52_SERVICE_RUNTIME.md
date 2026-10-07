@@ -7,7 +7,7 @@ accepts R12–R13 at `2d542164` and corrected prepared-success recovery. The
 [workspace resumption decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984)
 lifts the temporary audit hold and resumes this same partial task. Accepted
 media/control, R1–R13, normal settlement and recovery foundations remain accepted.
-Current implementation is complete for PM review after final frozen verification.
+Runtime integration at `90156913` is not yet accepted. [PM R14–R15 finding](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559) authorizes one bounded correction task; the corrections are implemented and verified for PM review under the new MODEL GATE / PROCEED. Runtime acceptance remains pending.
 #52 stays OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED; #28 unresolved; owner decisions None.
 Recorded MODEL GATE / PROCEED: Complex; GPT-6.1 Sol — High.
 
@@ -49,6 +49,17 @@ and journal history is accessed by bounded pagination/indexed UUID lookup.
 Rejected admissions discard only known-closed leases without a surviving bridge.
 Failed original capabilities remain in the retirement registry, so cache cleanup
 cannot bypass the accepted original-owner checks.
+
+R14 distinguishes committed H/available capture slots from finalizer acquisition
+readiness. The oldest queued task waits for its exact local capture thread to
+finish and for confirmed exclusive H-proof teardown. It is neither claimed early
+nor skipped for a later task. Waiting uses the existing bounded durable poll
+outside admission locks; missed hints are harmless. Failed original proof owners
+remain explicitly attached to the bridge and visible as
+`capture_handoff_inputs_needs_attention`; no H rewrite or finalizer retry occurs.
+Compatible root lease cleanup remains separately supervised and does not undo
+confirmed exclusive-input readiness. Queued startup without a surviving local
+capture owner follows the original authority rules.
 
 ## Status, automation and stop
 
@@ -98,6 +109,19 @@ shutdown wait, not an assembly deadline. Expiry requests accepted addressed
 recovery cancellation or exact attempt/job cancellation. Cleanup runs on the
 owning worker's SQLite thread. Catalog ownership is released only after tracked
 threads/native/SQLite owners are confirmed retired.
+
+R15 wraps the runtime finalizer's newly acquired lifecycle lease with the accepted
+exact-open-object close guard before binding inputs. Its duplicate reference
+proves native lifetime even when Python marks the original stream closed. Failed
+coordinators in the authority registry participate in retirement independently
+of `runtime.current`. An explicit shutdown cleans retained readers on the original
+worker thread and retires only proved original native references. Reused CRT
+descriptors are refused, including fresh opens of the same lock file; an already
+closed original can retire its duplicate without touching the reused descriptor.
+Unconfirmed Python metadata remains owned too. Known-retired terminal error
+history is removed from the active registry; outstanding failed attempts stay
+bounded by durable units. Original preparation/cleanup receipts are preserved,
+and local cleanup never settles accounting or adopts earlier unfinished work.
 
 A constructed thread is retained if startup reporting fails after native start,
 or interruption leaves startup unconfirmed. Worker failure fences processing and
@@ -209,17 +233,17 @@ deployed acceptance. Accepted lower-layer regressions are preserved separately.
 | Requirement | Runtime evidence / remaining gate |
 | --- | --- |
 | A1 | Same creator/new known room while old finalizer paused; next automation cycle, immutable old intent. Offline coverage. |
-| A2 | One running/one queued plus two captures, tracked single worker; automatic subsequent FIFO. Offline coverage. |
+| A2 | One running/one queued plus two captures, tracked single worker; R14 oldest post-H barrier prevents leapfrogging a ready libx264 task; automatic subsequent FIFO. Offline coverage. |
 | A3 | Paused unsupported/faulted work remains counted; disjoint capture safety stays journal-backed. Full watchdog policy deferred. |
 | A4 | Same room/unknown same page refuse before source; accepted native path/room regressions retained. Public aliases/deployed tests deferred. |
-| A5 | Miss both H hints; runtime supervisor deaths preserve H and replacement. Accepted complete H-boundary deaths retained. Offline partial. |
+| A5 | Miss both H hints while actual worker polls a real capture held at confirmed_h; no early claim/reader, two replacement captures admitted, release automatically completes. Actual post-H exclusive marker close fault stays owned/queued. Accepted H-boundary deaths retained. Offline partial. |
 | A6 | Actual runtime supervisor death before preparation stays pinned; prepared/already-terminal restart and second recovery death. Earlier adoption/retry excluded. |
 | A7 | Accepted immutable-input/drift regressions retained; runtime faults remain paused/pinned. Offline partial. |
 | A8 | Copy/libx264 originals/control/H hashes and raw ON/OFF, reused slots and automatic policy. Offline coverage. |
 | A9 | Retention integration/execution excluded; existing protection regressions retained. Gate open. |
 | A10 | Six tasks plus two captures, reserved H at bound, overflow refusal, exact return; ten lifetime successes and bounded owners/history. Offline coverage. |
 | A11 | Output/catalog readiness and minimum-free admission/launch barriers; prepared recovery deferral. Reservation/resource budget excluded; partial. |
-| A12 | Two captures/running/queued shutdown, no drain; actual child cancellation, retained native/SQLite cleanup, partial/unknown real thread startup and launch failure. Offline coverage. |
+| A12 | Two captures/running/queued shutdown, no drain; R14 stop/shutdown during confirmed_h and next explicit queued restart; R15 actual protected finalizer lease, repeated incomplete shutdown, confirmed cleanup, reported-close-after-success, reused descriptors and SQLite cleanup outside current on the original worker. Accepted cancellation/thread-launch controls retained. Offline coverage. |
 | A13 | Legacy import/migration/cutover excluded. Schema-10 unchanged; older schema refusal retained. Gate open. |
 | A14 | Internal UUID/origin/status/targeted stop/stale callback/ambiguity coverage. HTTP/client/default activation excluded; partial. |
 | A15 | Existing automation claim accepted before H/reuse/promotion, indexed restart reconciliation and unchanged raw policy. Offline coverage. |
@@ -227,9 +251,9 @@ deployed acceptance. Accepted lower-layer regressions are preserved separately.
 | A17 | No unapproved temporary reservation implemented. Resource-policy gate open. |
 | A18 | Assembly has no blanket timeout; shutdown grace separate. Full phase watchdog/performance work excluded. Partial. |
 | A19 | Actual owned runtime supervisor and recovery deaths plus accepted child-lifetime regressions. Full deployed/power-loss gate open. |
-| A20 | Eligible prepared success only, fresh fenced recovery and next automatic FIFO; unsupported work visible/pinned. Broader recovery gate open. |
+| A20 | Eligible prepared success only, fresh fenced recovery after confirmed finalizer retirement and next automatic FIFO; unchanged media/H/history and original incomplete-cleanup receipt, one recovery result plus one ordinary result. Unsupported work visible/pinned. Broader recovery gate open. |
 
-## Final verification and delivery
+## Historical 90156913 verification and delivery
 
 Final serial suites used the existing interpreter
 `C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe`
@@ -283,3 +307,87 @@ tag. Public compatibility, broader recovery/storage/retention integration,
 independent integrated review and authorized natural-service validation remain
 release gates. Delivery uses Refs #52, preserves pushed history including the
 flagged historical `6fdacd37` Closes #52, and stops for PM review.
+
+## R14–R15 correction evidence — 2026-10-07 (corrections complete for PM review)
+
+Correction preflight verified Git root/branch/origin/common Git directory in the
+exact development worktree above, clean at reviewed `90156913`; the required
+`git pull --rebase --autostash` was already current. New MODEL GATE / PROCEED:
+Complex / GPT-6.1 Sol — High; owner decisions None. No other checkout was edited,
+installed environment changed, or production process accessed/restarted.
+
+Before production edits, two connected regressions ran against unchanged
+`90156913` production bytes: **2 failed in 7.54s** (`baseline-one.log`). R14
+actually claimed running work while the real capture remained inside confirmed_h
+with exclusive proof handles. R15 actually returned complete/released authority
+while a PROTECT_FROM_CLOSE finalizer lifecycle handle remained live, despite
+Python closed flags. `baseline-production-hashes.json` and `baseline-result.json`
+record the unchanged source proof; baseline failures are preserved.
+
+Ten new connected cases cover the exact post-H worker poll with lost hints and
+two disjoint captures; true FIFO ahead of a ready libx264 task; targeted-stop and
+shutdown/restart; actual exclusive marker teardown failure; protected finalizer
+lease both inside/outside current; repeated shutdown, independently confirmed
+cleanup, fresh prepared-success recovery and next FIFO; close-after-success;
+reused CRT descriptors for different/same files; and an already-terminal SQLite
+reader outside current cleaned only by the original worker. Generated media,
+original H/capture truth/history and incomplete cleanup receipts are checked.
+
+Development evidence remains separate: `corrected-one` passed 2 (21.10s);
+`cleanup-corrected` passed 3 (26.43s). `controls-one` had 21 passes/one teardown
+error (223.00s); `controls-two` had 2 passes/one teardown error (23.05s);
+`cleanup-diagnostic` had 1 pass/one teardown error (11.52s). Their actual summaries
+completed but retained a non-daemon fixture worker. Only each independently
+verified task-owned actual pytest child was terminated afterward; exact process
+identity evidence is preserved. This was independent test cleanup, never product
+shutdown success or a passing suite.
+
+The diagnostic found a confirmed-retired native reference with an open FileIO
+metadata owner. Product retirement remains conservative until that Python owner
+is also closed. Independent fixture teardown proves the original native reference
+gone and its CRT slot unused before disposing metadata on the owning worker;
+it refuses a reused slot. It also cleans failed registry coordinators outside
+current without settling accounting. `boundaries-one` preserved 5 failures/23
+passes (416.19s): two new assertions incorrectly expected recovered results in
+the ordinary result table, and three existing controls failed in that development
+snapshot. After retirement/fixture corrections, `boundaries-two` had 1 failure/27
+passes (297.28s): a new test raced a correctly reaped capture entry. The check now
+uses durable queue state. **`boundaries-three`: 33 passed in 369.91s**, including
+the unchanged native capture/recovery, cancellation, acknowledgement and SQLite
+controls. Earlier results are not relabelled or discarded.
+
+Evidence root:
+`C:\Users\Leandro\TikREC-tests\issue52-runtime-r14-r15-20261007`.
+The final source/test snapshot is `final-one`, **471 raw SHA-256 files**. Source
+and tests remain unchanged during serial portability/focused/related/full runs.
+Every suite records/asserts actual interpreter/base interpreter, cwd, Git root,
+HEAD, branch, origin/common Git directory and imported TikREC path. The verification
+HEAD is reviewed `90156913` plus the recorded task-owned uncommitted bytes; delivery
+verifies equivalence to its commit in `delivery-verification.json`. Focused verification passed **677 tests in
+2680.11s** (52 module selections; harness 2680.76s), with all 471 hashes unchanged.
+Related verification passed **1,440 tests / 2 skips / 17 subtests in 3422.38s**
+(131 module selections; harness 3423.14s), again with 471 unchanged hashes.
+Full verification passed **2,932 tests / 9 skips / 19 subtests**
+(2932 passed, 9 skipped, 19 subtests passed in 3758.56s (1:02:38); harness 3759.25s), with all 471 hashes unchanged.
+The ten new connected regressions passed in the focused, related and full suites. The simulated
+linux/darwin/freebsd import guard passed 3 (0.08s), preserving Windows assertions;
+actual non-Windows collection remains unexecuted. No deployed/natural-recording,
+power-loss or complete A1–A20 acceptance is claimed. Schema 10/defaults unchanged;
+all original integration exclusions and PM-review-only next action remain.
+
+
+### Final R14–R15 frozen verification
+
+| Suite | Ordinary passes | Skips | Subtests passed | Module selections | Harness seconds |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| portability | 3 | 0 | 0 | 1 | 0.65 |
+| focused | 677 | 0 | 0 | 52 | 2680.76 |
+| related | 1440 | 2 | 17 | 131 | 3423.14 |
+| full | 2932 | 9 | 19 | 1 | 3759.25 |
+
+All suites exited zero; 471 raw source/test hashes matched before and after
+each suite. Full selection is the entire tests directory. Logs, provenance,
+module lists, isolated configurations and verification JSON remain in `final-one`.
+The actual imported package was the development worktree `tikrec\__init__.py`,
+never deployed main or the old desktop project. Commit/push equivalence and
+task-owned process retirement are recorded separately at delivery.

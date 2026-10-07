@@ -1,6 +1,8 @@
 """One tracked FIFO worker; durable work, not notifications, drives processing."""
 
 from .journal_settlement import JournalSettlement
+from .service_runtime_retirement import (retired, runner_retired, retained_runners,
+    protect_lease, retire_guard_references, prune_terminal_runners)
 
 
 def capture_uncertain(entry):
@@ -48,38 +50,30 @@ def reap_captures(runtime):
         prune_leases(runtime)
 
 
-def retired(adapter):
-    """Inspect exact live resource ownership independently of durable terminal facts."""
-    runner, cap = adapter.coordinator, adapter.capability
-    if cap is not None and cap.operation is not None:
-        for key, held in cap.objects:
-            if key == 'lease':
-                guard = getattr(held.handle, 'guard', None)
-                if not held.closed or not held.handle.closed or guard is not None and guard.retained:
-                    return False
-            elif held.handle is not None or getattr(held, 'fd', None) is not None:
-                return False
-        if any(r.connection is not None for r in cap.readers):
-            return False
-        return all(c['process'].closed for c in runner.children)
-    return runner.closed
-
-
 def cleanup_current(runtime):
     """Request accepted local cleanup on the worker's original SQLite thread."""
     adapter = runtime.current
-    if adapter is not None:
-        try:
-            if adapter.capability is not None:
-                for reader in adapter.capability.readers:
-                    reader.cleanup()
-            adapter.close(5)
-        except BaseException as error:
-            runtime.record_error(error)
-        if retired(adapter):
-            if adapter.error is None:
-                runtime.authority._attempts.pop(adapter.coordinator.token, None)
-            runtime.current = None
+    runners = tuple(runtime.authority._attempts.values())
+    for runner in runners:
+        cap = getattr(runner, 'settlement_owner', None)
+        if cap is not None and cap.operation is not None:
+            for reader in cap.readers:
+                if reader.connection is not None:
+                    for _, error in reader.cleanup():
+                        runner._error(error)
+                        runtime.record_error(error)
+        elif adapter is not None and adapter.coordinator is runner and not runner_retired(runner):
+            try:
+                adapter.close(5)
+            except BaseException as error:
+                runtime.record_error(error)
+        # Earlier failed work outside current is pinned, not adopted or replayed.
+        retire_guard_references(runtime, runner)
+        if runner_retired(runner):
+            runner.closed = True
+    if runtime.current is not None and retired(runtime.current):
+        runtime.current = None
+    prune_terminal_runners(runtime)
     for owner in tuple(runtime.authority._recovery_owners.values()):
         try:
             owner.close()
@@ -91,6 +85,7 @@ def cleanup_current(runtime):
 def owned(runtime):
     """Refuse worker retirement while thread-affine or native owners remain."""
     return (runtime.current is not None and not retired(runtime.current)
+            or bool(retained_runners(runtime))
             or any(o.has_retained_ownership() for o in runtime.authority._recovery_owners.values())
             or runtime.connections.has_ownership())
 
@@ -125,12 +120,13 @@ def process_once(runtime, startup):
                                                        fault=recovery_fault)
         finally:
             runtime.recovery_address = None
-        return
+        return True
     if any(t['state'] in {'failed', 'blocked'} for t in status['tasks']):
         runtime.paused = 'unsupported_unfinished_phase'
         return
-    if not any(t['state'] == 'queued' for t in status['tasks']):
-        return
+    oldest = next((t for t in status['tasks'] if t['state'] == 'queued'), None)
+    if oldest is None:
+        return False
     reason = runtime.storage_reason()
     if reason:
         runtime.paused = reason
@@ -138,9 +134,20 @@ def process_once(runtime, startup):
     with runtime.lock:
         if runtime.stopping.is_set():
             return
+        entry = runtime.captures.get(oldest['session'])
+        if entry is not None:
+            # Confirmed H frees the slot before exclusive local proof handles unwind.
+            # Do not spend its single-use attempt, or leapfrog the oldest FIFO task.
+            if not entry['done'] or entry['thread'] is not None and entry['thread'].is_alive():
+                return False
+            if not entry['bridge'].handoff_inputs_retired:
+                runtime.paused = 'capture_handoff_inputs_needs_attention'
+                return False
         options = dict(runtime.settlement_options)
         fault = options.pop('fault', lambda _: None)
         def runtime_fault(point):
+            if point == 'after_owned_inputs':
+                protect_lease(adapter.coordinator)
             fault(point)
             if point in {'before_release_preparation', 'before_terminal_release'}:
                 # Unrelated borrowed SQLite cleanup is still local outstanding ownership.
@@ -148,6 +155,7 @@ def process_once(runtime, startup):
                 require(not runtime.connections.failed(runtime), 'runtime catalog cleanup remains unconfirmed')
         adapter = JournalSettlement(runtime.authority, ffmpeg=runtime.ffmpeg,
             ffprobe=runtime.ffprobe, fault=runtime_fault, **options)
+        adapter.coordinator.native_close_guards = []
         runtime.current = adapter
     try:
         adapter.run()
@@ -158,6 +166,8 @@ def process_once(runtime, startup):
             if adapter.error is None:
                 runtime.authority._attempts.pop(adapter.coordinator.token, None)
             runtime.current = None
+        prune_terminal_runners(runtime)
+    return True
 
 
 def processing_loop(runtime):
@@ -178,11 +188,11 @@ def processing_loop(runtime):
                 runtime.paused = runtime.paused or 'catalog_cleanup_needs_attention'
             elif runtime.paused in {None, 'low_free_space', 'storage_unavailable'}:
                 runtime.paused = None
-                process_once(runtime, startup)
+                progressed = process_once(runtime, startup)
                 if runtime.paused not in {'low_free_space', 'storage_unavailable'}:
                     startup = False
                 # A successful task immediately advances FIFO, without another H hint.
-                if runtime.paused is None and runtime.journal.status()['tasks']:
+                if progressed and runtime.paused is None and runtime.journal.status()['tasks']:
                     continue
         except BaseException as error:
             runtime.record_error(error)

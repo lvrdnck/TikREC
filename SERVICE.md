@@ -5,13 +5,19 @@
 [PM decision 6030581435](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435)
 accepts corrected prepared-success recovery and authorizes experimental runtime
 integration. [Audit/resumption](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984)
-resolves the workspace hold; the same integration is complete for PM review.
+resolves the workspace hold. [PM corrections R14–R15](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559)
+retain the integration but withhold acceptance of `90156913`; correction review
+and successful frozen verification are recorded in the runtime report; corrections await PM review.
 `IsolatedServiceRuntime` explicitly takes an identified existing schema-10 catalog,
 local media root and absolute media tools. Construction owns the catalog before
 reconciliation; `start_runtime()` starts one tracked non-daemon FIFO worker.
 Two journal-backed captures H before slot reuse; at most eight outstanding units
 include reserved captures. Automatic full success/settlement and eligible prepared
 release recovery use accepted owners; earlier work stays visible/pinned.
+Committed H frees capture slots before finalizer readiness: the oldest queued
+task waits for its original local exclusive proof handles to retire. Failed
+finalizer owners remain supervised outside the current-task projection; Python
+closed flags alone cannot establish native retirement or complete shutdown.
 
 Internal UUID lookup, targeted capture-only stop, separate capture/finalization
 status, existing automation acceptance receipts and owned shutdown are described

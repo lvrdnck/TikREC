@@ -135,9 +135,28 @@ def runtime_case(tmp_path, managed_process, monkeypatch):
         from tikrec import service_runtime_worker
         original = service_runtime_worker.cleanup_current
         def independent(value):
-            if value.current is not None:
-                independent_cleanup(value.current)
-                value.current.coordinator.closed = True
+            for runner in tuple(value.authority._attempts.values()):
+                adapter = SimpleNamespace(coordinator=runner,
+                    capability=getattr(runner, 'settlement_owner', None))
+                try:
+                    independent_cleanup(adapter)
+                    runner.closed = True
+                finally:
+                    # An earlier native close can leave a non-closed FileIO object.
+                    # Keep it supervised until this independent fixture can prove
+                    # its CRT slot empty, before releasing its Python metadata.
+                    lease = None if runner.guard is None else runner.guard.lifecycle
+                    stream = None if lease is None else lease.handle
+                    guard = getattr(stream, 'guard', None)
+                    if guard is not None and not guard.retained and not stream.closed:
+                        import msvcrt
+                        with pytest.raises(OSError):
+                            msvcrt.get_osfhandle(guard.descriptor)
+                        try:
+                            stream.raw.close()
+                        except OSError:
+                            pass
+                        assert stream.closed
             for owner in tuple(value.authority._recovery_owners.values()):
                 for reader in owner.readers:
                     connection = reader.connection

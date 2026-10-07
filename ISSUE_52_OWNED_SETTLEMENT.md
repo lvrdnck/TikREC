@@ -9,7 +9,13 @@ The [explicit runtime](ISSUE_52_SERVICE_RUNTIME.md) automatically invokes this
 original full success adapter for FIFO queued work. It does not reconstruct live
 capabilities, alter cleanup/accounting guards or activate default service/CLI.
 Incomplete cleanup remains owned and terminal accounting survives local errors.
-Runtime integration is complete for PM review; final verification is recorded in its report.
+Runtime integration at `90156913` is not yet accepted; [PM R14–R15](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559)
+requires dispatch/retirement correction. A default-no-op acquired-input hook
+lets this runtime protect the exact finalizer lifecycle lease with existing
+native close references. Failed registry owners, original-thread SQLite cleanup
+and committed terminal results remain supervised independently of `current`.
+Original settlement/preparation/cleanup evidence and this one-shot accounting
+protocol remain unchanged; runtime verification is recorded in its report.
 
 ## Narrow prepared-success recovery successor — 2026-10-06
 
