@@ -9,6 +9,9 @@ The published feature set is storage-only: automatic-admission space checks, con
 
 ## Opt-in operational Windows service
 
+Corrected operational mode/R20 are [PM-accepted](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6070585346). [Actual supervised execution evidence](ISSUE_52_OPERATIONAL_TRIAL.md) records passing media/control/retirement checks, remaining source continuity limits and a concurrent single-trial coordination conflict. Overall evidence is PARTIAL; stop for PM disposition. Everyday installation and unattended operation remain separately scoped.
+
+
 The unreleased `serve --journal-home` mode explicitly composes the accepted
 schema-10 runtime with normal monitoring and automatic recording. Ordinary
 `serve` without journal options retains its legacy backend. This mode requires a
