@@ -4,16 +4,18 @@ import time
 
 from .service_runtime_worker import reap_captures, owned, capture_uncertain
 from .session_journal_types import require
+from .service_runtime_refusal import retire_refusals, sealed_refusals, retry_refusal_authority
+from .service_runtime_retirement import lease_retired
 
 
 def authority_retired(runtime):
     """An emptied ExitStack alone does not prove that its failed closes retired."""
     authority = runtime.authority
     for lease in (authority.owner, *authority.leases):
-        guard = getattr(lease.handle, 'guard', None)
-        if not lease.closed or not lease.handle.closed or lease.cleanup_errors or guard is not None and guard.retained:
+        if not lease_retired(lease):
             return False
-    return all(h.handle is None and h.fd is None for h in (authority.state, authority.catalog, authority.media))
+    return (all(h.handle is None and h.fd is None for h in (authority.state, authority.catalog, authority.media))
+            and not any(g.retained for g in authority.native_close_guards))
 
 
 
@@ -83,11 +85,20 @@ def shutdown(runtime):
             catalog_uncertain = True
     alive = not captures_joined
     worker_alive = not worker_joined
-    uncertain_capture = any(capture_uncertain(e) for e in runtime.captures.values())
+    confirmed = set()
+    if captures_joined and worker_joined and not owned(runtime) and not catalog_uncertain and not runtime.connections.closing:
+        confirmed = retire_refusals(runtime, tuple(runtime.captures.items()))
+    elif captures_joined and worker_joined and not owned(runtime) and not catalog_uncertain and runtime.connections.closing:
+        confirmed = sealed_refusals(runtime)
+    uncertain_capture = any(sid not in confirmed and capture_uncertain(e)
+                            for sid, e in runtime.captures.items())
     incomplete = alive or worker_alive or owned(runtime) or uncertain_capture or catalog_uncertain
     if not incomplete:
         try:
+            sealed = runtime.connections.closing
             runtime.connections.seal()
+            if sealed and confirmed and len(confirmed) == len(runtime.captures):
+                retry_refusal_authority(runtime)
             runtime.authority.close()
             require(authority_retired(runtime), 'catalog/native authority cleanup remains unconfirmed')
             runtime.connections.restore()

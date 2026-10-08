@@ -70,7 +70,8 @@ class CaptureBridge:
         self.handoff_inputs_retired = False
         self.handoff_input_owners = []
         self.stop_event, self.started = Event(), False
-        self.fence = CaptureFence(intent.session_id, binding["generation"], self._opening)
+        self.fence = CaptureFence(intent.session_id, binding["generation"], self._opening,
+                                  track_inputs=authority.cleanup_guards)
         self.handoff_operation, self.admit_operation = operation_id(), operation_id()
         self.warnings, self.failure = set(), None
         self._fault = lambda _: None
@@ -221,6 +222,8 @@ class CaptureBridge:
         try:
             require(type(result) is CaptureEnded and not self.fence.cleanup_errors,
                     "source/writer closure was not proved")
+            require(self.fence.inputs is None or self.fence.inputs.retired(),
+                    "raw native closure was not proved")
             self.fence.close()
             with self.authority.lock:
                 row = self._current()

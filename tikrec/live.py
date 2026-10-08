@@ -220,7 +220,7 @@ def capture_live(
                     on_part_retained=capture_callback(retained, _capture_fence),
                     on_part_closed=capture_callback(part_closed, _capture_fence),
                     on_timestamp_replay=capture_callback(timestamp_replay, _capture_fence),
-                    **({"_open_guard": _capture_fence.opening} if _capture_fence is not None else {}),
+                    **({"_open_guard": _capture_fence.writer_opening} if _capture_fence is not None else {}),
                     # Older injected writers need not implement the new observation hook.
                     **({"on_media_retained": observation.retained} if writer is write_parts else {}),
                 )

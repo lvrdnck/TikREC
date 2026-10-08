@@ -53,6 +53,7 @@ def _connection_source(direct_url, *, number, raw_copy_dir, raw_tag_source,
             warning,
             connection_number=number,
             wall_clock=getattr(observation, "clock", time.time),
+            _open=None if fence is None or fence.inputs is None else fence.inputs.open,
         )
         if fence is not None:
             raw_copy = FencedRaw(raw_copy, fence)
@@ -68,6 +69,7 @@ def _connection_source(direct_url, *, number, raw_copy_dir, raw_tag_source,
             warning,
             connection_number=number,
             wall_clock=getattr(observation, "clock", time.time),
+            _open=None if fence is None or fence.inputs is None else fence.inputs.open,
         )
         if fence is not None:
             raw_copy = FencedRaw(raw_copy, fence)

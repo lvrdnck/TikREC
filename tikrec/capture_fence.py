@@ -13,12 +13,15 @@ class CaptureFence:
     journal receipt is never used here as new writer permission.
     """
 
-    def __init__(self, session_id, generation, opening):
+    def __init__(self, session_id, generation, opening, *, track_inputs=False):
         self.session_id, self.generation, self._opening = session_id, generation, opening
         self._lock, self.active, self.inflight = RLock(), True, 0
         self.cleanup_errors = []
         self.primary_error = None
         self.source_items = 0
+        self.sources_opened, self.sources_closed, self.writer_openings = 0, 0, 0
+        from .capture_input_owners import CaptureInputOwners
+        self.inputs = CaptureInputOwners() if track_inputs else None
 
     def check(self):
         """Refuse callbacks after generation close, including after slot replacement."""
@@ -50,6 +53,7 @@ class CaptureFence:
     def iterator(self, source):
         """Fence iteration and source finally blocks without retaining a yielded scope."""
         iterator = iter(source)
+        self.sources_opened += 1
         try:
             while True:
                 with self.operation():
@@ -66,6 +70,7 @@ class CaptureFence:
                 primary = sys.exc_info()[1]
                 try:
                     self.wrap(close)()
+                    self.sources_closed += 1
                 except BaseException as cleanup:
                     self.cleanup_errors.append(cleanup)
                     if primary is not None and not isinstance(primary, GeneratorExit):
@@ -77,6 +82,13 @@ class CaptureFence:
     def opening(self):
         """Serialize fresh stop/admission checks with actual native writer opening."""
         with self.operation(), self._opening():
+            yield
+
+    @contextmanager
+    def writer_opening(self):
+        """Remember any attempted part opening; shutdown cannot call it pre-configuration."""
+        with self.opening():
+            self.writer_openings += 1
             yield
 
     def close(self):

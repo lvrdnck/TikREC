@@ -24,6 +24,11 @@ class PilotCommand:
         self.shutdown_requested, self.last_control = False, None
         self.next_observation = 0
         self.last_result = None
+        self.stop_reason = None
+
+    def exit_code(self):
+        """Keep an unsupported/safety stop nonzero even after explicit cleanup succeeds."""
+        return 2 if self.primary is not None else 3 if self.stop_reason is not None else 0
 
     def start(self, source, token):
         """Initialize/reopen explicitly, then bind/start the existing complete composition."""
@@ -119,7 +124,7 @@ class PilotCommand:
                 command = self.control()
                 if command == 'shutdown' or command == 'cleanup' and self.shutdown_requested:
                     if self.cleanup():
-                        return 0 if self.primary is None else 2
+                        return self.exit_code()
                 if not self.shutdown_requested:
                     if self.envelope.clock() >= self.next_observation:
                         self.next_observation = self.envelope.clock() + 1
@@ -131,6 +136,7 @@ class PilotCommand:
                         emit('observation', **self.envelope.observed,
                              finalization=self.runtime.health()['finalization'])
                         if reason:
+                            self.stop_reason = reason
                             emit('stop_condition', reason=reason)
                             if self.cleanup():
                                 return 3
@@ -140,7 +146,7 @@ class PilotCommand:
                     time.sleep(0.1)
             except KeyboardInterrupt:
                 if self.cleanup():
-                    return 0 if self.primary is None else 2
+                    return self.exit_code()
             except BaseException as error:
                 if self.primary is None:
                     self.primary = error

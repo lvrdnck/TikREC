@@ -15,7 +15,6 @@ from .flv import FlvFormatError, FlvTag, read_tag
 
 DEFAULT_READ_TIMEOUT = 30.0
 
-
 class SourceStallError(TimeoutError):
     """Raised when an open source connection stops delivering bytes."""
 
@@ -26,7 +25,7 @@ class RawCopy:
     def __init__(self, path: Path, warning: Callable[[str], None] | None = None, *,
                  connection_number: int = 1,
                  wall_clock: Callable[[], float] = time.time,
-                 monotonic_clock: Callable[[], float] = time.monotonic) -> None:
+                 monotonic_clock: Callable[[], float] = time.monotonic, _open=None) -> None:
         if type(connection_number) is not int or connection_number < 1:
             raise ValueError("connection_number must be a positive integer")
         self.path = Path(path)
@@ -40,9 +39,10 @@ class RawCopy:
         self._saved_arrivals_path: Path | None = None
         self._offset = 0
         self._monotonic_reference = 0.0
+        opener = Path.open if _open is None else _open  # Only guarded pilot streams opt into native tracking.
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self._handle = self.path.open("xb")
+            self._handle = opener(self.path, "xb")
             self._saved_path = self.path
         except OSError as error:
             self._warn(f"could not open raw copy {self.path}: {error}")
@@ -52,7 +52,7 @@ class RawCopy:
             # correlated with wall-clock connection events without trusting clock changes.
             wall_reference = wall_clock()
             self._monotonic_reference = monotonic_clock()
-            self._arrivals_handle = self.arrivals_path.open("x", encoding="utf-8")
+            self._arrivals_handle = opener(self.arrivals_path, "x", encoding="utf-8")
             self._saved_arrivals_path = self.arrivals_path
             self._write_arrival_record({
                 "event": "clock_reference", "connection": connection_number,

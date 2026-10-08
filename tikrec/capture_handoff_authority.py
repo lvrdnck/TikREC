@@ -32,6 +32,7 @@ class CaptureAuthority:
         self._attempts, self._recovery_owners, self._release_recovery = {}, {}, None
         self._stack, self.leases = ExitStack(), []
         self.native_close_guards = []
+        self.cleanup_guards = cleanup_guards
         # The opt-in launcher retains exact startup owners; legacy callers stay unchanged.
         from .release_recovery_handles import cleanup_scope, NativeCloseGuard
         factory = (lambda h: NativeCloseGuard(self, h, resource_key='authority_native')) if cleanup_guards else None
@@ -91,7 +92,9 @@ class CaptureAuthority:
         output = Path(output).absolute()
         require(output.parent == self.root and output.suffix.casefold() == ".mp4",
                 "bridge output must be an immediate MP4 in the explicit root")
-        lease = acquire_lifecycle(self.root, "writer")
+        from .release_recovery_handles import cleanup_scope
+        with cleanup_scope(self) if self.cleanup_guards else nullcontext():
+            lease = acquire_lifecycle(self.root, "writer")
         self.leases.append(lease)
         with self.lock:
             try:

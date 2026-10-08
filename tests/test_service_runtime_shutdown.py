@@ -51,10 +51,11 @@ def test_shutdown_two_captures_running_and_queued_does_not_drain(runtime_case):
     assert all(row['phase'] == 'completed' for row in restarted.journal.history())
 
 
-def test_zero_grace_cancels_actual_assembly_child_and_reports_retained_protection(runtime_case):
+@pytest.mark.parametrize('guarded', [False, True])
+def test_zero_grace_cancels_actual_assembly_child_and_reports_retained_protection(runtime_case, guarded):
     case = runtime_case
     entered = Event()
-    runtime = case.build(shutdown_grace=0).start_runtime()
+    runtime = case.build(shutdown_grace=0, authority_cleanup_guards=guarded).start_runtime()
     create = runtime.settlement_options['process_factory']
     children = []
     def process(sid, token):
