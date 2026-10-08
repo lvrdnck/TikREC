@@ -1293,6 +1293,8 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+Publication checkpoint below is historical/complete. Current development: [B1/B2 delivered, B3 pending](ISSUE_52_PILOT.md), under PM resumption 6059481487.
+
 **v0.11.0 storage-focused publication COMPLETE / VERIFIED (2026-10-08).** [Owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758) was executed after PM acceptance 6059047079; no repeat permission/review cycle. Current released version is **v0.11.0**, published at **2026-10-08T11:50:27Z**. [TikREC v0.11.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0) is non-draft/non-prerelease, Release ID `406770680` / node `RE_kwDOUTgsvs4YPtP4`.
 
 Immutable annotated tag object **`ef8c5215712d454855a033700116bdc8fc0906a3`** peels to the exact approved **`2fe6354aa508d53ce3a3452ce08743d97400fe73`**, not a bookkeeping commit or main/development tip. [Wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl), asset ID `621682513`, is **207,542 bytes**, SHA-256 **`7cf87363cde6ce9817b79c4c7eb86fe37a3e77bcf564cde91019aadec7e902ca`**. Existing wheel checked before writes against 105 module bytes, metadata/entrypoint/RECORD and 223 frozen files. Draft and published downloads match the approved bytes. No rebuild/substitution or conflicting object overwrite occurred. [Publication execution/evidence](V0_11_RELEASE_PUBLICATION.md).
@@ -1333,8 +1335,8 @@ both job documents and automation stayed identical; bytes grew from 102,697,695
 to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
 replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-**Storage-focused v0.11.0 is published/verified; no implementation task is active.
-#48 and #52 remain OPEN / explicitly PAUSED** under PM decision 6059131758. The historical
+**Historical release-closeout coordination (superseded for B1/B2 by 6059481487): storage-focused v0.11.0 published/verified; no implementation task was active.
+#48 and #52 were OPEN / explicitly PAUSED** under PM decision 6059131758. The historical
 journal review under 5970692341 is complete;
 historical durable-attempt evidence is preserved in the #52 checkpoint below.
 Service integration is not approved.
@@ -2054,7 +2056,11 @@ missed-LIVE evidence warrants source-access investigation; unknown/unverifiable
 does not prove offline. Preserve the approved Gracie-only policy. No #48 polling
 or search is part of #52; #28 remains unresolved and no release is authorized.
 
-**Capture availability / finalization separation (issue #52; PAUSED):**
+**Capture availability / finalization separation (issue #52; B1+B2 COMPLETE / PM B3 REVIEW):**
+
+**#52 B1+B2 PASS — COMPLETE FOR PM REVIEW (2026-10-08).** [PM task 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487): opt-in foreground command, explicit isolated source/catalog/tool identities, finite operating envelope and actual Windows generated-media rehearsal delivered. [Commands, limits, actual failures/results and preserved evidence](ISSUE_52_PILOT.md). Final frozen bytes: 32 focused / 233 related passed, no skips; eight original sessions pass normal deep validation. Schema 10, two captures/one finalizer/eight units, original H/UUID/raw evidence and default legacy serve preserved. B3 fresh-context acceptance and separately authorized natural-LIVE pilot remain outstanding; no independent acceptance/activation claimed. v0.11 publication COMPLETE; #48 OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. Complex / GPT-6.1 Sol — High + owner PROCEED; no owner decisions. Correct isolated worktree/branch/root/origin/common directory verified, clean base `13f40263`, own-upstream pull current; no unrelated edits. Next: PM B3 review only, no automatic implementation successor.
+
+
 
 **Paused isolated HTTP/client integration checkpoint:**
 

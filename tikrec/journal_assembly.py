@@ -26,7 +26,7 @@ class JournalAssembly:
     """
 
     def __init__(self, authority, *, ffmpeg, ffprobe, progress=None,
-                 process_factory=OwnedProcess, fault=lambda _: None, candidate_validation=False, candidate_publication=False, manifest_completion=False):
+                 process_factory=OwnedProcess, fault=lambda _: None, candidate_validation=False, candidate_publication=False, manifest_completion=False, candidate_limit_bytes=None):
         self.coordinator = AttemptCoordinator(authority, process_factory=process_factory, fault=fault)
         require(not candidate_publication or candidate_validation, "publication requires validation")
         require(not manifest_completion or candidate_publication, "completion requires publication")
@@ -34,6 +34,9 @@ class JournalAssembly:
         self.coordinator.publication_capable = candidate_publication
         self.coordinator.validation_readers = candidate_validation
         self.ffmpeg, self.ffprobe = Path(ffmpeg), Path(ffprobe)
+        require(candidate_limit_bytes is None or type(candidate_limit_bytes) is int
+                and 131072 <= candidate_limit_bytes <= 512 * 1024**2, "invalid candidate byte limit")
+        self.candidate_limit_bytes = candidate_limit_bytes
         self.progress, self.plan, self.receipt = progress, None, None
         self.collectors, self.error = [], None
         self._started, self._lock = False, RLock()
@@ -113,6 +116,10 @@ class JournalAssembly:
             command = _build_ffmpeg_command(inputs, scratch.path / "candidate.mp4", ffmpeg=self.ffmpeg,
                 manifest=scratch.path / "concat.ffconcat" if self.plan.stream_copy else None,
                 target_size=self.plan.target_size, nominal_rate=self.plan.nominal_rate)
+            if self.candidate_limit_bytes is not None:
+                # The opt-in pilot caps the writer before durable launch intent is hashed.
+                # Near-cap output is refused below; a clean mux exit cannot prove full media.
+                command[-1:-1] = ['-fs', str(self.candidate_limit_bytes)]
             command = progress_command(command, self.progress is not None)
             outputs = ("candidate.mp4", "concat.ffconcat") if self.plan.stream_copy else ("candidate.mp4",)
             if self.plan.stream_copy:
@@ -126,6 +133,15 @@ class JournalAssembly:
             health = collector.input_health()["status"]
             self.receipt = scratch.seal_candidate(runner.children[-1]["launch"],
                 input_decode="unknown" if health == "not_checked" else health)
+            if self.candidate_limit_bytes is not None:
+                # Seal only unpublished bytes first: accepted cleanup needs that exact
+                # durable identity. Near-cap refusal never enters validation/publication.
+                margin = min(16 * 1024**2, self.candidate_limit_bytes // 8)
+                if self.receipt['size'] >= self.candidate_limit_bytes - margin:
+                    # This known opt-in refusal precedes every validator/publication.
+                    # Wrappers permit original local cleanup, never terminal accounting.
+                    runner.pilot_candidate_refused = True
+                    require(False, 'pilot candidate approached byte limit; preserve unfinished evidence')
             return self.result()
         except BaseException as original:
             self.error = original.original if isinstance(original, AttemptError) else original

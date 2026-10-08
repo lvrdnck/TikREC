@@ -1,5 +1,10 @@
 # Issue #52 — bounded release-readiness decision (2026-10-08)
 
+Current B1/B2 implementation/runbook: [ISSUE_52_PILOT.md](ISSUE_52_PILOT.md),
+under [PM task 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487).
+B3 fresh-context acceptance and separate natural-LIVE authorization remain
+outstanding. Earlier findings/evidence below are historical and preserved.
+
 Authority: [PM decision 6058350763](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058350763), with [R16–R17 requirements 6057613070](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6057613070). Review candidate **8b5485c12eea0d71f83c4a99e8984b666d9da620**. Complex / GPT-6.1 Sol — High gate and owner PROCEED recorded. #52 OPEN / SINGLE ACTIVE; #48 PAUSED; #28 unresolved. This task changes review tests/docs only.
 
 **R16 PASS; R17 PASS — bounded engineering verdict. NOT READY for a separately authorized local pilot.** No correction defect was demonstrated. This conversation retains the implementation history, so it does **not** satisfy the PM's explicitly requested fresh review conversation or constitute independent PM acceptance. That provenance gap is B3 below. Accepted R1–R15 and `b9189ae0`'s bounded runtime review are reused, not repeated.

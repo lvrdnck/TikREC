@@ -1,7 +1,7 @@
 """Explicit single native scheduler authority for the isolated capture bridge."""
 
 import json
-from contextlib import ExitStack
+from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from threading import RLock
 from uuid import uuid4
@@ -25,21 +25,28 @@ class CaptureAuthority:
     performed. Sources/writers must run through this single trusted authority.
     """
 
-    def __init__(self, journal, root):
+    def __init__(self, journal, root, *, cleanup_guards=False):
         self.journal, self.root = journal, Path(root).absolute()
         self.lock, self.bridges, self.pending = RLock(), {}, set()
         self.recovery_gate = RLock()
         self._attempts, self._recovery_owners, self._release_recovery = {}, {}, None
         self._stack, self.leases = ExitStack(), []
+        self.native_close_guards = []
+        # The opt-in launcher retains exact startup owners; legacy callers stay unchanged.
+        from .release_recovery_handles import cleanup_scope, NativeCloseGuard
+        factory = (lambda h: NativeCloseGuard(self, h, resource_key='authority_native')) if cleanup_guards else None
         try:
             require(self.root != journal.path.parent, "state and media scopes must be separate")
-            self.owner = self._stack.enter_context(acquire_lifecycle(journal.path.parent, "retention"))
-            self.state = self._stack.enter_context(NativeHandle(journal.path.parent, directory=True))
-            self.catalog = self._stack.enter_context(NativeHandle(journal.path, shared=True))
-            self.media = self._stack.enter_context(NativeHandle(self.root, directory=True))
+            with cleanup_scope(self) if cleanup_guards else nullcontext():
+                self.owner = self._stack.enter_context(acquire_lifecycle(journal.path.parent, "retention"))
+            self.state = self._stack.enter_context(NativeHandle(journal.path.parent, directory=True, cleanup_guard_factory=factory))
+            self.catalog = self._stack.enter_context(NativeHandle(journal.path, shared=True, cleanup_guard_factory=factory))
+            self.media = self._stack.enter_context(NativeHandle(self.root, directory=True, cleanup_guard_factory=factory))
             # The shared native DB handle denies replacement while permitting SQLite I/O.
             self.journal.status()
         except BaseException as original:
+            if cleanup_guards:
+                original.capture_authority_owner = self
             try:
                 self._stack.close()
             except BaseException as cleanup:

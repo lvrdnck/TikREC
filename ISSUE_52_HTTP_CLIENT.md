@@ -1,5 +1,10 @@
 # Issue #52 — isolated HTTP/client compatibility
 
+Current B1/B2 implementation/runbook: [ISSUE_52_PILOT.md](ISSUE_52_PILOT.md),
+under [PM task 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487).
+B3 fresh-context acceptance and separate natural-LIVE authorization remain
+outstanding. Earlier findings/evidence below are historical and preserved.
+
 ## Authority and current status
 
 **Current readiness review (2026-10-08):** candidate `8b5485c1` has bounded R16/R17 PASS and 43 new targeted Windows passes; local pilot NOT READY pending the finite operational/fresh-context gates. [Decision and exact limits](ISSUE_52_RELEASE_READINESS.md). This continued conversation is not independent fresh-context PM acceptance. The delivery evidence below remains historical and unchanged.

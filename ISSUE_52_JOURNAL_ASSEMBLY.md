@@ -1,5 +1,11 @@
 # Issue #52 — internal one-shot journal-backed MP4 assembly
 
+The [B1/B2 foreground pilot](ISSUE_52_PILOT.md) opts into a 256 MiB writer mux
+threshold before durable launch hashing. Near-cap sealed unpublished bytes refuse
+before validation/publication; original cleanup may retire while the unfinished
+unit stays held. Ordinary defaults/media algorithms remain unchanged; no broader
+recovery or terminal release is added.
+
 ## Current manifest-completion boundary — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication

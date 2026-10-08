@@ -4,8 +4,31 @@
 
 Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 B1/B2 development is resumed under [6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487); #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 and separate natural-LIVE authorization remain outstanding. No default activation, migration, production restart or automatic successor follows publication.
 
+
+## Opt-in foreground Windows pilot
+
+`python -m tikrec.pilot` explicitly identifies the reviewed development checkout,
+normalized source hash, known catalog UUID, new/reopened isolated home, chosen
+media binaries and loopback port. Secret comes from a nonlogged prompt. It
+constructs one existing passive runtime/admission/HTTP composition with empty
+isolated automation; ordinary `serve` and configuration stay legacy. No retention
+or production roots. [Exact commands, finite limits and evidence](ISSUE_52_PILOT.md).
+Original UUID status/stop and durable completion remain the HTTP contract below.
+The pilot additionally reports lifetime session count/limit and refuses the ninth
+intent even after earlier completion; `pilot_lifetime_limit` identifies that
+admission gate, independently of physical free slots/outstanding units.
+
+Foreground owns failed-start attachments, exact native pins and original-thread
+SQLite cleanup. Ctrl+C/local shutdown fences starts/stops original captures;
+incomplete retirement retains the same supervisor for explicit nonce cleanup
+retry. Known reopen consumes prior control; only queued/prepared-success work is
+supported. No drain, refund, adoption or broader recovery. Pilot writer byte-limit
+refusal seals unpublished/unvalidated bytes solely for existing local cleanup;
+it never enters validation/publication/release and retains its unfinished unit.
+Default adapters retain their accepted error/pin behavior. B3 fresh acceptance and
+separate natural-LIVE authorization are still required; no deployment claim.
 
 ## Experimental isolated HTTP backend — 2026-10-08
 

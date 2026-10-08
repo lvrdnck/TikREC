@@ -30,7 +30,7 @@ class IsolatedServiceRuntime:
                  observations=lambda bridge: {}, settlement_options=None,
                  thread_factory=Thread, shutdown_grace=30, poll_interval=0.2,
                  recovery_fault=lambda _: None, catalog_storage=None,
-                 clock=time.time, notify=None):
+                 clock=time.time, notify=None, authority_cleanup_guards=False):
         require(type(shutdown_grace) in {int, float} and 0 <= shutdown_grace <= 30)
         require(type(poll_interval) in {int, float} and 0 < poll_interval <= 1)
         require(all(callable(value) for value in (observations, thread_factory, clock, recovery_fault))
@@ -46,7 +46,7 @@ class IsolatedServiceRuntime:
             self.storage.minimum_free_bytes // (1024**3), disk_usage=self.storage._disk_usage)
         require(Path(self.catalog_storage.output_directory).absolute() == journal.path.parent,
                 'catalog storage readiness must describe the explicit catalog root')
-        self.authority = CaptureAuthority(journal, self.root)
+        self.authority = CaptureAuthority(journal, self.root, cleanup_guards=authority_cleanup_guards)
         self.journal = journal
         self.thread_factory, self.clock = thread_factory, clock
         self.grace, self.poll_interval, self.notify = shutdown_grace, poll_interval, notify

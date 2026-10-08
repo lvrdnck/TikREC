@@ -1,5 +1,10 @@
 # Issue #52 — explicitly constructed isolated service runtime
 
+Current B1/B2 implementation/runbook: [ISSUE_52_PILOT.md](ISSUE_52_PILOT.md),
+under [PM task 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487).
+B3 fresh-context acceptance and separate natural-LIVE authorization remain
+outstanding. Earlier findings/evidence below are historical and preserved.
+
 ## Authority and current boundary
 
 The [PM integration decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435)
