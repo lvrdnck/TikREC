@@ -46,6 +46,9 @@ def test_automation_growth_refuses_before_replacement_and_missing_save_never_rec
     path = tmp_path / 'automation.json'
     store = KnownAutomationStore(path); store.initialize()
     original = path.read_bytes()
+    with pytest.raises(ValueError):
+        store.initialize()
+    assert path.read_bytes() == original
     state = AutomationState(consumed_rooms=tuple((f'creator{i:06}', '1' * 20) for i in range(40000)))
     with pytest.raises(AutomationStateError):
         store.save(state)

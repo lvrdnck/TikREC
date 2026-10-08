@@ -20,6 +20,8 @@ class KnownAutomationStore(AutomationStateStore):
 
     def initialize(self):
         """Create empty automation only during explicit fresh-home initialization."""
+        local(self.path.parent)
+        require(not os.path.lexists(self.path), 'automation initialization requires absent state')
         super().save(AutomationState())
 
     def save(self, state):

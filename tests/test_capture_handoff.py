@@ -12,6 +12,30 @@ from tikrec.session_journal_types import JournalConflict, JournalError
 pytestmark = pytest.mark.skipif(os.name != "nt", reason="requires Windows native handoff proof")
 
 
+def test_repeated_original_stop_after_marker_keeps_handoff_revision(tmp_path):
+    data = local_media(tmp_path / 'fixture.flv')
+    from tikrec.source import iter_tags
+    with authority(tmp_path) as owner:
+        bridge = reserve(owner)
+        def source(_, raw):
+            raw.write(data)
+            for index, tag in enumerate(iter_tags((data,))):
+                yield tag
+                if index == 10:
+                    bridge.stop()
+        repeated = []
+        def fault(point):
+            if point == 'after_marker':
+                before = owner.journal.session(bridge.intent.session_id)
+                bridge.stop()
+                assert owner.journal.session(bridge.intent.session_id) == before
+                repeated.append(True)
+        bridge._fault = fault
+        assert bridge.run(**observations(data, source=source)).phase == 'queued'
+        assert repeated == [True] and owner.journal.session(bridge.intent.session_id)['stop']
+        assert len(owner.journal.status()['units']) == 1
+
+
 def test_real_room_handoff_then_same_creator_distinct_room_preserves_identity(tmp_path):
     data = local_media(tmp_path / "fixture.flv")
     with authority(tmp_path) as owner:

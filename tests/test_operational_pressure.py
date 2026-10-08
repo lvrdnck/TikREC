@@ -22,6 +22,8 @@ def test_pressure_cancels_only_owned_finalizer_and_preserves_capture_policy(tmp_
         wait(lambda: (tmp_path / 'finalizer-held').exists())
         new = probe.start('writer', True)
         wait(lambda: (tmp_path / 'source-held').exists())
+        # Active parts retain their temporary name until close; use live writer evidence.
+        assert probe.client.status(new['session_id'])['bytes_written'] > 13
         (tmp_path / 'free.txt').write_text('unknown' if pressure == 'unknown' else str(2 * 1024**3))
         journal = SessionJournal(probe.home / 'state' / 'sessions.sqlite3', probe.catalog)
         wait(lambda: journal.owned_attempt(journal.session(old['session_id'])['task']['token'])['state'] == 'revoked')

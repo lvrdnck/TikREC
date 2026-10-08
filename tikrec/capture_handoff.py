@@ -102,6 +102,11 @@ class CaptureBridge:
         """Serialize committed stop intent with fresh admission and native writer opening."""
         with self.authority.lock:
             row = self._current()
+            if row['stop']:
+                # HTTP shutdown and runtime shutdown may signal the same original.
+                # A repeated irreversible stop must not invalidate a closing H seal.
+                self.stop_event.set()
+                return
             self.binding = self.authority.invoke(self.authority.journal.capture_intent, operation_id(),
                 self.intent.session_id, row["generation"], row["revision"], stop=True, recovery="user_stop")
             self.stop_event.set()

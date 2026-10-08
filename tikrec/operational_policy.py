@@ -40,7 +40,9 @@ class OperatingPolicy:
         values = self.snapshot().values()
         if self.failed or any(value is None for value in values):
             return 'storage_unavailable'
-        return 'low_free_space' if min(values) < self.reserve + self.margins[phase] else None
+        # A queued task needs the minimum writer budget before spending its one attempt.
+        floor = self.reserve + self.margins[phase] + (16 * 1024**2 if phase == 'finalization' else 0)
+        return 'low_free_space' if min(values) < floor else None
 
     def storage(self, name):
         """Present the same admission floor to existing automation and health policy."""
@@ -59,6 +61,27 @@ class OperatingPolicy:
             raise ValueError('operational writer headroom unavailable')
         return budget
 
+    @staticmethod
+    def stop_capture(bridge):
+        """Commit one pressure stop on the original still-writing binding only."""
+        authority, sid = bridge.authority, bridge.intent.session_id
+        with authority.lock:
+            # Source and supervisor can observe pressure together. Serialize the check
+            # with the same native-opening/H fence, never bump a closing seal revision.
+            if bridge.stop_event.is_set():
+                return False
+            if not any(b['session'] == sid and b['generation'] == bridge.binding['generation']
+                       for b in authority.journal.status()['bindings']):
+                return False
+            row = authority.journal.session(sid)
+            if row['stop']:
+                bridge.stop_event.set()
+                return False
+            if row['phase'] not in {'reserved', 'capturing'}:
+                return False
+            bridge.stop()
+            return True
+
     def supervise(self, runtime):
         """Fence only exact owned work, independently of HTTP or finalizer progress."""
         capture_reason = self.reason('capture')
@@ -69,7 +92,7 @@ class OperatingPolicy:
         if capture_reason:
             for sid, entry in entries:
                 if not entry['done'] and not entry['bridge'].stop_event.is_set():
-                    runtime.stop(sid)
+                    self.stop_capture(entry['bridge'])
         if finalizer_reason and adapter is not None and not adapter.coordinator.cancelled.is_set():
             # Signal original captures first. Cancellation can wait on a native child.
             adapter.cancel(5)

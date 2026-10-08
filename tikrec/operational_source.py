@@ -16,7 +16,7 @@ def source_options(policy, bridge, ffprobe, retry_policy, *, chunks=None, resolv
             raise CaptureStopped()
         if policy.reason('capture'):
             # The original UUID gets a durable interrupted stop, never a fake room end.
-            bridge.stop()
+            policy.stop_capture(bridge)
             raise CaptureStopped()
 
     def stream(url, raw=None):

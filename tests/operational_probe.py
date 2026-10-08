@@ -53,8 +53,10 @@ def supplied(policy, bridge, ffprobe, retry_policy):
             while chunk := stream.read(65536):
                 check()
                 if 'writer' in name and not (BASE / 'release-source').exists():
-                    (BASE / 'source-held').write_text('exact source remains running')
                     yield chunk
+                    # A returned chunk has been parsed before this generator resumes.
+                    # The barrier must not race a pressure assertion ahead of media.
+                    (BASE / 'source-held').write_text('first chunk consumed; source remains running')
                     while not (BASE / 'release-source').exists():
                         check()
                         time.sleep(0.01)
