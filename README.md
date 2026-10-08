@@ -1,5 +1,12 @@
 # TikREC
 
+## v0.11.0 published storage scope
+
+Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
+
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
+
+
 A command-line recorder and small remote-control service for public TikTok LIVE streams.
 
 Windows is the sole active and planned recording/service runtime. The owner
@@ -13,14 +20,14 @@ unrelated owner-initiated Drive workflow. Age is restored to unset and the
 one-deletion authorization is consumed; #51 authorizes no further destructive
 validation, retry, repair or second deletion.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
-v0.10.0 remains the current released version; v0.11.0 remains unreleased until
-normal release readiness/bookkeeping is completed.
+v0.11.0 is the current published storage release at the separate approved
+candidate; this experimental branch and running installation are not deployed by it.
 
 Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops. Each recording produces one MP4.
 
 This reliability-first implementation is the foundation of a broader future
-livestream recording platform. Current v0.10.0 gives the persistent service
+livestream recording platform. Published v0.11.0 retains the persistent service
 capacity for two independent public LIVE recordings; creator automation can
 fill available capacity. The deployed
 Eliss/Sinaloan pair passed two-slot isolation, targeted stops, media validation,
@@ -30,8 +37,9 @@ A library, playback, automatic cleanup, notifications, and web workflows remain 
 work. Historical Moe media attribution remains non-blocking [#28](https://github.com/lvrdnck/TikREC/issues/28);
 the [forensic report](ISSUE_27_FORENSICS.md) preserves the evidence.
 
-The current package, immutable annotated tag, published GitHub Release, and
-current released version are v0.10.0.
+This development branch still advertises package 0.10.0. The current published
+release is v0.11.0 at its separate approved storage commit; later #30/#48/#52
+source here is outside that release.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
 Unreleased #52 development includes an explicitly composed, default-OFF
@@ -569,8 +577,8 @@ each with its own worker, stop event, durable intent, recovery, retained media,
 finalization, and result. Creator automation can fill both slots while retaining
 the configurable per-start reserve (10 GiB by default), room binding, collision-safe naming, and durable
 same-room suppression. It does not authenticate to TikTok, notify the owner,
-automatically delete media, or provide a library/Web UI/playback. Unreleased
-v0.11 development adds a read-only age-retention plan, explicit creator
+automatically delete media, or provide a library/Web UI/playback. Published
+v0.11.0 storage scope adds a read-only age-retention plan, explicit creator
 protection, and a local Windows-only command to delete one eligible session
 with exact-UUID confirmation. The service has no deletion endpoint. Issue #37's
 correction uses verified Windows handles for removal and serializes policy
@@ -579,8 +587,7 @@ step. POSIX destructive execution refuses before changing the recording root;
 read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
 cooperative-filesystem scope. The owner-facing CLI contract is in
-[RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **unreleased
-v0.11 development behavior**. Issue #39 corrected a post-sync audit intent
+[RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **published v0.11.0 storage behavior**. Issue #39 corrected a post-sync audit intent
 result-reporting defect. Issue #40 corrected a later success-output failure
 that falsely reported completed deletion as `PARTIAL`. A fresh-context public
 review at `653f5fe` found a remaining intent-sync interruption window
@@ -624,7 +631,8 @@ Gracie Drive move. Earlier NOT READY statements describe historical checkpoints.
 The single authorization is consumed and age is restored to unset; no further
 destructive validation is authorized by #51. Automatic cleanup remains unavailable.
 
-**Release state and future product:** v0.10.0 is the current published release.
+**Release state and future product:** v0.11.0 is the current published storage release.
+Later #30/#48/#52 source on this branch remains outside its release scope.
 Its reviewed release commit passed real simultaneous deployed validation,
 offline verification, and package build/install checks.
 Library/history/playback, a web interface, notifications, and automatic
@@ -665,7 +673,7 @@ ROADMAP.md.
 
 [SPEC.md](SPEC.md) — architecture, module responsibilities, validation
 notes and the reasoning behind past fixes.
-[RETENTION_CLI.md](RETENTION_CLI.md) — unreleased local retention deletion
+[RETENTION_CLI.md](RETENTION_CLI.md) — published v0.11.0 local retention deletion
 interface and safety contract.
 [ROADMAP.md](ROADMAP.md) — workflow-driven direction for future releases.
 [SERVICE.md](SERVICE.md) — remote API and Windows Task Scheduler deployment.

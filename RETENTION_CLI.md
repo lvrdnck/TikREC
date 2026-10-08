@@ -155,9 +155,8 @@ isolated full offline, and applicable WSL/POSIX suites passed. The public CLI
 gate is PASSED; that review preceded the owner authorization now recorded in
 issue #51. No real-media retention deletion occurred in that review; the later
 #51 attempt, reconciliation and final project-manager PASS are recorded above.
-The local CLI workflow below exists in the development checkout; it is
-not in the current
-v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
+The local CLI workflow below is included in the published v0.11.0 storage
+release. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 
 ## Commands and scope

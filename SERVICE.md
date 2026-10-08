@@ -1,5 +1,12 @@
 # TikREC remote recording and startup recovery
 
+## v0.11.0 published storage scope
+
+Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
+
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
+
+
 ## Experimental isolated HTTP backend — 2026-10-08
 
 [PM decision 6056452748](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6056452748)
@@ -127,14 +134,15 @@ Two bounded workers record independently of HTTP clients and of each other.
 Launch the service independently of SSH so disconnecting the remote shell does
 not end capture.
 
-This document describes the released v0.10.0 service plus unreleased v0.11.0 storage-status development.
+This document describes published v0.11.0 storage behavior plus later
+development changes on this branch; #30/#48/#52 remain outside that release.
 Per-user recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can own and automatically fill a fixed capacity of two independent recordings.
 Library, download, public retention execution, notification, and browser-control capabilities
-remain outside this slice. v0.10.0 is the current published release.
+remain outside this slice. v0.11.0 is the current published storage release.
 
-In unreleased v0.11 development, each service capture/finalization worker and
+In published v0.11.0 storage scope, each service capture/finalization worker and
 startup reconciliation/resume holds a root-scoped writer lease while it may
 mutate session or output artifacts. Two service slots can hold compatible writer
 leases in one output root. The local Windows retention CLI's executor requires

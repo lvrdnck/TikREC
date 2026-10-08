@@ -1293,6 +1293,16 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**v0.11.0 storage-focused publication COMPLETE / VERIFIED (2026-10-08).** [Owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758) was executed after PM acceptance 6059047079; no repeat permission/review cycle. Current released version is **v0.11.0**, published at **2026-10-08T11:50:27Z**. [TikREC v0.11.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0) is non-draft/non-prerelease, Release ID `406770680` / node `RE_kwDOUTgsvs4YPtP4`.
+
+Immutable annotated tag object **`ef8c5215712d454855a033700116bdc8fc0906a3`** peels to the exact approved **`2fe6354aa508d53ce3a3452ce08743d97400fe73`**, not a bookkeeping commit or main/development tip. [Wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl), asset ID `621682513`, is **207,542 bytes**, SHA-256 **`7cf87363cde6ce9817b79c4c7eb86fe37a3e77bcf564cde91019aadec7e902ca`**. Existing wheel checked before writes against 105 module bytes, metadata/entrypoint/RECORD and 223 frozen files. Draft and published downloads match the approved bytes. No rebuild/substitution or conflicting object overwrite occurred. [Publication execution/evidence](V0_11_RELEASE_PUBLICATION.md).
+
+Accepted evidence reused, not rerun: 1,731 Windows passes / 7 skips / 19 subtests, two focused version checks, compile/diff/30 help paths and installed-wheel smoke; unchanged #51 independent/public and native real-media PASS. #51 stays CLOSED/PASSED; its deletion authorization remains consumed. #52/#48 stay OPEN/explicitly PAUSED, #28 unresolved; B1/B2/B3 neither implemented, repeated nor waived. **No implementation task is active and no automatic successor is selected.** PM decides any future resume separately.
+
+The released package is the historical storage scope from `ebf501c4`, excluding later #30/#48/#52 source; automatic admission-only space checks and exact-confirmation Windows retention with disabled-unset age remain. The newer development installation/configuration/state/services/media and Gracie-only policy were not accessed or changed. Its package version is not changed to match the release. No main merge, executable-source change, package install, service/recorder restart, LIVE, user-media deletion, migration, upgrade, PyPI upload or #52 activation occurred. Both branch bookkeeping commits are documentation-only and recorded in #52; tag stays fixed. Refs #52. **Next: stop; no automatic successor.**
+
+#### Historical storage/development checkpoints (not release scope)
+
 **Final #51 outcome — COMPLETED / PASSED (2026-10-01 project-manager decision):**
 The public retention CLI independent review gate and Windows real-media retention
 validation are both **PASSED**. The one ordinary authorized Eliss deletion
@@ -1323,15 +1333,15 @@ both job documents and automation stayed identical; bytes grew from 102,697,695
 to 118,873,560. Original config bytes were restored; no restart, stop, recovery,
 replacement or duplicate occurred. Do not restore Eliss. Exact evidence:
 [ISSUE_30_DEPLOYED_VALIDATION.md](ISSUE_30_DEPLOYED_VALIDATION.md).
-**Storage-focused v0.11 release preparation is the sole active task; #48 and
-#52 are OPEN / explicitly PAUSED** under PM decision 6058707202. The historical
+**Storage-focused v0.11.0 is published/verified; no implementation task is active.
+#48 and #52 remain OPEN / explicitly PAUSED** under PM decision 6059131758. The historical
 journal review under 5970692341 is complete;
-current durable-attempt work/next action are recorded in the #52 checkpoint below.
+historical durable-attempt evidence is preserved in the #52 checkpoint below.
 Service integration is not approved.
 #8/#28 remain opportunistic
 non-blocking evidence work and #13 remains separate rendition-policy work.
-No other issue was started. v0.10.0 remains released/package version and v0.11.0
-unreleased; completion here does not execute or authorize release/tag work.
+No successor was started. Current published storage release is v0.11.0; this
+experimental branch package remains 0.10.0. #52/#48 stay paused.
 
 **Earlier reconciliation checkpoint (2026-10-01):** Read-only reconciliation is COMPLETE,
 classification **A — Explained unrelated change**. A separate owner chat's
@@ -2048,15 +2058,13 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Paused isolated HTTP/client integration checkpoint:**
 
-**Storage-focused v0.11.0 release preparation — SOLE ACTIVE task, READY FOR PM PUBLICATION REVIEW (2026-10-08). #52 and #48 are OPEN / explicitly PAUSED.** [PM decision 6058707202](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202) accepts `e17d0522`'s readiness assessment for sequencing, not independent R16–R17 acceptance. #52 B1/B2/B3 remain outstanding; no implementation, polling or acceptance review resumes here. #28 remains unresolved; owner implementation decisions None.
+**v0.11.0 storage-focused publication COMPLETE / VERIFIED (2026-10-08).** [Owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758) was executed after PM acceptance 6059047079; no repeat permission/review cycle. Current released version is **v0.11.0**, published at **2026-10-08T11:50:27Z**. [TikREC v0.11.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0) is non-draft/non-prerelease, Release ID `406770680` / node `RE_kwDOUTgsvs4YPtP4`.
 
-Storage candidate [2fe6354a](https://github.com/lvrdnck/TikREC/commit/2fe6354aa508d53ce3a3452ce08743d97400fe73), branch `codex/v0.11-storage-release`, exact base `ebf501c4153d104921ff63e69f4cfe0f262d713e`, is normally pushed from `C:\Users\Leandro\.codex\worktrees\v0.11-storage-release\TikREC`. Package 0.11.0 only there; current released/tagged version stays v0.10.0. All later #30/#48/#52 source is excluded. The newer development installation, its configuration/state/services/media and Gracie-only policy remain untouched; this candidate is not its replacement/downgrade.
+Immutable annotated tag object **`ef8c5215712d454855a033700116bdc8fc0906a3`** peels to the exact approved **`2fe6354aa508d53ce3a3452ce08743d97400fe73`**, not a bookkeeping commit or main/development tip. [Wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl), asset ID `621682513`, is **207,542 bytes**, SHA-256 **`7cf87363cde6ce9817b79c4c7eb86fe37a3e77bcf564cde91019aadec7e902ca`**. Existing wheel checked before writes against 105 module bytes, metadata/entrypoint/RECORD and 223 frozen files. Draft and published downloads match the approved bytes. No rebuild/substitution or conflicting object overwrite occurred. [Publication execution/evidence](V0_11_RELEASE_PUBLICATION.md).
 
-Actual candidate Windows evidence: **1,731 complete-suite passes / 7 skips / 19 subtests; 2 focused version passes; compile/diff, 30 CLI help paths, local wheel and installed-wheel smoke passed; all 223 executable/test/script/metadata hashes frozen.** All 105 packaged/installed module bytes and wheel RECORD hashes match. [Exact provenance/results/artifact hash and limits](https://github.com/lvrdnck/TikREC/blob/2fe6354aa508d53ce3a3452ce08743d97400fe73/V0_11_RELEASE_CANDIDATE.md); [scoped release notes](https://github.com/lvrdnck/TikREC/blob/2fe6354aa508d53ce3a3452ce08743d97400fe73/RELEASE_NOTES_v0.11.0.md). Unchanged #51 accepted independent/public and Windows real-media evidence is reused; its one-deletion authorization is consumed and #51 stays closed. No user-media deletion or LIVE validation was repeated.
+Accepted evidence reused, not rerun: 1,731 Windows passes / 7 skips / 19 subtests, two focused version checks, compile/diff/30 help paths and installed-wheel smoke; unchanged #51 independent/public and native real-media PASS. #51 stays CLOSED/PASSED; its deletion authorization remains consumed. #52/#48 stay OPEN/explicitly PAUSED, #28 unresolved; B1/B2/B3 neither implemented, repeated nor waived. **No implementation task is active and no automatic successor is selected.** PM decides any future resume separately.
 
-This #52 checkpoint changes documentation only; its runtime/tests retain all 493 prior frozen hashes and `e17d0522` source identity. Accepted R1–R15/runtime and the bounded R16–R17 engineering verdict are preserved. The continued review was not fresh-context independent acceptance, so B3 is neither passed nor waived. Earlier [readiness assessment](ISSUE_52_RELEASE_READINESS.md) and [HTTP evidence](ISSUE_52_HTTP_CLIENT.md) remain historical evidence.
-
-**Next: PM review the exact storage candidate for separately authorized publication, then decide whether to resume the paused #52 gates.** No automatic successor, main merge, tag, GitHub Release/registry publication, production access/change/restart, default activation, migration or upgrade. Pull each worktree's own upstream only; never pull main into the historical release branch. Safe resume uses this decision and the candidate report, not historical next-feature statements. Refs #52; no issue closure or history rewrite.
+The released package is the historical storage scope from `ebf501c4`, excluding later #30/#48/#52 source; automatic admission-only space checks and exact-confirmation Windows retention with disabled-unset age remain. The newer development installation/configuration/state/services/media and Gracie-only policy were not accessed or changed. Its package version is not changed to match the release. No main merge, executable-source change, package install, service/recorder restart, LIVE, user-media deletion, migration, upgrade, PyPI upload or #52 activation occurred. Both branch bookkeeping commits are documentation-only and recorded in #52; tag stays fixed. Refs #52. **Next: stop; no automatic successor.**
 
 **Historical R12–R13 recovery corrections (accepted by 6030581435) — (issue #52; complete for PM review, 2026-10-07):**
 [PM decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)
