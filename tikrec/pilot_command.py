@@ -117,8 +117,12 @@ class PilotCommand:
         if result.get('complete'):
             result = {**result, 'complete': self.state.close()}
         self.last_result = result
-        emit('shutdown', **result, primary_type=None if original is None else type(original).__name__)
+        self.report_cleanup(result, original)
         return result.get('complete') is True
+
+    def report_cleanup(self, result, original):
+        """Emit the recorded result; operational callers can isolate their failed sinks."""
+        emit('shutdown', **result, primary_type=None if original is None else type(original).__name__)
 
     def run(self):
         """Supervise actual acceptance until confirmed stop; retries require explicit control."""

@@ -1,5 +1,4 @@
 """Headless service supervisor; no finite-pilot composition or lifetime budget."""
-import json
 import time
 from pathlib import Path
 from types import SimpleNamespace
@@ -9,6 +8,7 @@ from .control_cli import read_token
 from .operational_composition import compose
 from .operational_identity import identity
 from .operational_policy import OperatingPolicy
+from .operational_reporting import Reporting
 from .operational_state import ServiceState
 from .pilot_command import PilotCommand
 from .pilot_identity import local
@@ -24,34 +24,39 @@ class OperationalCommand(PilotCommand):
         super().__init__(options, policy)
         self.state = ServiceState(options.home)
         self.diagnostics = None
+        self.reporting = Reporting()
         self.last_observation = None
         self.session_observations = {}
 
     def receipt(self, event, **values):
         """Write sanitized bounded on-disk receipts; console receives lifecycle only."""
-        if self.diagnostics is not None:
-            self.diagnostics.emit(event, **values)
-        if event not in {'observation', 'stop'}:
-            print(json.dumps({'event': event, **values}, allow_nan=False), flush=True)
+        error = self.reporting.write(self.diagnostics, event, **values)
+        if error is not None:
+            # Save exact failure/attachments before any later report or cleanup can fail.
+            if self.primary is None:
+                self.primary = error
+            self.envelope.failed = True
+            if not self.shutdown_requested:
+                raise error
+
+    def report_cleanup(self, result, original):
+        """Reporting cannot interrupt the inherited recorded cleanup result or control."""
+        self.receipt('shutdown', **result,
+                     primary_type=None if original is None else type(original).__name__)
 
     def cleanup(self):
         """Preserve original parent cleanup semantics, then record the actual outcome."""
         if self.runtime is not None and self.runtime.paused not in {None, 'low_free_space', 'storage_unavailable'}:
             self.stop_reason = self.stop_reason or 'unsupported_work_needs_attention'
-        complete = super().cleanup()
-        try:
-            self.receipt('shutdown', **self.last_result)
-        except Exception:
-            # Sink failure never changes owned release proof or triggers another stop/start.
-            self.stop_reason = self.stop_reason or 'diagnostic_sink_unavailable'
-        return complete
+        return super().cleanup()
 
     def run(self):
         """Check space without requests, retain uncertain owners for explicit cleanup."""
         while True:
             try:
                 command = self.control()
-                if command == 'shutdown' or command == 'cleanup' and self.shutdown_requested:
+                if (command == 'shutdown' and not self.shutdown_requested
+                        or command == 'cleanup' and self.shutdown_requested):
                     if self.cleanup():
                         return self.exit_code()
                 if self.shutdown_requested:
@@ -86,12 +91,13 @@ class OperationalCommand(PilotCommand):
                 if self.cleanup():
                     return self.exit_code()
             except BaseException as error:
-                self.primary = self.primary or error
+                if self.primary is None:
+                    self.primary = error
                 self.envelope.failed = True
                 try:
                     self.receipt('failure', reason='operational_supervision_failed',
                                  primary_type=type(self.primary).__name__)
-                except Exception:
+                except BaseException:
                     pass
                 if self.cleanup():
                     return 2
@@ -108,6 +114,7 @@ class OperationalCommand(PilotCommand):
 def run_operational(arguments):
     """Initialize separately or reopen one explicit home through normal serve CLI."""
     owner = None
+    reporting = Reporting()
     try:
         require(arguments.config_path and arguments.token_file and arguments.journal_catalog_id
                 and arguments.ffmpeg and arguments.ffprobe, 'journal mode requires explicit config/token/tools/catalog')
@@ -134,8 +141,8 @@ def run_operational(arguments):
         require(policy.reason('admission') is None, 'operational startup storage unavailable')
         if options.mode == 'init':
             require(owner.state.close(), 'operational initialization cleanup incomplete')
-            print(json.dumps({'event': 'initialized', 'catalog_id': options.catalog_id,
-                              'schema': 10, 'backend': 'operational_schema10'}), flush=True)
+            owner.receipt('initialized', catalog_id=options.catalog_id,
+                          schema=10, backend='operational_schema10')
             return 0
         # Consume old control without replay before any callbacks become possible.
         owner.control()
@@ -148,14 +155,27 @@ def run_operational(arguments):
         code = owner.run()
         try:
             owner.receipt('exit', exit_code=code, complete=owner.last_result['complete'])
-        except Exception:
-            code = 3
-        return code
+        except BaseException:
+            pass  # The reporter already retained the exact fault; retirement is confirmed.
+        final_code = owner.exit_code() if owner.primary is not None else code
+        if final_code != code:
+            # A late reporting failure supersedes the prospective exit on surviving sinks.
+            # Failed channels stay disabled; no cleanup/action is repeated for diagnostics.
+            owner.receipt('failure', reason='operational_reporting_failed',
+                          primary_type=type(owner.primary).__name__)
+            owner.receipt('exit', exit_code=final_code, complete=owner.last_result['complete'])
+        return final_code
     except BaseException as error:
-        print(json.dumps({'event': 'failure', 'reason': 'operational_startup_refused',
-                          'primary_type': type(error).__name__}), flush=True)
         if owner is not None:
-            owner.primary = owner.primary or error
+            if owner.primary is None:
+                owner.primary = error
+            owner.envelope.failed = True
+            reporting = owner.reporting
+        # Saving the primary above retains its exact attached native/SQLite owners.
+        reporting.write(None if owner is None else owner.diagnostics, 'failure',
+                        reason='operational_startup_refused',
+                        primary_type=type(error if owner is None else owner.primary).__name__)
+        if owner is not None:
             if not owner.cleanup():
                 return owner.run()
         return 2

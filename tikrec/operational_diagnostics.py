@@ -10,7 +10,7 @@ FIELDS = {'backend', 'catalog_id', 'schema', 'source', 'configuration', 'tools',
           'control', 'capacities', 'free_bytes', 'paused_reason', 'outstanding_units',
           'reason', 'primary_type', 'complete', 'captures_joined', 'finalizer_joined',
           'authority_released', 'requests_joined', 'monitor_joined', 'diagnostic_count',
-          'diagnostics_dropped', 'exit_code', 'session_id', 'interrupted', 'phase'}
+          'diagnostics_dropped', 'exit_code', 'session_id', 'interrupted', 'phase', 'reporting_failures'}
 SEGMENT_BYTES = 1024**2
 
 
