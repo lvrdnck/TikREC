@@ -1,14 +1,15 @@
 # Issue #52 — foreground pilot B1/B2
 
-[PM B1/B2 contract 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487). R18–R19 accepted by [PM 6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355). **B3 PASS — READY TO REQUEST RESTRICTED NATURAL-LIVE AUTHORIZATION**, including independent R16/R17 PASS for candidate `1ca8d20556232ec678434762a0befd000276bfe3`. [Fresh provenance, 53 pilot/58 native passes, 16 deep validations and explicit retained-refusal limitation](ISSUE_52_B3_ACCEPTANCE.md). Experimental/default OFF, separate from published storage-only v0.11.0. B3 is PM-accepted; the [resumed authorized natural trial is PARTIAL](ISSUE_52_NATURAL_PILOT.md): one portrait capture and final MP4 deep-validate, the second source was offline, no overlap; confirmed shutdown/exit 0. PM review is pending; no production installation/configuration/media/credentials were accessed.
+[PM B1/B2 contract 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487). B3/R1–R19 retain their accepted scopes; [historical independent B3 evidence](ISSUE_52_B3_ACCEPTANCE.md) remains unchanged. [PM 6063639746](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6063639746) accepts the single-source natural check, closes that trial at **PARTIAL / 1 of 2 starts consumed**, and selects only the offline refusal-exit correction. [Current shutdown evidence and exact source binding](ISSUE_52_REFUSAL_SHUTDOWN.md): proved original pre-writer refusals retire locally and exit 3, retaining unfinished accounting/evidence. **Focused PM review is next; no automatic B3 or LIVE restart.** Experimental/default OFF, separate from published storage-only v0.11.0; no production installation/configuration/media/credentials were accessed.
 
-The B3 delivery in #52 records the exact **review-only checkout HEAD** required
-for `$revision` below; package source remains identical to tested `1ca8d205` and
-the recorded fingerprint. Do not pass `1ca8d205` against a later HEAD, derive
-trust from an unknown checkout, or rewrite an existing home/marker. The review
-corrected the shell variable to `$pilotHome` because PowerShell's `$HOME` is
-read-only, then executed the real prompt/module recipe on an empty disposable
-home and confirmed all owners retired with exit 0.
+The refusal-exit delivery in #52 records the exact current checkout HEAD required
+for `$revision` below and its source equivalence to tested `539058f7`. Later
+delivery commits are documentation only. Do not pass the source/test candidate
+against a later HEAD, derive trust from an unknown checkout, or rewrite an
+existing home/marker. Old B3/natural homes retain fingerprint `ae5ade3d…` and
+are not reopened by this changed package. Use `$pilotHome`: PowerShell's `$HOME`
+is read-only. The earlier empty-home real prompt/module exit 0 remains historical
+B3 evidence; current refusal/healthy command checks use explicit generated fixtures.
 
 ## Operator command
 
@@ -20,10 +21,10 @@ $python = 'C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\pytho
 $tools = 'C:\Users\Leandro\AppData\Local\Microsoft\WinGet\Packages\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-N-124716-g054dffd133-win64-gpl\bin'
 $pilotHome = 'C:\Users\Leandro\TikREC-tests\owner-pilot-01'
 $catalog = [guid]::NewGuid().ToString() # Save; reopen requires the same UUID.
-$revision = '<exact reviewed checkout HEAD from the B3 delivery in issue #52>'
-$sourceHash = 'ae5ade3d0390d7f0e1b5e20c856ec5257fda50f2d4847e829b39c24f52e1dfd7'
+$revision = '<exact current checkout HEAD from the refusal-exit delivery in issue #52, after focused PM review>'
+$sourceHash = '5ae52c3173efee26462aab187bc39aaade988fddcb2083ed7e306e7eaac2d588'
 Set-Location -LiteralPath $checkout
-& $python -m tikrec.pilot --checkout $checkout --revision $revision --source-sha256 $sourceHash --home $pilotHome --catalog-id $catalog --mode init --ffmpeg "$tools\ffmpeg.exe" --ffprobe "$tools\ffprobe.exe" --port 18765
+& $python -m tikrec.pilot --checkout $checkout --revision $revision --source-sha256 $sourceHash --home $pilotHome --catalog-id $catalog --mode init --ffmpeg (Join-Path -Path $tools -ChildPath 'ffmpeg.exe') --ffprobe (Join-Path -Path $tools -ChildPath 'ffprobe.exe') --port 18765
 ```
 
 Enter a fresh 24–256-character printable ASCII non-whitespace secret at the non-echoing prompt. No argument/environment token, production configuration discovery or secret logging. Save ready receipt: actual root/revision/fingerprint/interpreter/SQLite/backend/schema/catalog UUID/path/media/automation/port/control. Wrong branch/root/origin/revision/source/state/catalog refuses. Binaries undergo version and required libx264/AAC encoder/H264/AAC decoder checks. Source fingerprint normalizes CRLF to LF; frozen evidence separately hashes raw files.
@@ -57,9 +58,11 @@ Ctrl+C or a fresh local nonce requests shutdown:
 @{operation=[guid]::NewGuid().ToString();command='cleanup'} | ConvertTo-Json -Compress | Set-Content -LiteralPath "$pilotHome\control.json" -Encoding utf8
 ```
 
-Starts fence, original captures stop early, existing bounded joins/cancellation run; queued work is not drained. Last shutdown must report `complete:true` before safe exit. Listener closure is insufficient. Each operation needs a new nonce; no implicit cleanup retry or previous-operation replay on reopen. Incomplete stays supervised; some unsupported failures require PM correction, not repeated cleanup. In particular, pre-configuration refusal can preserve an unsealed original capture lease indefinitely: B3 reproduces this on corrected oversized input, with no supported confirmed-exit procedure. Preserve the same supervisor/home and return to PM; fixture process termination is not an operator remedy. Do not arbitrarily kill, close stale numeric descriptors, delete/reset state, manually finalize owned paths or edit SQL. Exit 0 = confirmed requested stop; 2 = startup/supervision failure with confirmed retirement; 3 = confirmed envelope/unsupported stop. Incomplete never exits as safe.
+Starts fence, original captures stop early, existing bounded joins/cancellation run; queued work is not drained. Last shutdown must report `complete:true` before safe exit. Listener closure is insufficient. Each operation needs a new nonce; no implicit cleanup retry or previous-operation replay on reopen. Current guarded code can retire a proved original pre-writer refusal only after fresh pre-H/catalog/generation checks, actual thread joins, closed source/callbacks, zero part-writer openings and exact raw/arrival/native cleanup. It preserves the failed/closing row, unit, binding, raw policy and every evidence byte: no H/output/settlement/refund or resume permission. `needs_attention` remains true and `output_completed` false; binding-based `active` may remain true, which does not prove a native writer is running. Complete shutdown describes local retirement only.
 
-Known reopen uses SAME home/catalog/fingerprint and reviewed source/tool identities, `--mode reopen`. Missing/redirected/unknown state refuses; no auto-init/migration/legacy import. Supported: queued and eligible prepared-success release. Earlier reserved/running/blocked attempts pause, preserve original units/claims/evidence, and stop the pilot. This is reduced availability, never completion/refund.
+Unknown source/writer/acquisition/handle/SQLite/H ownership still stays supervised and incomplete; some unsupported failures require PM correction. Preserve the same supervisor/home and return to PM rather than repeat blind cleanup. A genuinely repaired close fault uses a fresh explicit cleanup nonce on that same supervisor. Historical B3 fixture termination is not an operator remedy. Do not arbitrarily kill, close stale numeric descriptors, delete/reset state, manually finalize owned paths or edit SQL. Exit 0 = confirmed healthy requested stop; 2 = startup/supervision failure with confirmed retirement; 3 = confirmed envelope/unsupported/refusal stop, including manual shutdown before observation or after explicit retry. Incomplete never exits as safe.
+
+Known reopen uses SAME home/catalog/fingerprint and reviewed source/tool identities, `--mode reopen`. Missing/redirected/unknown state refuses; no auto-init/migration/legacy import. Supported: queued and eligible prepared-success release. Earlier reserved/closing/running/blocked attempts remain unsupported, preserve original units/claims/evidence, and stop the pilot. A NEW corrected refusal home can close its otherwise idle supervisor with exit 3, without adopting the old capture or returning its unit/binding. Old fingerprint-bound homes cannot be converted by rewriting markers. This is reduced availability, never completion/refund.
 
 ## Fixed supervised envelope
 

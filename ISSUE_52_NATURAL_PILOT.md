@@ -7,6 +7,8 @@
 | `https://www.tiktok.com/@slayyyboo22/live` | 15:33:56Z: room `7694304636148124446`, status 2, hd1/flv_pull_url | **1**; `885c7d49-ed25-4c22-8f5c-e7f2b6305da4` | Original room matched, raw=true, original-UUID stop, durable completed portrait copy MP4; both deep validations PASS. |
 | `https://www.tiktok.com/@vibecrewkrista/live` | 15:33:57Z: room `7694272970004433677`, status 4, TikTokOfflineError | **0**; no UUID | Confirmed offline; skipped without polling/substitution. |
 
+[PM acceptance 6063639746](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6063639746) accepts this single-source recording check and **closes the bounded trial at PARTIAL / 1 of 2 starts consumed**. There is no automatic use of the remaining allowance, polling, replacement trial or deployment permission. The [subsequent generated-only refusal-exit correction](ISSUE_52_REFUSAL_SHUTDOWN.md) is separate engineering work awaiting focused PM review; it does not change this trial's launch revision/fingerprint, validation claims, missing natural overlap or original successful media. The historical startup failure below remains unchanged.
+
 **Consumed allowance: 1/2 total, slayyyboo22 1/1 and vibecrewkrista 0/1.** No capture/capture or capture/finalization overlap, configuration change, rendition switch or replacement-UUID isolation was naturally available. This is partial empirical coverage, not a failed MP4 or new product blocker. Unused allowance grants no automatic follow-up after this delivered trial.
 
 ## Corrected exact launch and prompt targeting

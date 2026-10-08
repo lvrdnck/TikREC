@@ -1,5 +1,9 @@
 # Issue #52 — bounded release-readiness decision (2026-10-08)
 
+**Current checkpoint — refusal-exit correction delivered for focused PM review.** [PM 6063639746](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6063639746) accepts the single-source natural recording check and closes the overall trial at **PARTIAL / 1 of 2 starts consumed**, with no automatic remaining attempt. B3/R1–R19 retain their original scopes. [Generated-only original-owner shutdown correction, exact candidate/fingerprint and evidence](ISSUE_52_REFUSAL_SHUTDOWN.md): known pre-writer refusal preserves needs-attention session/unit/binding/raw evidence, confirms local native/thread retirement and exits 3. Unknown ownership remains incomplete; old homes/markers unchanged. This implementation is not another independent B3 verdict or deployment permission. #52 OPEN/SINGLE ACTIVE; focused PM review only, no automatic B3/operational successor; #48 PAUSED, storage-only v0.11.0 untouched.
+
+## Historical independent B3 checkpoint (original tested source/scope)
+
 **B3 PASS — READY TO REQUEST RESTRICTED NATURAL-LIVE AUTHORIZATION (2026-10-08).**
 Fresh independent review of `1ca8d20556232ec678434762a0befd000276bfe3`, including
 **R16 PASS / R17 PASS**, under [PM 6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355).
