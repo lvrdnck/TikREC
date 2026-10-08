@@ -4,7 +4,7 @@
 
 Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 are PM-accepted under [6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355); [fresh B3 acceptance](ISSUE_52_B3_ACCEPTANCE.md) passes the restricted supervised pilot, including R16/R17; #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 PASS is recorded; separate natural-LIVE authorization/validation remains outstanding. No default activation, migration, production restart or automatic successor follows publication.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 are PM-accepted under [6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355); [fresh B3 acceptance](ISSUE_52_B3_ACCEPTANCE.md) passes the restricted supervised pilot, including R16/R17; #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 and the restricted natural overlap are COMPLETE/PASS under PM acceptance 6065722442. The new operational mode is development-only; deployment remains separately authorized. No default activation, migration, production restart or automatic successor follows publication.
 
 
 A command-line recorder and small remote-control service for public TikTok LIVE streams.
@@ -42,19 +42,22 @@ release is v0.11.0 at its separate approved storage commit; later #30/#48/#52
 source here is outside that release.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
-Unreleased #52 development includes an explicitly composed, default-OFF
-[isolated HTTP/client backend](ISSUE_52_HTTP_CLIENT.md), with separate capture and
-finalization facts and stable original-session UUID lookup. Normal `serve` and the
-deployed service retain synchronous slot lifecycles. No configuration activation
-switch exists. See [SERVICE.md](SERVICE.md) for the experimental compatibility
-boundary; `active=false` alone cannot prove its MP4 is complete.
-The dedicated opt-in Windows `python -m tikrec.pilot` command now supplies
-explicit isolated identities, finite operating limits and foreground cleanup.
-[Operator instructions and generated-media evidence](ISSUE_52_PILOT.md).
-Pilot geometry admits positive dimensions with long edge <=1920 / short edge
-<=1080 in either orientation and inherits the normal capture confirmation/retry
-policy. [B3 PASS](ISSUE_52_B3_ACCEPTANCE.md) is complete for the restricted scope;
-natural-LIVE authorization/validation remains a separate gate.
+Unreleased #52 now offers an explicit, headless `serve --journal-home` mode with
+separate capture/finalization facts, configured automatic recording and original
+UUID controls. Ordinary `serve` retains the legacy backend. Initialize a new
+dedicated local home explicitly, then reopen it with the same catalog identity,
+explicit configuration/token file and checked tools. [Working commands](SERVICE.md#opt-in-operational-windows-service)
+and [operating policy, generated verification and rollout blockers](ISSUE_52_OPERATIONAL_SERVICE.md).
+Two captures, one finalizer and eight outstanding units remain; completed history
+has no eight-session ceiling. Storage is checked continuously; pressure preserves
+evidence and never fabricates output completion. `active=false` alone cannot
+prove an MP4 is complete.
+
+The restricted `python -m tikrec.pilot` retains its finite limits and foreground
+ownership rules. [Runbook](ISSUE_52_PILOT.md), [B3 evidence](ISSUE_52_B3_ACCEPTANCE.md)
+and [accepted restricted overlap](ISSUE_52_NATURAL_PILOT.md) remain historical
+COMPLETE/PASS within their scopes; none was repeated for operational development.
+No installed watcher/service change, migration, retention or deployment follows.
 
 ## Usage
 

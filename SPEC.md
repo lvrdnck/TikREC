@@ -4,8 +4,28 @@
 
 Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 are PM-accepted under [6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355); [fresh B3 acceptance](ISSUE_52_B3_ACCEPTANCE.md) passes the restricted supervised pilot, including R16/R17; #48 stays OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Experimental pilot](ISSUE_52_PILOT.md); B3 PASS is recorded; separate natural-LIVE authorization/validation remains outstanding. No default activation, migration, production restart or automatic successor follows publication.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 are PM-accepted under [6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355); [fresh B3 acceptance](ISSUE_52_B3_ACCEPTANCE.md) passes the restricted supervised pilot, including R16/R17; #48 stays OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Experimental pilot](ISSUE_52_PILOT.md); B3 and the restricted natural overlap are COMPLETE/PASS under PM acceptance 6065722442. The new operational mode is development-only; deployment remains separately authorized. No default activation, migration, production restart or automatic successor follows publication.
 
+
+## Opt-in operational journal service — 2026-10-08
+
+Normal `serve --journal-home` explicitly selects a new dedicated schema-10 home;
+ordinary serve remains legacy. Separate initialization, strict known reopen,
+explicit config/token/tools, existing automatic admission/reload/raw/retry
+semantics and original UUID lifecycle controls are required. No schema migration,
+legacy import or pipeline redesign. Two captures, one finalizer and eight
+outstanding units remain; repeated successes do not exhaust lifetime admission.
+
+Fresh physical space gates admission/capture/finalization independently during
+active work and idle HTTP periods. Configured reserve plus conservative headroom,
+owned finalizer cancellation, cooperative original capture stops, bounded metadata
+and diagnostics replace finite experiment ceilings. Dynamic writer-budget refusal
+is needs-attention with unpublished bytes and retained accounting; a zero native
+exit never proves an uncapped complete output. Retention age is refused in this
+mode, and journal media remains excluded by existing conservative planning.
+[Full policy, empirical limits and failure/recovery contract](ISSUE_52_OPERATIONAL_SERVICE.md)
+and [operator commands](SERVICE.md#opt-in-operational-windows-service) are current.
+Broader unfinished-phase recovery and deployment remain separate gates.
 
 ## Experimental pilot capture envelope
 

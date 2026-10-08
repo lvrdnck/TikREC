@@ -1293,7 +1293,7 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
-Publication checkpoint below is historical/complete. Current development: [B1/B2 delivered, B3 pending](ISSUE_52_PILOT.md), under PM resumption 6059481487.
+Publication checkpoint below is historical/complete. Current development: [opt-in operational journal service delivered for PM review](ISSUE_52_OPERATIONAL_SERVICE.md), under PM task 6065800184. The restricted pilot milestone is already COMPLETE/PASS.
 
 **v0.11.0 storage-focused publication COMPLETE / VERIFIED (2026-10-08).** [Owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758) was executed after PM acceptance 6059047079; no repeat permission/review cycle. Current released version is **v0.11.0**, published at **2026-10-08T11:50:27Z**. [TikREC v0.11.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0) is non-draft/non-prerelease, Release ID `406770680` / node `RE_kwDOUTgsvs4YPtP4`.
 
@@ -2056,15 +2056,15 @@ missed-LIVE evidence warrants source-access investigation; unknown/unverifiable
 does not prove offline. Preserve the approved Gracie-only policy. No #48 polling
 or search is part of #52; #28 remains unresolved and no release is authorized.
 
-**Capture availability / finalization separation (issue #52; natural overlap closeout delivered / PM disposition):**
+**Capture availability / finalization separation (issue #52; opt-in operational service delivered / PM review):**
 
-**#52 restricted natural overlap PASS — existing run closeout delivered (2026-10-08).** [PM disposition 6065356703](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6065356703): noahdekesel `8098532a-4cf5-4d73-bec2-c7051458ed9c` and exxoh2 `0d2ed6c0-5caf-4f66-8b87-e547078900eb`, **one raw-enabled start each / 2 of 2 consumed**. Executed **`7046a67a5377b93e2c686567fe5abbcccc7ae074`**, fingerprint **`5ae52c3173efee26462aab187bc39aaade988fddcb2083ed7e306e7eaac2d588`**; later closeout is docs only. Exxoh2 finalizer child times **17:17:35.550–17:17:37.583Z** overlap noah's growing raw evidence (**2,131,627 → 2,386,654 bytes**). Both copy outputs (**36.950 / 9.538 s**) match saved validation/publication hashes, decode/inspection/DTS PASS; original completed tasks return two units, zero units/both bindings free. Saved summary reports complete joins/authority release and exit 0; eight contained child retirement records corroborate, but standalone supervisor launch/import/shutdown/exit logs and request ledger are missing. [Exact timestamps, hashes and evidence limits](ISSUE_52_NATURAL_PILOT.md).
+The [PM task 6065800184](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6065800184) now connects the accepted pipeline to headless normal `serve --journal-home`: explicit dedicated initialization/known reopen, token-file/config/tool identity, configured automation, continuous physical-space gates, bounded diagnostics/history projections and exact-owner shutdown. Schema 10, two captures/one finalizer/eight outstanding units remain; normal duration and more than eight completions are supported. [Commands, operating envelope and evidence](ISSUE_52_OPERATIONAL_SERVICE.md). Executable/test candidate **`880fe298b460d7956010e17c2ffe44334102ef64`** has **83 focused passes; 3,115 full passes / 9 skips / 19 subtests passed**, no failures, both native exits 0, **531 unchanged hashes** and six new-mode generated deep validations with preserved original bytes. Source fingerprint **`bbe5a82df43ee65691b800b7fbc58e90fb2b2f6b1725de8aeb7540b32a5c6cb9`**.
 
-**Source-input decode UNKNOWN; visual integrity NOT CHECKED; brief samples do not prove full-stream completeness.** No natural configuration change/replacement UUID claim or rerun. All 25 original home files hash/native-identity preserved during read-only closeout; historical single-source trial remains **PARTIAL/closed at 1 of 2 consumed**, separate allowance. Refusal shutdown is [PM-accepted 6064992482](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6064992482); B3/R1–R19 scopes stand. **#52 OPEN/SINGLE ACTIVE, closeout complete; PM disposition only next, no automatic successor or deployment permission.** #48 PAUSED; #51 complete; #28 unresolved; published storage-only v0.11.0 untouched. No source/tests, media, production/watchers or release changes.
+Restricted overlap is already **COMPLETE/PASS** under [6065722442](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6065722442); pilot/B3/validators/closeout were not repeated. **#52 OPEN/SINGLE ACTIVE; PM review only next, no automatic successor or deployment authorization.** Real normal-length/soak evidence and authorized rollout remain separate; unsupported unfinished native phases can retain their original supervisor. No installed service/watchers/Scheduled Task access, LIVE, user-media mutation, retention, migration, broader recovery, main merge or release changes. #48 PAUSED; #51 complete; #28 unresolved; published storage-only v0.11.0 unchanged.
 
 
 
-**Paused isolated HTTP/client integration checkpoint:**
+**Historical paused isolated HTTP/client integration checkpoint (superseded by the operational task above):**
 
 **v0.11.0 storage-focused publication COMPLETE / VERIFIED (2026-10-08).** [Owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758) was executed after PM acceptance 6059047079; no repeat permission/review cycle. Current released version is **v0.11.0**, published at **2026-10-08T11:50:27Z**. [TikREC v0.11.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0) is non-draft/non-prerelease, Release ID `406770680` / node `RE_kwDOUTgsvs4YPtP4`.
 

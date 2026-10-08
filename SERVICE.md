@@ -4,8 +4,78 @@
 
 Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 are PM-accepted under [6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355); [fresh B3 acceptance](ISSUE_52_B3_ACCEPTANCE.md) passes the restricted supervised pilot, including R16/R17; #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 PASS is recorded; separate natural-LIVE authorization/validation remains outstanding. No default activation, migration, production restart or automatic successor follows publication.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 are PM-accepted under [6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355); [fresh B3 acceptance](ISSUE_52_B3_ACCEPTANCE.md) passes the restricted supervised pilot, including R16/R17; #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 and the restricted natural overlap are COMPLETE/PASS under PM acceptance 6065722442. The new operational mode is development-only; deployment remains separately authorized. No default activation, migration, production restart or automatic successor follows publication.
 
+
+## Opt-in operational Windows service
+
+The unreleased `serve --journal-home` mode explicitly composes the accepted
+schema-10 runtime with normal monitoring and automatic recording. Ordinary
+`serve` without journal options retains its legacy backend. This mode requires a
+new dedicated local home, existing explicit config/token files and checked tools;
+it never discovers/imports deployed state. [Contract, verification and rollout
+limits](ISSUE_52_OPERATIONAL_SERVICE.md). No installation or rollout is implied.
+
+Prepare a config outside the new home, with `output_directory` exactly HOME/media,
+`monitored_creators` selected explicitly, optional `automatic_raw_copy_creators`,
+and retention age unset. Existing reserve defaults to 10 GiB and retry window to
+900 seconds. Example config (choose a fresh location and creators for an
+authorized rollout; an empty list disables automatic monitoring):
+
+```json
+{"schema_version":1,"output_directory":"C:\\TikREC-journal\\media","monitored_creators":[],"automatic_raw_copy_creators":[],"minimum_free_space_gib":10}
+```
+
+Run from the reviewed source checkout with explicit paths. The executable paths
+below are the existing tools checked during generated Windows verification;
+select new dedicated config/home/token paths for a separately authorized rollout.
+Initialize once; the second command reopens the same identity:
+
+```powershell
+$python = 'C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe'
+$mediaTools = 'C:\Users\Leandro\AppData\Local\Microsoft\WinGet\Packages\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-N-124716-g054dffd133-win64-gpl\bin'
+$checkout = 'C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC'
+$catalog = [guid]::NewGuid().ToString() # initialize once; save this UUID for every reopen
+$argsJournal = @('--config', 'C:\TikREC-journal-config.json', 'serve',
+  '--journal-home', 'C:\TikREC-journal', '--journal-catalog-id', $catalog,
+  '--token-file', 'C:\TikREC-journal-token.txt', '--host', '127.0.0.1', '--port', '8765',
+  '--ffmpeg', (Join-Path $mediaTools 'ffmpeg.exe'), '--ffprobe', (Join-Path $mediaTools 'ffprobe.exe'))
+Set-Location -LiteralPath $checkout
+& $python -m tikrec.cli @argsJournal --journal-init
+& $python -m tikrec.cli @argsJournal
+```
+
+`--journal-init` requires an absent home and exits without worker/monitor work.
+Normal reopen refuses missing/corrupt/conflicting state or a changed source
+fingerprint; no reinitialization, pilot-home conversion or migration. Retain the
+catalog UUID and original home. Token-file auth and existing bind/origin rules
+apply. Creator lists reload; raw/retry/reserve policies are fixed at startup.
+Two captures, one finalizer and eight **outstanding**, not lifetime, units remain.
+Status/stop accept original UUIDs through normal `remote` commands below.
+
+Storage admission requires configured reserve +4 GiB, queued finalization +2 GiB plus the 16-MiB minimum writer budget,
+and captures stop at reserve +0.5 GiB or unknown storage. Independent checks run
+during finalization and idle HTTP periods. The dynamic owned writer budget comes
+from fresh physical free space; near-budget output is never published and exposes
+`candidate_budget_needs_attention`. Retained artifacts consume actual headroom;
+no logical reservation, eviction or retention is added. These are cooperative
+margins, not hard quotas. [Detailed bounds and empirical limits](ISSUE_52_OPERATIONAL_SERVICE.md#continuous-operating-policy).
+
+For local owned shutdown, write a fresh nonce atomically in the original home:
+
+```powershell
+$control = @{operation=[guid]::NewGuid().ToString();command='shutdown'} | ConvertTo-Json -Compress
+$control | Set-Content -LiteralPath 'C:\TikREC-journal\control.new' -Encoding utf8
+Move-Item -LiteralPath 'C:\TikREC-journal\control.new' -Destination 'C:\TikREC-journal\control.json' -Force
+```
+
+Ctrl+C is also supported. Confirm the actual shutdown/exit receipt. Exit 0 proves
+owner retirement and may leave queued work; it does not prove no outstanding
+units. Exit 2 indicates failure; exit 3 indicates attention despite retirement.
+If `complete=false`, preserve the original supervisor/state and use a new nonce
+with `command='cleanup'` for an explicit cleanup attempt. No forced exit or
+automatic restart around unresolved ownership. Four one-MiB sanitized diagnostic
+segments under HOME/logs record prospective identity/lifecycle/shutdown facts.
 
 ## Opt-in foreground Windows pilot
 
@@ -13,7 +83,7 @@ The published feature set is storage-only: automatic-admission space checks, con
 normalized source hash, known catalog UUID, new/reopened isolated home, chosen
 media binaries and loopback port. Secret comes from a nonlogged prompt. It
 constructs one existing passive runtime/admission/HTTP composition with empty
-isolated automation; ordinary `serve` and configuration stay legacy. No retention
+isolated automation; ordinary `serve` without journal opt-in stays legacy. No retention
 or production roots. [Exact commands, finite limits and evidence](ISSUE_52_PILOT.md).
 Original UUID status/stop and durable completion remain the HTTP contract below.
 AVC metadata must prove positive dimensions, long edge <=1920 and short edge
@@ -32,10 +102,10 @@ supported. No drain, refund, adoption or broader recovery. Pilot writer byte-lim
 refusal seals unpublished/unvalidated bytes solely for existing local cleanup;
 it never enters validation/publication/release and retains its unfinished unit.
 Default adapters retain their accepted error/pin behavior. [Fresh B3 PASS](ISSUE_52_B3_ACCEPTANCE.md)
-includes independent R16/R17 acceptance; separate natural-LIVE authorization
-and validation remain outstanding. Pre-configuration refusal can retain an
-unsealed lease and incomplete supervisor with no supported confirmed-exit
-procedure; preserve owners/state and return to PM. No deployment claim.
+includes independent R16/R17 acceptance. The restricted natural overlap is also
+COMPLETE/PASS under PM acceptance 6065722442. Accepted exact refusal retirement
+remains narrow; arbitrary unsealed native work can still retain an incomplete
+supervisor. Preserve owners/state and return to PM. No deployment claim.
 
 ## Experimental isolated HTTP backend — 2026-10-08
 
@@ -45,8 +115,9 @@ single default-OFF transport/client slice. `IsolatedRecordingHTTPServer` in
 `tikrec/service_http_runtime.py` takes an explicit passive runtime, admission,
 automation and monitor with matching isolated caller-owned state. It binds the
 listener before starting work and constructs no parallel legacy controller,
-startup reconciler, job store or implicit catalog. Normal `serve`/configuration
-continues to construct the legacy backend; there is no activation switch.
+startup reconciler, job store or implicit catalog. Ordinary `serve` without
+`--journal-home` continues to construct the legacy backend; the explicit
+operational mode above now supplies the journal composition.
 The [R16–R17 PM review](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6057613070)
 retains this direction but withholds acceptance of `31650357` pending the bounded
 request-ownership correction; accepted R1–R15 and `b9189ae0` remain accepted.
