@@ -77,6 +77,19 @@ with `command='cleanup'` for an explicit cleanup attempt. No forced exit or
 automatic restart around unresolved ownership. Four one-MiB sanitized diagnostic
 segments under HOME/logs record prospective identity/lifecycle/shutdown facts.
 
+Operational reporting failure saves the exact primary error and attached owners
+before diagnostics, then initiates the same owned shutdown. A failed console or
+disk channel is disabled after its first failure; at most two exact reporting
+errors remain on the original supervisor. Surviving receipts expose only channel
+and exception type. The failed stdout stream is quarantined through interpreter
+exit, including implicit flush. Confirmed retirement exits nonzero; incomplete
+retirement keeps the same supervisor and resources, accepting only a fresh local
+`cleanup` nonce on the original thread. A second `shutdown` does not retry cleanup.
+If all output channels fail, absence of a receipt proves nothing: preserve the
+process and original home, use documented local cleanup, and observe actual exit.
+An exit receipt is prospective; a late report failure supersedes its planned
+code on surviving sinks. Missing diagnostics are never reconstructed.
+
 ## Opt-in foreground Windows pilot
 
 `python -m tikrec.pilot` explicitly identifies the reviewed development checkout,

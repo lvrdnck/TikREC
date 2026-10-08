@@ -27,6 +27,17 @@ mode, and journal media remains excluded by existing conservative planning.
 and [operator commands](SERVICE.md#opt-in-operational-windows-service) are current.
 Broader unfinished-phase recovery and deployment remain separate gates.
 
+Operational startup/supervision errors retain the exact primary and its attached
+native/SQLite owners before error reporting. Console/write/flush or disk-receipt
+failure initiates original-owner shutdown, independently of successful reporting.
+Each failed channel is disabled once; two exact reporting failures at most remain
+reachable, with only fixed channel/type summaries emitted. Inherited cleanup uses
+a reporting hook; its recorded complete/incomplete result stays authoritative.
+Confirmed retirement permits nonzero exit. Incomplete retirement preserves the
+same supervisor for a fresh explicit original-thread `cleanup` nonce, with no
+automatic retry or second-shutdown retry. No receipt or process disappearance
+alone proves retirement. [R20 correction and evidence](ISSUE_52_OPERATIONAL_SERVICE.md#r20-reporting-and-owned-shutdown).
+
 ## Experimental pilot capture envelope
 
 The explicit foreground pilot accepts provable positive AVC dimensions with long

@@ -53,6 +53,10 @@ has no eight-session ceiling. Storage is checked continuously; pressure preserve
 evidence and never fabricates output completion. `active=false` alone cannot
 prove an MP4 is complete.
 
+Reporting failure initiates owned shutdown even when console and disk logs fail.
+Incomplete retirement preserves the original supervisor for explicit local
+cleanup; a missing receipt is not exit/retirement proof. [Local control and failed-output policy](SERVICE.md#opt-in-operational-windows-service).
+
 The restricted `python -m tikrec.pilot` retains its finite limits and foreground
 ownership rules. [Runbook](ISSUE_52_PILOT.md), [B3 evidence](ISSUE_52_B3_ACCEPTANCE.md)
 and [accepted restricted overlap](ISSUE_52_NATURAL_PILOT.md) remain historical
