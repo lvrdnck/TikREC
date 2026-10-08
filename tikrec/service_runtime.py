@@ -1,4 +1,4 @@
-"""Explicit experimental composition; normal serve/CLI never constructs this backend."""
+"""Explicit journal composition used by the opt-in operational service and pilot."""
 
 import time
 from pathlib import Path
@@ -21,7 +21,7 @@ class IsolatedServiceRuntime:
 
     Initialize disposable catalogs separately with SessionJournal.initialize.
     Construction acquires catalog ownership before any worker/reconciliation.
-    start_runtime is explicit. This backend is not wired into public HTTP/serve.
+    start_runtime is explicit. Ordinary serve without journal opt-in stays legacy.
     Observation/worker factories are trusted offline integration seams, not API
     request fields. Existing media algorithms and native capability guards apply.
     """
@@ -30,7 +30,7 @@ class IsolatedServiceRuntime:
                  observations=lambda bridge: {}, settlement_options=None,
                  thread_factory=Thread, shutdown_grace=30, poll_interval=0.2,
                  recovery_fault=lambda _: None, catalog_storage=None,
-                 clock=time.time, notify=None, authority_cleanup_guards=False):
+                 clock=time.time, notify=None, authority_cleanup_guards=False, resource_policy=None):
         require(type(shutdown_grace) in {int, float} and 0 <= shutdown_grace <= 30)
         require(type(poll_interval) in {int, float} and 0 < poll_interval <= 1)
         require(all(callable(value) for value in (observations, thread_factory, clock, recovery_fault))
@@ -39,6 +39,7 @@ class IsolatedServiceRuntime:
         self.ffmpeg, self.ffprobe = Path(ffmpeg), Path(ffprobe)
         require(self.ffmpeg.is_absolute() and self.ffprobe.is_absolute(), 'media tools must be explicit absolute paths')
         self.observations, self.settlement_options = observations, dict(settlement_options or {})
+        self.resource_policy = resource_policy
         self.storage = storage_status or StorageStatus(self.root)
         require(Path(self.storage.output_directory).absolute() == self.root,
                 'storage readiness must describe the explicit media root')
@@ -80,8 +81,12 @@ class IsolatedServiceRuntime:
                 raise
         return self
 
-    def storage_reason(self):
+    def storage_reason(self, phase='admission'):
         """Apply the existing readiness/minimum-free barrier without reserving guessed bytes."""
+        if self.resource_policy is not None:
+            if phase == 'admission' and self.paused not in {None, 'low_free_space', 'storage_unavailable'}:
+                return self.paused
+            return self.resource_policy.reason(phase)
         try:
             for storage in (self.storage, self.catalog_storage):
                 value = storage.snapshot()

@@ -23,6 +23,11 @@ def add_control_commands(subcommands) -> None:
     server.add_argument("--host", default=DEFAULT_HOST, help="explicit loopback/LAN/Tailscale IP")
     server.add_argument("--port", type=int, default=DEFAULT_PORT)
     server.add_argument("--token-file", metavar="FILE", help="bearer secret; overrides TIKREC_TOKEN")
+    server.add_argument('--journal-home', metavar='DIRECTORY', help='opt in to a dedicated schema-10 journal service')
+    server.add_argument('--journal-catalog-id', metavar='UUID', help='explicit known catalog identity')
+    server.add_argument('--journal-init', action='store_true', help='initialize an absent journal home, then exit')
+    server.add_argument('--ffmpeg', metavar='EXE', help='explicit checked journal media tool')
+    server.add_argument('--ffprobe', metavar='EXE', help='explicit checked journal inspection tool')
     server.add_argument("--recovery-window-seconds", type=recovery_window_argument,
                         metavar="SECONDS", help="override the 60-3600 second recovery window")
     remote = subcommands.add_parser("remote", help="control a trusted TikREC service")
@@ -68,6 +73,12 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
                         service_runner: Callable = serve,
                         remote_opener: Callable | None = None) -> int:
     """Run service or one remote action and print its safe JSON response."""
+    if arguments.command == 'serve':
+        if arguments.journal_home:
+            from .operational_command import run_operational
+            return run_operational(arguments)
+        if arguments.journal_init or arguments.journal_catalog_id or arguments.ffmpeg or arguments.ffprobe:
+            raise ValueError('journal options require --journal-home')
     token = read_token(arguments.token_file)
     if arguments.command == "serve":
         host = validate_bind(arguments.host, token)

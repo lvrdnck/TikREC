@@ -48,6 +48,10 @@ def reap_captures(runtime):
             if bridge.lease in runtime.authority.leases:
                 runtime.authority.leases.remove(bridge.lease)
         prune_leases(runtime)
+        if runtime.resource_policy is not None:
+            # Completed native references are not lifetime history. Unknown originals stay.
+            runtime.authority.native_close_guards[:] = [g for g in runtime.authority.native_close_guards
+                                                       if g.retained]
 
 
 def cleanup_current(runtime):
@@ -102,7 +106,7 @@ def process_once(runtime, startup):
         if record is None or record['preparation'] is None:
             runtime.paused = 'unsupported_unfinished_phase'
             return
-        reason = runtime.storage_reason()
+        reason = runtime.storage_reason('finalization')
         if reason:
             runtime.paused = reason
             return
@@ -127,7 +131,7 @@ def process_once(runtime, startup):
     oldest = next((t for t in status['tasks'] if t['state'] == 'queued'), None)
     if oldest is None:
         return False
-    reason = runtime.storage_reason()
+    reason = runtime.storage_reason('finalization')
     if reason:
         runtime.paused = reason
         return
@@ -149,6 +153,12 @@ def process_once(runtime, startup):
             if point == 'after_owned_inputs':
                 protect_lease(adapter.coordinator)
             fault(point)
+            if runtime.resource_policy is not None and point in {
+                    'before_assembly_writer', 'before_validation_authority', 'before_publication_preparation',
+                    'before_publication_fence'}:
+                from .session_journal_types import require
+                require(runtime.storage_reason('finalization') is None,
+                        'operational finalization storage pressure; preserve unfinished work')
             if point in {'before_release_preparation', 'before_terminal_release'}:
                 # Unrelated borrowed SQLite cleanup is still local outstanding ownership.
                 from .session_journal_types import require
@@ -160,6 +170,9 @@ def process_once(runtime, startup):
     try:
         adapter.run()
     finally:
+        if runtime.resource_policy is not None and getattr(adapter.coordinator, 'candidate_budget_refused', False):
+            # Preserve this category even when original native cleanup already retired.
+            runtime.paused = 'candidate_budget_needs_attention'
         if retired(adapter):
             # A failed capability stays visible to original-owner retirement checks.
             # Its outstanding unit bounds this registry; success history isn't cached.
@@ -196,6 +209,7 @@ def processing_loop(runtime):
                     continue
         except BaseException as error:
             runtime.record_error(error)
-            runtime.paused = 'finalizer_needs_attention'
+            if runtime.paused != 'candidate_budget_needs_attention':
+                runtime.paused = 'finalizer_needs_attention'
             startup = False
         runtime.wake.wait(runtime.poll_interval)

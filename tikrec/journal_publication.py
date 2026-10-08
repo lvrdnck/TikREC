@@ -37,9 +37,10 @@ class JournalPublication:
                 runner = self.coordinator
                 runner.cancelled.set()
                 if runner.scratch is not None:
-                    # Only the known pilot byte refusal sealed unpublished bytes before
+                    # Known writer-budget refusals seal unpublished bytes before
                     # any validator existed; its ordinary original-owner cleanup is safe.
-                    runner.validation_retained = not getattr(runner, 'pilot_candidate_refused', False)
+                    runner.validation_retained = not (getattr(runner, 'pilot_candidate_refused', False)
+                        or getattr(runner, 'candidate_budget_refused', False))
                     runner.scratch.hold(self.error)
                 raise PublicationError(self, self.error) from self.error
 

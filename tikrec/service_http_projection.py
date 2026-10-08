@@ -20,6 +20,7 @@ REASONS = frozenset({
     'monitor_cleanup_needs_attention', 'transport_needs_attention',
     'unfinished_attempt_needs_attention',
     'listener_cleanup_needs_attention',
+    'candidate_budget_needs_attention',
 })
 
 
