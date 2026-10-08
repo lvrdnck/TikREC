@@ -23,10 +23,10 @@ def wait(predicate, seconds=90):
         time.sleep(0.02)
 
 
-def generate(base):
+def generate(base, sizes=('64x64', '80x64')):
     """Generate both matching and changed AVC/AAC streams without user media."""
     base.mkdir(exist_ok=True)
-    for name, size in [('one', '64x64'), ('two', '80x64')]:
+    for name, size in zip(('one', 'two'), sizes):
         subprocess.run([shutil.which('ffmpeg'), '-v', 'error', '-f', 'lavfi', '-i',
             'testsrc=size=' + size + ':rate=10', '-f', 'lavfi', '-i',
             'sine=frequency=440:sample_rate=44100', '-t', '1.2', '-c:v', 'libx264',

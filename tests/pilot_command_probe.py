@@ -27,7 +27,7 @@ getpass.getpass = lambda _: sys.stdin.readline().strip()
 from tikrec import pilot_composition
 from tikrec.media import inspect_media
 from tikrec.service_runtime import IsolatedServiceRuntime
-from tikrec.tiktok import _ResolvedLiveUrl, TikTokOfflineError
+from tikrec.tiktok import _ResolvedLiveUrl, TikTokOfflineError, TikTokResolutionTransientError
 
 
 def supplied(envelope, bridge, ffprobe):
@@ -35,13 +35,33 @@ def supplied(envelope, bridge, ffprobe):
     name = Path(bridge.intent.output_path).stem
     room = str(1000 + sum(map(ord, name)))
     files = [BASE / 'one.flv']
-    if name == 'old':
+    if name == 'old' or MODE == 'policy':
         files.append(BASE / ('two.flv' if MODE == 'libx264' else 'one.flv'))
     actions = iter([*[_ResolvedLiveUrl('https://fixture.invalid/offline.flv', 2, room_id=room)
-                       for _ in files], TikTokOfflineError('fixture ended', room_id=room)])
+                       for _ in files], *[TikTokOfflineError('fixture ended', 4, room_id=room) for _ in range(3)]])
+    if MODE == 'policy':
+        live = _ResolvedLiveUrl('https://fixture.invalid/offline.flv', 2, room_id=room)
+        offline = TikTokOfflineError('fixture ended', 4, room_id=room)
+        actions = iter([live, offline, TikTokResolutionTransientError('fixture transient'),
+                        live, offline, offline, offline])
     sources = iter(files)
+    observations, delays = [], []
+    def save():
+        (BASE / (name + '-policy.json')).write_text(json.dumps({
+            'observations': observations, 'delays': delays}))
+    def waiter(event, seconds):
+        # Accelerate only the fixture's cancellable wait, retaining requested policy values.
+        delays.append(seconds)
+        save()
+        if MODE == 'policy' and len(delays) == 2:
+            (BASE / 'offline-unconfirmed').write_text('original confirmation wait')
+            while not (BASE / 'confirm-continue').exists() and not event.is_set():
+                time.sleep(0.01)
+
     def resolver(_):
         value = next(actions)
+        observations.append(type(value).__name__ if isinstance(value, Exception) else 'live:' + value.room_id)
+        save()
         if isinstance(value, Exception):
             raise value
         return value
@@ -58,7 +78,8 @@ def supplied(envelope, bridge, ffprobe):
             yield data[offset:offset + 256]
             time.sleep(0.02 if name.startswith('writer') else 0.001)
     return {**envelope.source_options(bridge, chunks=chunks, resolver=resolver),
-            'media_inspector': lambda path: inspect_media(path, ffprobe=str(ffprobe))}
+            'media_inspector': lambda path: inspect_media(path, ffprobe=str(ffprobe)),
+            'recovery_waiter': waiter}
 
 pilot_composition.source_options = supplied
 

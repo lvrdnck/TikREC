@@ -17,6 +17,7 @@ def stop_probe(probe):
     """Repair only disposable fixture barriers, then request product-owned shutdown."""
     (probe.base / 'release').write_text('release fixture barrier')
     (probe.base / 'repair').write_text('repair injected refusal')
+    (probe.base / 'confirm-continue').write_text('release fixture confirmation')
     for name in ('writer-a', 'writer-b'):
         (probe.base / (name + '-continue')).write_text('release fixture source')
     if probe.process.poll() is None and probe.home.exists():

@@ -114,7 +114,8 @@ class PilotEnvelope:
                         raise CaptureStopped()
                     if tag.is_avc_configuration:
                         width, height = avc_configuration_dimensions(tag.payload[5:])
-                        if width > 1920 or height > 1080:
+                        # Bound the same declared pixel envelope in either orientation.
+                        if min(width, height) <= 0 or max(width, height) > 1920 or min(width, height) > 1080:
                             bridge.stop_event.set()
                             raise CaptureStopped()
                     yield tag
@@ -125,9 +126,9 @@ class PilotEnvelope:
                 source.close()
                 if raw is not None:
                     raw.close()
+        # Omitted policy options inherit capture_live's normal confirmation/retry defaults.
         result = {'tag_source': lambda url: stream(url), 'raw_tag_source': stream,
-                  'warning': lambda _: None, 'offline_confirmation_checks': 1,
-                  'offline_confirmation_interval': 0.1, 'backoff_seconds': 0.1}
+                  'warning': lambda _: None}
         if resolver is not None:
             result['resolver'] = resolver
         return result
