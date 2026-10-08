@@ -30,9 +30,15 @@ A library, playback, automatic cleanup, notifications, and web workflows remain 
 work. Historical Moe media attribution remains non-blocking [#28](https://github.com/lvrdnck/TikREC/issues/28);
 the [forensic report](ISSUE_27_FORENSICS.md) preserves the evidence.
 
-The current package, immutable annotated tag, published GitHub Release, and
-current released version are v0.10.0.
+This candidate package is v0.11.0; the immutable annotated tag, published
+GitHub Release and current released version remain v0.10.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
+
+## v0.11.0 storage release candidate
+
+This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+
+Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
 
 ## Usage
 
@@ -525,8 +531,8 @@ each with its own worker, stop event, durable intent, recovery, retained media,
 finalization, and result. Creator automation can fill both slots while retaining
 the configurable per-start reserve (10 GiB by default), room binding, collision-safe naming, and durable
 same-room suppression. It does not authenticate to TikTok, notify the owner,
-automatically delete media, or provide a library/Web UI/playback. Unreleased
-v0.11 development adds a read-only age-retention plan, explicit creator
+automatically delete media, or provide a library/Web UI/playback. The v0.11.0
+release candidate adds a read-only age-retention plan, explicit creator
 protection, and a local Windows-only command to delete one eligible session
 with exact-UUID confirmation. The service has no deletion endpoint. Issue #37's
 correction uses verified Windows handles for removal and serializes policy
@@ -535,8 +541,7 @@ step. POSIX destructive execution refuses before changing the recording root;
 read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
 cooperative-filesystem scope. The owner-facing CLI contract is in
-[RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **unreleased
-v0.11 development behavior**. Issue #39 corrected a post-sync audit intent
+[RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **v0.11.0 candidate behavior, not yet published**. Issue #39 corrected a post-sync audit intent
 result-reporting defect. Issue #40 corrected a later success-output failure
 that falsely reported completed deletion as `PARTIAL`. A fresh-context public
 review at `653f5fe` found a remaining intent-sync interruption window
@@ -562,7 +567,7 @@ separately. The NEW review at 2ccf464 found a remaining cleanup-reporting
 defect (#46): a later policy-lock cleanup fault can replace the first fault
 before the failed audit event records its type. Issue #46 now preserves that
 first fault and keeps later policy, audit, and lifecycle cleanup faults
-secondary. The single next v0.11 task is a NEW fresh-context public CLI
+secondary. At that historical checkpoint, the next task was a fresh-context public CLI
 review; the gate remains NOT READY before separately authorized real-media
 validation.
 That NEW review at `75ffb1d` found an audit/lifecycle teardown blocker
@@ -570,8 +575,8 @@ That NEW review at `75ffb1d` found an audit/lifecycle teardown blocker
 lifecycle close fault can leave the process registry occupied. The public
 CLI gate remained NOT READY. Issue #47 now keeps first audit/lifecycle faults
 through cleanup, releases process ownership once, and preserves pre-intent,
-incomplete, and proven-completion results. The single next v0.11 task is
-another NEW independent public CLI review before separately authorized
+incomplete, and proven-completion results. At that historical checkpoint, the next task was
+another independent public CLI review before separately authorized
 real-media validation. No real media was deleted.
 The subsequent independent public CLI review of `f3dd917` PASSED after #50's
 correction. Windows real-media validation #51 is now PASSED by the project
@@ -621,7 +626,7 @@ ROADMAP.md.
 
 [SPEC.md](SPEC.md) — architecture, module responsibilities, validation
 notes and the reasoning behind past fixes.
-[RETENTION_CLI.md](RETENTION_CLI.md) — unreleased local retention deletion
+[RETENTION_CLI.md](RETENTION_CLI.md) — candidate local retention deletion
 interface and safety contract.
 [ROADMAP.md](ROADMAP.md) — workflow-driven direction for future releases.
 [SERVICE.md](SERVICE.md) — remote API and Windows Task Scheduler deployment.

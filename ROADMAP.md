@@ -1293,6 +1293,14 @@ dual-media validation, and post-dual-session restart evidence remain outstanding
 
 ### v0.11.0 — Smart storage, retention, and disk protection
 
+**Storage-focused v0.11.0 release preparation is the SOLE ACTIVE task (2026-10-08).** [PM decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202) supersedes historical feature sequencing. Exact base `ebf501c4153d104921ff63e69f4cfe0f262d713e`; branch `codex/v0.11-storage-release`; isolated worktree `C:\Users\Leandro\.codex\worktrees\v0.11-storage-release\TikREC`. Candidate package 0.11.0; current published/tagged release v0.10.0. Only version, version assertions and scoped documentation change from this base; all accepted supporting behavior is retained.
+
+#52 and #48 are OPEN / explicitly PAUSED. #52 evidence `e17d0522` and B1/B2/B3 remain separate, neither repeated nor waived. #30/#48/#52 source is absent from this historical release branch. The newer installed development checkout/configuration/state/services/media remain untouched; no downgrade/replacement/migration is proposed. #51 stays CLOSED/PASSED, and its consumed one-deletion authorization permits no new user-media deletion. Only generated disposable fixtures are used.
+
+Complex / GPT-6.1 Sol — High MODEL GATE and owner PROCEED recorded; owner implementation decisions None. This is a continuation with retained history, not a fresh-context #52 acceptance review. [Release scope/compatibility](RELEASE_NOTES_v0.11.0.md); [actual verification and artifacts](V0_11_RELEASE_CANDIDATE.md). **READY FOR PM PUBLICATION REVIEW: 1,731 Windows passes / 7 skips / 19 subtests, 2 focused passes, compile/diff and 30 CLI help paths, local wheel and installed-wheel smoke passed; all 223 hashes frozen. PM review of the exact pushed candidate is the sole next action.** No merge/tag/GitHub Release/registry publication or feature successor is authorized. The historical 12 October planning date is not a commitment.
+
+#### Historical storage milestones (sequencing superseded)
+
 **Final #51 outcome — COMPLETED / PASSED (2026-10-01 project-manager decision):**
 The public retention CLI independent review gate and Windows real-media retention
 validation are both **PASSED**. The one ordinary authorized Eliss deletion
@@ -1311,7 +1319,7 @@ released version; v0.11.0 remains unreleased until normal release readiness/
 bookkeeping is completed. No feature implementation, tag or release starts here.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 
-**Single next task (queued, not started): #30 — Hot-reload monitored creators
+**Historical queued task (excluded from this release): #30 — Hot-reload monitored creators
 without restarting recording service.** This follows the roadmap's existing
 post-retention operational sequence. #48 (opt-in watcher raw-copy) and #52
 (finalization resource isolation) remain queued; #8/#13/#28 remain separate

@@ -11,14 +11,15 @@ Two bounded workers record independently of HTTP clients and of each other.
 Launch the service independently of SSH so disconnecting the remote shell does
 not end capture.
 
-This document describes the released v0.10.0 service plus unreleased v0.11.0 storage-status development.
+This document describes the v0.11.0 storage candidate, retaining the v0.10.0
+service/API behavior and adding storage status and cooperative writer leases.
 Per-user recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can own and automatically fill a fixed capacity of two independent recordings.
-Library, download, public retention execution, notification, and browser-control capabilities
-remain outside this slice. v0.10.0 is the current published release.
+Library, download, HTTP retention execution, notification and browser-control
+capabilities remain outside the service; the local retention CLI is separate. v0.10.0 is the current published release.
 
-In unreleased v0.11 development, each service capture/finalization worker and
+In this v0.11.0 candidate, each service capture/finalization worker and
 startup reconciliation/resume holds a root-scoped writer lease while it may
 mutate session or output artifacts. Two service slots can hold compatible writer
 leases in one output root. The local Windows retention CLI's executor requires
@@ -26,6 +27,12 @@ the exclusive lease; it fails closed while either worker owns one. The service
 exposes no retention deletion or policy API.
 The persistent root lock file is never a retention target. Durable completed
 job references still block that executor even after their writer lease ends.
+
+## v0.11.0 storage release candidate
+
+This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+
+Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
 
 ## Bind and secret
 
@@ -371,8 +378,8 @@ immutable; fresh codec/keyframe/timestamp state starts the next numbered part.
 live_resume.py adds saved same-room identity checks to that continuation.
 Startup additionally has a narrow writer-partial recovery step described below;
 ordinary explicit resume and completed-part discovery still reject partials.
-That recovery change did not alter CLI/routes. The current package version is
-0.10.0.
+That recovery change did not alter CLI/routes. This historical recovery checkpoint was on package
+0.10.0; this isolated candidate is 0.11.0.
 
 ## Durable automatic-start state - v0.9.0
 
@@ -673,7 +680,7 @@ That restart exposed and fixed one status-only accounting defect: an inactive
 controller now takes the maximum durable reconnect count from `session.json`, so
 completed status retains its 7 reconnects across a service restart. Active status
 still uses in-memory allocations and does not open the manifest while capture may
-atomically replace it on Windows. The current package version is 0.10.0.
+atomically replace it on Windows. That historical checkpoint used package 0.10.0; this candidate is 0.11.0.
 
 The 2026-09-23 v0.10 deployed two-slot gate used an existing automatically
 started, #29-recovered Eliss session in slot 1 and an owner-manually-started

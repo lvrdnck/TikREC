@@ -1,45 +1,17 @@
 # TikREC current state
 
-Last reviewed: 2026-10-01. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-08. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Issue #51 COMPLETED / PASSED (project-manager decision, 2026-10-01):**
-  #51 is closed as completed. The public retention CLI independent review gate
-  and native Windows real-media retention validation are both **PASSED**.
-  Exactly one authorized ordinary
-  Eliss session returned COMPLETE/0; its 12-event durable audit records retained/
-  control artifacts first, final MP4 last, and durable completion. Immediate
-  verification proved exactly five intended paths removed, all 753 unrelated
-  observed entries unchanged, and unaffected service/slot/job ownership. The
-  deleted UUID was absent from subsequent planning. Age was safely restored to
-  its original unset state. The later Gracie move was a separate owner-initiated,
-  hash-checked Drive workflow after retention completion and immediate scope
-  verification; the audit contains no Gracie target. `Unsorted`'s size-only API
-  discrepancy establishes no content mutation or retention involvement.
-  No production retention defect is demonstrated. **The one-deletion
-  authorization is consumed; #51 authorizes no further destructive validation,
-  retry, repair or second deletion.** Evidence and final decision:
-  [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
-  v0.10.0 remains the current released/package version; v0.11.0 remains
-  unreleased pending normal release readiness/bookkeeping. This closure task
-  changes documentation/issues only, without touching media, evidence, policy,
-  service or production code. No feature implementation or release action starts.
+**Storage-focused v0.11.0 release preparation is the SOLE ACTIVE task (2026-10-08).** [PM decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202) supersedes historical feature sequencing. Exact base `ebf501c4153d104921ff63e69f4cfe0f262d713e`; branch `codex/v0.11-storage-release`; isolated worktree `C:\Users\Leandro\.codex\worktrees\v0.11-storage-release\TikREC`. Candidate package 0.11.0; current published/tagged release v0.10.0. Only version, version assertions and scoped documentation change from this base; all accepted supporting behavior is retained.
 
-- **Single next task (queued, not started): #30 — Hot-reload monitored creators
-  without restarting recording service.** The roadmap already places this
-  bounded operational follow-up after the retention gate, which is now passed.
-  Preserve the single-process two-slot manager and active recordings; a future
-  task must preflight/gate the implementation separately. No implementation is
-  currently active and no owner action is pending for this completed bookkeeping.
-  #48 (opt-in automatic raw-copy) and #52 (finalization resource isolation) stay
-  queued; #8/#13/#28 remain separate non-blocking evidence/investigation work.
-  #52's reported GPU spike was attributed to old TikREC, not the current
-  finalizer, so it does not establish a current-code blocker or displace #30.
-  Normal v0.11 release readiness/bookkeeping remains separate and unexecuted.
+#52 and #48 are OPEN / explicitly PAUSED. #52 evidence `e17d0522` and B1/B2/B3 remain separate, neither repeated nor waived. #30/#48/#52 source is absent from this historical release branch. The newer installed development checkout/configuration/state/services/media remain untouched; no downgrade/replacement/migration is proposed. #51 stays CLOSED/PASSED, and its consumed one-deletion authorization permits no new user-media deletion. Only generated disposable fixtures are used.
+
+Complex / GPT-6.1 Sol — High MODEL GATE and owner PROCEED recorded; owner implementation decisions None. This is a continuation with retained history, not a fresh-context #52 acceptance review. [Release scope/compatibility](RELEASE_NOTES_v0.11.0.md); [actual verification and artifacts](V0_11_RELEASE_CANDIDATE.md). **READY FOR PM PUBLICATION REVIEW: 1,731 Windows passes / 7 skips / 19 subtests, 2 focused passes, compile/diff and 30 CLI help paths, local wheel and installed-wheel smoke passed; all 223 hashes frozen. PM review of the exact pushed candidate is the sole next action.** No merge/tag/GitHub Release/registry publication or feature successor is authorized. The historical 12 October planning date is not a commitment.
 
 ### Historical coordination checkpoints (superseded)
 
@@ -1943,7 +1915,7 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Package version:** v0.10.0, from `tikrec.__version__` and packaging metadata.
+- **Candidate package version:** v0.11.0, from `tikrec.__version__` and packaging metadata; unpublished. The existing published package remains v0.10.0.
 - **Tagged version:** immutable annotated `v0.10.0`, tag object
   `014fa0b785f77c6b42ffe73a86ba28b00126a4ff`, peeled release commit
   `dfb81b683a89d01f55d70291fb5cdcfead654976`.

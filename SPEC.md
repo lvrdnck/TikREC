@@ -24,6 +24,12 @@ remain one recording per invocation; the persistent service has a fixed two-job
 bound for explicit or opt-in monitored creators. Each stops independently when
 its stream ends or when the owner targets it.
 
+## v0.11.0 storage release candidate
+
+This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+
+Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
+
 ## Scope
 
 ### Current
@@ -654,8 +660,8 @@ legacy v0.9 state needs no migration. Each controller loads and reconciles only
 its store. A malformed store blocks only that slot and remains untouched; two
 interrupted stores claiming the same path fail the second closed before recovery.
 No state-path CLI option is added. Only the latest job per slot is stored, with
-one owning service process/account. The package and current released version
-are v0.10.0.
+one owning service process/account. The candidate package is v0.11.0; the current released version
+remains v0.10.0.
 
 ### Patient outage policy and transport classification
 
@@ -773,7 +779,7 @@ output rather than represented as capture. After proxy retirement and an idle
 service restart, status also restores the completed manifest's reconnect count;
 active capture avoids reading the manifest while its atomic replacement may be
 in progress. All v0.5 real deployment-validation phases are complete. The
-current package version is 0.10.0.
+package at that historical checkpoint was 0.10.0; this candidate is 0.11.0.
 
 ### tikrec/service.py — narrow HTTP adapter
 
@@ -1568,7 +1574,8 @@ investigation as a correctness blocker before replay handling changes.
 See [ROADMAP.md](ROADMAP.md) for the dependency-ordered release plan. Features
 listed there are unavailable until their release is implemented; that does not
 make deferred product capabilities permanently prohibited. The architecture
-describes released v0.10.0 on current `main` and preserves v0.9.0 boundaries
+describes this historical storage-focused v0.11.0 candidate, retaining v0.10.0
+service behavior and preserving v0.9.0 boundaries
 where historical scope matters. Deployed two-slot isolation, implementation
 readiness, and exact-release-commit review passed before publication.
 

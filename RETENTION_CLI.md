@@ -1,4 +1,4 @@
-# Owner-facing retention CLI (unreleased v0.11 development)
+# Owner-facing retention CLI (v0.11.0 release candidate)
 
 Windows is the sole active and planned runtime. The owner's 2026-10-01 decision
 supersedes #53/#54; their unreleased Fedora/Linux additions are removed and no
@@ -159,6 +159,12 @@ The local CLI workflow below exists in the development checkout; it is
 not in the current
 v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
+
+## v0.11.0 storage release candidate
+
+This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+
+Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
 
 ## Commands and scope
 
