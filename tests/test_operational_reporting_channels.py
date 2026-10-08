@@ -1,6 +1,8 @@
 """Bounded exact secondary errors survive loss of every product output sink."""
 import sys
+from types import SimpleNamespace
 
+from tikrec.operational_command import OperationalCommand
 from tikrec.operational_reporting import DisabledConsole, Reporting
 
 
@@ -41,3 +43,21 @@ def test_surviving_disk_summary_excludes_exception_text(monkeypatch):
     assert reporting.write(Disk(), 'shutdown', complete=False) is None
     assert values[-1]['reporting_failures'] == [{'channel': 'console', 'type': 'BrokenPipeError'}]
     assert 'secret' not in repr(values)
+
+
+def test_incomplete_keyboard_interrupt_waits_for_explicit_cleanup(tmp_path):
+    owner = OperationalCommand(SimpleNamespace(home=tmp_path / 'absent'), SimpleNamespace(failed=False))
+    primary = ValueError('original reporting failure')
+    owner.primary, owner.shutdown_requested = primary, True
+    calls = []
+    def control():
+        calls.append('control')
+        if calls == ['control']:
+            raise KeyboardInterrupt
+        return 'cleanup'
+    def cleanup():
+        calls.append('cleanup')
+        return True
+    owner.control, owner.cleanup = control, cleanup
+    assert owner.run() == 2 and owner.primary is primary
+    assert calls == ['control', 'control', 'cleanup']

@@ -88,7 +88,8 @@ class OperationalCommand(PilotCommand):
                     self.session_observations = observed
                 self.server.handle_request()
             except KeyboardInterrupt:
-                if self.cleanup():
+                # After incomplete retirement, only a fresh local cleanup nonce retries.
+                if not self.shutdown_requested and self.cleanup():
                     return self.exit_code()
             except BaseException as error:
                 if self.primary is None:
