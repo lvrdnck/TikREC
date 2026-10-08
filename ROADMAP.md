@@ -2047,11 +2047,18 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Current isolated service-runtime integration checkpoint:**
 
-**Issue #52 OPEN / SINGLE ACTIVE — runtime corrections R14–R15 COMPLETE FOR PM REVIEW (2026-10-07).** [PM finding 6037046559](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559) retains `90156913` but does not accept runtime integration yet. R1–R13/media/control/normal settlement and corrected prepared-success recovery remain accepted; workspace audit resolved. Recorded MODEL GATE: Complex / GPT-6.1 Sol — High; owner PROCEED received; owner decisions None.
-
-Corrections implemented: two actual Windows regressions first failed against unchanged `90156913`; oldest queued dispatch now waits for exact local capture teardown, and uncertain finalizer owners remain supervised through truthful shutdown, including outside runtime.current. Preserve FIFO, disjoint capture after H, exact-once accounting, schema 10 and default-OFF behavior. No broad recovery/redesign or successor integration. [Runtime report](ISSUE_52_SERVICE_RUNTIME.md).
-
-Prior reviewed Windows suites remain historical successful evidence: 667 focused; 1,430 related / 2 skips / 17 subtests; 2,922 full / 9 skips / 19 subtests; three simulated import guards, 468 source/test hashes unchanged. Correction final frozen suites passed: **677 focused; 1,440 related / 2 skips / 17 subtests; 2,932 full / 9 skips / 19 subtests; 3 simulated import guards**, with 471 unchanged source/test hashes. All baseline/development failures remain separate evidence; actual non-Windows collection and deployed acceptance remain unexecuted. Existing isolated Windows worktree verified clean at `90156913`, pull already up to date. #48 OPEN/PAUSED; #28 unresolved. No production access/change/restart, default activation, public API rollout, broader recovery, retention, #48 polling, upgrades, performance policy, remote worker, version bump, merge, release or tag. Corrections delivered for PM review only; runtime integration acceptance remains pending. No automatic successor.
+**Issue #52 OPEN / SINGLE ACTIVE — independent isolated-runtime review COMPLETE FOR PM REVIEW (2026-10-08).**
+[PM decision 6051730786](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6051730786)
+accepts R14–R15 at `26cc0e7d`; this bounded implemented-contract review is **PASS**
+with no reproduced runtime blocker. Five new connected Windows regressions:
+**5 passed in 279.80s (0:04:39); related 292 passed in 761.36s (0:12:41)**; 475 hashes unchanged across both frozen selections.
+All 471 existing source/test bytes, schema 10 and default-OFF behavior are preserved.
+[Evidence and limits](ISSUE_52_SERVICE_RUNTIME.md#independent-acceptance-review--2026-10-08).
+Earlier implementation suites remain historical; no redundant full-suite rerun.
+**Next: PM review only; no automatic successor.** #48 OPEN/PAUSED; #28 unresolved;
+owner decisions None. Public API, retention, migration, broader recovery/resource
+policy and natural/deployed acceptance remain later gates. No production access,
+restart, polling, upgrade, merge, version bump, release or tag.
 
 **Historical R12–R13 recovery corrections (accepted by 6030581435) — (issue #52; complete for PM review, 2026-10-07):**
 [PM decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)

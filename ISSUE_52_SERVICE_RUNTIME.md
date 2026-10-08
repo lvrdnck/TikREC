@@ -7,10 +7,16 @@ accepts R12–R13 at `2d542164` and corrected prepared-success recovery. The
 [workspace resumption decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984)
 lifts the temporary audit hold and resumes this same partial task. Accepted
 media/control, R1–R13, normal settlement and recovery foundations remain accepted.
-Runtime integration at `90156913` is not yet accepted. [PM R14–R15 finding](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559) authorizes one bounded correction task; the corrections are implemented and verified for PM review under the new MODEL GATE / PROCEED. Runtime acceptance remains pending.
+[PM decision 6051730786](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6051730786)
+accepts focused R14–R15 at `26cc0e7d949a83d85aa15b84acef5eb9a693bec9` and
+selects the independent review below. That review is complete with a bounded
+**PASS** for the implemented contract; overall runtime/release acceptance still
+requires PM review and the explicitly deferred integration/deployment gates.
 #52 stays OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED; #28 unresolved; owner decisions None.
-Recorded MODEL GATE / PROCEED: Complex; GPT-6.1 Sol — High.
+Review MODEL GATE / PROCEED: Complex; GPT-6.1 Sol — High (2026-10-08).
 
+The following implementation-workspace paragraph is historical; the independent
+review below verified the same root/branch/origin/common directory at `26cc0e7d`.
 Implementation and every execution use the existing linked Windows worktree
 `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC` on
 `codex/capture-journal-handoff`. Its common Git directory is
@@ -20,6 +26,92 @@ The two modified/fourteen untracked partial files were preserved and continued.
 The separate old desktop project and primary/deployed checkout are not editing
 targets. Audit observations are not proof of every historical invocation or
 the deployed process's in-memory source; prediction-work location remains unknown.
+
+## Independent acceptance review — 2026-10-08
+
+**Implemented contract: PASS within the disposable Windows scope below. No
+runtime blocker was reproduced; no runtime source fix or accepted-foundation
+redesign was made. PM review only follows this delivery.** This fresh conversation
+first inspected the runtime composition and existing coverage, including the
+original [integration contract](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435),
+H/native ownership, settlement/recovery, automation, status/stop and shutdown.
+Preflight verified the exact worktree, branch, origin, common Git directory,
+clean baseline `26cc0e7d`, and conflict-free required pull (already current).
+The desktop/primary/deployed checkouts were not editing or test-import targets.
+
+### Implemented / PASS / FAIL / deferred evidence
+
+| Implemented boundary | Independent evidence / result |
+| --- | --- |
+| Two capture writers, one FIFO finalizer, eight units (A1/A2/A3/A10) | **PASS:** new progress cases use whole-tag barriers after real writer callbacks, then prove both byte counts increase while the old finalizer is paused at its media plan. Six tasks plus two writers retain eight units; a distinct ninth admission refuses. Actual copy/libx264 finalization automatically completes the six tasks while both later captures stay active; their subsequent H/terminal results preserve FIFO and return exactly eight units. This proves concurrency/ownership, not simultaneous CPU throughput. |
+| Original UUID/room/path/raw and automation acceptance (A4/A8/A14/A15) | **PASS:** new raw-OFF/ON cases lose acknowledgement after a real automatic capture thread starts. The persisted claim survives H and two replacement captures; first-slot generation increases. A fresh coordinator with the opposite raw preference reconciles the original indexed acceptance. Changed creator/room/path/prior UUID keys refuse acceptance; stale callback and old stop cannot alter replacements. Original intent/seal/receipt and terminal history survive explicit runtime restart. |
+| H/stop/shutdown and retained owners (A5/A12/A19) | **PASS for covered controls:** independently rerun all existing runtime modules, including lost H hints, oldest exclusive-proof readiness, actual Windows close protection, reused native/CRT identifiers, retained coordinators outside current, original-thread SQLite cleanup, partial thread startup, status read fencing and shutdown without queue draining. Native/input/lease/scratch/control/child, recovery inspection/protection, borrowed SQLite and catalog owners were also inspected in source. Test cleanup of deliberately retained owners is separate from product safe-exit claims. |
+| Output/catalog storage readiness (A11) | **PASS for implemented minimum-free/unavailable-storage barriers:** existing admission/launch refusal tests plus new catalog-only prepared-recovery deferral while output storage remains healthy. No task refund or media mutation during deferral. Space reservations/output budgets, watchdogs and retention remain **DEFERRED**, not failures of the implemented contract. |
+| Permitted restart and exactly-once accounting (A6/A20) | **PASS for prepared-success/queued/terminal scope:** new runtime recovery admits two progressing real captures while recovery authority is held. A failure after committed recovery terminal reporting preserves completion, original H/cleanup/media and exactly one recovered return. Shutdown retains three queued units; a fresh explicit runtime automatically completes them with three ordinary results, one recovery result and no second recovery generation. Existing supervisor-death, unsupported-pinned, cancellation, acknowledgement and SQLite fault controls are independently rerun. |
+| Generated media/control preservation (A7/A8/A16) | **PASS offline:** real generated AVC/AAC captures feed accepted copy and libx264 assembly/validation/publication/manifest/settlement. New tests preserve original source/control/H and predecessor-manifest hashes; progressing raw-ON bytes equal the generated input and raw-OFF creates no raw file. Existing generated/death controls are rerun. No natural recording, deployed service or power-loss acceptance is claimed. |
+| Implemented FAIL findings | **None reproduced.** Development fixture failures below are not product defects or passing suites. |
+| Remaining public/product/deployment gates (A9/A13/A17/A18 and broader A1–A20) | **DEFERRED:** public HTTP/client rollout, default activation, retention integration/execution, legacy migration/cutover, broader unfinished-phase recovery, reservations/watchdogs/resource/performance policy, natural/deployed/power-loss acceptance and actual non-Windows collection. No automatic successor, merge or release follows a bounded PASS. |
+
+The ownership review follows exact original objects and registries rather than
+Python closed flags, slot availability, historical receipts or an empty ExitStack.
+Covered faults do not constitute proof of every possible combined failure.
+Accepted R1–R15 and the resolved workspace audit remain accepted; no contradictory
+foundation evidence was found. The existing A1–A20 table below retains its
+partial/offline limits; this review completes the requested independent check
+of implemented behavior, not every deferred row of the full design.
+
+### Independently executed verification and provenance
+
+| Frozen selection | Actual pytest summary | Modules | Harness seconds |
+| --- | --- | ---: | ---: |
+| New connected review cases | 5 passed in 279.80s (0:04:39) | 3 | 280.36 |
+| Related runtime/interface regressions | 292 passed in 761.36s (0:12:41) | 28 | 761.94 |
+
+Both selections ran serially against the same **475 raw source/test SHA-256
+values**, unchanged before/after. Every one of the **471 existing files** also
+matches the accepted R14–R15 verification snapshot; four test/helper files were
+added. Runtime source, existing tests, package/schema/defaults/dependencies and
+AGENTS are unchanged. The related selection includes all eleven original runtime
+test modules, automation/admission/recording/service/storage characterization,
+and the three simulated linux/darwin/freebsd import guards. These simulated
+guards are not actual non-Windows execution. No skip is relabelled as a pass.
+
+Interpreter: `C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe`,
+Python **3.11.15**, SQLite **3.53.1**; base interpreter
+`C:\Users\Leandro\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\python.exe`.
+Every suite asserts cwd/Git root/HEAD/branch/origin/common directory and actual
+`tikrec.__file__` from this exact development worktree. Configuration/temp roots
+and generated media are disposable and explicitly isolated; no installation,
+external network/LIVE capture, production credentials or production recordings were used.
+Frozen source/tests were not edited while either selection ran.
+
+Evidence root: `C:\Users\Leandro\TikREC-tests\issue52-independent-runtime-20261008`.
+`focused-final` and `related-final` retain pytest logs, module lists, raw hash
+snapshots, process identities, interpreter/import provenance and verification
+JSON. `review-baseline-verification.json` checks both snapshots and accepted
+bytes; delivery equivalence and task-tagged process retirement are verified
+separately. The checked-in tests preserve reproducible scenarios; generated
+media, SQLite fixtures and local logs are not tracked.
+`process-retirement.json` records zero remaining task-tagged Python/FFmpeg/FFprobe
+processes after both selections. Exact native-job/thread cleanup is independently
+asserted by the fixtures; deliberately incomplete product shutdown stays recorded
+as incomplete, even when independent fixture cleanup subsequently succeeds.
+
+Development evidence is preserved separately: `development-one` **4 failed in
+36.26s**, because two simultaneous captures were incorrectly assigned the same
+creator page. `development-two` **2 failed, 3 passed in 114.44s**, because the
+overflow request still collided with an active page before reaching the backlog
+barrier. Both freezes stayed unchanged and both pytest processes exited normally
+after independent fixture cleanup. Distinct neutral creator identities correct
+the fixtures without relaxing page protection or changing product source.
+The final five cases then pass; prior failures are not discarded or relabelled.
+
+Per the authoritative review decision, no redundant focused/related/full
+implementation rerun was performed solely for unchanged runtime source. AGENTS'
+appropriate broader verification is satisfied by the related selection above.
+The earlier **677 focused / 1,440 related / 2,932 full** results and their
+skips/subtests/hash provenance below remain historical implementation evidence;
+they are not independently rerun results of this review.
 
 ## Explicit composition and automatic FIFO
 
@@ -308,7 +400,7 @@ independent integrated review and authorized natural-service validation remain
 release gates. Delivery uses Refs #52, preserves pushed history including the
 flagged historical `6fdacd37` Closes #52, and stops for PM review.
 
-## R14–R15 correction evidence — 2026-10-07 (corrections complete for PM review)
+## Historical R14–R15 correction evidence — 2026-10-07 (accepted by PM 6051730786)
 
 Correction preflight verified Git root/branch/origin/common Git directory in the
 exact development worktree above, clean at reviewed `90156913`; the required

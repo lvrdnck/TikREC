@@ -1,19 +1,35 @@
 # TikREC current state
 
-Last reviewed: 2026-10-07. This is a short handoff record, not a replacement
+Last reviewed: 2026-10-08. This is a short handoff record, not a replacement
 for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 [SESSION_MANIFEST.md](SESSION_MANIFEST.md), or
 [CONNECTION_LOG.md](CONNECTION_LOG.md).
 
 ## Coordination
 
-- **Issue #52 OPEN / SINGLE ACTIVE — runtime corrections R14–R15 COMPLETE FOR PM REVIEW (2026-10-07).** [PM finding 6037046559](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559) retains `90156913` but does not accept runtime integration yet. R1–R13/media/control/normal settlement and corrected prepared-success recovery remain accepted; workspace audit resolved. Recorded MODEL GATE: Complex / GPT-6.1 Sol — High; owner PROCEED received; owner decisions None.
+**Issue #52 OPEN / SINGLE ACTIVE — independent isolated-runtime review COMPLETE FOR PM REVIEW (2026-10-08).**
+[PM decision 6051730786](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6051730786)
+accepts R14–R15 at `26cc0e7d` and selects this review; it supersedes the prior
+pending-correction checkpoint. Bounded implemented-contract review: **PASS**,
+no reproduced runtime blocker. Runtime source, all 471 existing source/test files,
+schema 10 and default-OFF behavior are unchanged. Five independent connected
+regressions add writer progress at eight units/FIFO, automatic launch-ack loss
+across slot/raw-policy reuse, and concurrent prepared recovery/exact-once accounting.
 
-Corrections implemented: two actual Windows regressions first failed against unchanged `90156913`; oldest queued dispatch now waits for exact local capture teardown, and uncertain finalizer owners remain supervised through truthful shutdown, including outside runtime.current. Preserve FIFO, disjoint capture after H, exact-once accounting, schema 10 and default-OFF behavior. No broad recovery/redesign or successor integration. [Runtime report](ISSUE_52_SERVICE_RUNTIME.md).
+Independent frozen verification: **5 passed in 279.80s (0:04:39); related 292 passed in 761.36s (0:12:41)**.
+Both selections preserve the same 475 raw source/test hashes; 28 related modules
+include existing runtime/native/SQLite/restart controls and legacy interfaces.
+Earlier 677/1,440/2,932 implementation passes remain historical, not rerun here.
+[Review evidence and implemented/PASS/deferred map](ISSUE_52_SERVICE_RUNTIME.md#independent-acceptance-review--2026-10-08).
+Verified worktree `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC`,
+branch `codex/capture-journal-handoff`, origin `lvrdnck/TikREC`, common Git directory
+`C:\Users\Leandro\dev\TikREC\.git`; exact baseline `26cc0e7d949a83d85aa15b84acef5eb9a693bec9`.
 
-Verified implementation/test root: `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC`, branch `codex/capture-journal-handoff`, origin `lvrdnck/TikREC`, common Git directory `C:\Users\Leandro\dev\TikREC\.git`. Every suite asserted the imported `tikrec\__init__.py` came from that worktree. Evidence: `C:\Users\Leandro\TikREC-tests\issue52-runtime-r14-r15-20261007\final-one`; delivery verifies committed source equivalence.
-
-Prior reviewed Windows suites remain historical successful evidence: 667 focused; 1,430 related / 2 skips / 17 subtests; 2,922 full / 9 skips / 19 subtests; three simulated import guards, 468 source/test hashes unchanged. Correction final frozen suites passed: **677 focused; 1,440 related / 2 skips / 17 subtests; 2,932 full / 9 skips / 19 subtests; 3 simulated import guards**, with 471 unchanged source/test hashes. All baseline/development failures remain separate evidence; actual non-Windows collection and deployed acceptance remain unexecuted. Existing isolated Windows worktree verified clean at `90156913`, pull already up to date. #48 OPEN/PAUSED; #28 unresolved. No production access/change/restart, default activation, public API rollout, broader recovery, retention, #48 polling, upgrades, performance policy, remote worker, version bump, merge, release or tag. Corrections delivered for PM review only; runtime integration acceptance remains pending. No automatic successor.
+**Next: PM review only; no automatic successor.** #48 OPEN/PAUSED; #28 unresolved;
+owner decisions None. Public API/default activation, retention, migration/cutover,
+broader recovery/resource policy and natural/deployed/power-loss acceptance remain
+later gates. No production access/restart, #48 polling, upgrade, merge, version
+bump, release or tag. Evidence: `C:\Users\Leandro\TikREC-tests\issue52-independent-runtime-20261008`.
 
 - **Historical R12–R13 delivery (accepted by PM decision 6030581435) — issue #52 OPEN / SINGLE ACTIVE — R12–R13 recovery corrections complete for PM review (2026-10-07):** [PM decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330) retains the bounded prepared-success recovery design but withholds acceptance of `45243f6c` pending correction review. R1–R11 and the accepted normal settlement at `0665b5e8` remain accepted. The correction preserves exact earliest exceptions and bounded actual secondary errors; tracks partial lifecycle/native and every SQLite reader owner; refuses unsafe close/new recovery; preserves committed terminal facts. Separate recovery execution fencing keeps scans, hashes, SQL waits and teardown outside capture admission, retaining catalog/thread/call/generation/cancel fences. Shared-root child creation compares stable directory identity while attempt inventories/file proofs stay exact. Actual Windows close-protection tests retain native handles even when Python marks a stream closed; cleanup refuses reused descriptors, including a fresh open of the same lock file. Schema 10 unchanged; schemas 1–9 preserved/refused; no migration. [Recovery contract, actual failures and evidence](ISSUE_52_RELEASE_RECOVERY.md). Final frozen isolated Windows suites: **351 focused passed; 1,114 related passed / 2 skipped / 17 subtests passed; 2,875 full passed / 9 skipped / 19 subtests passed**; no failures; **448 source/test hashes unchanged** before/after every serial run. Prior reviewed suites remain historical: **302 focused; 1,065 related/2 skips/17 subtests; 2,826 full/9 skips/19 subtests**. #48 OPEN/PAUSED; #28 unresolved; owner decisions None. Service/API/monitor/scheduler wiring, production access/change/restart, broader unfinished-phase recovery, retention, runtime/resource-policy changes, merge/release/tag remain outside scope. Natural-recording, power-loss, service/A1–A20 and integrated review remain separate gates. **PM review only after delivery; no automatic successor or deployment-readiness claim.**
 
