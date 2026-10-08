@@ -2045,20 +2045,14 @@ or search is part of #52; #28 remains unresolved and no release is authorized.
 
 **Capture availability / finalization separation (issue #52; SINGLE ACTIVE):**
 
-**Current isolated service-runtime integration checkpoint:**
+**Current isolated HTTP/client integration checkpoint:**
 
-**Issue #52 OPEN / SINGLE ACTIVE — independent isolated-runtime review COMPLETE FOR PM REVIEW (2026-10-08).**
-[PM decision 6051730786](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6051730786)
-accepts R14–R15 at `26cc0e7d`; this bounded implemented-contract review is **PASS**
-with no reproduced runtime blocker. Five new connected Windows regressions:
-**5 passed in 279.80s (0:04:39); related 292 passed in 761.36s (0:12:41)**; 475 hashes unchanged across both frozen selections.
-All 471 existing source/test bytes, schema 10 and default-OFF behavior are preserved.
-[Evidence and limits](ISSUE_52_SERVICE_RUNTIME.md#independent-acceptance-review--2026-10-08).
-Earlier implementation suites remain historical; no redundant full-suite rerun.
-**Next: PM review only; no automatic successor.** #48 OPEN/PAUSED; #28 unresolved;
-owner decisions None. Public API, retention, migration, broader recovery/resource
-policy and natural/deployed acceptance remain later gates. No production access,
-restart, polling, upgrade, merge, version bump, release or tag.
+**Issue #52 OPEN / SINGLE ACTIVE — isolated HTTP/client compatibility COMPLETE FOR PM REVIEW (2026-10-08).**
+[PM decision 6056452748](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6056452748) accepts `b9189ae0` and the bounded implemented-runtime review; accepted R1–R15 at `26cc0e7d` remain intact. The single approved successor is the experimental default-OFF HTTP/client slice. Complex / GPT-6.1 Sol — High MODEL GATE and owner PROCEED recorded; owner decisions None.
+
+Work uses the verified existing Windows worktree `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC`, branch `codex/capture-journal-handoff`, origin `lvrdnck/TikREC`; required pull was already current and baseline clean. Explicit composition, bounded capture/finalization projections, stable authenticated UUID lookup, targeted stop and optional RemoteClient/CLI UUID status are complete. Final frozen Windows evidence: **83 focused / 360 related passed**, no skips; both generated copy/libx264 original sessions pass CLI deep validation, 488 source/test hashes unchanged and zero task-tagged processes remain. [Contract, preserved failures, provenance and limits](ISSUE_52_HTTP_CLIENT.md).
+
+#48 remains OPEN/PAUSED; #28 unresolved. **Next: PM review only; no automatic successor.** Delivery uses Refs #52; the exact pushed commit is recorded in #52's reconciled top checkpoint/comment. Safe resume: pull/reconcile this isolated branch, #52 and the report. Schema 10, accepted R1–R15, two captures/one finalizer/eight units, original identity and prepared-success-only recovery stay unchanged. Natural/deployed/power-loss acceptance remains outstanding; no production access/restart, default activation, migration, retention, broader recovery, polling, upgrade/resource-policy change, merge, version bump, release or tag.
 
 **Historical R12–R13 recovery corrections (accepted by 6030581435) — (issue #52; complete for PM review, 2026-10-07):**
 [PM decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330)

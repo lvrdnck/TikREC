@@ -175,7 +175,7 @@ when invoked, that is an error, not a wait state.
     tikrec monitor list
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
-    tikrec remote status --server URL [--token-file FILE]
+    tikrec remote status --server URL [--token-file FILE] [--session-id UUID]
     tikrec remote recordings --server URL [--token-file FILE]
     tikrec remote monitor-status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]
@@ -988,7 +988,13 @@ strict because the running service uses them. Missing output storage is valid.
 
 `RemoteClient` sends injected/testable standard-library HTTP JSON requests,
 refuses redirects and environment proxies, bounds responses, and reports safe
-request errors. `remote recordings` reads aggregate status and
+request errors. Optional `RemoteClient.status(session_id)` / `remote status
+--session-id UUID` requires `durable_finalization_v1`, then addresses only
+that original UUID. Older servers explicitly report unsupported lookup; no latest
+slot is substituted. The separately constructed default-OFF isolated HTTP backend
+and durable completion semantics are documented in
+[ISSUE_52_HTTP_CLIENT.md](ISSUE_52_HTTP_CLIENT.md) and [SERVICE.md](SERVICE.md).
+`remote recordings` reads aggregate status and
 `remote stop --session-id UUID` targets one current session; legacy singular
 status/stop are preserved only where unambiguous. It never automatically retries
 an ambiguous start. The CLI

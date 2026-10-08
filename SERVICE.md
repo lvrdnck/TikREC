@@ -1,13 +1,15 @@
 # TikREC remote recording and startup recovery
 
-## Explicit isolated runtime backend — 2026-10-07
+## Experimental isolated HTTP backend — 2026-10-08
 
-[PM decision 6030581435](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435)
-accepts corrected prepared-success recovery and authorizes experimental runtime
-integration. [Audit/resumption](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984)
-resolves the workspace hold. [PM corrections R14–R15](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6037046559)
-retain the integration but withhold acceptance of `90156913`; correction review
-and successful frozen verification are recorded in the runtime report; corrections await PM review.
+[PM decision 6056452748](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6056452748)
+accepts the bounded implemented-runtime review at `b9189ae0` and authorizes this
+single default-OFF transport/client slice. `IsolatedRecordingHTTPServer` in
+`tikrec/service_http_runtime.py` takes an explicit passive runtime, admission,
+automation and monitor with matching isolated caller-owned state. It binds the
+listener before starting work and constructs no parallel legacy controller,
+startup reconciler, job store or implicit catalog. Normal `serve`/configuration
+continues to construct the legacy backend; there is no activation switch.
 `IsolatedServiceRuntime` explicitly takes an identified existing schema-10 catalog,
 local media root and absolute media tools. Construction owns the catalog before
 reconciliation; `start_runtime()` starts one tracked non-daemon FIFO worker.
@@ -19,13 +21,56 @@ task waits for its original local exclusive proof handles to retire. Failed
 finalizer owners remain supervised outside the current-task projection; Python
 closed flags alone cannot establish native retirement or complete shutdown.
 
-Internal UUID lookup, targeted capture-only stop, separate capture/finalization
-status, existing automation acceptance receipts and owned shutdown are described
-in the [runtime contract/evidence](ISSUE_52_SERVICE_RUNTIME.md). Unknown cleanup
-reports incomplete shutdown and retains authority. Output/catalog readiness is
-checked before admission/launch. The default service/CLI, legacy recovery and
-HTTP interfaces remain on their existing construction path. No configuration
-switch, deployed activation, migration, retention or new resource policy exists.
+Only this backend advertises `durable_finalization_v1`. Existing `active_count`,
+`available_slots`, `available` and additive `capture` describe physical capture
+bindings. `admission_available`/fixed `admission_reason` separately describe
+backlog/storage/attention refusal: eight old units may leave both slots free while
+new starts refuse. Additive `finalization` reports units/tasks and worker/paused
+facts. Unknown counts are null. `/recordings` keeps exactly two latest slot
+snapshots, at most eight `finalization_sessions` tasks and at most eight
+`outstanding_sessions` owners, including counted/pinned empty evidence without
+an assembly task. `origin_slot_id` is immutable across today's slot reuse.
+
+Authenticated `GET /sessions/UUID` looks up one stable original session across
+capture, finalization, terminal history and restart. Invalid canonical UUID is
+400; unknown UUID is 404. Only audited owned terminal success/recovery release
+proof exposes `output_completed=true`/`final_output_path`. Capture closure,
+publication alone, a free slot, failure or empty/no-assembly never proves an MP4.
+This is durable historical completion evidence, not a guarantee against later
+external deletion. Unmeasured closed/restarted byte counters are null.
+
+Singular status/empty stop include all outstanding capture/artifact owners and
+remain 409 when ambiguous. Targeted active stop signals only that capture.
+Finalization-only UUID stop returns 202 `stop_result=capture_already_closed`
+without affecting assembly or a replacement capture. Completed/unknown UUID stop
+stays 404; malformed UUID stays 400. Existing start fields and 202 acceptance stay.
+
+`RemoteClient.status(session_id=None)` and `tikrec remote status --session-id UUID`
+use stable lookup after capability discovery. Omitted ID preserves `/recording`.
+Older servers explicitly report unsupported requested-UUID lookup; no latest-slot
+fallback exists. Old consumers may read ordinary routes, but `active=false` and
+slot reuse cannot imply output completion on this backend. Additive wire
+compatibility does not preserve those old lifecycle assumptions.
+
+Transport uses allowlisted projections and a 65,536-byte response ceiling.
+Existing bearer/bind/origin/body protections remain. No stderr, exception text,
+signed URLs, SQLite/internal capabilities or arbitrary controls serialize.
+At most 16 non-daemon request owners are tracked. Request/disconnect and supplied
+monitor SQLite cleanup stays on each original thread; failed cleanup and lost
+startup acknowledgement retain reachable owners for explicit shutdown retry.
+Known prestart failure likewise retains an unclosed socket and the original
+startup error if socket cleanup fails; no SQLite work ran on that request.
+Shutdown requests original UUID capture stops before waiting on unresolved HTTP
+owners. Inspect `shutdown_components()`/`shutdown_result`: listener close and independent
+fixture repair cannot prove safe product exit. Startup failures preserve their
+primary exception and attach `isolated_server`/`isolated_shutdown`.
+
+[Transport contract/evidence](ISSUE_52_HTTP_CLIENT.md) and
+[accepted runtime evidence](ISSUE_52_SERVICE_RUNTIME.md) record actual results and
+limits. Schema 10, accepted R1–R15, original raw/control/H identity, automation
+acceptance/raw policy/creator-only reload and prepared-success-only recovery stay.
+#52 remains OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED; #28 unresolved. No production
+activation/restart, migration, retention, broader recovery or resource-policy change.
 Historical checkpoints below remain evidence within their original boundaries.
 
 ## Current manifest-completion boundary — 2026-10-06

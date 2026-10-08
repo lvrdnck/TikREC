@@ -1,19 +1,17 @@
 # Issue #52 — capture availability and durable local finalization
 
-## Current isolated runtime integration — 2026-10-07
+## Current isolated runtime and HTTP/client integration — 2026-10-08
 
-[PM acceptance/integration](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030581435)
-accepts corrected prepared-success recovery at `2d542164`;
-[audit/resumption](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6030964984)
-resolves the same runtime task, now complete for PM review. The
-[runtime contract and A1–A20 evidence map](ISSUE_52_SERVICE_RUNTIME.md) describes
-explicit default-OFF construction, two captures, one tracked FIFO finalizer,
-eight outstanding units, automatic success and bounded recovery, automation,
-internal UUID/status/stop and truthful owned shutdown. Schema 10 unchanged.
-Public activation/API, unfinished-phase adoption, retention/storage resource
-policy, independent integrated review and natural-service validation remain gates.
-Earlier proposed broad retry/import/resource-policy requirements below are not
-authorization to implement those exclusions in this runtime slice.
+[PM decision 6056452748](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6056452748)
+accepts `b9189ae0`'s bounded implemented-runtime review and R1–R15 at `26cc0e7d`.
+The single authorized successor implements the existing status/compatibility
+proposal for an explicitly composed default-OFF backend only. See
+[transport contract/evidence](ISSUE_52_HTTP_CLIENT.md) and
+[accepted runtime map](ISSUE_52_SERVICE_RUNTIME.md).
+Schema 10, two captures/one finalizer/eight units, original identity and narrow
+recovery stay unchanged. Public/default activation, migration, retention, broader
+recovery/resource policy and natural/deployed acceptance remain later gates.
+Earlier broad design proposals below do not authorize those exclusions.
 
 ## Current accepted settlement and narrow recovery boundary — 2026-10-06
 
@@ -696,7 +694,7 @@ worker; release state ownership last. If a capture cannot safely close, remain
 visibly shutting_down / blocked rather than claim safe handoff or abandon a daemon
 writer. An externally forced process exit is handled by restart reconciliation.
 
-## Status and compatibility proposal (review required)
+## Status and compatibility proposal (approved for isolated backend only)
 
 Preserve existing routes, start fields/202 acceptance, fixed error/status codes,
 UUID identity, two slot IDs, auth/bind policy and safe redaction. Do not expose
@@ -714,7 +712,8 @@ signed URLs, raw stderr, DB internals or arbitrary control commands.
 
 Old clients must not equate slot reuse or `active=false` with successful MP4
 completion. Test current `remote.py` / CLI and document capability fallback before
-rollout. No endpoint/schema/default change is made in this task.
+rollout. The isolated backend now follows this approved direction; normal service
+defaults and schema 10 stay unchanged. See the transport report for actual verification.
 
 ## Acceptance matrix for full integration (no full case passed yet)
 

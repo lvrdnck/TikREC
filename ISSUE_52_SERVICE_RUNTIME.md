@@ -9,9 +9,12 @@ lifts the temporary audit hold and resumes this same partial task. Accepted
 media/control, R1–R13, normal settlement and recovery foundations remain accepted.
 [PM decision 6051730786](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6051730786)
 accepts focused R14–R15 at `26cc0e7d949a83d85aa15b84acef5eb9a693bec9` and
-selects the independent review below. That review is complete with a bounded
-**PASS** for the implemented contract; overall runtime/release acceptance still
-requires PM review and the explicitly deferred integration/deployment gates.
+selects the independent review below.
+[PM decision 6056452748](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6056452748)
+accepts that bounded implemented-contract **PASS** and selects the single
+[isolated HTTP/client successor](ISSUE_52_HTTP_CLIENT.md). The review below remains
+historical evidence, not a repeated acceptance task. Default/public activation and
+the deferred deployment/release gates remain outstanding.
 #52 stays OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED; #28 unresolved; owner decisions None.
 Review MODEL GATE / PROCEED: Complex; GPT-6.1 Sol — High (2026-10-08).
 
@@ -120,7 +123,8 @@ identified schema-10 journal and explicit local media root. Fresh initialization
 is a separate `SessionJournal.initialize` call. Construction acquires the single
 catalog/native authority and remains passive until `start_runtime()`. It does not
 construct a legacy RecordingController/StartupReconciler or operate a second
-catalog. No CLI, default service factory, HTTP route or configuration activates it.
+catalog. No CLI, default service factory or configuration activates it. The separate
+experimental HTTP composition is documented in [ISSUE_52_HTTP_CLIENT.md](ISSUE_52_HTTP_CLIENT.md).
 
 Admission uses the existing CaptureAuthority/CaptureBridge and real LIVE, FLV,
 raw, connection and manifest code. UUID/generation, creator, proven room, paths
@@ -175,7 +179,8 @@ idle/replacement slot. Unknown acceptance keeps the pending claim and disables
 automation. Raw opt-in and creator policy use existing coordinator rules; no
 creator-list or configuration writes occur. The caller explicitly composes the
 isolated coordinator/store and assigns `runtime.automation` for owned shutdown.
-These internal projections do not declare public HTTP/client compatibility.
+These internal projections remain separate from the bounded experimental HTTP
+projections in [ISSUE_52_HTTP_CLIENT.md](ISSUE_52_HTTP_CLIENT.md); default/deployed rollout remains deferred.
 
 ## Startup, storage and shutdown
 

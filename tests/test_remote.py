@@ -103,3 +103,40 @@ def test_invalid_server(server):
 
 def test_redirects_are_refused():
     assert _NoRedirect().redirect_request(None, None, 302, "", {}, "http://evil.test") is None
+
+
+def test_stable_status_requires_capability_and_exact_uuid():
+    sid = '00000000-0000-0000-0000-000000000123'
+    calls = []
+    def opener(request, **_):
+        calls.append(request.full_url)
+        return BytesIO(json.dumps({'capabilities': ['durable_finalization_v1']}
+            if request.full_url.endswith('/health') else {'session_id': sid}).encode())
+    client = RemoteClient('http://main-pc', opener=opener)
+    assert client.status(sid) == {'session_id': sid}
+    assert calls == ['http://main-pc/health', 'http://main-pc/sessions/' + sid]
+    with pytest.raises(ValueError, match='canonical UUID'):
+        client.status(sid.upper().replace('123', 'ABC'))
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize('capabilities', [None, [], 'durable_finalization_v1'])
+def test_old_server_requested_uuid_never_falls_back_to_latest(capabilities):
+    calls = []
+    def opener(request, **_):
+        calls.append(request.full_url)
+        return BytesIO(json.dumps({'capabilities': capabilities, 'active': False}).encode())
+    client = RemoteClient('http://main-pc', opener=opener)
+    with pytest.raises(RemoteError, match='does not support stable session-ID'):
+        client.status('00000000-0000-0000-0000-000000000123')
+    assert calls == ['http://main-pc/health']
+    assert client.status()['active'] is False
+    assert calls[-1].endswith('/recording')
+
+
+def test_capable_server_must_return_requested_identity():
+    def opener(request, **_):
+        return BytesIO(b'{"capabilities":["durable_finalization_v1"]}'
+            if request.full_url.endswith('/health') else b'{"session_id":"replacement"}')
+    with pytest.raises(RemoteError, match='different session identity'):
+        RemoteClient('http://main-pc', opener=opener).status('00000000-0000-0000-0000-000000000123')

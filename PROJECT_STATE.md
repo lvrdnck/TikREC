@@ -7,29 +7,12 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-**Issue #52 OPEN / SINGLE ACTIVE — independent isolated-runtime review COMPLETE FOR PM REVIEW (2026-10-08).**
-[PM decision 6051730786](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6051730786)
-accepts R14–R15 at `26cc0e7d` and selects this review; it supersedes the prior
-pending-correction checkpoint. Bounded implemented-contract review: **PASS**,
-no reproduced runtime blocker. Runtime source, all 471 existing source/test files,
-schema 10 and default-OFF behavior are unchanged. Five independent connected
-regressions add writer progress at eight units/FIFO, automatic launch-ack loss
-across slot/raw-policy reuse, and concurrent prepared recovery/exact-once accounting.
+**Issue #52 OPEN / SINGLE ACTIVE — isolated HTTP/client compatibility COMPLETE FOR PM REVIEW (2026-10-08).**
+[PM decision 6056452748](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6056452748) accepts `b9189ae0` and the bounded implemented-runtime review; accepted R1–R15 at `26cc0e7d` remain intact. The single approved successor is the experimental default-OFF HTTP/client slice. Complex / GPT-6.1 Sol — High MODEL GATE and owner PROCEED recorded; owner decisions None.
 
-Independent frozen verification: **5 passed in 279.80s (0:04:39); related 292 passed in 761.36s (0:12:41)**.
-Both selections preserve the same 475 raw source/test hashes; 28 related modules
-include existing runtime/native/SQLite/restart controls and legacy interfaces.
-Earlier 677/1,440/2,932 implementation passes remain historical, not rerun here.
-[Review evidence and implemented/PASS/deferred map](ISSUE_52_SERVICE_RUNTIME.md#independent-acceptance-review--2026-10-08).
-Verified worktree `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC`,
-branch `codex/capture-journal-handoff`, origin `lvrdnck/TikREC`, common Git directory
-`C:\Users\Leandro\dev\TikREC\.git`; exact baseline `26cc0e7d949a83d85aa15b84acef5eb9a693bec9`.
+Work uses the verified existing Windows worktree `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC`, branch `codex/capture-journal-handoff`, origin `lvrdnck/TikREC`; required pull was already current and baseline clean. Explicit composition, bounded capture/finalization projections, stable authenticated UUID lookup, targeted stop and optional RemoteClient/CLI UUID status are complete. Final frozen Windows evidence: **83 focused / 360 related passed**, no skips; both generated copy/libx264 original sessions pass CLI deep validation, 488 source/test hashes unchanged and zero task-tagged processes remain. [Contract, preserved failures, provenance and limits](ISSUE_52_HTTP_CLIENT.md).
 
-**Next: PM review only; no automatic successor.** #48 OPEN/PAUSED; #28 unresolved;
-owner decisions None. Public API/default activation, retention, migration/cutover,
-broader recovery/resource policy and natural/deployed/power-loss acceptance remain
-later gates. No production access/restart, #48 polling, upgrade, merge, version
-bump, release or tag. Evidence: `C:\Users\Leandro\TikREC-tests\issue52-independent-runtime-20261008`.
+#48 remains OPEN/PAUSED; #28 unresolved. **Next: PM review only; no automatic successor.** Delivery uses Refs #52; the exact pushed commit is recorded in #52's reconciled top checkpoint/comment. Safe resume: pull/reconcile this isolated branch, #52 and the report. Schema 10, accepted R1–R15, two captures/one finalizer/eight units, original identity and prepared-success-only recovery stay unchanged. Natural/deployed/power-loss acceptance remains outstanding; no production access/restart, default activation, migration, retention, broader recovery, polling, upgrade/resource-policy change, merge, version bump, release or tag.
 
 - **Historical R12–R13 delivery (accepted by PM decision 6030581435) — issue #52 OPEN / SINGLE ACTIVE — R12–R13 recovery corrections complete for PM review (2026-10-07):** [PM decision 6024429330](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6024429330) retains the bounded prepared-success recovery design but withholds acceptance of `45243f6c` pending correction review. R1–R11 and the accepted normal settlement at `0665b5e8` remain accepted. The correction preserves exact earliest exceptions and bounded actual secondary errors; tracks partial lifecycle/native and every SQLite reader owner; refuses unsafe close/new recovery; preserves committed terminal facts. Separate recovery execution fencing keeps scans, hashes, SQL waits and teardown outside capture admission, retaining catalog/thread/call/generation/cancel fences. Shared-root child creation compares stable directory identity while attempt inventories/file proofs stay exact. Actual Windows close-protection tests retain native handles even when Python marks a stream closed; cleanup refuses reused descriptors, including a fresh open of the same lock file. Schema 10 unchanged; schemas 1–9 preserved/refused; no migration. [Recovery contract, actual failures and evidence](ISSUE_52_RELEASE_RECOVERY.md). Final frozen isolated Windows suites: **351 focused passed; 1,114 related passed / 2 skipped / 17 subtests passed; 2,875 full passed / 9 skipped / 19 subtests passed**; no failures; **448 source/test hashes unchanged** before/after every serial run. Prior reviewed suites remain historical: **302 focused; 1,065 related/2 skips/17 subtests; 2,826 full/9 skips/19 subtests**. #48 OPEN/PAUSED; #28 unresolved; owner decisions None. Service/API/monitor/scheduler wiring, production access/change/restart, broader unfinished-phase recovery, retention, runtime/resource-policy changes, merge/release/tag remain outside scope. Natural-recording, power-loss, service/A1–A20 and integrated review remain separate gates. **PM review only after delivery; no automatic successor or deployment-readiness claim.**
 

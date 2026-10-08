@@ -45,9 +45,9 @@ def add_control_commands(subcommands) -> None:
             action.add_argument("--output", required=True, metavar="ABSOLUTE_PC_MP4_PATH")
             action.add_argument("--raw-copy", action="store_true",
                                 help="opt in to raw/arrival evidence beside retained parts")
-        elif name == "stop":
+        elif name in {"stop", "status"}:
             action.add_argument("--session-id", metavar="UUID",
-                                help="target one active session when multiple are recording")
+                                help="target one original session by UUID")
 
 
 def read_token(token_file: str | None) -> str | None:
@@ -103,6 +103,8 @@ def run_control_command(arguments: argparse.Namespace, stdout: TextIO, *,
         result = client.monitoring()
     elif arguments.action == "stop":
         result = client.stop(arguments.session_id)
+    elif arguments.action == "status" and arguments.session_id is not None:
+        result = client.status(arguments.session_id)
     else:
         result = getattr(client, arguments.action)()
     print(json.dumps(result, indent=2, sort_keys=True), file=stdout)

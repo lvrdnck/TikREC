@@ -28,6 +28,7 @@ class CreatorMonitor:
         waiter: Callable[[float], bool] | None = None,
         cycle_completed: Callable[[dict], None] | None = None,
         creator_loader: Callable[[], tuple[str, ...]] | None = None,
+        thread_factory: Callable = Thread,
     ) -> None:
         self._creators = validate_monitored_creators(creators)
         if poll_interval <= 0:
@@ -39,6 +40,7 @@ class CreatorMonitor:
         self._waiter = waiter or self._stop.wait
         self._cycle_completed = cycle_completed
         self._creator_loader = creator_loader
+        self._thread_factory = thread_factory
         self._configuration_unavailable = False
         self._lock = Lock()
         # Includes the completion callback so a second cycle cannot replace its list.
@@ -61,7 +63,7 @@ class CreatorMonitor:
             if self._thread is not None:
                 raise RuntimeError("creator monitor already started")
             self._running = True
-            worker = Thread(target=self._run, name="tikrec-monitor", daemon=False)
+            worker = self._thread_factory(target=self._run, name="tikrec-monitor", daemon=False)
             self._thread = worker
         try:
             worker.start()

@@ -47,9 +47,19 @@ class RemoteClient:
         """Check service health and availability."""
         return self._request("GET", "/health")
 
-    def status(self) -> dict:
-        """Fetch current recording progress or the most recent result."""
-        return self._request("GET", "/recording")
+    def status(self, session_id: str | None = None) -> dict:
+        """Fetch singular status or a stable UUID on a capable isolated backend."""
+        if session_id is None:
+            return self._request("GET", "/recording")
+        sid = _session_id(session_id)
+        # An older slot snapshot cannot establish the requested original identity.
+        capabilities = self.health().get("capabilities")
+        if not isinstance(capabilities, list) or "durable_finalization_v1" not in capabilities:
+            raise RemoteError("service does not support stable session-ID status lookup")
+        value = self._request("GET", "/sessions/" + sid)
+        if value.get("session_id") != sid:
+            raise RemoteError("service returned a different session identity")
+        return value
 
     def recordings(self) -> dict:
         """Fetch aggregate recording capacity and one safe status per slot."""
@@ -95,6 +105,8 @@ class RemoteClient:
                 hint = "multiple recordings active; use recordings or an explicit session ID"
             elif code == 404 and path == "/recording/stop":
                 hint = "active session not found"
+            elif code == 404 and path.startswith("/sessions/"):
+                hint = "requested session not found"
             else:
                 hint = {401: "check bearer token",
                         400: "check request values and absolute .mp4 output"}.get(

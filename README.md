@@ -34,10 +34,12 @@ The current package, immutable annotated tag, published GitHub Release, and
 current released version are v0.10.0.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
-Unreleased #52 development includes an isolated capture-to-journal handoff
-[harness and evidence report](ISSUE_52_CAPTURE_HANDOFF.md). The deployed CLI/service
-still finalizes synchronously and retains its current slot lifecycle. The harness
-adds no public command or deployed capture-capacity change.
+Unreleased #52 development includes an explicitly composed, default-OFF
+[isolated HTTP/client backend](ISSUE_52_HTTP_CLIENT.md), with separate capture and
+finalization facts and stable original-session UUID lookup. Normal `serve` and the
+deployed service retain synchronous slot lifecycles. No configuration activation
+switch exists. See [SERVICE.md](SERVICE.md) for the experimental compatibility
+boundary; `active=false` alone cannot prove its MP4 is complete.
 
 ## Usage
 
@@ -74,7 +76,7 @@ adds no public command or deployed capture-capacity change.
     tikrec retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]
     tikrec serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
     tikrec remote health --server URL [--token-file FILE]
-    tikrec remote status --server URL [--token-file FILE]
+    tikrec remote status --server URL [--token-file FILE] [--session-id UUID]
     tikrec remote recordings --server URL [--token-file FILE]
     tikrec remote monitor-status --server URL [--token-file FILE]
     tikrec remote start --server URL PUBLIC_LIVE_URL --output ABSOLUTE_PC_MP4_PATH [--raw-copy] [--token-file FILE]

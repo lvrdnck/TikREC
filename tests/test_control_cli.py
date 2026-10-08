@@ -14,6 +14,26 @@ from tikrec.retry_policy import RetryPolicy
 TOKEN = "test-secret-0123456789"
 
 
+def test_remote_status_optional_uuid_and_older_server_unsupported(monkeypatch):
+    monkeypatch.setenv('TIKREC_TOKEN', TOKEN)
+    sid = '00000000-0000-0000-0000-000000000123'
+    calls = []
+    def capable(request, **_):
+        calls.append(request.full_url)
+        return BytesIO(json.dumps({'capabilities': ['durable_finalization_v1']}
+            if request.full_url.endswith('/health') else
+            {'session_id': sid, 'output_completed': False, 'active': False}).encode())
+    output = StringIO()
+    assert main(['remote', 'status', '--server', 'http://main-pc', '--session-id', sid],
+        remote_opener=capable, stdout=output) == 0
+    assert json.loads(output.getvalue())['session_id'] == sid
+    assert calls[-1] == 'http://main-pc/sessions/' + sid
+    errors = StringIO()
+    assert main(['remote', 'status', '--server', 'http://main-pc', '--session-id', sid],
+        remote_opener=lambda *a, **k: BytesIO(b'{}'), stderr=errors) == 1
+    assert 'does not support stable session-ID' in errors.getvalue()
+
+
 def test_serve_defaults_and_existing_commands(monkeypatch, tmp_path):
     monkeypatch.delenv("TIKREC_TOKEN", raising=False)
     calls = []
