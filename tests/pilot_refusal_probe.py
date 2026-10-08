@@ -10,10 +10,18 @@ from tests.test_release_recovery_windows_close import protection
 from tikrec.capture_handoff_authority import CaptureAuthority
 from tikrec.capture_input_owners import CaptureInputOwners
 from tikrec.pilot_command import PilotCommand
+from tikrec import service_runtime_capture
 
 blocked = []
 reserve, open_raw = CaptureAuthority.reserve, CaptureInputOwners.open
 cleanup = PilotCommand.cleanup
+run_capture = service_runtime_capture.run_capture
+
+
+def observed_capture(runtime, sid, generation):
+    """Expose completed product unwinding before test hashes race its exclusive inventory."""
+    run_capture(runtime, sid, generation)
+    (fixture.BASE / (sid + '-capture-retired')).write_text('original capture function returned')
 
 
 def fixture_reserve(owner, *args, **kwargs):
@@ -89,5 +97,6 @@ def observed_cleanup(owner):
 
 CaptureAuthority.reserve, CaptureInputOwners.open = fixture_reserve, fixture_open
 PilotCommand.cleanup = observed_cleanup
+service_runtime_capture.run_capture = observed_capture
 if __name__ == '__main__':
     runpy.run_module('tikrec.pilot', run_name='__main__')

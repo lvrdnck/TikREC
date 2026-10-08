@@ -134,3 +134,31 @@ def test_actual_refusal_native_close_fault_requires_repair_and_explicit_retry(tm
             probe.control('cleanup')
             probe.process.wait(timeout=30)
         probe.stream.close()
+
+
+def test_manual_shutdown_after_refusal_is_nonzero_before_supervisor_observation(tmp_path):
+    """A requested stop cannot relabel a proved original refusal as a healthy exit."""
+    generate(tmp_path, ('1922x1080', '64x64'))
+    probe = CommandProbe(tmp_path, 'reopen', module='tests.pilot_refusal_probe')
+    try:
+        ready = probe.ready()
+        sid = probe.start('oversized', True)['session_id']
+        journal = SessionJournal(Path(ready['catalog']), probe.catalog)
+        wait(lambda: (tmp_path / (sid + '-capture-retired')).exists(), seconds=5)
+        assert not any(e['event'] == 'stop_condition' for e in probe.events())
+        row, status, original = journal.session(sid), journal.status(), media_hashes(probe.home / 'media')
+        probe.control('shutdown')
+        probe.finish(expected=3)
+        assert not any(e['event'] == 'stop_condition' for e in probe.events())
+        assert journal.session(sid) == row and journal.status() == status
+        assert media_hashes(probe.home / 'media') == original
+        owners = json.loads((tmp_path / 'refusal-owners.jsonl').read_text().splitlines()[-1])
+        assert owners['complete'] and owners['after']['captures'][sid]['refusal_retired']
+        (tmp_path / 'manual-refusal-stop-proof.json').write_text(json.dumps({
+            'owners': owners, 'row': row, 'status': status,
+            'exit': probe.process.returncode, 'supervisor_stop_condition': False}, indent=2))
+    finally:
+        if probe.process.poll() is None:
+            probe.control('shutdown')
+            probe.process.wait(timeout=30)
+        probe.stream.close()

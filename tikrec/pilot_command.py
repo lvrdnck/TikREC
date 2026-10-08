@@ -28,7 +28,10 @@ class PilotCommand:
 
     def exit_code(self):
         """Keep an unsupported/safety stop nonzero even after explicit cleanup succeeds."""
-        return 2 if self.primary is not None else 3 if self.stop_reason is not None else 0
+        # Manual shutdown may beat the observation tick; the original refusal remains a failure.
+        refused = self.runtime is not None and any(
+            e.get('refusal_retired') for e in self.runtime.captures.values())
+        return 2 if self.primary is not None else 3 if self.stop_reason is not None or refused else 0
 
     def start(self, source, token):
         """Initialize/reopen explicitly, then bind/start the existing complete composition."""

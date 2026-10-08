@@ -49,6 +49,13 @@ def test_early_source_refusal_repeated_shutdown_preserves_durable_failure(runtim
     assert all(not g.retained for g in bridge.fence.inputs.native_close_guards)
     assert not runtime.connections.has_ownership()
     assert_originals(runtime, sid, row, status, original)
+    view = runtime.session_status(sid)
+    assert view['needs_attention'] and view['active'] and not view['output_completed']
+    fresh = runtime_case.build(authority_cleanup_guards=True).start_runtime()
+    view = fresh.session_status(sid)
+    assert view['needs_attention'] and not view['output_completed'] and fresh.captures == {}
+    assert fresh.shutdown()['complete']
+    assert_originals(fresh, sid, row, status, original)
     with pytest.raises(RecordingBusy):
         start(runtime, 'late', room='456')
     with pytest.raises(JournalConflict):
