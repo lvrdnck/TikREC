@@ -12,6 +12,11 @@ Schema 10, two captures/one finalizer/eight units, original identity and narrow
 recovery stay unchanged. Public/default activation, migration, retention, broader
 recovery/resource policy and natural/deployed acceptance remain later gates.
 Earlier broad design proposals below do not authorize those exclusions.
+The [R16–R17 correction decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6057613070)
+retains this direction but withholds acceptance of `31650357` pending the bounded
+HTTP request/socket ownership correction. The transport report records the real
+Windows accept-loop reproductions and correction; the accepted runtime review
+and foundations are not reopened.
 
 ## Current accepted settlement and narrow recovery boundary — 2026-10-06
 

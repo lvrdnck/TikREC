@@ -2,9 +2,9 @@
 
 ## Authority and current status
 
-[PM decision 6056452748](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6056452748) accepts review `b9189ae0` and the implemented Windows runtime at accepted R14–R15 baseline `26cc0e7d`. This single successor is experimental/default OFF. Complex / GPT-6.1 Sol — High MODEL GATE and owner PROCEED recorded. #52 OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED, #28 unresolved; owner decisions None.
+[PM correction decision 6057613070](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6057613070) retains the HTTP/client direction but withholds acceptance of `316503578dec55cabeded9e0d7d77472a4f5bb46` pending R16–R17. Accepted R1–R15, `b9189ae0`'s bounded implemented-runtime review and schema 10 remain accepted. This single correction is experimental/default OFF. Complex / GPT-6.1 Sol — High MODEL GATE and owner PROCEED recorded. #52 OPEN/SINGLE ACTIVE, #48 OPEN/PAUSED, #28 unresolved; owner decisions None.
 
-**COMPLETE FOR PM REVIEW:** this bounded transport/client slice. Final frozen native Windows suites: **83 focused / 360 related passed**, no skips; both generated copy/libx264 original sessions pass normal CLI deep validation. The prior review is accepted, not repeated; overall #52/deployment acceptance is not claimed. Execution evidence is in `C:\Users\Leandro\TikREC-tests\issue52-http-client-20261008`; development failures are preserved separately from final frozen results. The exact normally pushed Refs #52 delivery is recorded in #52's reconciled current checkpoint/comment. PM review only next; no automatic successor.
+**R16–R17 COMPLETE FOR PM REVIEW:** unchanged `31650357` reproduced R16 and both R17 gates through actual Windows loopback acceptance before runtime edits. Final correction suites: **103 focused / 229 related passed**, no skips, on identical frozen bytes; both generated copy/libx264 original sessions pass normal CLI deep validation. The original **83 focused / 360 related passes** and two validations remain valid historical reported evidence for their selections. New evidence: `C:\Users\Leandro\TikREC-tests\issue52-http-r16-r17-20261008`; historical delivery: `C:\Users\Leandro\TikREC-tests\issue52-http-client-20261008`. The accepted runtime review is not repeated; overall #52/deployment acceptance is not claimed. Exact normally pushed Refs #52 correction commit is recorded in #52's current checkpoint/comment. PM review only next; no automatic successor.
 
 ## Implemented contract
 
@@ -18,11 +18,124 @@ Singular status/stop retains ambiguity across all outstanding owners (409). Targ
 
 `RemoteClient.status(session_id=None)` preserves the original `/recording` call when omitted. `tikrec remote status --session-id UUID` validates UUID, checks `/health` capability and uses only `/sessions/UUID`. An older server without that capability returns an explicit unsupported error; there is no latest-slot fallback. Returned UUID must match. Old clients may still read ordinary routes, but `active=false` or slot reuse cannot mean MP4 success on the isolated backend; compatibility is additive on wire, intentionally different in phase meaning.
 
-Transport uses allowlisted identity/counter/state/path/reason projections and a 65,536-byte response ceiling. Local paths are capped at 1,024 UTF-8 bytes and both output/parts paths are checked before start acceptance; monitoring/selected creator projections are capped at 100. Existing bearer/bind/origin/body/redirect protections remain. Arbitrary exception text, stderr, signed transports, SQLite/internal capabilities and controls never serialize. At most 16 non-daemon request owners are retained. Every request/disconnect cleans SQLite on its original thread; failed teardown holds the thread/object for a later explicit shutdown retry. The supplied monitor's original thread is likewise retained across lost startup acknowledgement/SQLite cleanup. Shutdown fences HTTP/callback starts and requests original UUID capture stops before waiting on uncertain request/monitor owners. Listener close and fixture repair do not establish safe product exit; startup errors retain the primary exception and attach reachable server/shutdown state. Listener-close failure preserves the socket and reports incomplete transport even when runtime authority retirement is confirmed.
+Transport uses allowlisted identity/counter/state/path/reason projections and a 65,536-byte response ceiling. Local paths are capped at 1,024 UTF-8 bytes and both output/parts paths are checked before start acceptance; monitoring/selected creator projections are capped at 100. Existing bearer/bind/origin/body/redirect protections remain. Arbitrary exception text, stderr, signed transports, SQLite/internal capabilities and controls never serialize. Every request/disconnect cleans SQLite on its original thread; failed teardown holds the thread/object for a later explicit shutdown retry. The supplied monitor's original thread is likewise retained across lost startup acknowledgement/SQLite cleanup. Shutdown fences HTTP/callback starts and requests original UUID capture stops before waiting on uncertain request/monitor owners. Listener close and fixture repair do not establish safe product exit; startup errors retain the primary exception and attach reachable server/shutdown state. Listener-close failure preserves the socket and reports incomplete transport even when runtime authority retirement is confirmed.
 
 Schema 10, accepted R1–R15, two captures/one finalizer/eight units, original raw/session/control/H evidence, original automation acceptance/raw preferences and creator-only reload, exact-once accounting and narrow prepared-success recovery remain unchanged. A small optional CreatorMonitor thread factory observes native ownership without altering default scheduling/resolution policy.
 
-## Verification evidence
+## R16–R17 ownership correction
+
+Only `service_http_requests.py` and `service_http_runtime.py` change product source.
+The isolated server registers each exact native socket in `get_request()` before
+verification/start/refusal. Its accept boundary preserves real stdlib
+`handle_request()`/`serve_forever()` selection and native listener acceptance, but
+replaces the generic exception fallback that could close a worker's socket from
+the accept thread. Direct start errors still raise the exact primary exception;
+ordinary accept-loop exceptions are recorded privately. Interruptions propagate
+after retaining ownership. A worker remains solely responsible for its socket
+and SQLite until cleanup and its actual native join are proved.
+
+Total ownership is bounded to **16 worker owners plus one acceptance/refusal
+reserve (17)**. Known prestart/refused sockets stay registered until close succeeds.
+Any pending accepted/socket-only owner pauses further native acceptance, even if
+all older workers retire; later clients remain in the finite OS backlog and may
+wait/time out. A ready paused listener waits up to 50 ms or an ownership-change
+signal per iteration. No background close retries or automatic client retries
+exist. `requests.join(..., closing=True)` or `shutdown_components()` explicitly
+retries socket-only owners; workers retry on their original thread. A trusted
+direct `process_request` caller retains its own connection on a reserve-unavailable
+RuntimeError; it cannot evade the bound. Integrated shutdown fences native
+acceptance first; a registered acceptance still in verification holds the barrier
+until its transfer resolves. Listener closure alone cannot prove safe exit.
+
+Unchanged-source Windows baseline (actual full disposable isolated runtime,
+CPython 3.11.15, SQLite 3.53.1): **3 failed / 3 passed in 1.66s**. Both source and
+all 490 then-present source/test hashes remain unchanged through the run; the
+reviewed request blob is exactly `0b3345977d977804728ac6381f4f380786854ecf`.
+R16 retained a live worker but its socket was already closed by MainThread before
+release. Both R17 gates lost the failed socket owner: error escaped, two fallback
+closes ran, join and integrated shutdown reported complete/authority released
+while the exact refused native socket remained open. This demonstrates the
+disposable false retirement barrier; it is not a production data-loss claim.
+Ordinary startup and both successful-close refusal controls passed. Baseline
+fixture repair separately retired the lost sockets; it is not product retirement.
+
+New connected tests retain ordinary/direct/known-prestart controls and add actual
+Windows TCP coverage for started/unconfirmed startup, primary plus secondary
+socket/SQLite errors, repeated explicit cleanup, both refusal gates, the finite
+reserve and paused accepts, in-flight verification, real continuous accept-loop
+shutdown and early original-UUID capture stop. Exact native socket descriptors,
+worker/accept-loop joins and original SQLite close thread IDs are asserted.
+Independent fault repair and deferred native-start fixture repair are labelled;
+only successful explicit product cleanup afterward establishes retirement.
+
+## R16–R17 verification evidence
+
+All serial runs use the verified existing native interpreter
+`C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe`,
+base uv CPython **3.11.15 / Windows AMD64**, SQLite **3.53.1**. Each run records
+actual cwd/root/branch/origin/common Git directory, HEAD `31650357` and actual
+worktree `tikrec.__file__`, plus before/after SHA-256 for every source/test file.
+`TIKREC_TOKEN` is removed; APPDATA/LOCALAPPDATA/XDG config/state/TMP/TEMP point
+to separate disposable directories beneath the evidence root. Only local
+generated media and ephemeral Windows loopback sockets are used; existing
+ffmpeg/ffprobe are unchanged. No production data/runtime or installation is used.
+
+| Selection | Actual result | Frozen files | Interpretation |
+| --- | --- | ---: | --- |
+| baseline-accept | 3 failed / 3 passed in 1.66s | 490 | R16 and both R17 gates reproduced before runtime edits; ordinary-start and successful-refusal controls pass. Request blob verified. Byte-exact source/reproducer snapshots retained in `baseline-reproducer`, with matching baseline hashes. |
+| development-one | 22 passed in 10.90s | 490 | Corrected reproductions plus direct-request and lifecycle controls. |
+| development-two | 1 failed / 33 passed in 27.24s | 492 | Continuous-loop fixture observed worker entry before accept-thread startup-error recording; wait for that actual acknowledgement diagnostic instead. Product source unchanged for this fixture repair. |
+| development-three | 1 failed / 19 passed in 8.47s | 492 | Capture-stop fixture assumed completed retirement immediately after release. Join the exact asynchronous capture before the explicit bounded shutdown retry; product source unchanged for this fixture repair. No performance guarantee inferred. |
+| development-four | 20 passed in 8.42s | 492 | All new loopback cases pass, including interrupted/unconfirmed native startup. |
+| focused-final-frozen | 103 passed in 265.65s, no skips | 492 | All ten HTTP modules plus RemoteClient/CLI, including copy/libx264, original raw/H/UUID, eight-unit accounting, targeted stop and restart completion. |
+| related-final | 229 passed in 697.09s, no skips | 492 | Relevant 24-module legacy service/monitor/automation/admission/storage and runtime ownership/shutdown/recovery regression selection. |
+
+Both final 492-entry manifests equal each other and delivery source/test bytes.
+Of the initial HTTP delivery's 488 existing files, **486 are unchanged**; only
+the two isolated HTTP ownership/composition source modules change. Four new
+test/helper files add 20 cases. Accepted runtime/journal/media/monitor/automation/
+admission, client/CLI/default service source, package metadata and schema 10
+remain unchanged. Canonical committed-file/remote equivalence is separately
+verified in `delivery-verification.json`, accounting for normal CRLF conversion.
+
+Read-only normal `python -m tikrec.cli validate PARTS_DIRECTORY --deep --json`
+passes for both new final connected original sessions at
+`focused-final-frozen/pytest/test_http_client_old_uuid_two_0/media/old.parts`
+(copy) and `_1/media/old.parts` (libx264): both return 0/passed, no findings or
+stderr. Ten original files per session and all 492 source/test hashes remain
+unchanged (`media-validation/verification.json`). No natural/deployed recording
+was authorized or accessed; that acceptance remains outstanding.
+
+`process-retirement.json` records zero remaining task-tagged Python/ffmpeg/ffprobe
+processes after serial tests and validation. This command-line census alone
+does not identify anonymous inherited-pipe children; passing exact native
+disposable Job guards separately require zero members and confirmed child exit.
+New loopback tests assert native accepted/client/listener retirement, actual
+worker/accept-loop joins and original SQLite close thread IDs. Fixture fault
+repair and separately supervised cleanup are not product safe-exit guarantees;
+unconfirmed owners explicitly report incomplete shutdown until actual retry
+retirement is proved. No prior independent runtime review is selected again.
+
+The related selection contains these 24 modules (each `tests/test_NAME.py`):
+
+```text
+service service_job service_configuration service_reload
+monitoring monitoring_reload monitoring_reload_capacity admission storage_status
+automation automation_capacity automation_recovery automation_state
+service_runtime service_runtime_automation service_runtime_capacity
+service_runtime_connections service_runtime_faults service_runtime_threads
+service_runtime_shutdown service_runtime_recovery service_runtime_restart
+service_runtime_h_readiness service_runtime_finalizer_retirement
+```
+
+Every serial selection executes `-m pytest <modules> -vv -p no:cacheprovider
+--capture=tee-sys --basetemp <selection>/pytest`. Exact selections, provenance,
+environment, hashes, full failures/output and results are retained under their
+labelled evidence directories. Existing client/CLI regressions run in the focused
+selection; unchanged recording modules and the three historical independent
+acceptance-review modules are not mechanically repeated.
+
+## Historical initial HTTP delivery verification
 
 Native interpreter: `C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe`; base uv CPython 3.11.15 (Windows AMD64), SQLite 3.53.1. Every run verifies the exact isolated cwd/Git root, branch/origin/common Git directory, accepted parent `b9189ae0` and actual `tikrec.__file__` import. Existing ffmpeg/ffprobe are used; no dependency/runtime installation or upgrade. Final runs strip `TIKREC_TOKEN` and use explicit disposable APPDATA/LOCALAPPDATA/XDG configuration/state/TMP/TEMP roots.
 

@@ -15,6 +15,10 @@ accepts that bounded implemented-contract **PASS** and selects the single
 [isolated HTTP/client successor](ISSUE_52_HTTP_CLIENT.md). The review below remains
 historical evidence, not a repeated acceptance task. Default/public activation and
 the deferred deployment/release gates remain outstanding.
+[PM correction decision 6057613070](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6057613070)
+retains that successor's direction but withholds acceptance of `31650357` pending
+R16–R17 HTTP request ownership corrections. Accepted runtime R1–R15 and this
+bounded review remain accepted and are not repeated. [Correction evidence](ISSUE_52_HTTP_CLIENT.md).
 #52 stays OPEN/SINGLE ACTIVE; #48 OPEN/PAUSED; #28 unresolved; owner decisions None.
 Review MODEL GATE / PROCEED: Complex; GPT-6.1 Sol — High (2026-10-08).
 

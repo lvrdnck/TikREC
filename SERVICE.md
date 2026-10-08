@@ -10,6 +10,9 @@ automation and monitor with matching isolated caller-owned state. It binds the
 listener before starting work and constructs no parallel legacy controller,
 startup reconciler, job store or implicit catalog. Normal `serve`/configuration
 continues to construct the legacy backend; there is no activation switch.
+The [R16–R17 PM review](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6057613070)
+retains this direction but withholds acceptance of `31650357` pending the bounded
+request-ownership correction; accepted R1–R15 and `b9189ae0` remain accepted.
 `IsolatedServiceRuntime` explicitly takes an identified existing schema-10 catalog,
 local media root and absolute media tools. Construction owns the catalog before
 reconciliation; `start_runtime()` starts one tracked non-daemon FIFO worker.
@@ -55,11 +58,23 @@ compatibility does not preserve those old lifecycle assumptions.
 Transport uses allowlisted projections and a 65,536-byte response ceiling.
 Existing bearer/bind/origin/body protections remain. No stderr, exception text,
 signed URLs, SQLite/internal capabilities or arbitrary controls serialize.
-At most 16 non-daemon request owners are tracked. Request/disconnect and supplied
-monitor SQLite cleanup stays on each original thread; failed cleanup and lost
-startup acknowledgement retain reachable owners for explicit shutdown retry.
-Known prestart failure likewise retains an unclosed socket and the original
-startup error if socket cleanup fails; no SQLite work ran on that request.
+Each native accepted socket is registered before verification/start/refusal.
+The isolated accept loop delegates cleanup only to that exact owner, so lost
+startup acknowledgement cannot trigger generic foreign-thread socket closure.
+At most 16 non-daemon worker owners plus one accepted/refusal socket reserve are
+tracked (17 total). A failed refusal/prestart close holds the reserve and pauses
+further native acceptance, leaving later connections in the finite OS backlog;
+clients may wait/time out. A ready paused listener waits up to 50 ms per loop or
+an ownership-change signal. No automatic close retry or client retry is added.
+Explicit `requests.join(..., closing=True)` or `shutdown_components()` retries
+socket-only owners; worker/monitor SQLite and socket cleanup stays on the original
+thread. Failed closes remain reachable and shutdown incomplete until exact close
+and, for workers, original-thread cleanup and native join are confirmed. Primary
+startup errors remain exact; secondary diagnostics stay bounded and private.
+In-flight accepted sockets also hold the shutdown barrier. Integrated shutdown
+fences further native acceptance before inspecting it. Trusted direct
+`process_request` callers retain their connection if the reserve is unavailable
+(explicit local RuntimeError); they cannot bypass the ownership bound.
 Shutdown requests original UUID capture stops before waiting on unresolved HTTP
 owners. Inspect `shutdown_components()`/`shutdown_result`: listener close and independent
 fixture repair cannot prove safe product exit. Startup failures preserve their

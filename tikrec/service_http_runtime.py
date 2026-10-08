@@ -127,14 +127,28 @@ class IsolatedRecordingHTTPServer(ThreadingHTTPServer):
         """Bound tracked request concurrency and preserve ambiguous thread startup."""
         self.requests.start(request, client_address)
 
+    def get_request(self):
+        """Transfer a real accepted socket into the bounded registry immediately."""
+        return self.requests.accept(super().get_request)
+
+    def _handle_request_noblock(self):
+        # BaseServer's fallback closes sockets after process_request raises, even
+        # when native Thread.start succeeded. The isolated owner alone may close.
+        if not self.requests.wait_capacity():
+            return
+        try:
+            request, address = self.get_request()
+        except OSError:
+            return
+        self.requests.handle_accepted(request, address)
+
     def handle_error(self, request, client_address):
         """Never print arbitrary backend exception text to HTTP-server stderr."""
 
     def shutdown_components(self):
         """Fence callbacks, retire request borrowers, then ask the sole runtime to close."""
         runtime = self.runtime
-        with self.requests.lock:
-            self.requests.closed = True
+        self.requests.stop_accepting()
         with runtime.lock:
             runtime.closed = True
             runtime.stopping.set()
