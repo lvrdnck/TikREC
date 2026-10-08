@@ -7,11 +7,13 @@ for [ROADMAP.md](ROADMAP.md), [SPEC.md](SPEC.md), [SERVICE.md](SERVICE.md),
 
 ## Coordination
 
-**Storage-focused v0.11.0 release preparation is the SOLE ACTIVE task (2026-10-08).** [PM decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202) supersedes historical feature sequencing. Exact base `ebf501c4153d104921ff63e69f4cfe0f262d713e`; branch `codex/v0.11-storage-release`; isolated worktree `C:\Users\Leandro\.codex\worktrees\v0.11-storage-release\TikREC`. Candidate package 0.11.0; current published/tagged release v0.10.0. Only version, version assertions and scoped documentation change from this base; all accepted supporting behavior is retained.
+**v0.11.0 storage-focused publication COMPLETE / VERIFIED (2026-10-08).** [Owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758) was executed after PM acceptance 6059047079; no repeat permission/review cycle. Current released version is **v0.11.0**, published at **2026-10-08T11:50:27Z**. [TikREC v0.11.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0) is non-draft/non-prerelease, Release ID `406770680` / node `RE_kwDOUTgsvs4YPtP4`.
 
-#52 and #48 are OPEN / explicitly PAUSED. #52 evidence `e17d0522` and B1/B2/B3 remain separate, neither repeated nor waived. #30/#48/#52 source is absent from this historical release branch. The newer installed development checkout/configuration/state/services/media remain untouched; no downgrade/replacement/migration is proposed. #51 stays CLOSED/PASSED, and its consumed one-deletion authorization permits no new user-media deletion. Only generated disposable fixtures are used.
+Immutable annotated tag object **`ef8c5215712d454855a033700116bdc8fc0906a3`** peels to the exact approved **`2fe6354aa508d53ce3a3452ce08743d97400fe73`**, not a bookkeeping commit or main/development tip. [Wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl), asset ID `621682513`, is **207,542 bytes**, SHA-256 **`7cf87363cde6ce9817b79c4c7eb86fe37a3e77bcf564cde91019aadec7e902ca`**. Existing wheel checked before writes against 105 module bytes, metadata/entrypoint/RECORD and 223 frozen files. Draft and published downloads match the approved bytes. No rebuild/substitution or conflicting object overwrite occurred. [Publication execution/evidence](V0_11_RELEASE_PUBLICATION.md).
 
-Complex / GPT-6.1 Sol — High MODEL GATE and owner PROCEED recorded; owner implementation decisions None. This is a continuation with retained history, not a fresh-context #52 acceptance review. [Release scope/compatibility](RELEASE_NOTES_v0.11.0.md); [actual verification and artifacts](V0_11_RELEASE_CANDIDATE.md). **READY FOR PM PUBLICATION REVIEW: 1,731 Windows passes / 7 skips / 19 subtests, 2 focused passes, compile/diff and 30 CLI help paths, local wheel and installed-wheel smoke passed; all 223 hashes frozen. PM review of the exact pushed candidate is the sole next action.** No merge/tag/GitHub Release/registry publication or feature successor is authorized. The historical 12 October planning date is not a commitment.
+Accepted evidence reused, not rerun: 1,731 Windows passes / 7 skips / 19 subtests, two focused version checks, compile/diff/30 help paths and installed-wheel smoke; unchanged #51 independent/public and native real-media PASS. #51 stays CLOSED/PASSED; its deletion authorization remains consumed. #52/#48 stay OPEN/explicitly PAUSED, #28 unresolved; B1/B2/B3 neither implemented, repeated nor waived. **No implementation task is active and no automatic successor is selected.** PM decides any future resume separately.
+
+The released package is the historical storage scope from `ebf501c4`, excluding later #30/#48/#52 source; automatic admission-only space checks and exact-confirmation Windows retention with disabled-unset age remain. The newer development installation/configuration/state/services/media and Gracie-only policy were not accessed or changed. Its package version is not changed to match the release. No main merge, executable-source change, package install, service/recorder restart, LIVE, user-media deletion, migration, upgrade, PyPI upload or #52 activation occurred. Both branch bookkeeping commits are documentation-only and recorded in #52; tag stays fixed. Refs #52. **Next: stop; no automatic successor.**
 
 ### Historical coordination checkpoints (superseded)
 
@@ -1915,21 +1917,12 @@ new work; calendar entries are reminders only.
 
 ## Released version and development target
 
-- **Candidate package version:** v0.11.0, from `tikrec.__version__` and packaging metadata; unpublished. The existing published package remains v0.10.0.
-- **Tagged version:** immutable annotated `v0.10.0`, tag object
-  `014fa0b785f77c6b42ffe73a86ba28b00126a4ff`, peeled release commit
-  `dfb81b683a89d01f55d70291fb5cdcfead654976`.
-- **GitHub Release:** published non-draft, non-prerelease
-  [TikREC v0.10.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.10.0)
-  (ID `RE_kwDOUTgsvs4XiIOd`) on 2026-09-23.
-- **Current released version:** v0.10.0; release-commit package metadata,
-  immutable annotated tag, and GitHub Release are synchronized. Historical
-  releases, including v0.9.0, remain published from their existing tags.
-- **Development target:** v0.11.0 smart storage, retention, and disk protection
-  remains unreleased development. Public retention CLI review and
-  Windows real-media validation are PASSED; #51 is completed. Normal release
-  readiness/bookkeeping remains outstanding; no v0.11.0 tag or GitHub Release
-  is created by this task. Conditional v0.6.5 redundant capture is not selected.
+- **Package version:** v0.11.0, unchanged from the reviewed release candidate; newer installed environments were not modified/inspected.
+- **Tagged version:** immutable annotated `v0.11.0`, object `ef8c5215712d454855a033700116bdc8fc0906a3`, peeled commit `2fe6354aa508d53ce3a3452ce08743d97400fe73`.
+- **GitHub Release:** [TikREC v0.11.0](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), ID `406770680` / node `RE_kwDOUTgsvs4YPtP4`, published 2026-10-08T11:50:27Z, non-draft/non-prerelease.
+- **Verified wheel:** [download](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl), asset `621682513`, 207,542 bytes, SHA-256 `7cf87363cde6ce9817b79c4c7eb86fe37a3e77bcf564cde91019aadec7e902ca`; original/draft/published downloads match.
+- **Current released version:** v0.11.0; published package/tag/Release are synchronized at the approved historical storage commit. v0.10.0 remains an unchanged historical release: tag object `014fa0b785f77c6b42ffe73a86ba28b00126a4ff`, peeled `dfb81b683a89d01f55d70291fb5cdcfead654976`.
+- **Development:** later #30/#48/#52 behavior is outside v0.11.0. #52/#48 paused; B1/B2/B3 not waived; no successor selected. #51 closed/passed with consumed deletion authorization. Bookkeeping changes documentation only, never the tag target.
 
 ## Issue #13 rendition investigation
 

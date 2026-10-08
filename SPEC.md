@@ -15,8 +15,8 @@ completion and scope proof; the size-only `Unsorted` API discrepancy establishes
 no content mutation or retention involvement. No production defect is demonstrated.
 Age is restored to its original unset state and the one-deletion authorization
 is consumed. All evidence exclusions remain; #51 authorizes no further destructive
-validation, retry, repair or second deletion. v0.10.0 remains the current released
-version; v0.11.0 is unreleased pending normal release readiness/bookkeeping.
+validation, retry, repair or second deletion. v0.11.0 is the current released
+storage version, published at the separately reviewed historical candidate.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
 
 Record public TikTok LIVE streams to disk reliably and completely. Local commands
@@ -24,11 +24,11 @@ remain one recording per invocation; the persistent service has a fixed two-job
 bound for explicit or opt-in monitored creators. Each stops independently when
 its stream ends or when the owner targets it.
 
-## v0.11.0 storage release candidate
+## v0.11.0 published storage scope
 
-This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
 
 ## Scope
 
@@ -660,8 +660,8 @@ legacy v0.9 state needs no migration. Each controller loads and reconciles only
 its store. A malformed store blocks only that slot and remains untouched; two
 interrupted stores claiming the same path fail the second closed before recovery.
 No state-path CLI option is added. Only the latest job per slot is stored, with
-one owning service process/account. The candidate package is v0.11.0; the current released version
-remains v0.10.0.
+one owning service process/account. The package and current released storage version
+are v0.11.0; later development behavior remains excluded.
 
 ### Patient outage policy and transport classification
 
@@ -976,7 +976,7 @@ boundary waits until that step finishes. Once it applies, every later removal
 must recheck the updated policy. Direct external edits do not participate in this
 cooperative protocol.
 
-In unreleased v0.11 development, `retention protect/unprotect/protected` manages
+In published v0.11.0 storage scope, `retention protect/unprotect/protected` manages
 the independent ordered protection list. `retention plan [ROOT] [--json]` inspects
 only immediate `.parts` children of an explicit or configured output directory.
 It is read-only and uses durable `ended_at`, never file mtime, for the optional
@@ -987,10 +987,10 @@ unprotected creator can be `eligible`. Unknown, changing, extra, symlinked,
 recoverable, and conflicting evidence is not eligible. The local Windows-only
 `retention delete SESSION_UUID [ROOT] [--confirm SESSION_UUID]` workflow and
 expanded advisory plan are specified in [RETENTION_CLI.md](RETENTION_CLI.md).
-They are implemented in unreleased v0.11 development; no automatic cleanup
+They are included in published v0.11.0; no automatic cleanup
 exists. Viewing a plan cannot authorize deletion.
 
-The unreleased internal executor accepts one explicit root and canonical session
+The internal retention executor accepts one explicit root and canonical session
 UUID, never a saved planner result. Under the owner-approved issue #37 platform
 scope, destructive execution is Windows-only. POSIX refuses before creating a
 lifecycle lock or audit, or changing any recording artifact; advisory planning
@@ -1072,8 +1072,8 @@ without repair or automatic resume. Malformed or contradictory history blocks
 deletion. The journal excludes transport secrets and signed URLs. Issue #35
 corrected the plan-to-authorization and audit-history gaps found at `3ff83bc`.
 A fresh independent review of `ef8d01b` passed the Windows-only private
-executor gate under this cooperative-filesystem boundary. The unreleased local
-CLI now exposes one explicit Windows-only session deletion through the private
+executor gate under this cooperative-filesystem boundary. The published local
+CLI exposes one explicit Windows-only session deletion through the private
 executor; [RETENTION_CLI.md](RETENTION_CLI.md) specifies its confirmation,
 status, audit, and exit contract.
 Root-level persistent lifecycle locks use
@@ -1082,7 +1082,7 @@ releases a held lock. All TikREC mutators of a recording root take writer leases
 while the retention executor takes the exclusive lease. The protocol excludes
 TikREC's own writers,
 not an arbitrary hostile process deliberately defeating filesystem metadata
-guarantees. The executor and its local CLI caller remain unreleased.
+guarantees. The executor and its local CLI caller are included in published v0.11.0.
 An `attempt` without `deleted` can mean no rename, a preserved quarantine, or
 actual removal before the result could be journaled. Process death before
 setting disposition leaves the quarantine; death after setting it closes the
@@ -1104,7 +1104,7 @@ races. Issue #37 supplies the Windows handle protocol and policy synchronization
 with owner-approved POSIX refusal. The fresh independent `ef8d01b` review
 passed the private executor gate on native NTFS and WSL POSIX refusal/history;
 owner-facing retention execution is now implemented locally on Windows in
-unreleased v0.11 development; its contract is in
+published v0.11.0 storage scope; its contract is in
 [RETENTION_CLI.md](RETENTION_CLI.md).
 The fresh independent public CLI review at `f99528f` found a terminal-output
 result-reporting blocker (#40): an output exception or interruption after the

@@ -4,6 +4,10 @@
 
 Authority: [complete PM decision 6058707202](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Storage preparation is the sole active task; #52/#48 remain OPEN/PAUSED. Complex / GPT-6.1 Sol — High gate and owner PROCEED recorded; owner implementation decisions None. This continuation retains history and is not a new independent #52 acceptance conversation; B3 remains outstanding and no #52 review is repeated.
 
+## Publication checkpoint
+
+Published/verified at the original candidate under owner authorization 6059131758; [publication execution](V0_11_RELEASE_PUBLICATION.md). The preparation report and its reported test results below remain historical and unchanged. Tag stays at `2fe6354aa508d53ce3a3452ce08743d97400fe73`.
+
 ## Scope and provenance
 
 Verified new worktree `C:\Users\Leandro\.codex\worktrees\v0.11-storage-release\TikREC`, branch above, origin `https://github.com/lvrdnck/TikREC.git`, common Git directory `C:\Users\Leandro\dev\TikREC\.git`. Branch/path collisions were absent before creation. Initial non-destructive upstream pull in the audited #52 worktree was already current; the deliberate historical release branch was then created at the exact base, not pulled from main. Primary checkout's existing untracked test directories were preserved; no source/configuration/environment/service/media from the newer installation was used.

@@ -13,8 +13,8 @@ unrelated owner-initiated Drive workflow. Age is restored to unset and the
 one-deletion authorization is consumed; #51 authorizes no further destructive
 validation, retry, repair or second deletion.
 See [ISSUE_51_RETENTION_VALIDATION.md](ISSUE_51_RETENTION_VALIDATION.md).
-v0.10.0 remains the current released version; v0.11.0 remains unreleased until
-normal release readiness/bookkeeping is completed.
+v0.11.0 is now the current released storage version; publication was verified
+without changing the newer running development installation.
 
 Point it at a LIVE page, it records until the stream ends or you stop it,
 reconnecting if the connection drops. Each recording produces one MP4.
@@ -30,15 +30,15 @@ A library, playback, automatic cleanup, notifications, and web workflows remain 
 work. Historical Moe media attribution remains non-blocking [#28](https://github.com/lvrdnck/TikREC/issues/28);
 the [forensic report](ISSUE_27_FORENSICS.md) preserves the evidence.
 
-This candidate package is v0.11.0; the immutable annotated tag, published
-GitHub Release and current released version remain v0.10.0.
+Package version, immutable annotated tag, published GitHub Release and
+current released version are v0.11.0 for this defined storage feature set.
 See [PROJECT_STATE.md](PROJECT_STATE.md) for the authoritative release state.
 
-## v0.11.0 storage release candidate
+## v0.11.0 published storage scope
 
-This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
 
 ## Usage
 
@@ -532,7 +532,7 @@ finalization, and result. Creator automation can fill both slots while retaining
 the configurable per-start reserve (10 GiB by default), room binding, collision-safe naming, and durable
 same-room suppression. It does not authenticate to TikTok, notify the owner,
 automatically delete media, or provide a library/Web UI/playback. The v0.11.0
-release candidate adds a read-only age-retention plan, explicit creator
+release adds a read-only age-retention plan, explicit creator
 protection, and a local Windows-only command to delete one eligible session
 with exact-UUID confirmation. The service has no deletion endpoint. Issue #37's
 correction uses verified Windows handles for removal and serializes policy
@@ -541,7 +541,7 @@ step. POSIX destructive execution refuses before changing the recording root;
 read-only planning remains available. The fresh independent review of
 `ef8d01b` passed the Windows-only private safety gate under the documented
 cooperative-filesystem scope. The owner-facing CLI contract is in
-[RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **v0.11.0 candidate behavior, not yet published**. Issue #39 corrected a post-sync audit intent
+[RETENTION_CLI.md](RETENTION_CLI.md). The CLI deletion command is **published v0.11.0 storage behavior**. Issue #39 corrected a post-sync audit intent
 result-reporting defect. Issue #40 corrected a later success-output failure
 that falsely reported completed deletion as `PARTIAL`. A fresh-context public
 review at `653f5fe` found a remaining intent-sync interruption window
@@ -585,7 +585,8 @@ Gracie Drive move. Earlier NOT READY statements describe historical checkpoints.
 The single authorization is consumed and age is restored to unset; no further
 destructive validation is authorized by #51. Automatic cleanup remains unavailable.
 
-**Release state and future product:** v0.10.0 is the current published release.
+**Release state and future product:** v0.11.0 is the current published storage release;
+v0.10.0 remains the preceding reviewed two-slot release.
 Its reviewed release commit passed real simultaneous deployed validation,
 offline verification, and package build/install checks.
 Library/history/playback, a web interface, notifications, and automatic

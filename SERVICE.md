@@ -11,15 +11,15 @@ Two bounded workers record independently of HTTP clients and of each other.
 Launch the service independently of SSH so disconnecting the remote shell does
 not end capture.
 
-This document describes the v0.11.0 storage candidate, retaining the v0.10.0
+This document describes the published v0.11.0 storage service, retaining the v0.10.0
 service/API behavior and adding storage status and cooperative writer leases.
 Per-user recovery-window, monitored-creator, and output-directory configuration are
 selected at startup; guided recovery remains a local CLI addition. The service
 can own and automatically fill a fixed capacity of two independent recordings.
 Library, download, HTTP retention execution, notification and browser-control
-capabilities remain outside the service; the local retention CLI is separate. v0.10.0 is the current published release.
+capabilities remain outside the service; the local retention CLI is separate. v0.11.0 is the current published storage release.
 
-In this v0.11.0 candidate, each service capture/finalization worker and
+In published v0.11.0, each service capture/finalization worker and
 startup reconciliation/resume holds a root-scoped writer lease while it may
 mutate session or output artifacts. Two service slots can hold compatible writer
 leases in one output root. The local Windows retention CLI's executor requires
@@ -28,11 +28,11 @@ exposes no retention deletion or policy API.
 The persistent root lock file is never a retention target. Durable completed
 job references still block that executor even after their writer lease ends.
 
-## v0.11.0 storage release candidate
+## v0.11.0 published storage scope
 
-This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
 
 ## Bind and secret
 

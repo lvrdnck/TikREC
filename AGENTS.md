@@ -1,11 +1,10 @@
 # TikREC
 
-## v0.11.0 storage release candidate
+## v0.11.0 published storage scope
 
-This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
-
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
 
 ## Roles and decision boundaries
 
@@ -223,8 +222,9 @@ Nothing belongs at the repository root except configuration and documentation.
 ## Project constraints
 
 - The direct local CLI records one manually selected public TikTok LIVE per run.
-  The released v0.10.0 service can own two independent recordings; v0.10.0 is
-  the current released version.
+  The released v0.11.0 storage service retains two independent recordings;
+  v0.11.0 is the current released storage version. Later development features
+  remain outside that release.
   Treat deferred product capabilities separately from permanent security/privacy
   boundaries; see SPEC.md and ROADMAP.md for authoritative scope and sequencing.
 - Python 3.11+. Use the standard library for FLV handling; ffmpeg and ffprobe

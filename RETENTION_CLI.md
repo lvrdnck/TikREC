@@ -1,4 +1,4 @@
-# Owner-facing retention CLI (v0.11.0 release candidate)
+# Owner-facing retention CLI (published v0.11.0)
 
 Windows is the sole active and planned runtime. The owner's 2026-10-01 decision
 supersedes #53/#54; their unreleased Fedora/Linux additions are removed and no
@@ -9,8 +9,8 @@ original unset state and the one-deletion authorization is consumed; #51
 authorizes no further destructive validation, retry, repair or second deletion. All
 Gracie, forensic, diagnostic, raw-copy, protected, ambiguous, active/recoverable
 and durable-job-linked sessions remain excluded. The platform rollback performed no #51
-deletion. v0.10.0 remains the current released version; v0.11.0 is unreleased
-pending normal release readiness/bookkeeping. Earlier dated evidence below
+deletion. v0.11.0 is the current released storage version; publication is
+verified without repeating the consumed destructive validation. Earlier dated evidence below
 describes historical validation attempts, not current authorization.
 
 **Status: IMPLEMENTED IN DEVELOPMENT — PUBLIC CLI GATE PASSED; REAL-MEDIA
@@ -155,16 +155,15 @@ isolated full offline, and applicable WSL/POSIX suites passed. The public CLI
 gate is PASSED; that review preceded the owner authorization now recorded in
 issue #51. No real-media retention deletion occurred in that review; the later
 #51 attempt, reconciliation and final project-manager PASS are recorded above.
-The local CLI workflow below exists in the development checkout; it is
-not in the current
-v0.10.0 release. v0.11.0 is unreleased. This contract is for a local, explicit
+The local CLI workflow below is included in the published v0.11.0 storage
+release. This contract is for a local, explicit
 Windows workflow under the cooperative-filesystem boundary in [SPEC.md](SPEC.md).
 
-## v0.11.0 storage release candidate
+## v0.11.0 published storage scope
 
-This isolated branch packages the exact `ebf501c4` storage feature set as **0.11.0** under the [PM release-preparation decision](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058707202). Published/tagged v0.10.0 remains the current released version; no v0.11 tag or publication has occurred. Read [scoped release notes](RELEASE_NOTES_v0.11.0.md) and [candidate verification](V0_11_RELEASE_CANDIDATE.md).
+Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-Later #30 hot reload, #48 automatic raw-copy and all #52 source are excluded. The owner's newer development installation is separate and unchanged: do not replace it or use its newer configuration/state with this package. Windows retention remains one explicit eligible UUID with confirmation; age unset means disabled. Historical next-task/review statements below are evidence, superseded by this release decision. #52/#48 are paused; storage release preparation is the sole active task.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52/#48 remain OPEN/PAUSED; #51 CLOSED/PASSED, #28 unresolved. No default activation, migration, production restart or automatic successor follows publication.
 
 ## Commands and scope
 
