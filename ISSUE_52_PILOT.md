@@ -1,6 +1,6 @@
 # Issue #52 — foreground pilot B1/B2
 
-[PM contract 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487). **B1/B2 PASS — complete for PM review.** Experimental/default OFF, separate from published storage-only v0.11.0. B3 fresh-context acceptance and separately authorized natural-LIVE pilot remain outstanding. No production installation/configuration/media/credentials were accessed.
+[PM B1/B2 contract 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487). **R18–R19 PASS — complete for PM correction review** under [6060507133](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6060507133). B1/B2 direction retained; `2aa72096` is historical evidence, not the accepted pilot candidate. Experimental/default OFF, separate from published storage-only v0.11.0. Whole-candidate B3 fresh-context acceptance and separately authorized natural-LIVE pilot remain outstanding. No production installation/configuration/media/credentials were accessed.
 
 ## Operator command
 
@@ -12,8 +12,8 @@ $python = 'C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\pytho
 $tools = 'C:\Users\Leandro\AppData\Local\Microsoft\WinGet\Packages\yt-dlp.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-N-124716-g054dffd133-win64-gpl\bin'
 $home = 'C:\Users\Leandro\TikREC-tests\owner-pilot-01'
 $catalog = [guid]::NewGuid().ToString() # Save; reopen requires the same UUID.
-$revision = '<exact reviewed candidate commit from issue #52>'
-$sourceHash = 'fb71c4e1d41a32de50a88999c2b8ffec5c8480451b943a8c4660947879dca351'
+$revision = '<exact corrected candidate commit from the R18–R19 delivery in issue #52>'
+$sourceHash = 'ae5ade3d0390d7f0e1b5e20c856ec5257fda50f2d4847e829b39c24f52e1dfd7'
 Set-Location -LiteralPath $checkout
 & $python -m tikrec.pilot --checkout $checkout --revision $revision --source-sha256 $sourceHash --home $home --catalog-id $catalog --mode init --ffmpeg "$tools\ffmpeg.exe" --ffprobe "$tools\ffprobe.exe" --port 18765
 ```
@@ -58,7 +58,8 @@ Known reopen uses SAME home/catalog/fingerprint and reviewed source/tool identit
 | Limit | Implementation |
 | --- | --- |
 | Capacity | Accepted schema 10, two captures/one FIFO finalizer/eight outstanding units. Additionally eight lifetime session intents per catalog, including completed history; slot reuse/reopen never resets allowance. |
-| Per capture | 120 seconds at cooperative source checks, four connections, 64 MiB total original ingress, 16,384 chunks, 4,000 tags; chunk <=64 KiB, tag <=1 MiB, codec header <=4 KiB, AVC first-SPS declared dimensions <=1920x1080. Stop original bridge before further raw writes. |
+| Per capture | 120 seconds at cooperative source checks, four connections, 64 MiB total original ingress, 16,384 chunks, 4,000 tags; chunk <=64 KiB, tag <=1 MiB, codec header <=4 KiB, AVC first-SPS positive dimensions: long edge <=1920 / short edge <=1080 in either orientation. Stop original bridge before further raw writes. |
+| Room-end/retry policy | Inherit `capture_live`: three offline checks, 5-second confirmation spacing, 1-second base failure backoff. No product pilot overrides; fixture acceleration is test-only. Finite ingress/connection/time limits remain interrupted outcomes. |
 | Whole active run | 900 seconds under foreground supervision, manual starts only, isolated empty automation/monitor set, no retention. |
 | Free-space headroom | >=16 GiB launch/every admission, shared local catalog/media volume. Unknown refuses. Once/second observe actual media/state/free; <=8 GiB free, >=6 GiB media, >=512 MiB state or uncertain runtime triggers early original-session stop. |
 | Candidate writer | Pilot-only `-fs 268435456` included before original launch hash. Mux threshold, **not exact quota**. Within 16 MiB of threshold or larger refuses BEFORE validation/publication. Sealed unpublished bytes allow original local cleanup; outstanding unit stays held. Legacy default has no limit option. |
@@ -72,7 +73,7 @@ These allowances assume checked trusted binaries, bounded AVC/AAC input consiste
 
 Rollback means confirmed stop and preservation of the whole isolated home: schema-10 catalog, marker/automation/control, raw/arrivals/parts/manifests/scratch/output and original hashes. Leave legacy roots/services untouched. Never point older code at it, downgrade/migrate/reset/delete it, or broaden recovery. Known reopen only in supported states; otherwise retain evidence and stop for PM.
 
-## Implementation and evidence
+## Historical B1/B2 implementation and evidence at `2aa72096`
 
 Dedicated `python -m tikrec.pilot` composes the existing passive runtime/admission/HTTP once. Native state pins and attached startup owners remain reachable with exact Windows close guards; original error type wins. Ordinary serve/configuration remain legacy. Pilot-only ingress/writer limits do not add a scheduler or change media algorithms. Byte-limit refusal records sealed **unvalidated/unpublished** bytes, skips every validator/publication, closes original local owners, and retains unfinished accounting; default wrappers retain their original failure behavior.
 
@@ -127,7 +128,78 @@ no substitute scheduler/constructor-only orchestration. Evidence roots/logs and
 all generated originals are preserved, including development failures.
 
 Delivery uses Refs #52 and a normal push; exact candidate commit is recorded in
-#52's delivery comment. **Next: PM fresh-context B3 acceptance for this exact
-candidate/operating scope; then seek separate natural-LIVE pilot authorization.**
+#52's delivery comment. **Next: PM correction review, then separate fresh-context B3 acceptance for the
+exact whole candidate/operating scope; then seek natural-LIVE pilot authorization.**
 No automatic successor or production action. #48 stays paused; #51 closed/passed;
 #28 unresolved; storage-only v0.11 publication remains finished and separate.
+
+## R18–R19 correction evidence — 2026-10-08
+
+Corrected source/test commit **`928a6e5655dfcac9ee7d6f19cb60fd47dfcbdbfb`** on `codex/capture-journal-handoff`;
+final documentation candidate is the exact commit in #52's R18–R19 delivery.
+The command above requires that final candidate's exact HEAD and corrected
+normalized package fingerprint **`ae5ade3d0390d7f0e1b5e20c856ec5257fda50f2d4847e829b39c24f52e1dfd7`**. Do not use the old fingerprint,
+mutate an old marker/home, reset a catalog or migrate old evidence to reopen it.
+Existing pilot homes and earlier evidence remain preserved. Only `pilot_limits.py`
+product source changes; schema/journal/runtime/ownership/default serve stay intact.
+
+R18 real AVC/AAC parser controls: 640x1280, 720x1280, 1080x1920 boundary,
+1920x1080, 1280x720 and 64x64 pass with original tags/raw intact. Actual 1922x1080,
+1082x1920, 2560x1440 and 1280x1280 refuse before configuration yield; truncated
+AVC/no-SPS records refuse. Three additional explicit parser-fact doubles check
+nonpositive dimensions; required real generated-media cases retain the real parser
+and dimension extraction. No resize/rotate/rendition selection or resource increase.
+
+Actual authenticated loopback command: 640x1280 portrait copy and
+1280x720 ->720x1280 differing configuration use the existing copy/libx264 plans.
+Old finalization is held while both new captures advance; original UUID status,
+old-UUID no-op stop, targeted stop, singular ambiguity, original raw/source/control/H
+and FIFO completion assertions pass. All six original sessions pass normal deep
+validation. The fixture originals and protected pre-finalization controls/H remain
+unchanged, including preserved predecessor manifest identity.
+
+R19 normal composition with no fixture injection omits all three policy options
+and inherits **3 / 5.0 / 1.0**. Actual command observes live -> lone offline ->
+transient -> same-room live -> three confirmed offline results. At the original
+first confirmation barrier, capture stays active and output incomplete. Recorded
+wait requests are **[0, 5, 1, 0, 5, 5] seconds**; room-status confirmation flags
+are **[false, false, false, true]**. Only the test helper's cancellable waiter
+accelerates time; no product policy values are shortened. Two original raw source
+connections and the final output pass ordinary deep validation.
+
+| Frozen run | Actual result |
+| --- | --- |
+| Unchanged `2aa72096` baseline | **10 failed / 9 passed**, 165.46 s pytest; 166.06 s harness. All 209 package files match the original Git source, blob `fa4fe7b0618a23f9719b6e2f0ffb2a1031313968` for pilot limits. |
+| correction-focused | **51 passed / no skips**, 230.00 s pytest; 230.59 s harness. Real geometry/policy plus pilot limits/command/restart/identity. |
+| correction-related | **124 passed / no skips**, 253.90 s pytest; 254.47 s harness. Exact eleven modules/argv in provenance: LIVE/control/recovery, confirmation/bound identity, capture/H media, HTTP actual accept/UUID, runtime shutdown and SQLite connections. |
+
+Baseline failures reproduce all three portrait refusals, nonpositive dimensions,
+normal policy overrides, missed portrait copy/configuration-change completion and
+premature finalization after one offline observation. The rejected initial portrait
+baseline also reports **incomplete shutdown after explicit cleanup retry**; its
+ambiguous pre-configuration ownership remains retained. Two identified disposable
+Python fixture processes (wrapper/interpreter for that one command) were forcibly
+terminated and recorded in `baseline/forced-disposable-cleanup.json`. That is NOT
+confirmed owner retirement or an operator workaround. Baseline homes/logs remain.
+No accepted ownership/runtime design is altered to hide this failure; unsupported
+or uncertain state still requires preserve-state supervision/PM handling.
+
+Corrected focused command logs: 22 launches, 19 final `complete:true` shutdown
+receipts (including exact native/SQLite repair and explicit retry), three refusals
+before constructing owners. **15 generated original-session deep validations**:
+eight original pilot cases plus six geometry overlap sessions and one policy case.
+Original hashes are retained in each validation JSON and plan record. No forced
+fixture termination in either corrected final run; zero remaining task processes
+is recorded separately after both runs. No production/user-media/LIVE access.
+
+Evidence root **`C:\Users\Leandro\TikREC-tests\issue52-pilot-r18-r19-20261008`**:
+`baseline-source-proof.json`, all three run directories with exact argv/interpreter/
+cwd/Git/import provenance and frozen raw manifests, `focused-retirement-validation.json`,
+`static-checks.json` and final retirement/candidate proof. Same **511** source/test/
+script/pyproject raw hashes before/after both corrected runs; manifest SHA-256
+**`bf96f478021bf38474c1af8610f327aa70ede161e6e406bc291a3660160092ba`**.
+510 Python files compile; changed source/helper maximum 188 lines. Pilot help,
+ordinary CLI version (unchanged development metadata 0.10.0) and diff checks pass.
+Native interpreter/tools are those documented above; disposable environment roots
+and no inherited token/configuration are retained. No full historical suite/review
+was repeated. Refs #52. **Stop for PM correction review; B3 remains separate.**

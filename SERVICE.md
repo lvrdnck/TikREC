@@ -4,7 +4,7 @@
 
 Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 B1/B2 development is resumed under [6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487); #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 and separate natural-LIVE authorization remain outstanding. No default activation, migration, production restart or automatic successor follows publication.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 pilot corrections are delivered for PM review under [6060507133](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6060507133); #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 and separate natural-LIVE authorization remain outstanding. No default activation, migration, production restart or automatic successor follows publication.
 
 
 ## Opt-in foreground Windows pilot
@@ -16,6 +16,10 @@ constructs one existing passive runtime/admission/HTTP composition with empty
 isolated automation; ordinary `serve` and configuration stay legacy. No retention
 or production roots. [Exact commands, finite limits and evidence](ISSUE_52_PILOT.md).
 Original UUID status/stop and durable completion remain the HTTP contract below.
+AVC metadata must prove positive dimensions, long edge <=1920 and short edge
+<=1080 in either orientation. The pilot inherits capture policy: three offline
+confirmations, 5-second spacing and 1-second base backoff. Duration/byte/connection
+cutoffs remain intentional interruptions; no pilot room-end or retry override.
 The pilot additionally reports lifetime session count/limit and refuses the ninth
 intent even after earlier completion; `pilot_lifetime_limit` identifies that
 admission gate, independently of physical free slots/outstanding units.
