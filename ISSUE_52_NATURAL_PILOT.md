@@ -1,3 +1,61 @@
+# Issue #52 — resumed authorized natural-pilot result
+
+**NATURAL PILOT PARTIAL — one natural recording completed and validated; second authorized source confirmed offline, no overlap.** [PM disposition 6063286746](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6063286746) explicitly resumed the same [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062963351). B3/R16–R19 remain accepted. The preceding startup refusal is preserved unchanged below and its original evidence directory was not modified. No repeated model/permission gate or B3 suite.
+
+| Source | Single normal public-resolution result | Starts / UUID | Actual outcome |
+| --- | --- | --- | --- |
+| `https://www.tiktok.com/@slayyyboo22/live` | 15:33:56Z: room `7694304636148124446`, status 2, hd1/flv_pull_url | **1**; `885c7d49-ed25-4c22-8f5c-e7f2b6305da4` | Original room matched, raw=true, original-UUID stop, durable completed portrait copy MP4; both deep validations PASS. |
+| `https://www.tiktok.com/@vibecrewkrista/live` | 15:33:57Z: room `7694272970004433677`, status 4, TikTokOfflineError | **0**; no UUID | Confirmed offline; skipped without polling/substitution. |
+
+**Consumed allowance: 1/2 total, slayyyboo22 1/1 and vibecrewkrista 0/1.** No capture/capture or capture/finalization overlap, configuration change, rendition switch or replacement-UUID isolation was naturally available. This is partial empirical coverage, not a failed MP4 or new product blocker. Unused allowance grants no automatic follow-up after this delivered trial.
+
+## Corrected exact launch and prompt targeting
+
+Clean requested worktree/branch/origin/common-Git/own-upstream verified; `git pull --rebase --autostash` returned already current. Exact launch **`d24430c20ab4d97aff8509fbaa6f57148d718fc8`**; all package bytes equal B3 candidate `1ca8d205`, fingerprint **`ae5ade3d0390d7f0e1b5e20c856ec5257fda50f2d4847e829b39c24f52e1dfd7`**. Root/import `C:\Users\Leandro\.codex\worktrees\capture-journal-handoff\TikREC`; common Git `C:\Users\Leandro\dev\TikREC\.git` was identified only. Existing runbook interpreter Windows CPython 3.11.15 / SQLite 3.53.1 and media tools/version/capabilities/hashes rechecked, unchanged from the historical identity below. No installation or production discovery.
+
+Directly written **literal PowerShell**, `$pilotHome`, argument array and `Join-Path` for FFmpeg/FFprobe. A harmless standard-library-only argv helper received the **final parsed 18 nonsecret arguments through that same array/invocation path**, checking exact cwd/interpreter/revision/fingerprint/home/catalog/tool paths, no control characters and binary hashes. It neither imported TikREC nor created state/resolved sources. Saved `parsed-argv.json`; actual command then used `python -m tikrec.pilot` with the same array. No fixture or source/test substitution.
+
+New evidence **`C:\Users\Leandro\TikREC-tests\issue52-natural-resume-20261008-153137`**, new initially absent home **`C:\Users\Leandro\TikREC-tests\issue52-natural-resume-20261008-153137\pilot-home`**, catalog **`72edb74b-c45f-4755-ae93-aa8bffd9e8cd`**. Fresh distinct secret, owner/SYSTEM-only local ACL; actual prompt observed from the intended console before native live-child checks and input delivery. The guard initially refused the uv executable alias versus its resolved versioned path; read-only identity reconciliation confirmed the same interpreter, and no secret was sent until resolved identity matched. Input delivered **15:33:49.204821Z**, with original live Python PIDs **31684 / 43316** and the current actual hidden prompt verified. Child exit/refusal cancels delivery; the shell waits after exit and cannot consume late input as commands. No token argv/environment, old-secret reuse or secret publication.
+
+Independent persistent WMI-created console **PID 44284**, created **15:32:21.180831Z**, parent 33260/session 1, native `IsProcessInJob=false`. Actual module invoked **15:33:15.990467Z**, waited at the hidden prompt, then emitted exact preflight/ready receipts and passed authenticated RemoteClient health. No process deadline, finally-kill or tool-parent teardown. Source/provenance and native identities are local. Every original 120-second/64 MiB/connection/tag/chunk/geometry/candidate/900-second/headroom/media/state limit remained unchanged.
+
+## Actual capture, validation and preservation
+
+Start ledger fsynced **15:34:04.553871Z before POST**, raw_copy=True, new immediate `media\slayyyboo22.mp4`. The successful response was saved as `slayyyboo22-start.json`, then an **external logging TypeError** arose from repeating `creator` as a keyword; the ledger initially labeled this failed/uncertain. Read-only status and the already saved response proved the exact acknowledged original UUID. A reconciliation entry records that distinction; **no start was resent, allowance remained consumed, and no further admissions occurred**. This external reporting error is not a TikREC start failure. External probes also corrected a capture-manifest assertion to expect truthful `interrupted` after the requested stop, and read the PowerShell UTF-16 log correctly; neither changed product/media/receipts.
+
+At **15:34:19.483328Z**, original status was active/capturing, room matched, **1,527,721 bytes**; raw and arrival files were growing. Original-UUID stop requested **15:34:36.687973Z**, acknowledged stop_requested/interrupted with **3,540,385 retained bytes** while capture closure was still pending. By **15:34:52.614296Z**, original UUID was closed/completed with **output_completed=true**, no needs-attention, two free slots/zero outstanding units. Four foreground observations recorded finalizer running, but no newer capture existed. Healthy finalization finished before shutdown; no artificial stalls/reconnects or whole-pilot cancellation of healthy work.
+
+Normal original-path commands, selected existing tools through child PATH, explicit `--deep` without configuration discovery:
+
+```text
+python -m tikrec.cli validate ORIGINAL_PILOT_HOME/media/slayyyboo22.parts --deep --json
+python -m tikrec.cli validate ORIGINAL_PILOT_HOME/media/slayyyboo22.mp4 --deep --json
+```
+
+**Both exit 0, PASS, no findings**. Session: one retained FLV, retained media integrity passed, final inspection/decode passed, session completeness **interrupted** from the authorized manual stop. Final MP4: H.264/AAC **720x1280**, **30.846 seconds**, copy assembly confirmed by original native launch recipe including unchanged `-fs 268435456`. The finalization manifest records input_decode **not_checked** for copy; this is not relabeled as a clean finalizer input-decode receipt. Separate normal retained-part decode/DTS checks passed. Visual integrity is not checked; raw preservation/linkage is not a claim of a separate full raw decoder run.
+
+One connection, zero reconnects. **3,541,363 original raw bytes** accounted by **5,752 contiguous monotonic byte-arrival records** (5,753 records including clock reference); connections link the exact raw/arrivals/part names and original room/session. H seal **`184f587f4280c7fc9ab37ebbb18324fc56772698d0e6d1d432fa30ce3e8886a4`** recomputes correctly. All five H artifact native volume/file/size/write stamps match, including the separately preserved original 952-byte predecessor manifest; control hashes match original connections and predecessor manifest. Original current manifest reports interrupted capture/completed finalization. Read-only catalog proves completed original task/release, zero units/bindings. No SQL edit, manual finalization or recovery.
+
+| Original file | Bytes | SHA-256 |
+| --- | ---: | --- |
+| raw connection | 3541363 | `11eacc03a1ded2de91173fdff964d42995eb84d22eef4a72657fbc0daf6b2636` |
+| retained FLV | 3540385 | `776fe412d19972e7d0cd5a3ce54c4cdde823b1998432346e1585528ecdaed3cb` |
+| final MP4 | 3538510 | `d8a887fd74baebbc417d28e66f03023c4fe8a241864d833e3d8f7d7b5f9dd341` |
+
+**Ten original media/control files retain exact hashes/sizes/native file IDs before/after both validators and whole-pilot shutdown**; media manifest **`c60c8e204c0fe873e869c9207ba56b5ece0e8732030a48cc5e9b53c6ff8b9204`**. Closed complete home: **15 files**, manifest **`d986a851c9df9e7b5b732ea7a10aa2f5c8f254fc369c31bf3ccac815b3c7b254`**, including schema-10 catalog/marker/control/automation and original media. **513 source/test/script/metadata hashes unchanged**, canonical manifest **`6df8cb6aeda5f3f536619d42b8faa21d5515e38fb254c72cbb26e4f9a8bea4f5`**. No source/test edits or offline suite rerun.
+
+## Confirmed shutdown and remaining scope
+
+Fresh shutdown nonce **`6e0de8ce-6964-481c-8dd8-d56909c17daa`**, requested **15:36:50.201486Z** after completion/validation. Product receipt: **complete:true, captures_joined:true, finalizer_joined:true, requests_joined:true, monitor_joined:true, authority_released:true**, zero diagnostics, no primary error. **Actual command exit 0 at 15:36:50.3754169Z**. Four original contained child records (assembly helper and three validators) prove confirmed_exited/code 0/active 0/native cleanup 1, with original PID/creation/image identities in `native-child-retirement.json`; contained FFmpeg retirement belongs to original native Job evidence. Persistent shell then exited normally on its local release signal. Census proves zero remaining task shell/Python/FFmpeg/FFprobe processes and no loopback listener. **No forced termination, incomplete cleanup or retained owner**.
+
+Observed minimum free **49,839,992,832 bytes**; peak media **11,445,875**, state **1,320,013**. No headroom/ingress/run safety limit was reached or changed. Known pre-configuration incomplete-shutdown limitation remains explicitly accepted/unresolved and was not encountered. No natural configuration-change, two-source overlap, broader recovery, restart, all-failure safe-exit or unattended evidence is claimed.
+
+Local nonsecret evidence: parsed argv, live prompt/child identities, fsynced ledger, actual foreground/exit, authenticated statuses, both deep JSON results, raw/arrival/H/release verification, before/after hashes, closed-home manifest, native child cleanup and process census. Media/secrets stay local. Later task commits are **documentation only and distinct from exact launch d24430c2**; they do not silently rebind launch permission to a later HEAD. #52 stays open awaiting PM review; #48 paused, #51 passed, #28 unresolved, published storage-only v0.11.0 untouched. No existing recorder/service/configuration/media changes, retention/deletion, migration, upgrade, merge or release. Stop; no automatic successor.
+
+---
+
+The earlier refused invocation report below is retained unchanged as historical evidence; its hold was superseded only by the linked PM disposition.
+
 # Issue #52 — authorized natural-pilot execution, 2026-10-08
 
 **NATURAL PILOT FAIL — execution refused before LIVE; no product correctness verdict.** [Owner authorization 6062963351](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062963351) followed [PM B3 acceptance 6062854485](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062854485). This execution used GPT-6.1 Sol — High and the existing authorization without another permission/model gate. B3 and accepted R16–R19 foundations remain accepted.
