@@ -37,7 +37,8 @@ def generate(base, sizes=('64x64', '80x64')):
 class CommandProbe:
     """Run the actual module with private offline seams and preserve exact command/logs."""
 
-    def __init__(self, base, mode='copy', *, home=None, catalog=None, reopen=False, port=0, ffmpeg=None, source_hash=None):
+    def __init__(self, base, mode='copy', *, home=None, catalog=None, reopen=False, port=0, ffmpeg=None, source_hash=None,
+                 module='tests.pilot_command_probe'):
         self.base, self.home = base, home or base / 'pilot-home'
         self.catalog = catalog or str(uuid4())
         self.log = base / ('reopen.log' if reopen else 'command.log')
@@ -49,7 +50,7 @@ class CommandProbe:
             '--ffmpeg', str(ffmpeg or shutil.which('ffmpeg')), '--ffprobe', shutil.which('ffprobe'), '--port', str(port)]
         environment = dict(os.environ, TIKREC_PILOT_TEST_FIXTURES=str(base), TIKREC_PILOT_TEST_MODE=mode)
         environment.pop('TIKREC_TOKEN', None)
-        command = [sys.executable, '-m', 'tests.pilot_command_probe', *self.args]
+        command = [sys.executable, '-m', module, *self.args]
         (base / ('reopen-command.json' if reopen else 'command.json')).write_text(
             json.dumps({'argv': command, 'cwd': str(ROOT), 'entrypoint': 'runpy tikrec.pilot __main__',
                         'secret': 'generated test secret supplied by stdin; omitted'}))

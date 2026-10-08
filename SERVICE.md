@@ -4,7 +4,7 @@
 
 Current released version: [**TikREC v0.11.0**](https://github.com/lvrdnck/TikREC/releases/tag/v0.11.0), annotated tag `ef8c5215712d454855a033700116bdc8fc0906a3` at exact approved `2fe6354aa508d53ce3a3452ce08743d97400fe73`; verified [wheel](https://github.com/lvrdnck/TikREC/releases/download/v0.11.0/tikrec-0.11.0-py3-none-any.whl). Publication completed under [owner authorization](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059131758). [Execution and artifact verification](V0_11_RELEASE_PUBLICATION.md). Historical candidate/preparation statements below describe earlier checkpoints.
 
-The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 pilot corrections are delivered for PM review under [6060507133](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6060507133); #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 and separate natural-LIVE authorization remain outstanding. No default activation, migration, production restart or automatic successor follows publication.
+The published feature set is storage-only: automatic-admission space checks, conservative planning and one exact-confirmation Windows deletion with age unset/disabled. Later #30/#48/#52 features are excluded. The owner's newer development installation is separate and unchanged; its executable/package metadata is not bumped or installed here. #52 R18–R19 are PM-accepted under [6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355); [fresh B3 acceptance](ISSUE_52_B3_ACCEPTANCE.md) passes the restricted supervised pilot, including R16/R17; #48 remains OPEN/PAUSED, #51 CLOSED/PASSED, #28 unresolved. [Pilot command/runbook](ISSUE_52_PILOT.md); B3 PASS is recorded; separate natural-LIVE authorization/validation remains outstanding. No default activation, migration, production restart or automatic successor follows publication.
 
 
 ## Opt-in foreground Windows pilot
@@ -31,8 +31,11 @@ retry. Known reopen consumes prior control; only queued/prepared-success work is
 supported. No drain, refund, adoption or broader recovery. Pilot writer byte-limit
 refusal seals unpublished/unvalidated bytes solely for existing local cleanup;
 it never enters validation/publication/release and retains its unfinished unit.
-Default adapters retain their accepted error/pin behavior. B3 fresh acceptance and
-separate natural-LIVE authorization are still required; no deployment claim.
+Default adapters retain their accepted error/pin behavior. [Fresh B3 PASS](ISSUE_52_B3_ACCEPTANCE.md)
+includes independent R16/R17 acceptance; separate natural-LIVE authorization
+and validation remain outstanding. Pre-configuration refusal can retain an
+unsealed lease and incomplete supervisor with no supported confirmed-exit
+procedure; preserve owners/state and return to PM. No deployment claim.
 
 ## Experimental isolated HTTP backend — 2026-10-08
 

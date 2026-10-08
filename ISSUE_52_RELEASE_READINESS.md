@@ -1,9 +1,27 @@
 # Issue #52 — bounded release-readiness decision (2026-10-08)
 
-Current B1/B2 implementation/runbook: [ISSUE_52_PILOT.md](ISSUE_52_PILOT.md),
-under [PM task 6059481487](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6059481487).
-B3 fresh-context acceptance and separate natural-LIVE authorization remain
-outstanding. Earlier findings/evidence below are historical and preserved.
+**B3 PASS — READY TO REQUEST RESTRICTED NATURAL-LIVE AUTHORIZATION (2026-10-08).**
+Fresh independent review of `1ca8d20556232ec678434762a0befd000276bfe3`, including
+**R16 PASS / R17 PASS**, under [PM 6062251355](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6062251355).
+[Exact scope, source fingerprint, provenance, 53 pilot / 58 native passes,
+16 deep validations and preserved incomplete-refusal limitation](ISSUE_52_B3_ACCEPTANCE.md).
+B1/B2 and PM-accepted R18–R19 satisfy this restricted supervised gate. The
+actual foreground shell command retires normally; pre-configuration refusal
+truthfully retains owners and has no supported confirmed-exit procedure.
+It is not an unattended or all-failure rollback guarantee. Separate natural-LIVE
+authorization/validation remains outstanding; no trial or deployment occurred.
+
+| Current gate | Status |
+| --- | --- |
+| B1 explicit isolated foreground command | PASS in the restricted scope. |
+| B2 finite envelope and command rehearsal | PASS; soft mux/planning limits and unsupported refusal remain explicit. |
+| B3 genuinely fresh acceptance, including R16–R17 | PASS; ready for PM to request separate restricted natural-LIVE authorization. |
+
+[Current command/runbook](ISSUE_52_PILOT.md). Published storage-only v0.11.0
+remains untouched. #52 OPEN/SINGLE ACTIVE for PM review; #48 PAUSED; #51
+CLOSED/PASSED; #28 unresolved. No automatic successor. The assessment and
+dependency table below are **historical**, including their then-outstanding B3
+provenance gap; [this fresh review](ISSUE_52_B3_ACCEPTANCE.md) supersedes that gap.
 
 Authority: [PM decision 6058350763](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6058350763), with [R16–R17 requirements 6057613070](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6057613070). Review candidate **8b5485c12eea0d71f83c4a99e8984b666d9da620**. Complex / GPT-6.1 Sol — High gate and owner PROCEED recorded. #52 OPEN / SINGLE ACTIVE; #48 PAUSED; #28 unresolved. This task changes review tests/docs only.
 
