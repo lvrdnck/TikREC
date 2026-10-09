@@ -56,6 +56,10 @@ prove an MP4 is complete.
 Reporting failure initiates owned shutdown even when console and disk logs fail.
 Incomplete retirement preserves the original supervisor for explicit local
 cleanup; a missing receipt is not exit/retirement proof. [Local control and failed-output policy](SERVICE.md#opt-in-operational-windows-service).
+An original quiescent written pre-handoff failure can retire locally with
+attention exit 3 while keeping failed media, its unit and occupied binding;
+unknown native/source cleanup stays incomplete. This grants no recovery or
+recording retry. [Scoped proof and evidence](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md).
 
 The restricted `python -m tikrec.pilot` retains its finite limits and foreground
 ownership rules. [Runbook](ISSUE_52_PILOT.md), [B3 evidence](ISSUE_52_B3_ACCEPTANCE.md)

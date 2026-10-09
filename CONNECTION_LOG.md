@@ -1,5 +1,13 @@
 # Connection evidence
 
+## Original capture-control retirement — 2026-10-09
+
+Opt-in guarded capture records original native writer ownership for connection,
+room-status and outage JSONL appends. Existing records, order, flush/fsync and
+schemas remain unchanged. Confirmed pre-H failure retirement preserves these
+bytes and raw/arrival/part evidence; it adds no connection or recovery event.
+[Scoped shutdown proof and verification](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md).
+
 ## Current manifest-completion boundary — 2026-10-06
 
 [PM decision 6012406322](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6012406322) accepts `0ca6144a` publication

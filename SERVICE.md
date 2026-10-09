@@ -9,7 +9,7 @@ The published feature set is storage-only: automatic-admission space checks, con
 
 ## Opt-in operational Windows service
 
-Corrected operational mode/R20 and the [path-check throughput correction](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6080216581) are PM-accepted within their recorded scope. The [single post-correction trial](ISSUE_52_POST_CORRECTION_TRIAL.md) is retired with passing new media/control/accounting/owner checks and PARTIAL evidence: actual headroom decline required earlier safety disposition, so the planned 20-minute capture/30-minute envelope remains unestablished. Its allocation is consumed/closed; next only PM disposition, no repeat or rollout. [Earlier trial](ISSUE_52_OPERATIONAL_TRIAL.md) and [accepted continuity attribution](ISSUE_52_CONTINUITY_DIAGNOSIS.md) remain historical. Everyday installation and unattended operation remain separately scoped.
+Corrected operational mode/R20 and the path-check correction are PM-accepted within scope. [PM 6080770655](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6080770655) accepts the [shortened trial](ISSUE_52_POST_CORRECTION_TRIAL.md), allocation consumed/closed, no repeat. The [written pre-H shutdown correction](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md) is delivered PARTIAL: first-candidate retirement evidence exists, final serialization follow-up verification stopped for storage. Final safety/performance checks and PM disposition remain; rollout HOLD. Historical trial/continuity reports remain preserved.
 
 
 The unreleased `serve --journal-home` mode explicitly composes the accepted
@@ -94,6 +94,20 @@ If all output channels fail, absence of a receipt proves nothing: preserve the
 process and original home, use documented local cleanup, and observe actual exit.
 An exit receipt is prospective; a late report failure supersedes its planned
 code on surviving sinks. Missing diagnostics are never reconstructed.
+
+Guarded original pre-H failures can also retire after a part writer has opened,
+but only during owned shutdown. The historical opening count remains intact.
+The original capture thread and worker must join; source/callback admission is
+sealed, and raw/arrival plus every part/control stream must have exact native
+closure proof. The same UUID, generation, bridge, lease, intent, unit and binding
+must still be authoritative, with no H operation/marker, pending handoff, task or
+output. Confirmed local retirement exits with attention code 3 while preserving
+failed media and unfinished accounting. It grants no recording/finalization,
+refund or retry permission. A new same-code fixture reopen retains the occupied
+needs-attention binding; an idle supervisor can close its own fresh resources.
+Unknown acquisition/close/source identity stays incomplete on the same owner;
+only a fresh original-thread `cleanup` nonce retries provable original resources.
+[Candidate, native faults, command/exit evidence and limits](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md).
 
 ## Opt-in foreground Windows pilot
 

@@ -1,12 +1,12 @@
 # Issue #52 — opt-in operational journal service
 
-**2026-10-09 disposition:** [PM 6080216581](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6080216581) accepts path-check code `e78db2da` / delivery `a320aeec` (fingerprint `9da7cc3c…`). The [one subsequent operational trial](ISSUE_52_POST_CORRECTION_TRIAL.md) is retired; its allocation is consumed/closed, checks pass but evidence is PARTIAL after early headroom safety stop. Next only PM disposition, no repeat or rollout. The fingerprint-bound historical reports/results below remain preserved.
+**2026-10-09 disposition:** [PM 6080770655](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6080770655) accepts the shortened post-correction trial within scope; allocation stays consumed/closed. [Written pre-H shutdown correction](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md) delivered PARTIAL; final safety/performance verification stopped for headroom, focused PM disposition next. Rollout HOLD; historical reports below preserved.
 
 Task: [PM 6065800184](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6065800184), 2026-10-08. Fresh-root Windows mode through the normal CLI; schema 10, accepted runtime/HTTP/automation/assembly/validation/publication/settlement. Restricted overlap is already COMPLETE/PASS under [6065722442](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6065722442). Its LIVE, B3, validators and documentation closeout were not repeated. Missing historical supervisor logs remain missing.
 
 ## Working command and state contract
 
-Current path-check correction: [exact candidate and frozen safety/performance evidence](ISSUE_52_THROUGHPUT_MEASUREMENT.md) await focused PM review; prior continuity/throughput diagnoses are accepted. Rollout remains HOLD, LIVE permissions CLOSED; historical homes/intervention and unsupported post-writer cleanup limits remain preserved.
+Current correction: [written pre-H original-writer retirement proof](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md). First frozen safety/actual command retirement and a pilot-witness serialization failure are recorded; corrected final fingerprint has AST/diff only because physical headroom stopped verification. Final safety/paced/deep checks outstanding; no completed acceptance or automatic successor. Prior diagnoses/path-check/trial acceptances remain; historical unsupported-cleanup statements/results below retain their original scope.
 
 Historical engineering/trial checkpoint (preserved): Current engineering acceptance: [PM 6070585346](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6070585346) accepts corrected operational mode/R20 within its limits. A separate [concurrent execution evidence report](ISSUE_52_OPERATIONAL_TRIAL.md) preserves actual original-owner retirement/media results and the single-trial coordination conflict; overall evidence remains PARTIAL and PM disposition is next. The earlier trial report below is preserved. No automatic successor or cutover.
 

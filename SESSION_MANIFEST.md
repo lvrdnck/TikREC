@@ -1,5 +1,14 @@
 # TikREC session manifest
 
+## Original capture-writer retirement — 2026-10-09
+
+Opt-in guarded capture registers the original manifest temporary writer before
+its first write and retains native close proof through atomic publication.
+Manifest schema/content, fsync/rename policy and ordinary capture are unchanged.
+Shutdown-only retirement of a failed written pre-H capture preserves its closed
+manifest and unfinished journal accounting; it does not complete or repair it.
+[Ownership contract and evidence](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md).
+
 ## Current owned success settlement boundary — 2026-10-06
 
 PM accepts R11 and corrected completion at `df954dd2`; manifest schema 1 and all

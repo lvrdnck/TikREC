@@ -38,6 +38,19 @@ same supervisor for a fresh explicit original-thread `cleanup` nonce, with no
 automatic retry or second-shutdown retry. No receipt or process disappearance
 alone proves retirement. [R20 correction and evidence](ISSUE_52_OPERATIONAL_SERVICE.md#r20-reporting-and-owned-shutdown).
 
+Shutdown-only retirement also covers an original quiescent written pre-H failure
+when UUID/generation/bridge/lease authority, actual joins, irreversible callback
+fencing and exact source/raw/arrival/part/control native closure are all proved.
+Historical writer openings are preserved; a scoped lifetime ledger supplies the
+additional written-failure proof. Confirmed stream closures become counters,
+not accumulated references. Unknown acquisitions and unidentified cleanup faults
+refuse; exact retained originals remain reachable for explicit local retry.
+No H/marker/pending handoff/task/output ambiguity is allowed. Failed media, intent,
+unit, binding and claims remain unchanged; attention exit 3 proves local resource
+retirement, not recording success or recovery permission. Schema 10, zero-writer
+refusal and authoritative post-H handling stay compatible.
+[Focused implementation and verification](ISSUE_52_WRITTEN_FAILURE_SHUTDOWN.md).
+
 ## Experimental pilot capture envelope
 
 The explicit foreground pilot accepts provable positive AVC dimensions with long
