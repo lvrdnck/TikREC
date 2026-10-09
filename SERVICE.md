@@ -56,6 +56,8 @@ apply. Creator lists reload; raw/retry/reserve policies are fixed at startup.
 Two captures, one finalizer and eight **outstanding**, not lifetime, units remain.
 Status/stop accept original UUIDs through normal `remote` commands below.
 
+Path identity checks use fresh no-follow metadata for the target and every ancestor, plus a separate known-target revalidation after traversal. Related facts share that observation only within the call; no cross-call cache. Missing/non-directory ancestry, dangling links/junctions, reparse points, file hardlinks and uncertain metadata refuse. Both state/media checks and both physical free-space queries still run at every original policy boundary; native pins remain independent authority. [Scoped correction and measured limits](ISSUE_52_THROUGHPUT_MEASUREMENT.md). Existing homes bound to a previous source fingerprint are not upgraded or migrated.
+
 Storage admission requires configured reserve +4 GiB, queued finalization +2 GiB plus the 16-MiB minimum writer budget,
 and captures stop at reserve +0.5 GiB or unknown storage. Independent checks run
 during finalization and idle HTTP periods. The dynamic owned writer budget comes

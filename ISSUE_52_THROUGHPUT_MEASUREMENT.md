@@ -1,3 +1,243 @@
+# #52 path-check correction — NOT REPRODUCED IN TESTED ENVELOPE
+
+2026-10-09; code correction and safety/performance verification COMPLETE for focused
+PM review under [complete assignment 6079130341](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6079130341).
+New Complex / GPT-6.1 Sol — High MODEL GATE and PROCEED recorded; sole implementation
+owner `path-check-20261009-a490`, [checkpoint 6079429067](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6079429067).
+The prior measurement checkpoint stays CLOSED. No parallel executor.
+
+**Safety: PASS within available native privileges. Connected performance: NOT REPRODUCED IN TESTED ENVELOPE.**
+Three corrected uninstrumented single-capture repetitions pass unchanged lag criteria.
+Compact two-capture/larger-fragment/modest-headroom results are individually recorded
+below; no sustained deployment, upstream completeness or historical LIVE attribution.
+Rollout HOLD; old fingerprint-bound homes remain incompatible and preserved.
+
+## Exact frozen executable and bounded correction
+
+Verified designated root/origin/branch/common Git directory, clean base
+`a4907b1050ac2eda04a569fe1ede5db6b7ad7a46`; own-upstream pull was up to date.
+Code/test candidate **`e78db2da7feb03411f20f54a4b4ad468e590360e`**, normalized 219-module fingerprint
+**`9da7cc3c5c9358abcb3b127c3a30d0755decd6c0c892eb775133c85d7aeaf8ad`**. Complete raw-byte manifest: **537**
+product/test/packaging files, `frozen-source-hashes.json`. Relative to the prior
+536-file executable manifest, only `tikrec/pilot_identity.py` changed and
+`tests/test_pilot_identity_local.py` was added. All verification used these frozen
+bytes before the later documentation delivery commit. No version change.
+
+`local` obtains one fresh no-follow lstat per observation and derives type,
+symlink/reparse and hardlink facts from it. It still visits the target and EVERY
+ancestor, then obtains a separate fresh known-target observation after traversal.
+Actual state/media path probes: **37 → 10 metadata queries**; final MP4 path:
+41 → 11; absent leaf: 37 → 10. This is within-invocation query coalescing, no
+cross-call cache or reduced checking cadence. Separate caller checks and native
+pins remain unchanged. Namespace checks are cooperative, not an atomic snapshot.
+
+Narrow intended-refusal strengthening characterized before implementation:
+the old helper accepted an absent leaf beneath a regular-file ancestor and a
+dangling junction as an absent new leaf. Both now refuse. Other metadata errors
+remain refusal and become sanitized `pilot path metadata unavailable`, without
+private pathname/error text. Existing paths and absent FINAL leaf with an intact
+directory ancestry retain return semantics. Known-state missing targets refuse.
+The final fresh known-target observation also validates its type/link attributes.
+
+All per-read/per-tag invocations, both state/media checks and BOTH physical-space
+queries remain. Profile counts confirm two path checks/two disk queries per
+snapshot. Different actual HTTP read aggregation explains different invocation totals;
+the offered fragmentation is unchanged.
+for both baseline/corrected captures, policy checks equal
+`3 * (nonempty raw reads + 1) + 1235`. SQLite/media/raw/retry/shutdown/schema 10,
+reserves/margins and normal/pilot defaults are unchanged.
+
+## Tests first and frozen safety verification
+
+Unchanged-code baseline, saved `baseline-tests.log`: **7 failed, 10 passed,
+4 skipped**, 0.40 s. Failures expose the two acceptance holes, redundant queries
+and unsanitized access/I/O/sharing errors. No baseline failure was relabelled as
+success. Development helper: 17 passed/4 skips; broader pre-freeze check:
+50 passed/6 skips, 98.47 s. Added fresh-success and Windows-error-code assertions
+were included in the final frozen candidate.
+
+Final affected regression selection: **252 passed, 6 skipped in 1193.82s (0:19:53)**. Exact selection, Python,
+frozen candidate, prospective launch records and launcher/tool original-handle outcomes are in
+`focused-command.json`, `focused-launches.json`, `focused-original-exits.json` and
+`focused-result.json`; 419 tracked subprocess originals all exited.
+Existing fixture force-termination fallbacks were disabled by the external runner;
+unknown retirement would retain original handles and stop expansion.
+
+Coverage: acceptance/refusal/query counts; missing/non-directory ancestry; native
+hardlinks and intact/dangling Windows junctions; reparse and symlink metadata;
+access/sharing/I/O uncertainty; missing/replaced target/ancestor between calls;
+fresh queries on consecutive successes and post-traversal known-target deletion.
+Native file/directory symlink creation has privilege error 1314; four helper cases
+skip, with independent sealed-input privilege skips reported by pytest. Mocked
+metadata cases supplement these limits, not replace native pins. Independent
+native pin/sharing/close tests preserve original handle identity and explicit
+safe retries. Low/unknown storage and cooperative in-flight stop, UUID/accounting,
+ten completed recordings and the generated 121-second/70-MiB source assertions,
+R20 combined reporting failures/retained SQLite/native cleanup, ordinary service
+defaults, restricted-pilot compatibility, HTTP/automation/finalizer/shutdown pass.
+No full suite, B3, historical validator or LIVE rerun.
+
+## Prospective connected verification and measured improvement
+
+New external root: `C:\Users\Leandro\TikREC-tests\path-check-correction-20261009-a490`. Corrected prior harness copied with
+`reused-harness-hashes.json`; old helpers/homes/receipts remain byte-identical.
+Same volume/path DEPTH (nine target/ancestor observations for state/media),
+interpreter/checked tools, 0.5-second HTTP observer, raw enabled, source schedule
+and fragmentation. No directory relocation or product seam beyond the same
+loopback resolver injection. All sources are finite GENERATED media, not TikTok.
+Python 3.11.15 / SQLite 3.53.1; actual launch/import/tool identities saved per
+operational startup. FFmpeg/FFprobe N-124716-g054dffd133-20260531 hashes match the
+accepted baseline. Fresh separate catalog/config/token/home for every case.
+
+Healthy two-second smoke precedes all timed work. Normal three terminal same-room
+observations at five-second spacing remain; exact H/assembly markers, completed
+UUIDs, separate finalization state and original-owner receipts were checked.
+Buffered metrics still export at capture completion/failure independently of CLI
+return. External failure-export regression preserves the exact primary exception
+without whole-CLI return; zero product starts. Profile export took
+0.025010 s outside ingestion.
+
+Matched order: ordinary-u1 → operational-u1 → operational-u2 → ordinary-u2 →
+ordinary-u3 → operational-u3; lighter operational-i1 → ordinary-i1; then one
+two-disjoint-captures runtime, larger-fragment ordinary/operational pair and
+25-fps at 1.2× pace ordinary/operational pair. 14 cases including smoke;
+no 48-case campaign or second concurrent supervisor. Minimum observed free space
+32.072 GiB; normal reserve 10 GiB and physical
+fixture floor 15 GiB unchanged. Host activity/available-space variation is not
+controlled and was not investigated through production access.
+
+Accepted before-correction uninstrumented baseline: EOF spans
+42.719 / 38.860 / 51.656 s, late medians 10.192 / 6.522 / 16.432 s, wall slopes
+0.235033 / 0.164639 / 0.259979 s/s; ordinary EOF 32.000 s and late medians
+0.003 / 0.006 / 0.008 s. That historical evidence was reused, not rerun.
+
+Current matching metrics (EOF span excludes offline confirmation/finalization;
+drain columns are after nominal source end / actual final socket send):
+
+| Case / stream | Raw EOF s | Late median / max lag s | Wall slope s/s | Late − early s | Drain nominal / send s | Blocked sends s | Fresh schedule p95 / max ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| headroom25-operational1-u1 / s0 | 26.704 | 0.013 / 0.050 | -0.000048 | -0.000 | 0.019 / 0.032 | 0.123 | 0.437 / 0.891 |
+| headroom25-ordinary-u1 / s0 | 26.672 | -0.004 / 0.004 | -0.000019 | -0.000 | 0.003 / 0.000 | 0.124 | 0.434 / 0.651 |
+| large15-operational1-u1 / s0 | 32.015 | 0.106 / 0.210 | -0.000051 | -0.003 | 0.204 / 0.000 | 0.013 | 0.512 / 0.586 |
+| large15-ordinary-u1 / s0 | 32.000 | 0.102 / 0.215 | -0.000039 | 0.000 | 0.203 / 0.000 | 0.013 | 0.520 / 0.595 |
+| small15-operational1-i1 / s0 | 32.047 | 0.016 / 0.093 | 0.000481 | 0.006 | 0.015 / 0.031 | 0.114 | 0.448 / 0.654 |
+| small15-operational1-u1 / s0 | 32.031 | 0.012 / 0.081 | 0.000040 | -0.001 | 0.000 / 0.015 | 0.120 | 0.430 / 0.700 |
+| small15-operational1-u2 / s0 | 32.047 | 0.012 / 0.067 | 0.000042 | 0.000 | 0.031 / 0.047 | 0.121 | 0.434 / 0.602 |
+| small15-operational1-u3 / s0 | 32.031 | 0.012 / 0.082 | 0.000066 | 0.002 | 0.000 / 0.015 | 0.125 | 0.436 / 0.750 |
+| small15-operational2-u1 / s0 | 32.015 | 0.020 / 0.090 | 0.000049 | 0.000 | 0.016 / 0.031 | 0.129 | 0.432 / 0.645 |
+| small15-operational2-u1 / s1 | 32.015 | 0.020 / 0.090 | -0.000020 | -0.001 | 0.016 / 0.031 | 0.131 | 0.427 / 0.635 |
+| small15-ordinary-i1 / s0 | 32.000 | -0.005 / 0.003 | -0.000047 | 0.000 | 0.000 / 0.000 | 0.117 | 0.433 / 0.651 |
+| small15-ordinary-u1 / s0 | 32.000 | 0.005 / 0.013 | 0.000026 | 0.000 | 0.000 / 0.000 | 0.138 | 0.437 / 0.692 |
+| small15-ordinary-u2 / s0 | 32.000 | 0.002 / 0.010 | 0.000004 | 0.000 | 0.000 / 0.000 | 0.126 | 0.434 / 0.706 |
+| small15-ordinary-u3 / s0 | 32.000 | 0.000 / 0.008 | -0.000020 | 0.000 | 0.000 / 0.000 | 0.134 | 0.438 / 0.632 |
+
+Original criteria retained: warmup 3 s; growing wall slope >0.01 s/s,
+late-minus-early >0.25 s, late median/drain >0.5 s are failures. Monotonic Windows
+resolution 15.625 ms; 100-ms frontier grid, QPC 100 ns. Small/negative millisecond
+values are not precision claims. `lag-verdicts.json` records every stream result.
+Socket-send completion is not a wire timestamp; fresh producer scheduling and
+blocked-send/inherited-backpressure intervals are separated, never summed as loss.
+
+Lighter profile actual exclusive capture-thread costs, same sampler as baseline:
+
+| Category | Baseline / corrected calls | Baseline / corrected exclusive wall s |
+| --- | ---: | ---: |
+| sqlite_session | 7 / 7 | 0.026518 / 0.024576 |
+| sqlite_status | 1242 / 1242 | 4.145171 / 4.323530 |
+| arrival_write_flush | 5553 / 5205 | 0.189351 / 0.134856 |
+| path_identity | 35782 / 33694 | 35.793039 / 14.064544 |
+| free_space_query | 35782 / 33694 | 0.940203 / 1.076637 |
+| policy_snapshot | 17891 / 16847 | 0.453593 / 0.458457 |
+| policy_check | 17891 / 16847 | 0.065474 / 0.065074 |
+| http_read_blocking | 5552 / 5204 | 1.069081 / 11.928823 |
+| raw_write | 5551 / 5203 | 0.057021 / 0.040303 |
+| parser_tag | 1236 / 1236 | 0.188663 / 0.139198 |
+| retained_write | 1233 / 1233 | 0.029196 / 0.021106 |
+
+Selected local exclusive wall time **41.888228 →
+20.348282 s**. Path cost per invocation
+**1.000308 →
+0.417420 ms**.
+Parent cumulative scopes include these children and are not added again.
+HTTP waiting rises as the receiver keeps up with paced delivery. SQLite remains
+secondary and unchanged; no further optimization was made.
+Light profile late median is 0.016 s versus 0.012 s uninstrumented; EOF 32.047 s
+versus 32.031–32.047 s. These observable differences are below the existing 0.1-s
+lag criterion; they do not precisely bound instrumentation CPU/exclusive-cost
+overhead. Historical full-profile amplification remains in the preserved report.
+Repeated uninstrumented passes independently establish the connected improvement.
+
+## Generated payload/output and original-owner evidence
+
+Exact source inventory: `{"smoke.flv": {"bytes": 258377, "sha256": "c2f2380494b01de00f110e99fbf4d96f870531b469db4568af07be9965dc90f5"}, "v15.flv": {"bytes": 3661002, "sha256": "5c4d505de71b00e97bf81744810a06b2ad3752191483496f3974041dbe0eeb42"}, "v25.flv": {"bytes": 3661493, "sha256": "182810b6e0a742d5ea11b501865cf27ca8f2ba13e3323c111fb7246f099afbeb"}}`.
+Every timed source byte is offered/sent/read exactly; contiguous raw-arrival
+records terminate with EOF. Every retained media payload/order matches the exact
+source suffix after the existing leading AAC keyframe gate; no media/retry change.
+Actual read-size distributions, not requested 64 KiB, are preserved:
+
+| Case / stream | Offered B | Sent B | Raw-read B | Retained / offered media tags | Reads | Median / p95 / max B |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| headroom25-operational1-u1 / s0 | 3661493 | 3661493 | 3661493 | 1550 / 1551 | 5930 | 11 / 2048 / 2048 |
+| headroom25-ordinary-u1 / s0 | 3661493 | 3661493 | 3661493 | 1550 / 1551 | 5928 | 11 / 2048 / 2048 |
+| large15-operational1-u1 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 322 | 8186 / 17962 / 65536 |
+| large15-ordinary-u1 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 322 | 8186 / 17962 / 65536 |
+| small15-operational1-i1 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5203 | 226 / 2048 / 2048 |
+| small15-operational1-u1 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5200 | 227 / 2048 / 2048 |
+| small15-operational1-u2 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5200 | 226 / 2048 / 2048 |
+| small15-operational1-u3 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5202 | 228 / 2048 / 2048 |
+| small15-operational2-u1 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5195 | 230 / 2048 / 2048 |
+| small15-operational2-u1 / s1 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5195 | 230 / 2048 / 2048 |
+| small15-ordinary-i1 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5194 | 230 / 2048 / 2048 |
+| small15-ordinary-u1 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5182 | 234 / 2048 / 2048 |
+| small15-ordinary-u2 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5183 | 234 / 2048 / 2048 |
+| small15-ordinary-u3 / s0 | 3661002 | 3661002 | 3661002 | 1230 / 1231 | 5176 | 235 / 2048 / 2048 |
+
+4 new generated deep checks exit 0 (single retained parts/MP4 and both
+two-capture MP4s), original artifact hashes unchanged. `new-generated-deep-checks.json`
+contains actual commands/stdout/stderr and before/after proof. No historical-media
+validation, repair, remux or re-encode. All new producer/receiver originals and
+separately observed wrappers exit 0; operational shutdown is complete with
+authority released, zero diagnostics, zero units and two available slots.
+Two disjoint UUIDs/rooms have independent H/finalization evidence in one supervisor.
+No process disappearance inference, hidden retry or forced intervention.
+
+Eight operational cases complete nine recordings. In the larger-fragment case,
+the last health snapshot still showed one running task; the next UUID poll saw
+completion. That earlier snapshot is preserved. Read-only inspection of only
+the NEW catalogs after confirmed original exit independently proves zero units,
+no bound captures and completed tasks, with catalog/sidecar hashes unchanged.
+Per-case `*-post-exit-accounting.json` records the observation boundary; no earlier
+snapshot was rewritten or historical state reopened.
+
+All 180 historical trial hashes and 718
+saved old-measurement files remain unchanged; no old state was reopened. Old failed
+fixture exit 57426 and `complete:false` remain historical test intervention,
+not product retirement. Unsupported post-writer cleanup is STILL a rollout risk.
+
+Reproduce saved derived measurements read-only with:
+
+```powershell
+& 'C:\Users\Leandro\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe' 'C:\Users\Leandro\TikREC-tests\path-check-correction-20261009-a490\analyze.py'
+```
+
+Fresh-launch stages are recorded in `plan.json`/`driver.py` and per-case launch
+argv; existing case directories are never reused. Timings, native exits, UUID
+states, H markers, source/package manifests and generated hashes are prospective.
+Credentials/media are external and not uploaded.
+
+**One next action:** focused PM review of this exact correction and its bounded
+safety/performance evidence. Larger-rate/long sustained deployment, real-source
+continuity and unsupported post-writer cleanup remain unproven; no next
+optimization, recovery implementation, rollout or new trial is authorized.
+#52 OPEN, #48 PAUSED, #28 separate/non-blocking, #51/published v0.11.0 complete.
+No production watcher/service/Scheduled Task access/change, LIVE, installation,
+migration/retention, dependency upgrade, force-kill, main merge, release or closure.
+Refs #52.
+
+---
+
+Historical accepted measurement and stopped attempt follow VERBATIM.
+
 # #52 throughput continuation — LOCAL BOTTLENECK REPRODUCED
 
 2026-10-09; **same measurement `throughput-20261009-a7ad` COMPLETE for PM review**
