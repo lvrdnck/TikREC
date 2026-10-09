@@ -1,5 +1,7 @@
 # #52 path-check correction — NOT REPRODUCED IN TESTED ENVELOPE
 
+**2026-10-09 disposition:** [PM 6080216581](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6080216581) accepts path-check code `e78db2da` / delivery `a320aeec` (fingerprint `9da7cc3c…`). The [one subsequent operational trial](ISSUE_52_POST_CORRECTION_TRIAL.md) is retired; its allocation is consumed/closed, checks pass but evidence is PARTIAL after early headroom safety stop. Next only PM disposition, no repeat or rollout. The fingerprint-bound historical reports/results below remain preserved.
+
 2026-10-09; code correction and safety/performance verification COMPLETE for focused
 PM review under [complete assignment 6079130341](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6079130341).
 New Complex / GPT-6.1 Sol — High MODEL GATE and PROCEED recorded; sole implementation

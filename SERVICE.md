@@ -9,7 +9,7 @@ The published feature set is storage-only: automatic-admission space checks, con
 
 ## Opt-in operational Windows service
 
-Corrected operational mode/R20 are [PM-accepted](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6070585346). [Actual supervised execution evidence](ISSUE_52_OPERATIONAL_TRIAL.md) records passing media/control/retirement checks, remaining source continuity limits and a concurrent single-trial coordination conflict. Overall evidence is PARTIAL; stop for PM disposition. Everyday installation and unattended operation remain separately scoped.
+Corrected operational mode/R20 and the [path-check throughput correction](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6080216581) are PM-accepted within their recorded scope. The [single post-correction trial](ISSUE_52_POST_CORRECTION_TRIAL.md) is retired with passing new media/control/accounting/owner checks and PARTIAL evidence: actual headroom decline required earlier safety disposition, so the planned 20-minute capture/30-minute envelope remains unestablished. Its allocation is consumed/closed; next only PM disposition, no repeat or rollout. [Earlier trial](ISSUE_52_OPERATIONAL_TRIAL.md) and [accepted continuity attribution](ISSUE_52_CONTINUITY_DIAGNOSIS.md) remain historical. Everyday installation and unattended operation remain separately scoped.
 
 
 The unreleased `serve --journal-home` mode explicitly composes the accepted

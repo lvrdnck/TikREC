@@ -1,5 +1,7 @@
 # Issue #52 — opt-in operational journal service
 
+**2026-10-09 disposition:** [PM 6080216581](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6080216581) accepts path-check code `e78db2da` / delivery `a320aeec` (fingerprint `9da7cc3c…`). The [one subsequent operational trial](ISSUE_52_POST_CORRECTION_TRIAL.md) is retired; its allocation is consumed/closed, checks pass but evidence is PARTIAL after early headroom safety stop. Next only PM disposition, no repeat or rollout. The fingerprint-bound historical reports/results below remain preserved.
+
 Task: [PM 6065800184](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6065800184), 2026-10-08. Fresh-root Windows mode through the normal CLI; schema 10, accepted runtime/HTTP/automation/assembly/validation/publication/settlement. Restricted overlap is already COMPLETE/PASS under [6065722442](https://github.com/lvrdnck/TikREC/issues/52#issuecomment-6065722442). Its LIVE, B3, validators and documentation closeout were not repeated. Missing historical supervisor logs remain missing.
 
 ## Working command and state contract
