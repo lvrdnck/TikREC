@@ -51,6 +51,8 @@ def test_written_failure_retires_without_h_or_accounting_change(runtime_case, ra
     assert runtime.shutdown() is result
     assert bridge.failure is failure and bridge.fence.writer_openings > 0
     assert bridge.lease.closed and not bridge.lease.handle.guard.retained
+    import json
+    assert json.loads(json.dumps(runtime.captures[sid]['refusal_retired']))['writer_openings'] > 0
     assert hashes(runtime.root) == original
     assert runtime.journal.session(sid) == row and runtime.journal.status() == status
     assert runtime.journal.operation(bridge.handoff_operation) is None
@@ -149,7 +151,7 @@ def test_written_proof_survives_sealed_catalog_cleanup_retry(runtime_case):
     protection(handle, True)
     try:
         assert not runtime.shutdown()['complete'] and runtime.connections.closing
-        assert runtime.captures[sid]['refusal_retired']['writers'] is bridge.fence.writers
+        assert runtime.captures[sid]['refusal_writer_owner'] is bridge.fence.writers
         assert bridge.fence.writers.retired() and bridge.lease.closed
         assert not runtime.shutdown()['complete'] and guard.retained
     finally:

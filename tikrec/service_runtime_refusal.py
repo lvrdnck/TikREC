@@ -78,9 +78,10 @@ def retire_refusal(runtime, sid, entry):
             lease.handle.close()
         require(lease.closed and lease.handle.closed and not guard.retained,
                 'original refusal lease cleanup unconfirmed')
+        # Keep exact local objects outside the serializable retirement receipt.
+        entry['refusal_writer_owner'] = fence.writers
         entry['refusal_retired'] = {'session': sid, 'generation': fence.generation,
-            'revision': row['revision'], 'writer_openings': fence.writer_openings,
-            'writers': fence.writers}
+            'revision': row['revision'], 'writer_openings': fence.writer_openings}
         return True
 
 
@@ -124,7 +125,7 @@ def sealed_refusals(runtime):
                 and entry['done'] and not entry['thread'].is_alive()
                 and not fence.active and not fence.inflight and writer_quiescent(fence, entry, sealed=True)
                 and proof['writer_openings'] == fence.writer_openings
-                and proof['writers'] is fence.writers
+                and entry.get('refusal_writer_owner') is fence.writers
                 and (fence.writers is None or fence.writers.retired())
                 and fence.sources_opened == fence.sources_closed
                 and fence.inputs.retired() and lease.closed and lease.handle.closed

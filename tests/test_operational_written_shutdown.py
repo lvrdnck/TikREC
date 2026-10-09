@@ -36,6 +36,11 @@ class WrittenProbe(Probe):
     def stop(self):
         """Remove only a generated handle fault before the original-owner cleanup nonce."""
         (self.base / 'repair-written').touch()
+        if self.process is not None and self.process.poll() is None and any(
+                row['event'] == 'cleanup-return' for row in self.witnesses()):
+            # An incomplete owner accepts cleanup, never another shutdown retry.
+            self.control('cleanup')
+            self.process.wait(60)
         super().stop()
 
 
