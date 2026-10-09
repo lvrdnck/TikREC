@@ -22,6 +22,8 @@ class CaptureFence:
         self.sources_opened, self.sources_closed, self.writer_openings = 0, 0, 0
         from .capture_input_owners import CaptureInputOwners
         self.inputs = CaptureInputOwners() if track_inputs else None
+        from .capture_writer_owners import CaptureWriterOwners
+        self.writers = CaptureWriterOwners(session_id, generation) if track_inputs else None
 
     def check(self):
         """Refuse callbacks after generation close, including after slot replacement."""
@@ -86,7 +88,7 @@ class CaptureFence:
 
     @contextmanager
     def writer_opening(self):
-        """Remember any attempted part opening; shutdown cannot call it pre-configuration."""
+        """Keep historical openings; a written failure additionally needs native lifetime proof."""
         with self.opening():
             self.writer_openings += 1
             yield

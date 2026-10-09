@@ -1,4 +1,4 @@
-"""Shutdown-only local retirement of the original guarded pre-writer refusal."""
+"""Shutdown-only original pre-H failure retirement, without changing journal accounting."""
 
 import os
 from dataclasses import asdict
@@ -6,6 +6,19 @@ from pathlib import Path
 
 from .capture_handoff_marker import MARKER_NAME
 from .session_journal_types import digest, require
+
+
+def writer_quiescent(fence, entry, *, sealed=False):
+    """Keep the zero-writer proof; written failures need an additional lifetime ledger."""
+    if fence.writer_openings == 0:
+        return not fence.cleanup_errors
+    writers = fence.writers
+    return (writers is not None and writers.entered and writers.exited
+            and writers.session_id == fence.session_id and writers.generation == fence.generation
+            and writers.thread == entry['thread'].ident
+            and writers.parts_opened == fence.writer_openings
+            and writers.known_cleanup(fence.cleanup_errors)
+            and (not sealed or writers.retired()))
 
 
 def retire_refusal(runtime, sid, entry):
@@ -27,8 +40,8 @@ def retire_refusal(runtime, sid, entry):
                 and bridge.authority is authority and bridge.lease in authority.leases
                 and bridge.intent.session_id == sid and bridge.started,
                 'original refusal owner identity changed')
-        require(not fence.active and fence.inflight == 0 and not fence.cleanup_errors
-                and fence.writer_openings == 0 and fence.sources_opened == fence.sources_closed
+        require(not fence.active and fence.inflight == 0 and writer_quiescent(fence, entry)
+                and fence.sources_opened == fence.sources_closed
                 and fence.sources_opened > 0, 'source/writer cleanup unconfirmed')
         require(fence.session_id == sid and fence.generation == bridge.binding['generation'],
                 'original refusal generation changed')
@@ -50,6 +63,8 @@ def retire_refusal(runtime, sid, entry):
                 and not os.path.lexists(bridge.intent.output_path), 'H/output ownership is ambiguous')
         # A closed fence cannot be reopened by an escaped callback; admission is also sealed.
         bridge.stop_event.set()
+        if fence.writers is not None and not fence.writers.retire():
+            return False
         if not fence.inputs.retire():
             return False
         guard = getattr(lease.handle, 'guard', None)
@@ -64,7 +79,8 @@ def retire_refusal(runtime, sid, entry):
         require(lease.closed and lease.handle.closed and not guard.retained,
                 'original refusal lease cleanup unconfirmed')
         entry['refusal_retired'] = {'session': sid, 'generation': fence.generation,
-                                    'revision': row['revision']}
+            'revision': row['revision'], 'writer_openings': fence.writer_openings,
+            'writers': fence.writers}
         return True
 
 
@@ -80,6 +96,11 @@ def retire_refusals(runtime, entries):
         inputs = entry['bridge'].fence.inputs
         if inputs is not None:
             for error in inputs.errors:
+                if not any(error is previous for previous in runtime.errors):
+                    runtime.record_error(error)
+        writers = entry['bridge'].fence.writers
+        if writers is not None:
+            for error in writers.errors:
                 if not any(error is previous for previous in runtime.errors):
                     runtime.record_error(error)
     return confirmed
@@ -101,8 +122,11 @@ def sealed_refusals(runtime):
                 and runtime.authority.bridges.get(sid) is bridge
                 and bridge.authority is runtime.authority and lease in runtime.authority.leases
                 and entry['done'] and not entry['thread'].is_alive()
-                and not fence.active and not fence.inflight and not fence.cleanup_errors
-                and not fence.writer_openings and fence.sources_opened == fence.sources_closed
+                and not fence.active and not fence.inflight and writer_quiescent(fence, entry, sealed=True)
+                and proof['writer_openings'] == fence.writer_openings
+                and proof['writers'] is fence.writers
+                and (fence.writers is None or fence.writers.retired())
+                and fence.sources_opened == fence.sources_closed
                 and fence.inputs.retired() and lease.closed and lease.handle.closed
                 and guard is not None and not guard.retained):
             confirmed.add(sid)

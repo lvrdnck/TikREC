@@ -209,12 +209,14 @@ class CaptureBridge:
                 return self._never_admitted()
         warning = observations.pop("warning", None)
         try:
-            result = capture_live(f"https://www.tiktok.com/@{self.intent.creator}/live",
-                parts_directory=Path(self.intent.parts_path), output_path=Path(self.intent.output_path),
-                raw_copy_dir=Path(self.intent.parts_path) if self.intent.raw_copy else None,
-                session_id=self.intent.session_id, room_identity=self._room, stop_event=self.stop_event,
-                warning=lambda message: self._warning(message, warning), _capture_only=True,
-                _capture_fence=self.fence, **observations)
+            from .capture_writer_owners import writer_scope
+            with writer_scope(self.fence.writers):
+                result = capture_live(f"https://www.tiktok.com/@{self.intent.creator}/live",
+                    parts_directory=Path(self.intent.parts_path), output_path=Path(self.intent.output_path),
+                    raw_copy_dir=Path(self.intent.parts_path) if self.intent.raw_copy else None,
+                    session_id=self.intent.session_id, room_identity=self._room, stop_event=self.stop_event,
+                    warning=lambda message: self._warning(message, warning), _capture_only=True,
+                    _capture_fence=self.fence, **observations)
         except BaseException as error:
             with self.authority.lock:
                 if self.authority.journal.session(self.intent.session_id)["phase"] == "reserved":
@@ -229,6 +231,8 @@ class CaptureBridge:
                     "source/writer closure was not proved")
             require(self.fence.inputs is None or self.fence.inputs.retired(),
                     "raw native closure was not proved")
+            require(self.fence.writers is None or self.fence.writers.retired(),
+                    "part/control native closure was not proved")
             self.fence.close()
             with self.authority.lock:
                 row = self._current()

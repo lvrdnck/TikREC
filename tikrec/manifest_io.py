@@ -7,6 +7,7 @@ import json
 import os
 from collections.abc import Callable
 from pathlib import Path
+from .capture_writer_owners import open_capture_file
 
 
 def write_manifest(path: Path, values: dict, *, expected_digest: str | None = None,
@@ -14,7 +15,7 @@ def write_manifest(path: Path, values: dict, *, expected_digest: str | None = No
     """Replace one manifest only while its inspected owner remains current."""
     temporary = path.with_name(f".{path.name}.partial")
     try:
-        with temporary.open("w", encoding="utf-8") as handle:
+        with open_capture_file(temporary, "w", encoding="utf-8") as handle:
             json.dump(values, handle, indent=2, sort_keys=True)
             handle.write("\n")
             handle.flush()

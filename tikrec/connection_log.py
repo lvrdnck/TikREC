@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .writer import PartTiming
+from .capture_writer_owners import open_capture_file
 
 
 @dataclass(frozen=True)
@@ -100,7 +101,7 @@ def append_room_status_record(
 
 
 def _append_jsonl_record(path: Path, values: dict[str, object]) -> None:
-    with path.open("a", encoding="utf-8") as handle:
+    with open_capture_file(path, "a", encoding="utf-8") as handle:
         handle.write(json.dumps(values, sort_keys=True) + "\n")
         handle.flush()
         # A killed process must not lose the last connection or room-status evidence.

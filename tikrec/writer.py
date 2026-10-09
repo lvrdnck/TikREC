@@ -161,7 +161,8 @@ def _open_part(output_dir: Path, index: int, configuration_tag: FlvTag) -> _Open
     partial_path = output_dir / f".{final_path.name}.partial"
     if final_path.exists() or final_path.is_symlink() or partial_path.exists():
         raise FileExistsError(f"refusing to overwrite {final_path}")
-    handle = partial_path.open("xb")
+    from .capture_writer_owners import open_capture_file
+    handle = open_capture_file(partial_path, "xb")
     handle.write(_FLV_HEADER)
     return _OpenPart(handle, partial_path, final_path, configuration_tag)
 
