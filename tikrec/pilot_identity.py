@@ -3,11 +3,12 @@ import hashlib
 import json
 import os
 import sqlite3
+import stat
 import subprocess
 import sys
 from pathlib import Path
 
-from .session_journal_types import require
+from .session_journal_types import JournalError, require
 
 
 def local(path, *, exists=True):
@@ -16,15 +17,25 @@ def local(path, *, exists=True):
     require(path.is_absolute() and str(path) == str(path.absolute())
             and not str(path).startswith('\\\\') and '..' not in path.parts,
             'pilot paths must be explicit native absolute paths')
-    for item in (path, *path.parents):
-        if not item.exists():
+    items = [path, *path.parents]
+    if exists:
+        # Keep the known-target revalidation after the complete ancestor walk.
+        items.append(path)
+    for item in items:
+        try:
+            # One fresh no-follow observation supplies all related facts. Following
+            # existence checks can misclassify a dangling redirection as a new leaf.
+            info = item.lstat()
+        except FileNotFoundError:
             require(item == path and not exists, 'missing pilot parent or state')
             continue
-        info = item.lstat()
-        require(not item.is_symlink() and not getattr(info, 'st_file_attributes', 0) & 0x400,
+        except OSError:
+            raise JournalError('pilot path metadata unavailable') from None
+        require(not stat.S_ISLNK(info.st_mode) and not getattr(info, 'st_file_attributes', 0) & 0x400,
                 'redirected pilot path')
-        require(item.is_dir() or info.st_nlink == 1, 'multiply linked pilot file')
-    require(not exists or path.exists(), 'missing pilot identity')
+        directory = stat.S_ISDIR(info.st_mode)
+        require(item == path or directory, 'pilot ancestor is not a directory')
+        require(directory or info.st_nlink == 1, 'multiply linked pilot file')
     return path
 
 
