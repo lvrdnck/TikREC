@@ -176,7 +176,68 @@ the same bounded transient-failure policy used for other connection errors.
 - Python 3.11+
 - ffmpeg and ffprobe on PATH
 
-Install with `pip install -e .`
+The commands below distinguish the existing user-facing commands from the
+development commands newly made explicit here. Run them from the repository
+root in PowerShell.
+
+### Windows development setup
+
+Create a virtual environment and install TikREC in editable mode:
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -e .
+```
+
+To install the development dependency group as well, use pip 25.1 or later;
+pip added `--group` support in 25.1. The `dev` group in `pyproject.toml` installs
+pytest:
+
+```powershell
+.venv\Scripts\python.exe -m pip install --upgrade "pip>=25.1"
+.venv\Scripts\python.exe -m pip install --group dev
+```
+
+The editable install command was already documented above. Virtual environment
+creation, the minimum pip version, and the `dev` group command are newly
+documented here from the repository configuration. Run the `dev` group command
+after activating/creating the virtual environment and from the repository root;
+it installs the declared development dependencies alongside the runtime package
+already installed above.
+
+### CLI and service commands
+
+The CLI entry point is `tikrec`, installed by the package configuration. For
+example, the existing command to record a public LIVE page is:
+
+```powershell
+.venv\Scripts\tikrec.exe live <tiktok-live-page-url>
+```
+
+The existing service command is:
+
+```powershell
+.venv\Scripts\tikrec.exe serve [--host IP] [--port PORT] [--token-file FILE] [--recovery-window-seconds SECONDS]
+```
+
+For a persistent Windows service, `SERVICE.md` documents running
+`.venv\Scripts\tikrec.exe` with `serve` and the deployment arguments through
+Windows Task Scheduler.
+
+### Offline tests and checks
+
+Run the offline pytest suite from the repository root with:
+
+```powershell
+.venv\Scripts\python.exe -m pytest
+```
+
+This command is newly established from `pyproject.toml`: pytest is in the `dev`
+dependency group and the configured test directory is `tests/`. The repository
+has no CI workflow or configured lint, type-check, or general build command.
+Some media and service changes have additional validation requirements described
+in `AGENTS.md`; those are task-specific and are not part of the offline test
+command.
 
 ## Configuration and local output paths
 
